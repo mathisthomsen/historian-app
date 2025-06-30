@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique @db.VarChar(255)
+  name            String    @db.VarChar(255)
+  password        String    @db.VarChar(255)
+  role            UserRole  @default(USER)
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastLoginAt     DateTime?
+
+  // Relations
+  emailConfirmations EmailConfirmation[]
+  passwordResets     PasswordReset[]
+  refreshTokens      RefreshToken[]
+  events             events[]
+  persons            persons[]
+  life_events        life_events[]
+  event_types        event_types[]
+  literature         literature[]
+  bibliographySyncs  BibliographySync[]
+
+  @@index([email])
+  @@index([role])
+  @@index([emailVerified])
+  @@map("users")
+}
+
+model EmailConfirmation {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_confirmations")
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_resets")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model events {
+  id          Int           @id @default(autoincrement())
+  userId      Int // User who owns this event
+  title       String        @db.VarChar(255)
+  description String?       @db.Text
+  date        DateTime?     @db.Date
+  end_date    DateTime?     @db.Date
+  location    String?       @db.VarChar(255)
+  life_events life_events[]
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+  @@index([title])
+  @@index([location])
+  @@index([userId])
+}
+
+model event_types {
+  id          Int           @id @default(autoincrement())
+  userId      Int // User who owns this event type
+  name        String?       @db.VarChar(100)
+  icon        String?       @db.VarChar(100)
+  color       String?       @db.VarChar(10)
+  life_events life_events[]
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([name])
+  @@index([userId])
+}
+
+model life_events {
+  id            Int       @id @default(autoincrement())
+  userId        Int // User who owns this life event
+  person_id     Int?
+  event_id      Int? // ⬅️ Neue Referenz auf globales Event
+  title         String?   @db.VarChar(255)
+  start_date    DateTime? @db.Date
+  end_date      DateTime? @db.Date
+  location      String?   @db.VarChar(255)
+  description   String?   @db.Text
+  metadata      Json?
+  event_type_id Int?
+
+  // Relationen
+  event      events?      @relation(fields: [event_id], references: [id], onDelete: SetNull, map: "fk_event")
+  event_type event_types? @relation(fields: [event_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_type")
+  persons    persons?     @relation(fields: [person_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "life_events_ibfk_1")
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([person_id], map: "person_id")
+  @@index([event_type_id], map: "fk_event_type")
+  @@index([event_id], map: "fk_event")
+  @@index([start_date])
+  @@index([end_date])
+  @@index([title])
+  @@index([location])
+  @@index([person_id, start_date])
+  @@index([person_id, end_date])
+  @@index([userId])
+}
+
+model persons {
+  id          Int       @id @default(autoincrement())
+  userId      Int // User who owns this person
+  first_name  String?   @db.VarChar(100)
+  last_name   String?   @db.VarChar(100)
+  birth_date  DateTime? @db.Date
+  birth_place String?   @db.VarChar(255)
+  death_date  DateTime? @db.Date
+  death_place String?   @db.VarChar(255)
+  notes       String?   @db.Text
+
+  life_events life_events[]
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Beziehungen
+  relations_from person_relations[] @relation("from_person")
+  relations_to   person_relations[] @relation("to_person")
+
+  @@index([first_name])
+  @@index([last_name])
+  @@index([birth_date])
+  @@index([death_date])
+  @@index([birth_place])
+  @@index([death_place])
+  @@index([first_name, last_name])
+  @@index([userId])
+  @@fulltext([first_name, last_name, birth_place, death_place, notes])
+}
+
+model person_relations {
+  id             Int     @id @default(autoincrement())
+  from_person    persons @relation("from_person", fields: [from_person_id], references: [id])
+  from_person_id Int
+
+  to_person    persons @relation("to_person", fields: [to_person_id], references: [id])
+  to_person_id Int
+
+  relation_type String @db.VarChar(100) // z.B. "spouse", "parent", "sibling"
+
+  notes String? @db.Text
+
+  @@index([from_person_id])
+  @@index([to_person_id])
+  @@index([relation_type])
+  @@index([from_person_id, relation_type])
+  @@map("person_relations")
+}
+
+model literature {
+  id              Int     @id @default(autoincrement())
+  userId          Int // User who owns this literature entry
+  title           String  @db.VarChar(255)
+  author          String  @db.VarChar(255)
+  publicationYear Int?    @db.Int
+  type            String  @db.VarChar(100) // book, article, journal, website, etc.
+  description     String? @db.Text
+  url             String? @db.VarChar(500)
+
+  // Additional bibliographic fields
+  publisher String? @db.VarChar(255)
+  journal   String? @db.VarChar(255)
+  volume    String? @db.VarChar(50)
+  issue     String? @db.VarChar(50)
+  pages     String? @db.VarChar(100)
+  doi       String? @db.VarChar(255)
+  isbn      String? @db.VarChar(50)
+  issn      String? @db.VarChar(50)
+  language  String? @db.VarChar(50)
+  keywords  String? @db.Text
+  abstract  String? @db.Text
+
+  // Sync metadata
+  externalId   String?   @db.VarChar(255) // ID from external service
+  syncSource   String?   @db.VarChar(50) // zotero, mendeley, citavi, etc.
+  lastSyncedAt DateTime?
+  syncMetadata Json? // Additional sync data
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([title])
+  @@index([author])
+  @@index([type])
+  @@index([publicationYear])
+  @@index([externalId])
+  @@index([syncSource])
+  @@index([externalId, syncSource])
+  @@fulltext([title, author, description, abstract, keywords])
+}
+
+model BibliographySync {
+  id       Int     @id @default(autoincrement())
+  userId   Int // User who owns this sync config
+  service  String  @db.VarChar(50) // zotero, mendeley, citavi
+  name     String  @db.VarChar(255) // User-friendly name
+  isActive Boolean @default(true)
+
+  // Service-specific configuration
+  apiKey         String?   @db.VarChar(500) // For API-based services
+  apiSecret      String?   @db.VarChar(500) // For OAuth services
+  accessToken    String?   @db.VarChar(500) // OAuth access token
+  refreshToken   String?   @db.VarChar(500) // OAuth refresh token
+  tokenExpiresAt DateTime?
+
+  // Collection/library configuration
+  collectionId   String? @db.VarChar(255) // External collection ID
+  collectionName String? @db.VarChar(255) // External collection name
+
+  // Sync settings
+  autoSync     Boolean   @default(false)
+  syncInterval Int?      @db.Int // Minutes between syncs
+  lastSyncAt   DateTime?
+  syncMetadata Json? // Additional sync configuration
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([service])
+  @@index([isActive])
+  @@index([userId, service])
+  @@map("bibliography_syncs")
+}

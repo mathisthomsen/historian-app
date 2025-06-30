@@ -40,3 +40,7 @@ a {
     color-scheme: dark;
   }
 }
+
+main {
+  //padding-block-start: 24px;
+}

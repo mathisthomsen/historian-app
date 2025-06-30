@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # MySQL Database for Staging
+  mysql:
+    image: mysql:8.0
+    container_name: historian_mysql_staging
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_staging_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    ports:
+      - "3307:3306"  # Different port for staging
+    networks:
+      - historian_staging_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # SMTP Server (MailHog for staging)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: historian_mailhog_staging
+    restart: unless-stopped
+    ports:
+      - "1026:1025"  # SMTP - different port
+      - "8026:8025"  # Web UI - different port
+    networks:
+      - historian_staging_network
+
+  # Next.js Application for Staging
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: staging
+    container_name: historian_app_staging
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    ports:
+      - "3001:3000"  # Different port for staging
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    networks:
+      - historian_staging_network
+    volumes:
+      - ./uploads/staging:/app/uploads
+      - ./logs/staging:/app/logs
+
+volumes:
+  mysql_staging_data:
+
+networks:
+  historian_staging_network:
+    driver: bridge 

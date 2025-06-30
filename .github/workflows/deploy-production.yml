@@ -1,0 +1,93 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_password
+          MYSQL_DATABASE: test_db
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3306:3306
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Setup environment
+        run: |
+          cp env.example .env.test
+          echo "DATABASE_URL=mysql://root:test_password@localhost:3306/test_db" >> .env.test
+          echo "JWT_SECRET=test_secret" >> .env.test
+          echo "NEXTAUTH_SECRET=test_secret" >> .env.test
+      
+      - name: Generate Prisma client
+        run: npx prisma generate
+      
+      - name: Run database migrations
+        run: npx prisma db push
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Build application
+        run: npm run build
+
+  deploy-production:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build Docker image
+        run: docker build -t historian-app:production .
+      
+      - name: Deploy to production server
+        run: |
+          # This would typically involve:
+          # 1. Pushing to a container registry
+          # 2. SSH to production server
+          # 3. Pull and restart containers
+          # 4. Run database migrations
+          # 5. Health checks
+          echo "Deploying to production server..."
+          # ssh user@production-server "cd /path/to/app && ./deploy.sh production up"
+      
+      - name: Run health checks
+        run: |
+          # Wait for deployment to complete
+          sleep 30
+          # Check if application is responding
+          # curl -f http://your-domain.com/api/health || exit 1 

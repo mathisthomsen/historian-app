@@ -1,5 +1,256 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+# Historian App
+
+A comprehensive web application for managing historical data, including persons, events, literature, and relationships. Built with Next.js, Prisma, MySQL, and Material-UI.
+
+## Features
+
+- **User Authentication**: Secure login/register with email confirmation
+- **Person Management**: Create and manage historical figures with detailed profiles
+- **Event Management**: Track historical events with dates, locations, and descriptions
+- **Relationship System**: Define and visualize relationships between persons
+- **Literature Management**: Organize and sync bibliography with external services
+- **Timeline Visualization**: Interactive timeline of events and life events
+- **Analytics Dashboard**: Statistics and insights about your historical data
+- **Location Tracking**: Geographic data for events and persons
+- **Bibliography Sync**: Integration with Zotero and Mendeley
+
+## Architecture
+
+### Technology Stack
+
+- **Frontend**: Next.js 15 with App Router, Material-UI v7, TypeScript
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: MySQL 8.0
+- **Authentication**: JWT with refresh tokens
+- **Email**: SMTP integration (MailHog for development/staging)
+- **Deployment**: Docker Compose with multi-environment support
+
+### System Components
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Next.js App   │    │   MySQL DB      │    │   MailHog       │
+│   (Port 3000)   │◄──►│   (Port 3306)   │    │   (Port 1025)   │
+│                 │    │                 │    │                 │
+│ - API Routes    │    │ - Users         │    │ - SMTP Server   │
+│ - SSR Pages     │    │ - Persons       │    │ - Web UI        │
+│ - Auth System   │    │ - Events        │    │   (Port 8025)   │
+│ - File Uploads  │    │ - Literature    │    │                 │
+└─────────────────┘    │ - Relationships │    └─────────────────┘
+                       └─────────────────┘
+```
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js 18+
+- MySQL 8.0+
+- Docker & Docker Compose (for deployment)
+
+### Local Development
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd historian_app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp env.example .env.local
+   # Edit .env.local with your configuration
+   ```
+
+4. **Set up the database**
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+
+5. **Create sample data (optional)**
+   ```bash
+   node create_sample_data.js
+   ```
+
+6. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+7. **Access the application**
+   - App: http://localhost:3000
+   - MailHog (for email testing): http://localhost:8025
+
+## Deployment
+
+### Docker Deployment
+
+The application supports multiple environments (development, staging, production) using Docker Compose.
+
+#### Quick Start
+
+1. **Set up environment files**
+   ```bash
+   cp env.staging.example .env.staging
+   cp env.production.example .env.production
+   # Edit the files with your configuration
+   ```
+
+2. **Deploy staging environment**
+   ```bash
+   ./deploy.sh staging up
+   ```
+
+3. **Deploy production environment**
+   ```bash
+   ./deploy.sh production up
+   ```
+
+#### Deployment Commands
+
+```bash
+# Start environment
+./deploy.sh [staging|production] up
+
+# Stop environment
+./deploy.sh [staging|production] down
+
+# Restart environment
+./deploy.sh [staging|production] restart
+
+# View logs
+./deploy.sh [staging|production] logs
+
+# Check status
+./deploy.sh [staging|production] status
+
+# Run migrations
+./deploy.sh [staging|production] migrate
+
+# Backup database
+./deploy.sh [staging|production] backup
+
+# Restore database
+./deploy.sh [staging|production] restore backup_file.sql
+```
+
+### Environment Ports
+
+| Environment | App Port | MySQL Port | MailHog SMTP | MailHog UI |
+|-------------|----------|------------|--------------|------------|
+| Development | 3000     | 3306       | 1025         | 8025       |
+| Staging     | 3001     | 3307       | 1026         | 8026       |
+| Production  | 3000     | 3306       | 1025         | 8025       |
+
+### Production Considerations
+
+1. **SSL/TLS**: Use Nginx reverse proxy with SSL certificates
+2. **Database**: Consider using managed MySQL service (AWS RDS, Google Cloud SQL)
+3. **Email**: Use production SMTP service (SendGrid, AWS SES, etc.)
+4. **Backups**: Regular database backups and monitoring
+5. **Monitoring**: Set up logging and monitoring (ELK stack, Prometheus)
+
+## CI/CD Pipeline
+
+### GitHub Actions Example
+
+```yaml
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy to staging
+        run: |
+          # SSH to server and run deployment
+          ssh user@server "./deploy.sh staging up"
+```
+
+### Deployment Pipeline Options
+
+1. **Simple**: Direct deployment with deploy script
+2. **Advanced**: GitHub Actions + Docker Registry
+3. **Enterprise**: Kubernetes with Helm charts
+
+## Database Schema
+
+### Core Tables
+
+- **users**: User accounts and authentication
+- **persons**: Historical figures and their details
+- **events**: Historical events with dates and locations
+- **life_events**: Personal events linked to persons
+- **relationships**: Connections between persons
+- **literature**: Books, papers, and references
+- **bibliography_sync**: External service integrations
+
+### Relationships
+
+```
+users (1) ── (many) persons
+users (1) ── (many) events
+users (1) ── (many) literature
+
+persons (1) ── (many) life_events
+persons (1) ── (many) relationships
+events (1) ── (many) life_events
+```
+
+## API Documentation
+
+### Authentication Endpoints
+
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/forgot-password` - Password reset request
+- `POST /api/auth/reset-password` - Password reset
+- `GET /api/auth/status` - Authentication status
+
+### Data Endpoints
+
+- `GET /api/persons` - List persons
+- `POST /api/persons` - Create person
+- `GET /api/persons/[id]` - Get person details
+- `PUT /api/persons/[id]` - Update person
+- `DELETE /api/persons/[id]` - Delete person
+
+- `GET /api/events` - List events
+- `POST /api/events` - Create event
+- `GET /api/events/[id]` - Get event details
+- `PUT /api/events/[id]` - Update event
+- `DELETE /api/events/[id]` - Delete event
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For support and questions, please open an issue on GitHub or contact the development team.
+
 ## Getting Started
 
 First, run the development server:
