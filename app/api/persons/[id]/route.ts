@@ -14,7 +14,8 @@ export async function GET(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(context.params.id);
+  const { params } = await context;
+  const id = Number(params.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const person = await prisma.persons.findFirst({ 
@@ -46,7 +47,8 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(context.params.id);
+  const { params } = await context;
+  const id = Number(params.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const data = await req.json();
@@ -101,7 +103,8 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(context.params.id);
+  const { params } = await context;
+  const id = Number(params.id);
   if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   try {

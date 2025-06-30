@@ -353,16 +353,16 @@ export default function PersonDetailPage() {
         </Stack>
         <Paper sx={{ mt: 4, p: 3, maxWidth: 600 }}>
           <Grid container spacing={2}>
-            <Grid xs={4}><Skeleton width={80} /></Grid>
-            <Grid xs={8}><Skeleton width={180} /></Grid>
-            <Grid xs={4}><Skeleton width={80} /></Grid>
-            <Grid xs={8}><Skeleton width={180} /></Grid>
-            <Grid xs={4}><Skeleton width={80} /></Grid>
-            <Grid xs={8}><Skeleton width={180} /></Grid>
-            <Grid xs={4}><Skeleton width={80} /></Grid>
-            <Grid xs={8}><Skeleton width={180} /></Grid>
-            <Grid xs={4}><Skeleton width={80} /></Grid>
-            <Grid xs={8}><Skeleton width={180} /></Grid>
+            <Grid item xs={4}><Skeleton width={80} /></Grid>
+            <Grid item xs={8}><Skeleton width={180} /></Grid>
+            <Grid item xs={4}><Skeleton width={80} /></Grid>
+            <Grid item xs={8}><Skeleton width={180} /></Grid>
+            <Grid item xs={4}><Skeleton width={80} /></Grid>
+            <Grid item xs={8}><Skeleton width={180} /></Grid>
+            <Grid item xs={4}><Skeleton width={80} /></Grid>
+            <Grid item xs={8}><Skeleton width={180} /></Grid>
+            <Grid item xs={4}><Skeleton width={80} /></Grid>
+            <Grid item xs={8}><Skeleton width={180} /></Grid>
           </Grid>
         </Paper>
         <Box sx={{ width: '100%', mt: 4 }}>
@@ -394,7 +394,7 @@ export default function PersonDetailPage() {
       {/* Person Info Card */}
       <Paper sx={{ mt: 4, p: 3, mb: 4 }}>
         <Grid container spacing={3}>
-          <Grid xs={12} md={8}>
+          <Grid item xs={12} md={8}>
             <Stack spacing={2}>
               <Box>
                 <Typography variant="h4" component="h1" gutterBottom>
@@ -412,7 +412,7 @@ export default function PersonDetailPage() {
               </Box>
               
               <Grid container spacing={2}>
-                <Grid xs={12} sm={6}>
+                <Grid item xs={12} sm={6}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CalendarToday color="action" fontSize="small" />
                     <Box>
@@ -428,7 +428,7 @@ export default function PersonDetailPage() {
                 </Grid>
                 
                 {person?.death_date && (
-                  <Grid xs={12} sm={6}>
+                  <Grid item xs={12} sm={6}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <CalendarToday color="action" fontSize="small" />
                       <Box>
@@ -458,7 +458,7 @@ export default function PersonDetailPage() {
             </Stack>
           </Grid>
           
-          <Grid xs={12} md={4}>
+          <Grid item xs={12} md={4}>
             <Stack spacing={2} alignItems="flex-end">
               <Button
                 variant="outlined"

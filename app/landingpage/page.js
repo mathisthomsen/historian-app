@@ -17,9 +17,9 @@ import Divider from '@mui/material/Divider';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import AutoStories from '@mui/icons-material/AutoStories';
-import School from '@mui/icons-material/school';
-import Dashboard from '@mui/icons-material/dashboard';
-import Handshake from '@mui/icons-material/handshake';
+import School from '@mui/icons-material/School';
+import Dashboard from '@mui/icons-material/Dashboard';
+import Handshake from '@mui/icons-material/Handshake';
 
 
 export default function Home() {
@@ -85,7 +85,7 @@ export default function Home() {
                 <Typography variant="h3" component="h2" gutterBottom align='center' sx={{ fontFamily: 'Permanent Marker' }}>
                     Funktionen
                 </Typography>
-                <List component="ul" sx={{ width: '100%', maxWidth: 600, bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', gap: 4 }} component="nav" aria-label="main mailbox folders">
+                <List component="ul" sx={{ width: '100%', maxWidth: 600, bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', gap: 4 }} aria-label="main mailbox folders">
                     <ListItem alignItems="center" sx={{ gap: 4 }}>
                         <ListItemAvatar>
                             <Image
