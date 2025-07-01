@@ -41,6 +41,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import './globals.css';
+import { logout } from './lib/api';
 
 const FabMenu = dynamic(() => import('.//components/FabMenu'), { ssr: false });
 const LoadingBar = dynamic(() => import('.//components/LoadingBar'), { ssr: false });
@@ -114,14 +115,7 @@ export default function RootLayout({ children }) {
   };
 
   const handleLogout = () => {
-    // Clear authentication state
-    setIsAuthenticated(false);
-    setUser(null);
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    handleUserMenuClose();
-    router.push('/');
+    logout(); // This will handle API call, cookie clearing, and redirect
   };
 
   // Check authentication status on mount and route changes
