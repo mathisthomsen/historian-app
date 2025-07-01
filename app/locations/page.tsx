@@ -30,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import SiteHeader from '../components/SiteHeader';
+import { api } from '../lib/api';
 
 interface LocationData {
   location: string;
@@ -54,15 +55,7 @@ export default function LocationsPage() {
     setError(null);
     try {
       console.log('Fetching location data...');
-      const response = await fetch('/api/locations', {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch location data');
-      }
-      
-      const data = await response.json();
+      const data = await api.get('/api/locations');
       console.log('Location data received:', data);
       setLocations(data);
     } catch (error) {
@@ -86,16 +79,16 @@ export default function LocationsPage() {
       <Container maxWidth="lg" sx={{ mt: 6 }}>
         <SiteHeader title="Orte" showOverline={false} />
         <Grid container spacing={3}>
-          <Grid xs={12} md={4}>
+          <Grid item xs={12} md={4}>
             <Skeleton variant="rectangular" height={120} />
           </Grid>
-          <Grid xs={12} md={4}>
+          <Grid item xs={12} md={4}>
             <Skeleton variant="rectangular" height={120} />
           </Grid>
-          <Grid xs={12} md={4}>
+          <Grid item xs={12} md={4}>
             <Skeleton variant="rectangular" height={120} />
           </Grid>
-          <Grid xs={12}>
+          <Grid item xs={12}>
             <Skeleton variant="rectangular" height={400} />
           </Grid>
         </Grid>
@@ -115,7 +108,7 @@ export default function LocationsPage() {
       
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -133,7 +126,7 @@ export default function LocationsPage() {
           </Card>
         </Grid>
         
-        <Grid xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -151,7 +144,7 @@ export default function LocationsPage() {
           </Card>
         </Grid>
         
-        <Grid xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -169,7 +162,7 @@ export default function LocationsPage() {
           </Card>
         </Grid>
         
-        <Grid xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Stack direction="row" alignItems="center" justifyContent="space-between">

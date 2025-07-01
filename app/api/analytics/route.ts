@@ -15,11 +15,11 @@ export async function GET(request: NextRequest) {
     // Get events by year
     const eventsByYear = await prisma.$queryRaw`
       SELECT 
-        YEAR(date) as year,
+        EXTRACT(YEAR FROM date) as year,
         COUNT(*) as count
       FROM events 
-      WHERE userId = ${user.id} AND date IS NOT NULL
-      GROUP BY YEAR(date)
+      WHERE "userId" = ${user.id} AND date IS NOT NULL
+      GROUP BY year
       ORDER BY year DESC
       LIMIT 10
     ` as any[]
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         location,
         COUNT(*) as count
       FROM events 
-      WHERE userId = ${user.id} AND location IS NOT NULL AND location != ''
+      WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
       GROUP BY location
       ORDER BY count DESC
       LIMIT 10
@@ -42,9 +42,9 @@ export async function GET(request: NextRequest) {
         'literature' as type,
         id,
         title,
-        createdAt as date
+        "createdAt" as date
       FROM literature 
-      WHERE userId = ${user.id}
+      WHERE "userId" = ${user.id}
       ORDER BY date DESC
       LIMIT 5
     ` as any[]
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         end_date,
         location
       FROM events 
-      WHERE userId = ${user.id} AND date IS NOT NULL
+      WHERE "userId" = ${user.id} AND date IS NOT NULL
       ORDER BY date ASC
     ` as any[]
 

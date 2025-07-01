@@ -2,19 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../libs/prisma'
 import { getAuthenticatedUser } from '../../../lib/api-helpers';
 
-type RouteContext = {
-  params: { id: string };
-};
-
 // 🟩 GET – Einzelne Person holen
-export async function GET(req: NextRequest, context: RouteContext) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { params } = await context;
   const id = Number(params.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
@@ -40,14 +35,13 @@ export async function GET(req: NextRequest, context: RouteContext) {
 }
 
 // 🟨 PUT – Person aktualisieren
-export async function PUT(req: NextRequest, context: RouteContext) {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { params } = await context;
   const id = Number(params.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
@@ -96,14 +90,13 @@ export async function PUT(req: NextRequest, context: RouteContext) {
 }
 
 // 🟥 DELETE – Person löschen
-export async function DELETE(req: NextRequest, context: RouteContext) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { params } = await context;
   const id = Number(params.id);
   if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 

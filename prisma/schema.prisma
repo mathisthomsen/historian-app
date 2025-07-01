@@ -3,15 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
   id                Int       @id @default(autoincrement())
-  email             String    @unique @db.VarChar(255)
-  name              String    @db.VarChar(255)
-  password          String    @db.VarChar(255)
+  email             String    @unique
+  name              String
+  password          String
   role              UserRole  @default(USER)
   emailVerified     Boolean   @default(false)
   emailVerifiedAt   DateTime?
@@ -39,7 +39,7 @@ model User {
 model EmailConfirmation {
   id        Int      @id @default(autoincrement())
   userId    Int
-  token     String   @unique @db.VarChar(255)
+  token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
   
@@ -54,7 +54,7 @@ model EmailConfirmation {
 model PasswordReset {
   id        Int      @id @default(autoincrement())
   userId    Int
-  token     String   @unique @db.VarChar(255)
+  token     String   @unique
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -70,7 +70,7 @@ model PasswordReset {
 model RefreshToken {
   id        Int      @id @default(autoincrement())
   userId    Int
-  token     String   @unique @db.VarChar(255)
+  token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
   
@@ -90,11 +90,11 @@ enum UserRole {
 model events {
   id          Int           @id @default(autoincrement())
   userId      Int           // User who owns this event
-  title       String        @db.VarChar(255)
-  description String?       @db.Text
-  date        DateTime?     @db.Date
-  end_date    DateTime?     @db.Date
-  location    String?       @db.VarChar(255)
+  title       String
+  description String?
+  date        DateTime?
+  end_date    DateTime?
+  location    String?
   life_events life_events[]
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -107,9 +107,9 @@ model events {
 model event_types {
   id          Int           @id @default(autoincrement())
   userId      Int           // User who owns this event type
-  name        String?       @db.VarChar(100)
-  icon        String?       @db.VarChar(100)
-  color       String?       @db.VarChar(10)
+  name        String?
+  icon        String?
+  color       String?
   life_events life_events[]
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -122,23 +122,23 @@ model life_events {
   userId        Int          // User who owns this life event
   person_id     Int?
   event_id      Int?         // ⬅️ Neue Referenz auf globales Event
-  title         String?      @db.VarChar(255)
-  start_date    DateTime?    @db.Date
-  end_date      DateTime?    @db.Date
-  location      String?      @db.VarChar(255)
-  description   String?      @db.Text
+  title         String?
+  start_date    DateTime?
+  end_date      DateTime?
+  location      String?
+  description   String?
   metadata      Json?
   event_type_id Int?
 
   // Relationen
-  event         events?      @relation(fields: [event_id], references: [id], onDelete: SetNull, map: "fk_event")
-  event_type    event_types? @relation(fields: [event_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_type")
+  event         events?      @relation(fields: [event_id], references: [id], onDelete: SetNull, map: "fk_event_life_events")
+  event_type    event_types? @relation(fields: [event_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_type_life_events")
   persons       persons?     @relation(fields: [person_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "life_events_ibfk_1")
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([person_id], map: "person_id")
-  @@index([event_type_id], map: "fk_event_type")
-  @@index([event_id], map: "fk_event")
+  @@index([event_type_id], map: "fk_event_type_idx")
+  @@index([event_id], map: "fk_event_idx")
   @@index([start_date])
   @@index([end_date])
   @@index([title])
@@ -174,7 +174,6 @@ model persons {
   @@index([death_place])
   @@index([first_name, last_name])
   @@index([userId])
-  @@fulltext([first_name, last_name, birth_place, death_place, notes])
 }
 
 model person_relations {
@@ -201,7 +200,7 @@ model literature {
   userId          Int       // User who owns this literature entry
   title           String    @db.VarChar(255)
   author          String    @db.VarChar(255)
-  publicationYear Int?      @db.Int
+  publication_year Int?
   type            String    @db.VarChar(100) // book, article, journal, website, etc.
   description     String?   @db.Text
   url             String?   @db.VarChar(500)
@@ -234,11 +233,10 @@ model literature {
   @@index([title])
   @@index([author])
   @@index([type])
-  @@index([publicationYear])
+  @@index([publication_year])
   @@index([externalId])
   @@index([syncSource])
   @@index([externalId, syncSource])
-  @@fulltext([title, author, description, abstract, keywords])
 }
 
 model BibliographySync {
@@ -246,7 +244,7 @@ model BibliographySync {
   userId          Int       // User who owns this sync config
   service         String    @db.VarChar(50)  // zotero, mendeley, citavi
   name            String    @db.VarChar(255) // User-friendly name
-  isActive        Boolean   @default(true)
+  isActive        Boolean   @default(false)
   
   // Service-specific configuration
   apiKey          String?   @db.VarChar(500) // For API-based services
@@ -261,7 +259,7 @@ model BibliographySync {
   
   // Sync settings
   autoSync        Boolean   @default(false)
-  syncInterval    Int?      @db.Int // Minutes between syncs
+  syncInterval    Int?      // in minutes
   lastSyncAt      DateTime?
   syncMetadata    Json?     // Additional sync configuration
   

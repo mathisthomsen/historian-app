@@ -13,10 +13,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const literature = await prisma.$queryRaw`
-      SELECT id, title, author, publication_year, publisher, isbn, notes, createdAt, updatedAt
+      SELECT id, title, author, publication_year, publisher, isbn, "createdAt", "updatedAt"
       FROM literature 
-      WHERE userId = ${user.id}
-      ORDER BY createdAt DESC
+      WHERE "userId" = ${user.id}
+      ORDER BY "createdAt" DESC
     ` as any[]
 
     const jsonResponse = NextResponse.json(literature)
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const literature = await prisma.$queryRaw`
-      INSERT INTO literature (userId, title, author, publication_year, type, description, url)
+      INSERT INTO literature ("userId", title, author, publication_year, type, description, url)
       VALUES (${user.id}, ${body.title}, ${body.author || null}, 
               ${body.publicationYear ? parseInt(body.publicationYear) : null}, 
               ${body.type || null}, ${body.description || null}, ${body.url || null})

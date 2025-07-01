@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
           0 as life_event_count,
           MAX(date) as last_used
         FROM events 
-        WHERE userId = ${user.id} AND location IS NOT NULL AND location != ''
+        WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
         GROUP BY location
         
         UNION ALL
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
           COUNT(*) as life_event_count,
           MAX(start_date) as last_used
         FROM life_events 
-        WHERE userId = ${user.id} AND location IS NOT NULL AND location != ''
+        WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
         GROUP BY location
       ) as all_locations
       GROUP BY location

@@ -2,19 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../libs/prisma'
 import { getAuthenticatedUser } from '../../../lib/api-helpers';
 
-type RouteContext = {
-  params: { id: string };
-};
-
 // 🟩 GET
-export async function GET(req: NextRequest, context: RouteContext) {
+export async function GET(req: NextRequest, context: { params: { id: string } }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(context.params.id);
+  const { params } = await context;
+  const id = Number(params.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const event = await prisma.events.findFirst({ 
@@ -39,14 +36,15 @@ export async function GET(req: NextRequest, context: RouteContext) {
 }
 
 // 🟨 PUT
-export async function PUT(req: NextRequest, context: RouteContext) {
+export async function PUT(req: NextRequest, context: { params: { id: string } }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(context.params.id);
+  const { params } = await context;
+  const id = Number(params.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const data = await req.json();
@@ -92,14 +90,14 @@ export async function PUT(req: NextRequest, context: RouteContext) {
 }
 
 // 🟨 Delete
-export async function DELETE(req: NextRequest, context: RouteContext) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(context.params.id);
+  const id = Number(params.id);
   if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   try {

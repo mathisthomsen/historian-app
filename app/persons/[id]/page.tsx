@@ -18,7 +18,6 @@ import {
   MenuItem, 
   Skeleton, 
   Paper, 
-  Grid,
   Card,
   CardContent,
   Chip,
@@ -32,6 +31,7 @@ import {
   IconButton as MuiIconButton,
   Drawer
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { useRouter, useParams } from 'next/navigation';
 import { 
   ChevronLeft, 

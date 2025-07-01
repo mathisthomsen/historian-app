@@ -13,18 +13,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Simple counts using raw queries to avoid type issues
-    const totalPersons = await prisma.$queryRaw`SELECT COUNT(*) as count FROM persons WHERE userId = ${user.id}` as any[]
-    const totalEvents = await prisma.$queryRaw`SELECT COUNT(*) as count FROM events WHERE userId = ${user.id}` as any[]
-    const totalLifeEvents = await prisma.$queryRaw`SELECT COUNT(*) as count FROM life_events WHERE userId = ${user.id}` as any[]
-    const totalLiterature = await prisma.$queryRaw`SELECT COUNT(*) as count FROM literature WHERE userId = ${user.id}` as any[]
+    const totalPersons = await prisma.$queryRaw`SELECT COUNT(*) as count FROM persons WHERE "userId" = ${user.id}` as any[]
+    const totalEvents = await prisma.$queryRaw`SELECT COUNT(*) as count FROM events WHERE "userId" = ${user.id}` as any[]
+    const totalLifeEvents = await prisma.$queryRaw`SELECT COUNT(*) as count FROM life_events WHERE "userId" = ${user.id}` as any[]
+    const totalLiterature = await prisma.$queryRaw`SELECT COUNT(*) as count FROM literature WHERE "userId" = ${user.id}` as any[]
     
     // Count unique locations from events and life events
     const locationsResult = await prisma.$queryRaw`
       SELECT COUNT(DISTINCT location) as count 
       FROM (
-        SELECT location FROM events WHERE userId = ${user.id} AND location IS NOT NULL AND location != ''
+        SELECT location FROM events WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
         UNION
-        SELECT location FROM life_events WHERE userId = ${user.id} AND location IS NOT NULL AND location != ''
+        SELECT location FROM life_events WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
       ) as locations
     ` as any[]
     
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     
     const recentActivityResult = await prisma.$queryRaw`
-      SELECT COUNT(*) as count FROM literature WHERE userId = ${user.id} AND createdAt >= ${thirtyDaysAgo}
+      SELECT COUNT(*) as count FROM literature WHERE "userId" = ${user.id} AND "createdAt" >= ${thirtyDaysAgo}
     ` as any[]
 
     const stats = {

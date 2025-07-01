@@ -29,13 +29,13 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<{ user
 
     // Check if refresh token exists in database using raw query
     const storedToken = await prisma.$queryRaw`
-      SELECT rt.id, rt.userId, rt.token, rt.expiresAt, 
-             u.id as userId, u.email, u.name, u.role, u.emailVerified
+      SELECT rt.id, rt."userId", rt.token, rt."expiresAt", 
+             u.id as userId, u.email, u.name, u.role, u."emailVerified"
       FROM refresh_tokens rt
-      JOIN users u ON rt.userId = u.id
-      WHERE rt.userId = ${payload.userId} 
+      JOIN users u ON rt."userId" = u.id
+      WHERE rt."userId" = ${payload.userId} 
         AND rt.token = ${payload.tokenId}
-        AND rt.expiresAt > NOW()
+        AND rt."expiresAt" > NOW()
       LIMIT 1
     ` as any[]
 

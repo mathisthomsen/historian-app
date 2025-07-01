@@ -62,31 +62,24 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
     console.log('Token exchange successful, storing tokens...');
     
-    // Store tokens in database using upsert
+    // Store tokens in database
     await prisma.bibliographySync.upsert({
-      where: {
-        userId_service: {
-          userId: user.id,
-          service: 'mendeley'
-        }
-      },
+      where: { userId: user.id, service: 'Mendeley' },
       update: {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token,
-        tokenExpiresAt: new Date(Date.now() + (tokenData.expires_in * 1000)),
-        updatedAt: new Date()
+        tokenExpiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null,
+        isActive: true,
       },
       create: {
         userId: user.id,
-        service: 'mendeley',
+        service: 'Mendeley',
         name: 'Mendeley',
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token,
-        tokenExpiresAt: new Date(Date.now() + (tokenData.expires_in * 1000)),
+        tokenExpiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null,
         isActive: true,
-        autoSync: false,
-        syncInterval: 60
-      }
+      },
     });
 
     console.log('Tokens stored successfully');
@@ -108,4 +101,6 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.redirect(new URL('/bibliography-sync?error=callback_failed', request.url));
   }
-} 
+}
+
+console.log('DEBUG: Available Prisma models:', Object.keys(prisma)); 

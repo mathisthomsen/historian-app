@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
 
     const event = await prisma.$queryRaw`
-      INSERT INTO events (userId, title, description, date, end_date, location)
+      INSERT INTO events ("userId", title, description, date, end_date, location)
       VALUES (${user.id}, ${data.title}, ${data.description || null}, 
               ${data.date ? new Date(data.date) : null}, 
               ${data.end_date ? new Date(data.end_date) : null}, 
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
     let query = `
       SELECT id, title, description, date, end_date, location
       FROM events 
-      WHERE userId = ${user.id}
+      WHERE "userId" = ${user.id}
     `;
 
     if (location) {

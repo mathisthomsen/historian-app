@@ -70,9 +70,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Person ID is required' }, { status: 400 });
     }
 
-    console.log('Prisma client keys:', Object.keys(prisma));
+    console.log('DEBUG: Available Prisma models:', Object.keys(prisma));
     // Get all relationships for the person (both outgoing and incoming)
-    const relationships = await prisma.person_relations.findMany({
+    const relationships = await prisma.personRelation.findMany({
       where: {
         OR: [
           { from_person_id: parseInt(personId) },
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if relationship already exists
-    const existingRelation = await prisma.person_relations.findFirst({
+    const existingRelation = await prisma.personRelation.findFirst({
       where: {
         OR: [
           {
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the relationship
-    const relationship = await prisma.person_relations.create({
+    const relationship = await prisma.personRelation.create({
       data: {
         from_person_id: fromPersonId,
         to_person_id: toPersonId,
