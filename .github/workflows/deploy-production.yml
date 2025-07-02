@@ -27,6 +27,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Full Clean (remove .next, node_modules/.cache, .turbo, .tsbuildinfo, .eslintcache, .cache)
+        run: |
+          rm -rf .next
+          rm -rf node_modules/.cache
+          rm -rf .turbo
+          rm -rf **/.tsbuildinfo
+          rm -rf .eslintcache
+          rm -rf .cache
+
       - name: Clean Next.js and TypeScript cache
         run: |
           rm -rf .next
