@@ -5,8 +5,9 @@ const prisma = new PrismaClient();
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { params } = context;
   try {
     const user = await getCurrentUser(request);
     if (!user) {
@@ -88,8 +89,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { params } = context;
   try {
     const user = await getCurrentUser(request);
     if (!user) {

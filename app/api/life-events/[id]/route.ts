@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../libs/prisma'
 
 // 🟩 GET
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { params } = context;
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
@@ -15,7 +16,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // 🟨 PUT
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { params } = context;
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
@@ -46,7 +48,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // 🟨 Delete
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { params } = context;
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });

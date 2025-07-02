@@ -3,7 +3,8 @@ import prisma from '../../../libs/prisma'
 import { getAuthenticatedUser } from '../../../lib/api-helpers';
 
 // 🟩 GET
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { params } = context;
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
@@ -36,7 +37,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // 🟨 PUT
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { params } = context;
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
@@ -90,7 +92,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // 🟨 Delete
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { params } = context;
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
