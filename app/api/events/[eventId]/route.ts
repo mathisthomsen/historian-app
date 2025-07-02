@@ -3,7 +3,7 @@ import prisma from '../../../libs/prisma'
 import { getAuthenticatedUser } from '../../../lib/api-helpers';
 
 // 🟩 GET
-export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {
   const { params } = context;
   const { user, response } = await getAuthenticatedUser(req);
 
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   }
 
   const resolvedParams = await params;
-  const id = Number(resolvedParams.id);
+  const id = Number(resolvedParams.eventId);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const event = await prisma.events.findFirst({ 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 // 🟨 PUT
-export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {
   const { params } = context;
   const { user, response } = await getAuthenticatedUser(req);
 
@@ -46,7 +46,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   }
 
   const resolvedParams = await params;
-  const id = Number(resolvedParams.id);
+  const id = Number(resolvedParams.eventId);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const data = await req.json();
@@ -92,7 +92,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 // 🟨 Delete
-export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {
   const { params } = context;
   const { user, response } = await getAuthenticatedUser(req);
 
@@ -101,7 +101,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
   }
 
   const resolvedParams = await params;
-  const id = Number(resolvedParams.id);
+  const id = Number(resolvedParams.eventId);
   if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   try {
