@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser(request);
@@ -13,7 +13,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const relationshipId = parseInt(params.id);
+    const resolvedParams = await params;
+    const relationshipId = parseInt(resolvedParams.id);
     const body = await request.json();
     const { relationType, notes } = body;
 
@@ -87,7 +88,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser(request);
@@ -95,7 +96,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const relationshipId = parseInt(params.id);
+    const resolvedParams = await params;
+    const relationshipId = parseInt(resolvedParams.id);
 
     // Check if relationship exists and belongs to the user
     const existingRelationship = await prisma.person_relations.findFirst({

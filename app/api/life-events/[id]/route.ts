@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../libs/prisma.ts'
-
-type RouteContext = {
-  params: { id: string };
-};
+import prisma from '../../../libs/prisma'
 
 // 🟩 GET
-export async function GET(req: NextRequest, context: RouteContext) {
-  const id = Number(context.params.id);
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const id = Number(resolvedParams.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const lifeEvent = await prisma.life_events.findUnique({ where: { id } });
@@ -18,8 +15,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
 }
 
 // 🟨 PUT
-export async function PUT(req: NextRequest, context: RouteContext) {
-  const id = Number(context.params.id);
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const id = Number(resolvedParams.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const data = await req.json();
@@ -47,16 +45,17 @@ export async function PUT(req: NextRequest, context: RouteContext) {
   }
 }
 
-
 // 🟨 Delete
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const id = parseInt(params.id);
-  if (!id) return new Response('ID fehlt oder ungültig', { status: 400 });
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const id = Number(resolvedParams.id);
+  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   try {
     await prisma.life_events.delete({ where: { id } });
-    return new Response(null, { status: 204 });
+    return NextResponse.json(null, { status: 204 });
   } catch (error) {
-    return new Response('Fehler beim Löschen', { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
   }
 }

@@ -22,7 +22,7 @@ git push origin main
 Add these in Vercel dashboard → Project Settings → Environment Variables:
 
 ```
-DATABASE_URL=your_mysql_connection_string
+DATABASE_URL=your_postgresql_connection_string
 JWT_SECRET=your_jwt_secret_key
 JWT_REFRESH_SECRET=your_refresh_secret_key
 NEXTAUTH_SECRET=your_nextauth_secret
@@ -35,21 +35,30 @@ SMTP_PASS=your_smtp_password
 
 ## Database Options
 
-### Option 1: PlanetScale (Recommended)
-- Free tier: 1 database, 1 billion reads/month
-- MySQL compatible
-- Automatic scaling
+### Option 1: Neon (Recommended)
+- Free tier: 1 database, 3GB storage, 10GB transfer/month
+- PostgreSQL compatible
+- Serverless architecture
 - Built-in connection pooling
+- Automatic scaling
 
-### Option 2: AWS RDS
-- More control
-- Pay-as-you-go
-- Requires more setup
+### Option 2: Supabase
+- Free tier: 500MB database, 2GB bandwidth
+- PostgreSQL with real-time features
+- Built-in auth and storage
+- Easy setup
 
 ### Option 3: Railway
 - Simple setup
 - Good free tier
-- PostgreSQL/MySQL support
+- PostgreSQL support
+- Automatic deployments
+
+### Option 4: AWS RDS
+- More control
+- Pay-as-you-go
+- Requires more setup
+- PostgreSQL support
 
 ## Email Service Options
 
@@ -98,15 +107,15 @@ SMTP_PASS=your_smtp_password
 - Custom domains
 - Team collaboration
 
-### Database (PlanetScale)
+### Database (Neon)
 - Free tier: $0/month
-- Pro: $29/month (if needed)
+- Pro: $19/month (if needed)
 
 ### Email (Resend)
 - Free tier: $0/month
 - Pro: $20/month (if needed)
 
-**Total: ~$0-50/month depending on usage**
+**Total: ~$0-60/month depending on usage**
 
 ## Troubleshooting
 
@@ -118,5 +127,5 @@ SMTP_PASS=your_smtp_password
 
 ### Support
 - Vercel: [vercel.com/support](https://vercel.com/support)
-- PlanetScale: [planetscale.com/docs](https://planetscale.com/docs)
+- Neon: [neon.tech/docs](https://neon.tech/docs)
 - Resend: [resend.com/docs](https://resend.com/docs)

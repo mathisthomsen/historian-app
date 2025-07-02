@@ -62,9 +62,8 @@ interface HistoricEvent {
   description?: string;
 }
 
-export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const eventId = Number(id);
+export default function EventDetailPage({ params }: { params: { id: string } }) {
+  const eventId = Number(params.id);
   const router = useRouter();
   const [event, setEvent] = useState<HistoricEvent | null>(null);
   const [relatedLifeEvents, setRelatedLifeEvents] = useState<LifeEvent[]>([]);

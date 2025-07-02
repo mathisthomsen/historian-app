@@ -2,7 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 # Historian App
 
-A comprehensive web application for managing historical data, including persons, events, literature, and relationships. Built with Next.js, Prisma, MySQL, and Material-UI.
+A comprehensive web application for managing historical data, including persons, events, literature, and relationships. Built with Next.js, Prisma, PostgreSQL, and Material-UI.
 
 ## Features
 
@@ -22,7 +22,7 @@ A comprehensive web application for managing historical data, including persons,
 
 - **Frontend**: Next.js 15 with App Router, Material-UI v7, TypeScript
 - **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: MySQL 8.0
+- **Database**: PostgreSQL 15+
 - **Authentication**: JWT with refresh tokens
 - **Email**: SMTP integration (MailHog for development/staging)
 - **Deployment**: Docker Compose with multi-environment support
@@ -31,8 +31,8 @@ A comprehensive web application for managing historical data, including persons,
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Next.js App   │    │   MySQL DB      │    │   MailHog       │
-│   (Port 3000)   │◄──►│   (Port 3306)   │    │   (Port 1025)   │
+│   Next.js App   │    │   PostgreSQL DB │    │   MailHog       │
+│   (Port 3000)   │◄──►│   (Port 5432)   │    │   (Port 1025)   │
 │                 │    │                 │    │                 │
 │ - API Routes    │    │ - Users         │    │ - SMTP Server   │
 │ - SSR Pages     │    │ - Persons       │    │ - Web UI        │
@@ -47,7 +47,7 @@ A comprehensive web application for managing historical data, including persons,
 ### Prerequisites
 
 - Node.js 18+
-- MySQL 8.0+
+- PostgreSQL 15+
 - Docker & Docker Compose (for deployment)
 
 ### Local Development
@@ -144,16 +144,16 @@ The application supports multiple environments (development, staging, production
 
 ### Environment Ports
 
-| Environment | App Port | MySQL Port | MailHog SMTP | MailHog UI |
-|-------------|----------|------------|--------------|------------|
-| Development | 3000     | 3306       | 1025         | 8025       |
-| Staging     | 3001     | 3307       | 1026         | 8026       |
-| Production  | 3000     | 3306       | 1025         | 8025       |
+| Environment | App Port | PostgreSQL Port | MailHog SMTP | MailHog UI |
+|-------------|----------|-----------------|--------------|------------|
+| Development | 3000     | 5432            | 1025         | 8025       |
+| Staging     | 3001     | 5433            | 1026         | 8026       |
+| Production  | 3000     | 5432            | 1025         | 8025       |
 
 ### Production Considerations
 
 1. **SSL/TLS**: Use Nginx reverse proxy with SSL certificates
-2. **Database**: Consider using managed MySQL service (AWS RDS, Google Cloud SQL)
+2. **Database**: Consider using managed PostgreSQL service (Neon, Supabase, AWS RDS)
 3. **Email**: Use production SMTP service (SendGrid, AWS SES, etc.)
 4. **Backups**: Regular database backups and monitoring
 5. **Monitoring**: Set up logging and monitoring (ELK stack, Prometheus)

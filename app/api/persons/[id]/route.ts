@@ -3,14 +3,15 @@ import prisma from '../../../libs/prisma'
 import { getAuthenticatedUser } from '../../../lib/api-helpers';
 
 // 🟩 GET – Einzelne Person holen
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(params.id);
+  const resolvedParams = await params;
+  const id = Number(resolvedParams.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const person = await prisma.persons.findFirst({ 
@@ -35,14 +36,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // 🟨 PUT – Person aktualisieren
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(params.id);
+  const resolvedParams = await params;
+  const id = Number(resolvedParams.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const data = await req.json();
@@ -90,14 +92,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // 🟥 DELETE – Person löschen
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = Number(params.id);
+  const resolvedParams = await params;
+  const id = Number(resolvedParams.id);
   if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   try {
