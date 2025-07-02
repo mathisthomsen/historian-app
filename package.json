@@ -35,7 +35,8 @@
     "@mui/x-data-grid-pro": "^8.6.0",
     "@mui/x-date-pickers": "^8.6.0",
     "@mui/x-internals": "^8.5.0",
-    "@prisma/client": "^6.7.0",
+    "prisma": "6.11.0",
+    "@prisma/client": "6.11.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.17",
@@ -68,7 +69,7 @@
     "jest": "^30.0.3",
     "jest-environment-jsdom": "^30.0.2",
     "msw": "^2.10.2",
-    "prisma": "^6.7.0",
+    "prisma": "^6.11.0",
     "typescript": "5.8.3"
   }
 }
