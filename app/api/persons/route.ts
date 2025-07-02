@@ -46,9 +46,9 @@ export async function POST(req: NextRequest) {
       data: {
         first_name: validation.data.first_name || null,
         last_name: validation.data.last_name || null,
-        birth_date: validation.data.birth_date || null,
+        birth_date: validation.data.birth_date ? new Date(validation.data.birth_date) : null,
         birth_place: validation.data.birth_place || null,
-        death_date: validation.data.death_date || null,
+        death_date: validation.data.death_date ? new Date(validation.data.death_date) : null,
         death_place: validation.data.death_place || null,
         notes: validation.data.notes || null,
         userId: user.id

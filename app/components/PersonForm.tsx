@@ -71,11 +71,8 @@ export default function PersonForm({ mode, personId }: { mode: 'create' | 'edit'
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const formattedData = {
-      ...formData,
-      birth_date: formatDate(formData.birth_date),
-      death_date: formatDate(formData.death_date),
-    };
+    // Send formData as-is, do not convert dates to Date objects
+    const formattedData = { ...formData };
 
     const url = personId ? `/api/persons/${personId}` : '/api/persons';
     const method = personId ? 'PUT' : 'POST';

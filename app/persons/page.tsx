@@ -112,10 +112,8 @@ export default function PersonsPage() {
       headerName: 'Geburtsdatum',
       minWidth: 130,
       flex: 1,
-      valueGetter: (params: any) => {
-        if (!params || !params.value) return '';
-        return new Date(params.value as string).toLocaleDateString('de-DE');
-      },
+      valueGetter: (params) =>
+        params ? new Date(params).toLocaleDateString() : '',
     },
     { field: 'birth_place', headerName: 'Geburtsort', minWidth: 150, flex: 1 },
     {
@@ -123,10 +121,8 @@ export default function PersonsPage() {
       headerName: 'Sterbedatum',
       minWidth: 130,
       flex: 1,
-      valueGetter: (params: any) => {
-        if (!params || !params.value) return '';
-        return new Date(params.value as string).toLocaleDateString('de-DE');
-      },
+      valueGetter: (params) =>
+        params ? new Date(params).toLocaleDateString() : '',
     },
     { field: 'death_place', headerName: 'Sterbeort', minWidth: 150, flex: 1 },  
     { field: 'notes', headerName: 'Notizen', minWidth: 200, flex: 1,},
