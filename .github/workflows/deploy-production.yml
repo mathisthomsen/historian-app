@@ -46,15 +46,31 @@ jobs:
           echo "NEXTAUTH_URL=http://localhost:3000" >> .env.test
       
       - name: Generate Prisma client
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
         run: npx prisma generate
       
       - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
         run: npx prisma db push
       
       - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          JWT_SECRET: test_secret
+          JWT_REFRESH_SECRET: test_refresh_secret
+          NEXTAUTH_SECRET: test_nextauth_secret
+          NEXTAUTH_URL: http://localhost:3000
         run: npm test
       
       - name: Build application
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          JWT_SECRET: test_secret
+          JWT_REFRESH_SECRET: test_refresh_secret
+          NEXTAUTH_SECRET: test_nextauth_secret
+          NEXTAUTH_URL: http://localhost:3000
         run: npm run build
 
   deploy-production:
