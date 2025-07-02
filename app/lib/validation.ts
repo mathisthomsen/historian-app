@@ -50,12 +50,14 @@ export function validateAndSanitize<T>(
     const result = schema.parse(data);
     
     // Sanitize string fields
-    const sanitized = Object.fromEntries(
-      Object.entries(result).map(([key, value]) => [
-        key,
-        typeof value === 'string' ? sanitizeHtml(value) : value
-      ])
-    ) as T;
+    const sanitized = { ...result };
+    for (const key of Object.keys(sanitized as object) as Array<keyof typeof sanitized>) {
+      const value = sanitized[key];
+      if (typeof value === 'string') {
+        // Only assign if the field is actually a string
+        (sanitized as any)[key] = sanitizeHtml(value);
+      }
+    }
 
     return { success: true, data: sanitized };
   } catch (error) {

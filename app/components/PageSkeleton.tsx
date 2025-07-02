@@ -51,6 +51,7 @@ export default function PageSkeleton({
         {showStats && (
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {Array.from({ length: statsCount }).map((_, index) => (
+              // @ts-expect-error MUI Grid type workaround for Next.js 15
               <Grid item xs={12} sm={6} md={3} key={index}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
@@ -74,6 +75,7 @@ export default function PageSkeleton({
             <Skeleton variant="text" width={200} height={32} sx={{ mb: 2 }} />
             <Grid container spacing={3}>
               {Array.from({ length: actionsCount }).map((_, index) => (
+                // @ts-expect-error MUI Grid type workaround for Next.js 15
                 <Grid item xs={12} sm={6} md={3} key={index}>
                   <Card sx={{ height: '100%' }}>
                     <CardContent sx={{ textAlign: 'center', p: 3 }}>

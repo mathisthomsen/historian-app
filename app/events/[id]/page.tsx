@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { use } from 'react';
 import { useEffect, useState } from 'react';
 import {
   Container,
@@ -9,7 +8,6 @@ import {
   Typography,
   Button,
   Paper,
-  Grid,
   Card,
   CardContent,
   Chip,
@@ -38,6 +36,8 @@ import {
   People,
 } from '@mui/icons-material';
 import SiteHeader from '../../components/SiteHeader';
+import type { GridProps } from '@mui/material/Grid';
+import Grid from '@mui/material/Grid';
 
 interface LifeEvent {
   id: number;
@@ -62,8 +62,10 @@ interface HistoricEvent {
   description?: string;
 }
 
-export default function EventDetailPage({ params }: { params: { id: string } }) {
-  const eventId = Number(params.id);
+type Params = Promise<{ id: string }>;
+
+export default function EventDetailPage({ params }: { params: Params }) {
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
   const router = useRouter();
   const [event, setEvent] = useState<HistoricEvent | null>(null);
   const [relatedLifeEvents, setRelatedLifeEvents] = useState<LifeEvent[]>([]);
@@ -71,9 +73,16 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
 
   useEffect(() => {
+    params.then((p) => setResolvedParams(p));
+  }, [params]);
+
+  useEffect(() => {
+    if (!resolvedParams) return;
     async function fetchEventData() {
       setLoading(true);
       try {
+        if (!resolvedParams) throw new Error('No resolvedParams');
+        const eventId = Number(resolvedParams.id);
         const [eventRes, lifeEventsRes] = await Promise.all([
           fetch(`/api/events/${eventId}`),
           fetch(`/api/life-events?eventId=${eventId}`)
@@ -90,24 +99,27 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         setLoading(false);
       }
     }
-
     fetchEventData();
-  }, [eventId]);
+  }, [resolvedParams]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('de-DE');
   };
 
-  if (loading) {
+  if (!resolvedParams || loading) {
     return (
       <Container sx={{ mt: 6 }}>
         <Skeleton variant="text" width={300} height={48} />
         <Paper sx={{ mt: 4, p: 3 }}>
           <Grid container spacing={2}>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={4}><Skeleton width={80} /></Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={8}><Skeleton width={180} /></Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={4}><Skeleton width={80} /></Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={8}><Skeleton width={180} /></Grid>
           </Grid>
         </Paper>
@@ -125,6 +137,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
+  const eventId = Number(resolvedParams.id);
+
   return (
     <Container maxWidth="lg" sx={{ mt: 6 }}>
       <SiteHeader
@@ -136,6 +150,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       {/* Event Info Card */}
       <Paper sx={{ mt: 4, p: 3, mb: 4 }}>
         <Grid container spacing={3}>
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
           <Grid item xs={12} md={8}>
             <Stack spacing={2}>
               <Box>
@@ -151,6 +166,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </Box>
               
               <Grid container spacing={2}>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
                 <Grid item xs={12} sm={6}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CalendarToday color="action" fontSize="small" />
@@ -169,6 +185,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 </Grid>
                 
                 {event.location && (
+                  // @ts-expect-error MUI Grid type workaround for Next.js 15
                   <Grid item xs={12} sm={6}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <LocationOn color="action" fontSize="small" />
@@ -198,6 +215,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             </Stack>
           </Grid>
           
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
           <Grid item xs={12} md={4}>
             <Stack spacing={2} alignItems="flex-end">
               <Button

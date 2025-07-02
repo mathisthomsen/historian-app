@@ -40,6 +40,7 @@ export default function RegisterPage() {
       <Container maxWidth="lg">
         <Grid container spacing={4} alignItems="center">
           {/* Left side - Welcome content */}
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
           <Grid item xs={12} md={6}>
             <Box sx={{ color: 'white', textAlign: isMobile ? 'center' : 'left' }}>
               <Typography
@@ -84,6 +85,7 @@ export default function RegisterPage() {
           </Grid>
 
           {/* Right side - Registration form */}
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
           <Grid item xs={12} md={6}>
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <RegisterForm

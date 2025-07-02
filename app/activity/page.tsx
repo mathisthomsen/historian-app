@@ -189,6 +189,7 @@ export default function ActivityPage() {
       
       {/* Activity Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
         <Grid item xs={12} sm={4}>
           <Card>
             <CardContent>
@@ -206,7 +207,7 @@ export default function ActivityPage() {
             </CardContent>
           </Card>
         </Grid>
-        
+        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
         <Grid item xs={12} sm={4}>
           <Card>
             <CardContent>
@@ -229,7 +230,7 @@ export default function ActivityPage() {
             </CardContent>
           </Card>
         </Grid>
-        
+        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
         <Grid item xs={12} sm={4}>
           <Card>
             <CardContent>

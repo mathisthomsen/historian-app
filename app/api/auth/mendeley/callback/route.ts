@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     
     // Store tokens in database
     await prisma.bibliographySync.upsert({
-      where: { userId: user.id, service: 'Mendeley' },
+      where: { userId_service: { userId: user.id, service: 'Mendeley' } },
       update: {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token,

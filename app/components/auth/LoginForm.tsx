@@ -40,7 +40,7 @@ const loginSchema = z.object({
     .min(1, 'Email is required'),
   password: z.string()
     .min(1, 'Password is required'),
-  rememberMe: z.boolean().optional().default(false)
+  rememberMe: z.boolean()
 })
 
 type LoginFormData = z.infer<typeof loginSchema>

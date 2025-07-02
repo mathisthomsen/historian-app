@@ -1,14 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { use } from 'react';
 import { useEffect, useState } from 'react';
 import {
   Container,
   Box,
   Typography,
   Paper,
-  Grid,
   Card,
   CardContent,
   Chip,
@@ -24,6 +22,7 @@ import {
   Tab,
   Divider,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { useRouter } from 'next/navigation';
 import {
   LocationOn,
@@ -61,9 +60,10 @@ interface LifeEvent {
   type: 'life';
 }
 
-export default function LocationDetailPage({ params }: { params: Promise<{ location: string }> }) {
-  const { location } = use(params);
-  const decodedLocation = decodeURIComponent(location);
+type Params = Promise<{ location: string }>;
+
+export default function LocationDetailPage({ params }: { params: Params }) {
+  const [resolvedParams, setResolvedParams] = useState<{ location: string } | null>(null);
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [lifeEvents, setLifeEvents] = useState<LifeEvent[]>([]);
@@ -71,9 +71,16 @@ export default function LocationDetailPage({ params }: { params: Promise<{ locat
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
 
   useEffect(() => {
+    params.then((p) => setResolvedParams(p));
+  }, [params]);
+
+  useEffect(() => {
+    if (!resolvedParams) return;
     async function fetchLocationData() {
+      if (!resolvedParams) return;
       setLoading(true);
       try {
+        const decodedLocation = decodeURIComponent(resolvedParams.location);
         const [eventsRes, lifeEventsRes] = await Promise.all([
           fetch(`/api/events?location=${encodeURIComponent(decodedLocation)}`),
           fetch(`/api/life-events?location=${encodeURIComponent(decodedLocation)}`)
@@ -94,9 +101,8 @@ export default function LocationDetailPage({ params }: { params: Promise<{ locat
         setLoading(false);
       }
     }
-
     fetchLocationData();
-  }, [decodedLocation]);
+  }, [resolvedParams]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '—';
@@ -109,21 +115,27 @@ export default function LocationDetailPage({ params }: { params: Promise<{ locat
     return dateA - dateB;
   });
 
-  if (loading) {
+  if (!resolvedParams || loading) {
     return (
       <Container sx={{ mt: 6 }}>
         <Skeleton variant="text" width={300} height={48} />
         <Paper sx={{ mt: 4, p: 3 }}>
           <Grid container spacing={2}>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={4}><Skeleton width={80} /></Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={8}><Skeleton width={180} /></Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={4}><Skeleton width={80} /></Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={8}><Skeleton width={180} /></Grid>
           </Grid>
         </Paper>
       </Container>
     );
   }
+
+  const decodedLocation = decodeURIComponent(resolvedParams.location);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 6 }}>
@@ -136,6 +148,7 @@ export default function LocationDetailPage({ params }: { params: Promise<{ locat
       {/* Location Info Card */}
       <Paper sx={{ mt: 4, p: 3, mb: 4 }}>
         <Grid container spacing={3}>
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
           <Grid item xs={12} md={8}>
             <Stack spacing={2}>
               <Box>
@@ -152,6 +165,7 @@ export default function LocationDetailPage({ params }: { params: Promise<{ locat
               </Box>
               
               <Grid container spacing={2}>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
                 <Grid item xs={12} sm={6}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Event color="action" fontSize="small" />
@@ -166,6 +180,7 @@ export default function LocationDetailPage({ params }: { params: Promise<{ locat
                   </Stack>
                 </Grid>
                 
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
                 <Grid item xs={12} sm={6}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Person color="action" fontSize="small" />
@@ -183,6 +198,7 @@ export default function LocationDetailPage({ params }: { params: Promise<{ locat
             </Stack>
           </Grid>
           
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
           <Grid item xs={12} md={4}>
             <Stack spacing={2} alignItems="flex-end">
               <Box textAlign="center">

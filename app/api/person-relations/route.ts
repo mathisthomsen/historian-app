@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
     console.log('DEBUG: Available Prisma models:', Object.keys(prisma));
     // Get all relationships for the person (both outgoing and incoming)
-    const relationships = await prisma.personRelation.findMany({
+    const relationships = await prisma.person_relations.findMany({
       where: {
         OR: [
           { from_person_id: parseInt(personId) },
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if relationship already exists
-    const existingRelation = await prisma.personRelation.findFirst({
+    const existingRelation = await prisma.person_relations.findFirst({
       where: {
         OR: [
           {
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the relationship
-    const relationship = await prisma.personRelation.create({
+    const relationship = await prisma.person_relations.create({
       data: {
         from_person_id: fromPersonId,
         to_person_id: toPersonId,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DataGrid, GridColDef, selectedGridRowsSelector, useGridApiRef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
 import { Box, Typography, Container, Button, Stack } from '@mui/material';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -225,11 +225,10 @@ export default function EventsPage() {
           loading={loading}
           getRowId={(row) => row.id}
           onRowSelectionModelChange={(ids) => {
-            setSelectedIds(ids as number[]);
+            setSelectedIds(Array.isArray(ids) ? ids.map(Number) : []);
           }}
           >
         </DataGrid>
-        
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
           <MenuItem onClick={() => handleEdit()}>Bearbeiten</MenuItem>
