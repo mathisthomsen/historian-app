@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     // Insert events using raw query
     for (const event of data) {
       await prisma.$queryRaw`
-        INSERT INTO events (userId, title, description, date, end_date, location)
+        INSERT INTO events ("userId", title, description, date, end_date, location)
         VALUES (${user.id}, ${event.title || 'Untitled'}, ${event.description || null}, 
                 ${event.date ? new Date(event.date) : null}, 
                 ${event.end_date ? new Date(event.end_date) : null}, 

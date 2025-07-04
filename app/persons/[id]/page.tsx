@@ -54,6 +54,7 @@ import {
   CalendarToday,
 } from '@mui/icons-material';
 import SiteHeader from '../../components/SiteHeader';
+import PersonForm from '../../components/PersonForm';
 
 interface LifeEvent {
   id: number;
@@ -114,6 +115,7 @@ export default function PersonDetailPage() {
   const [showLifeEventForm, setShowLifeEventForm] = useState(false);
   const [showRelationshipForm, setShowRelationshipForm] = useState(false);
   const [editingRelationship, setEditingRelationship] = useState<Relationship | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
@@ -476,7 +478,7 @@ export default function PersonDetailPage() {
               <Button
                 variant="outlined"
                 startIcon={<Edit />}
-                onClick={() => router.push(`/persons/${personId}/edit`)}
+                onClick={() => setDrawerOpen(true)}
               >
                 Bearbeiten
               </Button>
@@ -881,6 +883,37 @@ export default function PersonDetailPage() {
           {snackbarMsg}
         </Alert>
       </Snackbar>
+
+      {/* Person Form Drawer */}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: '500px',
+            padding: 2,
+          },
+          zIndex: 1299,
+        }}
+      >
+        <PersonForm
+          mode="edit"
+          personId={personId}
+          onClose={() => setDrawerOpen(false)}
+          onResult={(result) => {
+            setSnackbarMsg(result.message);
+            setSnackbarSeverity(result.success ? 'success' : 'error');
+            setSnackbarOpen(true);
+            setDrawerOpen(false);
+            // Refresh person data
+            if (result.success) {
+              setLoading(true);
+              fetchPersonData();
+            }
+          }}
+        />
+      </Drawer>
     </Container>
   );
 }

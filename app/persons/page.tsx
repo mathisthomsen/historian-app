@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
-import { Box, Typography, Container, Button } from '@mui/material';
+import { Box, Typography, Container, Button, Drawer, Snackbar, Alert } from '@mui/material';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useRouter } from 'next/navigation';
 import SiteHeader from '../components/SiteHeader';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import { api } from '../lib/api';
+import type { GridSortModel, GridFilterModel } from '@mui/x-data-grid';
+import PersonForm from '../components/PersonForm';
 
 type Person = {
   id: number;
@@ -37,13 +39,34 @@ export default function PersonsPage() {
   const [rows, setRows] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0); // DataGrid is 0-based
+  const [pageSize, setPageSize] = useState(25);
+  const [rowCount, setRowCount] = useState(0);
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
+  const [filterModel, setFilterModel] = useState<GridFilterModel>({ items: [] });
 
-  const fetchPersons = async () => {
+  const fetchPersons = async (
+    pageNum = page,
+    limitNum = pageSize,
+    sort = sortModel,
+    filter = filterModel
+  ) => {
     try {
       setLoading(true);
       setError(null);
-      const data: ApiResponse = await api.get('/api/persons');
-      setRows(data.persons); // Use the correct property name
+      // Build query params for sorting
+      let sortParam = '';
+      if (sort && sort.length > 0) {
+        sortParam = `&sortField=${encodeURIComponent(sort[0].field)}&sortOrder=${encodeURIComponent(sort[0].sort || 'asc')}`;
+      }
+      // Build query params for filtering (only supports one filter for now)
+      let filterParam = '';
+      if (filter && filter.items && filter.items.length > 0 && filter.items[0].value) {
+        filterParam = `&filterField=${encodeURIComponent(filter.items[0].field)}&filterValue=${encodeURIComponent(filter.items[0].value)}`;
+      }
+      const data: ApiResponse = await api.get(`/api/persons?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}`);
+      setRows(data.persons);
+      setRowCount(data.pagination.total);
     } catch (error) {
       console.error('Fehler beim Laden der Personen:', error);
       setError('Fehler beim Laden der Daten');
@@ -54,12 +77,18 @@ export default function PersonsPage() {
 
   useEffect(() => {
     fetchPersons();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, sortModel, filterModel]);
 
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editPersonId, setEditPersonId] = useState<number | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
   const handleMenuOpen = (person: React.MouseEvent<HTMLButtonElement>, id: number) => {
     setAnchorEl(person.currentTarget);
@@ -72,8 +101,29 @@ export default function PersonsPage() {
   };
 
   const handleEdit = () => {
-    if (selectedId) router.push(`/persons/${selectedId}/edit`);
+    if (selectedId) {
+      setEditPersonId(selectedId);
+      setDrawerOpen(true);
+    }
     handleMenuClose();
+  };
+
+  const handleCreate = () => {
+    setEditPersonId(null);
+    setDrawerOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+    setEditPersonId(null);
+    fetchPersons();
+  };
+
+  const handlePersonFormResult = (result: { success: boolean; message: string }) => {
+    setSnackbarMsg(result.message);
+    setSnackbarSeverity(result.success ? 'success' : 'error');
+    setSnackbarOpen(true);
+    handleDrawerClose();
   };
 
   const handleDetail = () => {
@@ -163,7 +213,7 @@ export default function PersonsPage() {
           </Typography>
           <Button 
             variant="contained" 
-            onClick={fetchPersons}
+            onClick={() => fetchPersons()}
             sx={{ mt: 2 }}
           >
             Erneut versuchen
@@ -176,34 +226,75 @@ export default function PersonsPage() {
   return (
     <Container sx={{ mt: 6 }}>
       <SiteHeader title="Personen" showOverline={false} />
-      <Box sx={{ width: '100%' }}>
+      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
         <Button
           variant="contained"
-          color="primary"
-          onClick={() => handleBulkdelete(selectedIds)}
-          sx={{ mb: 2 }}
-          disabled={selectedIds.length === 0}
+          color="secondary"
+          onClick={handleCreate}
         >
-          Ausgewählte löschen ({selectedIds.length})
+          Neue Person
         </Button>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={loading}
-          getRowId={(row) => row.id}
-          slots={{ toolbar: GridToolbar }}
-          slotProps={{
-            toolbar: {
-              showQuickFilter: true,
-            },
-          }}
-        />
-        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-          <MenuItem onClick={handleDetail}>Details</MenuItem>
-          <MenuItem onClick={handleEdit}>Stammdaten Bearbeiten</MenuItem>
-          <MenuItem onClick={handleDelete}>Löschen</MenuItem>
-        </Menu>
       </Box>
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        loading={loading}
+        getRowId={(row) => row.id}
+        showToolbar={true}
+        pagination
+        paginationMode="server"
+        paginationModel={{ page, pageSize }}
+        onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
+          setPage(newPage);
+          setPageSize(newPageSize);
+        }}
+        rowCount={rowCount}
+        pageSizeOptions={[25, 50, 100]}
+        sortingMode="server"
+        sortModel={sortModel}
+        onSortModelChange={(model) => setSortModel(model.slice())}
+        filterMode="server"
+        filterModel={filterModel}
+        onFilterModelChange={(model) => setFilterModel(model)}
+      />
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={handleDetail}>Details</MenuItem>
+        <MenuItem onClick={handleEdit}>Stammdaten Bearbeiten</MenuItem>
+        <MenuItem onClick={handleDelete}>Löschen</MenuItem>
+      </Menu>
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={handleDrawerClose}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: '500px',
+            padding: 2,
+          },
+          zIndex: 1299,
+        }}
+      >
+        <PersonForm
+          mode={editPersonId ? 'edit' : 'create'}
+          personId={editPersonId || undefined}
+          onClose={handleDrawerClose}
+          onResult={handlePersonFormResult}
+        />
+      </Drawer>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          severity={snackbarSeverity}
+          onClose={() => setSnackbarOpen(false)}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMsg}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

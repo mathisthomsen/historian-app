@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
-import { Box, Typography, Container, Button, Stack } from '@mui/material';
+import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
+import { Box, Typography, Container, Button, Stack, Skeleton } from '@mui/material';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useRouter } from 'next/navigation';
-import EventTimeline from "../components/ChartsEvents";
 import ModalDeleteConfirmation from '../components/ModalDeleteConfirmation';
 import SiteHeader from '../components/SiteHeader';
 import { api } from '../lib/api';
+import Drawer from '@mui/material/Drawer';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import EventForm from '../components/EventForm';
 
 type Event = {
   id: number;
@@ -20,35 +23,72 @@ type Event = {
   location: string | null;
 };
 
+type ApiResponse = {
+  events: Event[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+};
+
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [rowCount, setRowCount] = useState(0);
+  const [sortModel, setSortModel] = useState<any[]>([]);
+  const [filterModel, setFilterModel] = useState<any>({ items: [] });
 
-  async function fetchEvents() {
+  const fetchEvents = async (
+    pageNum = page,
+    limitNum = pageSize,
+    sort = sortModel,
+    filter = filterModel
+  ) => {
     try {
-      const data = await api.get('/api/events');
-      setEvents(data);
+      setLoading(true);
+      setError(null);
+      let sortParam = '';
+      if (sort && sort.length > 0) {
+        sortParam = `&sortField=${encodeURIComponent(sort[0].field)}&sortOrder=${encodeURIComponent(sort[0].sort || 'asc')}`;
+      }
+      let filterParam = '';
+      if (filter && filter.items && filter.items.length > 0 && filter.items[0].value) {
+        filterParam = `&filterField=${encodeURIComponent(filter.items[0].field)}&filterValue=${encodeURIComponent(filter.items[0].value)}`;
+      }
+      console.log('[fetchEvents] Requesting /api/events', { page: pageNum, limit: limitNum, sort, filter });
+      const data: ApiResponse = await api.get(`/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}`);
+      console.log('[fetchEvents] Response:', data);
+      setEvents(data.events);
+      setRowCount(data.pagination.total);
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error('[fetchEvents] Fehler beim Laden der Events:', error);
+      setError('Fehler beim Laden der Daten');
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchEvents();
-    };
-    fetchData();
-  }, []);
+    console.log('[useEffect] Fetching events with', { page, pageSize, sortModel, filterModel });
+    fetchEvents();
+  }, [page, pageSize, sortModel, filterModel]);
 
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [plottedEvents, setPlottedEvents] = useState<Event[]>([]);
-  const [gridKey, setGridKey] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editEventId, setEditEventId] = useState<number | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, id: number) => {
     setAnchorEl(event.currentTarget);
@@ -61,7 +101,10 @@ export default function EventsPage() {
   };
 
   const handleEdit = () => {
-    if (selectedId) router.push(`/events/${selectedId}/edit`);
+    if (selectedId) {
+      setEditEventId(selectedId);
+      setDrawerOpen(true);
+    }
     setSelectedId(null);
     handleMenuClose();
   };
@@ -84,54 +127,42 @@ export default function EventsPage() {
     handleMenuClose();
   };
 
-  const handlePlotRows = () => {
-    const selected = events.filter((event) => selectedIds.includes(event.id));
-    setPlottedEvents(selected);
-  };
-
-  const handleResetPlotRows = () => {
-    setPlottedEvents([]);
-    setSelectedIds([]);
-    setGridKey((prev) => prev + 1);
-  };
-
-  const handleBulkdelete = async (ids: number[]) => {
-    if (ids.length === 0) return;
-    console.log('Bulk delete IDs (in handleBulkDelete):', ids);
-    try {
-      await api.delete('/api/events/bulk', ids);
-      fetchEvents();
-    } catch (error) {
-      console.error('Fehler beim Bulk-Löschen:', error);
-    }
-  };
-
   const handleOpenDeleteModal = () => {
     if (selectedId !== null) {
       const event = events.find(e => e.id === selectedId);
       console.log('Open delete modal called. Event ID:', selectedId, 'Event:', event ? event.title : '');
-    } else {
-      console.log('Open delete modal called for bulk delete. IDs:', selectedIds);
+      setShowDeleteModal(true);
     }
-    setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
     console.log('Confirm delete called');
-    if(selectedId === null && selectedIds != null) {
-      console.log('Called with selectedIds:', selectedIds);
-      await handleBulkdelete(selectedIds);
-      setShowDeleteModal(false);
-      return;
-    } else if (selectedId != null) {
+    if (selectedId != null) {
       console.log('Called with ID:', selectedId);
       await handleDelete();
       setShowDeleteModal(false);
       setSelectedId(null);
       return;
     }
-  }
- 
+  };
+
+  const handleCreate = () => {
+    setEditEventId(null);
+    setDrawerOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+    setEditEventId(null);
+    fetchEvents();
+  };
+
+  const handleEventFormResult = (result: { success: boolean; message: string }) => {
+    setSnackbarMsg(result.message);
+    setSnackbarSeverity(result.success ? 'success' : 'error');
+    setSnackbarOpen(true);
+    handleDrawerClose();
+  };
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
@@ -183,67 +214,99 @@ export default function EventsPage() {
   return (
     <Container sx={{ mt: 6 }}>
       <SiteHeader title="Ereignisse" showOverline={false} />
-      {plottedEvents.length > 0 && (
-        <Box mt={4}>
-          <Typography variant="h6">Ausgewählte Events</Typography>
-          <EventTimeline events={plottedEvents} />
-        </Box>
-      )}
       <Box sx={{ width: '100%' }}>
-        <Stack direction="row" spacing={2} justifyContent="left" alignItems="center" sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={2} alignItems="right" sx={{ mb: 2, justifyContent: 'flex-end' }}>
           <Button
             variant="contained"
-            color="error"
-            sx={{ mt: 2 }}
-            onClick={() => handleOpenDeleteModal()}
-            disabled={selectedIds.length < 2}
-          >
-            Ausgewählte löschen
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handlePlotRows}
-            disabled={selectedIds.length === 0}
-          >
-            Ausgewählte im Graph anzeigen
-          </Button>
-          <Button
-            onClick={handleResetPlotRows}
             color="secondary"
-            disabled={plottedEvents.length === 0}
+            onClick={handleCreate}
           >
-            Auswahl zurücksetzen
+            Neues Event
           </Button>
         </Stack>
-        <DataGrid
-          key={gridKey}
-          checkboxSelection
-          disableRowSelectionOnClick
-          rows={events}
-          columns={columns}
-          loading={loading}
-          getRowId={(row) => row.id}
-          onRowSelectionModelChange={(ids) => {
-            setSelectedIds(Array.isArray(ids) ? ids.map(Number) : []);
-          }}
-          >
-        </DataGrid>
+        {loading || !Array.isArray(events) ? (
+          <Box sx={{ width: '100%', height: 400, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Skeleton variant="rectangular" height={56} />
+            <Skeleton variant="rectangular" height={56} />
+            <Skeleton variant="rectangular" height={56} />
+            <Skeleton variant="rectangular" height={56} />
+            <Skeleton variant="rectangular" height={56} />
+            <Skeleton variant="rectangular" height={56} />
+          </Box>
+        ) : (
+          <DataGrid
+            rows={events}
+            columns={columns}
+            loading={loading}
+            getRowId={(row) => row.id}
+            pagination
+            paginationMode="server"
+            paginationModel={{ page, pageSize }}
+            onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
+              console.log('[DataGrid] Pagination changed', { newPage, newPageSize });
+              setPage(newPage);
+              setPageSize(newPageSize);
+            }}
+            rowCount={rowCount}
+            pageSizeOptions={[25, 50, 100]}
+            showToolbar={true}
+            sortingMode="server"
+            sortModel={sortModel}
+            onSortModelChange={(model) => {
+              console.log('[DataGrid] Sort model changed', model);
+              setSortModel(model.slice());
+            }}
+            filterMode="server"
+            filterModel={filterModel}
+            onFilterModelChange={(model) => {
+              console.log('[DataGrid] Filter model changed', model);
+              setFilterModel(model);
+            }}
+            disableRowSelectionOnClick
+          />
+        )}
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
           <MenuItem onClick={() => handleEdit()}>Bearbeiten</MenuItem>
           <MenuItem onClick={() => handleDetail()}>Details</MenuItem>
-          <MenuItem onClick={handleOpenDeleteModal}>Löschen</MenuItem>
         </Menu>
+        <Drawer
+          anchor="right"
+          open={drawerOpen}
+          onClose={handleDrawerClose}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: '500px',
+              padding: 2,
+            },
+            zIndex: 1299,
+          }}
+        >
+          <EventForm
+            mode={editEventId ? 'edit' : 'create'}
+            eventId={editEventId || undefined}
+            onClose={handleDrawerClose}
+            onResult={handleEventFormResult}
+          />
+        </Drawer>
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={4000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert
+            severity={snackbarSeverity}
+            onClose={() => setSnackbarOpen(false)}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMsg}
+          </Alert>
+        </Snackbar>
       </Box>
       <ModalDeleteConfirmation
         open={showDeleteModal}
-        itemName={
-          selectedId === null && selectedIds != null
-            ? `${selectedIds.length} ausgewählte Events`
-            : `das Event "${events.find(e => e.id === selectedId)?.title ?? ''}"`
-            
-        }
+        itemName={`das Event "${events.find(e => e.id === selectedId)?.title ?? ''}"`}
         onConfirmAction={handleConfirmDelete}
         onCancelAction={() => {
           setShowDeleteModal(false);

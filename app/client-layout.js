@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   AppBar,
@@ -39,12 +38,12 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import './globals.css';
 import { logout } from './lib/api';
-
-const FabMenu = dynamic(() => import('.//components/FabMenu'), { ssr: false });
-const LoadingBar = dynamic(() => import('.//components/LoadingBar'), { ssr: false });
+import { ErrorBoundary } from './components/ErrorBoundary';
+import LoadingBar from './components/LoadingBar';
+import { createCustomTheme } from './lib/theme';
 
 // Hook to detect scroll direction
 function useScrollDirection() {
@@ -141,63 +140,30 @@ export default function RootLayout({ children }) {
 
   useEffect(() => {
     const storedMode = localStorage.getItem('darkMode');
-    if (storedMode !== null) {
-      setDarkMode(storedMode === 'true');
+    if (storedMode === 'dark' || storedMode === 'light') {
+      setDarkMode(storedMode);
     } else {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDarkMode(prefersDark);
+      setDarkMode(prefersDark ? 'dark' : 'light');
     }
   }, []);
 
   const toggleDarkMode = () => {
-    const newMode = !darkMode;
+    const newMode = darkMode === 'dark' ? 'light' : 'dark';
     setDarkMode(newMode);
-    localStorage.setItem('darkMode', newMode.toString());
+    localStorage.setItem('darkMode', newMode);
   };
 
-  const theme = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode: darkMode ? 'dark' : 'light',
-          hero: {
-            start: darkMode ? '#0d47a1' : '#bbdefb',
-            end: darkMode ? '#1976d2' : '#e3f2fd',
-          },
-        },
-        components: {
-          MuiButton: {
-            styleOverrides: {
-              root: {
-                textTransform: 'none',
-              },
-            },
-          },
-          MuiCssBaseline: {
-            styleOverrides: {
-              body: {
-                scrollbarWidth: 'thin',
-                scrollbarColor: darkMode ? '#666 #333' : '#ccc #f1f1f1',
-                '&::-webkit-scrollbar': {
-                  width: '8px',
-                },
-                '&::-webkit-scrollbar-track': {
-                  background: darkMode ? '#333' : '#f1f1f1',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  background: darkMode ? '#666' : '#ccc',
-                  borderRadius: '4px',
-                },
-                '&::-webkit-scrollbar-thumb:hover': {
-                  background: darkMode ? '#888' : '#999',
-                },
-              },
-            },
-          },
-        },
-      }),
-    [darkMode]
-  );
+  const theme = useMemo(() => {
+    if (darkMode === 'dark' || darkMode === 'light') {
+      return createCustomTheme(darkMode);
+    }
+    // fallback to system preference if darkMode is null
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return createCustomTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+    return createCustomTheme('light');
+  }, [darkMode]);
 
   if (darkMode === null) return null; // gegen Hydration-Probleme
 
@@ -231,7 +197,7 @@ export default function RootLayout({ children }) {
               Historian App
             </Typography>
             <IconButton color="inherit" onClick={toggleDarkMode}>
-              {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+              {darkMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
             {isAuthenticated && user ? (
               <>
@@ -338,8 +304,9 @@ export default function RootLayout({ children }) {
           minHeight: '100vh',
         }}
       >
-        {children}
-        <FabMenu />
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </Box>
     </ThemeProvider>
   );

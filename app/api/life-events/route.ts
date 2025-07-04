@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const location = searchParams.get('location');
     const personId = searchParams.get('personId');
+    const eventId = searchParams.get('eventId');
 
     const whereClause: any = {
       userId: user.id
@@ -71,37 +72,67 @@ export async function GET(req: NextRequest) {
       whereClause.person_id = parseInt(personId);
     }
 
-    const lifeEvents = await prisma.life_events.findMany({
-      where: whereClause,
-      include: {
-        persons: {
-          select: {
-            id: true,
-            first_name: true,
-            last_name: true
-          }
-        }
-      },
-      orderBy: {
-        start_date: 'asc'
-      }
-    });
+    if (eventId) {
+      whereClause.event_id = parseInt(eventId);
+    }
 
-    // Transform the data to match the expected format
+    let lifeEvents: any[];
+    if (location) {
+      lifeEvents = await prisma.$queryRaw`
+        SELECT le.*, p.id as person_id, p.first_name, p.last_name
+        FROM life_events le
+        LEFT JOIN persons p ON le.person_id = p.id
+        WHERE le."userId" = ${user.id}
+          AND LOWER(TRIM(le.location)) = LOWER(TRIM(${location}))
+        ORDER BY le.start_date ASC
+      ` as any[];
+      // Map the raw result to match the expected format
+      lifeEvents = lifeEvents.map((event: any) => ({
+        ...event,
+        persons: event.person_id ? {
+          id: event.person_id,
+          first_name: event.first_name,
+          last_name: event.last_name
+        } : null
+      }));
+    } else {
+      lifeEvents = await prisma.life_events.findMany({
+        where: whereClause,
+        include: {
+          persons: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true
+            }
+          }
+        },
+        orderBy: {
+          start_date: 'asc'
+        }
+      });
+    }
+
+    console.log('Raw SQL life events result:', lifeEvents);
+
+    // Robust transformation for property names and BigInt
+    const toNum = (v: any) => (typeof v === 'bigint' ? Number(v) : Number(v) || 0);
     const transformedEvents = lifeEvents.map(event => ({
-      id: event.id,
-      person_id: event.person_id,
-      title: event.title,
-      description: event.description,
-      start_date: event.start_date,
-      end_date: event.end_date,
-      location: event.location,
-      person: {
-        id: event.persons?.id || 0,
-        first_name: event.persons?.first_name || '',
-        last_name: event.persons?.last_name || ''
-      }
+      id: toNum(event.id),
+      person_id: toNum(event.person_id),
+      title: event.title ?? '',
+      description: event.description ?? '',
+      start_date: event.start_date ?? '',
+      end_date: event.end_date ?? '',
+      location: event.location ?? '',
+      person: event.persons ? {
+        id: toNum(event.persons.id),
+        first_name: event.persons.first_name || '',
+        last_name: event.persons.last_name || ''
+      } : { id: 0, first_name: '', last_name: '' }
     }));
+
+    console.log('Transformed life events response:', transformedEvents);
 
     const jsonResponse = NextResponse.json(transformedEvents);
     

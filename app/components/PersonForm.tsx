@@ -8,6 +8,8 @@ import {
   Typography,
   Container,
   Skeleton,
+  Snackbar,
+  Alert,
 } from '@mui/material'
 import { useRouter } from 'next/navigation'
 import SiteHeader from './SiteHeader'
@@ -23,9 +25,11 @@ type PersonFormProps = {
     notes?: string
   }
   personId?: number // Optional: für Edit-Modus
+  onClose?: () => void;
+  onResult?: (result: { success: boolean; message: string }) => void;
 }
 
-export default function PersonForm({ mode, personId }: { mode: 'create' | 'edit'; personId?: number }) {
+export default function PersonForm({ mode, personId, onClose, onResult }: { mode: 'create' | 'edit'; personId?: number; onClose?: () => void; onResult?: (result: { success: boolean; message: string }) => void }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     first_name: '',
@@ -37,6 +41,8 @@ export default function PersonForm({ mode, personId }: { mode: 'create' | 'edit'
     notes: '',
   });
   const [loading, setLoading] = useState(mode === 'edit' && !!personId); // loading only for edit
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (mode === 'edit' && personId) {
@@ -70,23 +76,39 @@ export default function PersonForm({ mode, personId }: { mode: 'create' | 'edit'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setSubmitting(true);
+    setError(null);
     // Send formData as-is, do not convert dates to Date objects
     const formattedData = { ...formData };
-
     const url = personId ? `/api/persons/${personId}` : '/api/persons';
     const method = personId ? 'PUT' : 'POST';
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formattedData),
-    });
-
-    if (res.ok) {
-      router.push('/persons');
-    } else {
-      alert('Fehler beim Speichern.');
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formattedData),
+      });
+      if (res.ok) {
+        if (onResult) onResult({ success: true, message: 'Person erfolgreich gespeichert.' });
+        if (onClose) {
+          onClose();
+        } else {
+          router.push('/persons');
+        }
+      } else {
+        let msg = 'Fehler beim Speichern.';
+        try {
+          const data = await res.json();
+          if (data && data.error) msg += ` ${data.error}`;
+        } catch {}
+        setError(msg);
+        if (onResult) onResult({ success: false, message: msg });
+      }
+    } catch (err: any) {
+      setError('Netzwerkfehler oder Server nicht erreichbar.');
+      if (onResult) onResult({ success: false, message: 'Netzwerkfehler oder Server nicht erreichbar.' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -122,14 +144,25 @@ export default function PersonForm({ mode, personId }: { mode: 'create' | 'edit'
           <TextField label="Sterbedatum" name="death_date" type="date" InputLabelProps={{ shrink: true }} value={formData.death_date} onChange={handleChange} fullWidth />
           <TextField label="Sterbeort" name="death_place" value={formData.death_place} onChange={handleChange} fullWidth />
           <TextField label="Notizen" name="notes" value={formData.notes} onChange={handleChange} multiline rows={3} fullWidth />
-          <Button type="submit" variant="contained">
-            Speichern
+          <Button type="submit" variant="contained" disabled={submitting}>
+            {submitting ? 'Speichern...' : 'Speichern'}
           </Button>
-          <Button variant="outlined" color="secondary" onClick={() => router.push('/persons')}>
+          <Button variant="outlined" color="secondary" onClick={() => {
+            if (onClose) {
+              onClose();
+            } else {
+              router.push('/persons');
+            }
+          }} disabled={submitting}>
             Abbrechen
           </Button>
         </Stack>
       </form>
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

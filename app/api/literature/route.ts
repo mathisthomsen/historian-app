@@ -5,6 +5,21 @@ import { getAuthenticatedUser } from '../../lib/api-helpers';
 const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '20');
+  const search = searchParams.get('search') || '';
+  const skip = (page - 1) * limit;
+  const sortField = searchParams.get('sortField');
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
+  const filterField = searchParams.get('filterField');
+  const filterValue = searchParams.get('filterValue');
+
+  // Validate pagination parameters
+  if (page < 1 || limit < 1 || limit > 100) {
+    return NextResponse.json({ error: 'Ungültige Paginierungsparameter' }, { status: 400 });
+  }
+
   const { user, response } = await getAuthenticatedUser(req);
 
   if (!user) {
@@ -12,14 +27,52 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const literature = await prisma.$queryRaw`
-      SELECT id, title, author, publication_year, publisher, isbn, "createdAt", "updatedAt"
-      FROM literature 
-      WHERE "userId" = ${user.id}
-      ORDER BY "createdAt" DESC
-    ` as any[]
+    // Build where clause for filtering
+    let whereClause: any = {};
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { author: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    if (filterField && filterValue) {
+      whereClause[filterField] = { contains: filterValue, mode: 'insensitive' };
+    }
 
-    const jsonResponse = NextResponse.json(literature)
+    // Build orderBy for sorting
+    let orderBy: any[] = [];
+    if (sortField) {
+      orderBy.push({ [sortField]: sortOrder });
+    }
+    orderBy.push({ title: 'asc' });
+
+    // Get literature with pagination
+    const [literature, totalResult] = await Promise.all([
+      prisma.literature.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy,
+      }),
+      prisma.literature.count({ where: whereClause })
+    ]);
+
+    const totalPages = Math.ceil(totalResult / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    const jsonResponse = NextResponse.json({
+      literature,
+      pagination: {
+        page,
+        limit,
+        total: totalResult,
+        totalPages,
+        hasNextPage,
+        hasPrevPage
+      }
+    });
     
     // If we have a response with new cookies, merge them
     if (response) {

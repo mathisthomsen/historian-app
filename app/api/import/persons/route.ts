@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     // Insert persons using raw query
     for (const person of data) {
       await prisma.$queryRaw`
-        INSERT INTO persons (userId, first_name, last_name, birth_date, birth_place, death_date, death_place, notes)
+        INSERT INTO persons ("userId", first_name, last_name, birth_date, birth_place, death_date, death_place, notes)
         VALUES (${user.id}, ${person.first_name || null}, ${person.last_name || null}, 
                 ${person.birth_date ? new Date(person.birth_date) : null}, 
                 ${person.birth_place || null}, 

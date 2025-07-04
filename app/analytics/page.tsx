@@ -14,6 +14,7 @@ import {
   Skeleton,
   Alert,
   Divider,
+  Button,
 } from '@mui/material';
 import {
   People,
@@ -26,6 +27,8 @@ import {
 } from '@mui/icons-material';
 import SiteHeader from '../components/SiteHeader';
 import ChartsEvents from '../components/ChartsEvents';
+import { api } from '../lib/api';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 interface AnalyticsData {
   totalPersons: number;
@@ -51,39 +54,27 @@ interface AnalyticsData {
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAnalyticsData();
-  }, []);
-
-  const fetchAnalyticsData = async () => {
-    setLoading(true);
-    try {
-      // Fetch dashboard stats
-      const statsRes = await fetch('/api/dashboard/stats');
-      const stats = await statsRes.json();
-
-      // Fetch real analytics data
-      const analyticsRes = await fetch('/api/analytics');
-      const analytics = await analyticsRes.json();
-
-      const realData: AnalyticsData = {
-        totalPersons: stats.totalPersons || 0,
-        totalEvents: stats.totalEvents || 0,
-        totalLifeEvents: stats.totalLifeEvents || 0,
-        eventsByYear: analytics.eventsByYear || [],
-        eventsByLocation: analytics.eventsByLocation || [],
-        events: analytics.events || [],
-        recentActivity: analytics.recentActivity || [],
-      };
-
-      setData(realData);
-    } catch (error) {
-      console.error('Error fetching analytics data:', error);
-    } finally {
-      setLoading(false);
+    async function fetchData() {
+      setError(null);
+      setLoading(true);
+      try {
+        const data = await api.get('/api/analytics');
+        if (!data || typeof data !== 'object' || !Array.isArray(data.events)) {
+          throw new Error('Invalid analytics data');
+        }
+        setData(data);
+      } catch (err) {
+        setError('Fehler beim Laden der Analytics-Daten. Bitte versuchen Sie es später erneut.');
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+    fetchData();
+  }, []);
 
   if (loading) {
     return (
@@ -115,171 +106,191 @@ export default function AnalyticsPage() {
     );
   }
 
-  if (!data) {
+  if (error) {
     return (
-      <Container sx={{ mt: 6 }}>
-        <Alert severity="error">
-          Fehler beim Laden der Analytics-Daten
+      <Container maxWidth="xl" sx={{ mt: 6 }}>
+        <SiteHeader title="Analytics" showOverline={false} />
+        <Alert severity="error" sx={{ my: 4 }}>
+          {error}
+          <Button color="inherit" size="small" onClick={() => window.location.reload()} sx={{ ml: 2 }}>
+            Erneut versuchen
+          </Button>
         </Alert>
       </Container>
     );
   }
 
+  if (!data) {
+    return null;
+  }
+
   return (
-    <Container maxWidth="xl" sx={{ mt: 6 }}>
-      <SiteHeader title="Analytics & Insights" showOverline={false} />
-      
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Personen
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {data.totalPersons}
-                  </Typography>
-                </Box>
-                <People sx={{ fontSize: 40, color: 'primary.main' }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+    <ErrorBoundary fallback={
+      <Container maxWidth="xl" sx={{ mt: 6 }}>
+        <SiteHeader title="Analytics" showOverline={false} />
+        <Alert severity="error" sx={{ my: 4 }}>
+          Fehler beim Laden der Analytics-Daten. Bitte versuchen Sie es später erneut.
+          <Button color="inherit" size="small" onClick={() => window.location.reload()} sx={{ ml: 2 }}>
+            Erneut versuchen
+          </Button>
+        </Alert>
+      </Container>
+    }>
+      <Container maxWidth="xl" sx={{ mt: 6 }}>
+        <SiteHeader title="Analytics & Insights" showOverline={false} />
         
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Historische Ereignisse
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {data.totalEvents}
-                  </Typography>
-                </Box>
-                <Event sx={{ fontSize: 40, color: 'secondary.main' }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Lebensereignisse
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {data.totalLifeEvents}
-                  </Typography>
-                </Box>
-                <Timeline sx={{ fontSize: 40, color: 'success.main' }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Gesamt
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {data.totalPersons + data.totalEvents + data.totalLifeEvents}
-                  </Typography>
-                </Box>
-                <TrendingUp sx={{ fontSize: 40, color: 'info.main' }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Charts Section */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} lg={8}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              <CalendarToday sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Ereignisse nach Jahr
-            </Typography>
-            <ChartsEvents events={data.events || []} />
-          </Paper>
-        </Grid>
-        
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} lg={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              <LocationOn sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Top Orte
-            </Typography>
-            <Stack spacing={2}>
-              {data.eventsByLocation.map((item, index) => (
-                <Box key={item.location}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body2">
-                      {item.location}
+        {/* Stats Cards */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      Personen
                     </Typography>
-                    <Chip 
-                      label={item.count} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined"
-                    />
-                  </Stack>
-                  {index < data.eventsByLocation.length - 1 && <Divider sx={{ mt: 1 }} />}
-                </Box>
-              ))}
-            </Stack>
-          </Paper>
+                    <Typography variant="h4" component="div">
+                      {data.totalPersons}
+                    </Typography>
+                  </Box>
+                  <People sx={{ fontSize: 40, color: 'primary.main' }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      Historische Ereignisse
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {data.totalEvents}
+                    </Typography>
+                  </Box>
+                  <Event sx={{ fontSize: 40, color: 'secondary.main' }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      Lebensereignisse
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {data.totalLifeEvents}
+                    </Typography>
+                  </Box>
+                  <Timeline sx={{ fontSize: 40, color: 'success.main' }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      Gesamt
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {data.totalPersons + data.totalEvents + data.totalLifeEvents}
+                    </Typography>
+                  </Box>
+                  <TrendingUp sx={{ fontSize: 40, color: 'info.main' }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
 
-      {/* Recent Activity */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          <AnalyticsIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          Letzte Aktivitäten
-        </Typography>
-        <Stack spacing={2}>
-          {data.recentActivity.map((activity, index) => (
-            <Box key={index}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="body1">
-                    {activity.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {new Date(activity.date).toLocaleDateString('de-DE')}
-                  </Typography>
-                </Box>
-                <Chip 
-                  label={activity.type === 'person' ? 'Person' : activity.type === 'event' ? 'Ereignis' : 'Lebensereignis'}
-                  size="small"
-                  color={activity.type === 'person' ? 'primary' : activity.type === 'event' ? 'secondary' : 'success'}
-                  variant="outlined"
-                />
+        {/* Charts Section */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} lg={8}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                <CalendarToday sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Ereignisse nach Jahr
+              </Typography>
+              <ChartsEvents events={data.events || []} />
+            </Paper>
+          </Grid>
+          
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} lg={4}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                <LocationOn sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Top Orte
+              </Typography>
+              <Stack spacing={2}>
+                {data.eventsByLocation.map((item, index) => (
+                  <Box key={item.location}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">
+                        {item.location}
+                      </Typography>
+                      <Chip 
+                        label={item.count} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined"
+                      />
+                    </Stack>
+                    {index < data.eventsByLocation.length - 1 && <Divider sx={{ mt: 1 }} />}
+                  </Box>
+                ))}
               </Stack>
-              {index < data.recentActivity.length - 1 && <Divider sx={{ mt: 2 }} />}
-            </Box>
-          ))}
-        </Stack>
-      </Paper>
-    </Container>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Recent Activity */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            <AnalyticsIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+            Letzte Aktivitäten
+          </Typography>
+          <Stack spacing={2}>
+            {data.recentActivity.map((activity, index) => (
+              <Box key={index}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography variant="body1">
+                      {activity.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {new Date(activity.date).toLocaleDateString('de-DE')}
+                    </Typography>
+                  </Box>
+                  <Chip 
+                    label={activity.type === 'person' ? 'Person' : activity.type === 'event' ? 'Ereignis' : 'Lebensereignis'}
+                    size="small"
+                    color={activity.type === 'person' ? 'primary' : activity.type === 'event' ? 'secondary' : 'success'}
+                    variant="outlined"
+                  />
+                </Stack>
+                {index < data.recentActivity.length - 1 && <Divider sx={{ mt: 2 }} />}
+              </Box>
+            ))}
+          </Stack>
+        </Paper>
+      </Container>
+    </ErrorBoundary>
   );
 } 

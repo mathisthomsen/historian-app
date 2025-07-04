@@ -1,19 +1,17 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import {
   TextField,
   Button,
   Stack,
-  MenuItem,
   Container,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  SelectChangeEvent,
   Skeleton,
+  Autocomplete,
+  CircularProgress,
 } from '@mui/material';
+import React from 'react';
 
 export default function LifeEventForm({
     mode,
@@ -30,7 +28,6 @@ export default function LifeEventForm({
     onSuccessAction: (message: string) => void;
     onErrorAction: (message: string) => void;
   }) {
-  const [events, setEvents] = useState<{ id: number; title: string }[]>([]);
   const [form, setForm] = useState({
     title: '',
     start_date: '',
@@ -43,6 +40,16 @@ export default function LifeEventForm({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [initialLoading, setInitialLoading] = useState(mode === 'edit' && !!lifeEventId);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+
+  // Async event search state
+  const [eventOptions, setEventOptions] = useState<{ id: number; title: string }[]>([]);
+  const [eventSearch, setEventSearch] = useState('');
+  const [eventPage, setEventPage] = useState(1);
+  const [eventHasMore, setEventHasMore] = useState(true);
+  const [eventLoading, setEventLoading] = useState(false);
+  const [eventTotal, setEventTotal] = useState(0);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
 
   const successMessage = mode === 'create' ? 'Event erfolgreich erstellt!' : 'Event erfolgreich aktualisiert!';
   const errorMessage = mode === 'create' ? 'Fehler beim Erstellen des Events' : 'Fehler beim Aktualisieren des Events';
@@ -50,19 +57,48 @@ export default function LifeEventForm({
   const buttonText = mode === 'create' ? 'Event erstellen' : 'Event aktualisieren';
   const buttonLoadingText = mode === 'create' ? 'Erstelle...' : 'Aktualisiere...';
 
-  // 🟦 Events laden
+  // Fetch events from API
+  const fetchEvents = async (search = '', page = 1, append = false) => {
+    setEventLoading(true);
+    try {
+      const res = await fetch(`/api/events?search=${encodeURIComponent(search)}&page=${page}&limit=20`);
+      const data = await res.json();
+      const events = Array.isArray(data.events) ? data.events : Array.isArray(data) ? data : [];
+      setEventTotal(data.pagination?.total || 0);
+      setEventHasMore((data.pagination?.page || 1) < (data.pagination?.totalPages || 1));
+      setEventOptions(prev => append ? [...prev, ...events] : events);
+    } finally {
+      setEventLoading(false);
+    }
+  };
+
+  // Initial load and reset on open/search
   useEffect(() => {
-    setInitialLoading(true);
-    fetch('/api/events')
-      .then((res) => res.json())
-      .then((data) => {
-        setEvents(data);
-      })
-      .catch((error) => {
-        setEvents([]);
-      })
-      .finally(() => setInitialLoading(false));
-  }, []);
+    if (mode === 'create' || (mode === 'edit' && !lifeEventId)) {
+      setEventPage(1);
+      fetchEvents(eventSearch, 1, false);
+    }
+  }, [eventSearch, mode, lifeEventId]);
+
+  // Load more on page change
+  useEffect(() => {
+    if (eventPage > 1) {
+      fetchEvents(eventSearch, eventPage, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventPage]);
+
+  // Infinite scroll handler
+  const handleListboxScroll = (event: React.SyntheticEvent) => {
+    const listboxNode = event.currentTarget as HTMLElement;
+    if (
+      listboxNode.scrollTop + listboxNode.clientHeight >= listboxNode.scrollHeight - 10 &&
+      eventHasMore &&
+      !eventLoading
+    ) {
+      setEventPage(prev => prev + 1);
+    }
+  };
 
   // 🧠 Bestehendes Event laden, falls Edit-Modus
   useEffect(() => {
@@ -93,12 +129,33 @@ export default function LifeEventForm({
   }, [mode, lifeEventId, onErrorAction]);
   
 
+  // Custom validation
+  function validateForm() {
+    const errors: { [key: string]: string } = {};
+    if (!form.title.trim()) {
+      errors.title = 'Titel ist erforderlich';
+    }
+    if (!form.start_date) {
+      errors.start_date = 'Startdatum ist erforderlich';
+    }
+    // Add more validations as needed
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
   // 🟩 Form absenden
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setSuccess(false);
     setError('');
+    setFieldErrors({});
+
+    // Custom validation before submit
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
 
     const method = mode === 'create' ? 'POST' : 'PUT';
     const url = mode === 'create' ? '/api/life-events' : `/api/life-events/${lifeEventId}`;
@@ -108,7 +165,7 @@ export default function LifeEventForm({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
-        person_id: personId,
+        personId: personId,
         event_id: form.event_id ? Number(form.event_id) : null,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
@@ -136,21 +193,11 @@ export default function LifeEventForm({
         setError(msg);
         onErrorAction(msg);
       }
-      
   }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>) => {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name as string]: value }));
-    }
-
-    const handleSelectChange = (e: SelectChangeEvent<string>) => {
-        const { name, value } = e.target;
-        if (name && typeof value === 'string') {
-            setForm(prev => ({ ...prev, [name]: value }));
-        } else {
-            console.warn('Invalid value or name in handleSelectChange:', { name, value });
-        }
     }
 
     const handleReset = () => {
@@ -199,7 +246,7 @@ export default function LifeEventForm({
             Formular zurücksetzen
         </Button>
        
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
             <Stack spacing={2} sx={{ maxWidth: 600, mx: 'auto' }}>
                 <TextField
                 name="title"
@@ -208,6 +255,8 @@ export default function LifeEventForm({
                 fullWidth
                 onChange={handleChange}
                 required
+                error={!!fieldErrors.title}
+                helperText={fieldErrors.title}
                 />
                 <TextField
                 name="start_date"
@@ -218,6 +267,8 @@ export default function LifeEventForm({
                 fullWidth
                 onChange={handleChange}
                 required
+                error={!!fieldErrors.start_date}
+                helperText={fieldErrors.start_date}
                 />
                 <TextField
                 name="end_date"
@@ -244,32 +295,52 @@ export default function LifeEventForm({
                 fullWidth
                 onChange={handleChange}
                 />
-                <FormControl fullWidth>
-                    <InputLabel>Globales Ereignis</InputLabel>
-                    <Select
-                        name="event_id"
-                        label="Globales Event"
-                        value={form.event_id}
-                        fullWidth
-                        onChange={handleSelectChange}
-                        MenuProps={{
-                            PaperProps: {
-                              style: {
-                                zIndex: 1400,
-                              },
-                            },
-                          }}
-                    >
-                        <MenuItem value="">
-                            Kein globales Event verknüpfen
-                        </MenuItem>
-                        {events.map((ev) => (
-                            <MenuItem key={ev.id} value={String(ev.id)}>
-                                {ev.title}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                <Autocomplete
+                  ref={autocompleteRef}
+                  options={eventOptions}
+                  getOptionLabel={(option) => option.title}
+                  value={eventOptions.find(ev => String(ev.id) === form.event_id) || null}
+                  loading={eventLoading}
+                  onInputChange={(_, value, reason) => {
+                    if (reason === 'input') {
+                      setEventSearch(value);
+                      setEventPage(1);
+                    }
+                  }}
+                  onChange={(_, newValue) => {
+                    setForm(prev => ({ ...prev, event_id: newValue ? String(newValue.id) : '' }));
+                  }}
+                  ListboxProps={{
+                    onScroll: handleListboxScroll
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Globales Ereignis"
+                      fullWidth
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {eventLoading ? <CircularProgress color="inherit" size={20} sx={{ mr: 1 }} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  renderOption={(props, option) => {
+                    const { key, ...rest } = props;
+                    return (
+                      <li key={option.id} {...rest}>
+                        {option.title}
+                      </li>
+                    );
+                  }}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  clearOnBlur
+                  noOptionsText="Kein globales Ereignis gefunden"
+                />
         
                 <Button type="submit" variant="contained" color="primary">
                     {loading ? buttonLoadingText : buttonText}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -57,7 +57,6 @@ interface RelationshipFormProps {
   onClose: () => void;
   onSubmit: (relationship: RelationshipFormData) => void;
   currentPerson: Person;
-  allPersons: Person[];
   existingRelationship?: Relationship | RelationshipFormData;
   loading?: boolean;
 }
@@ -114,7 +113,6 @@ export default function RelationshipForm({
   onClose,
   onSubmit,
   currentPerson,
-  allPersons,
   existingRelationship,
   loading = false
 }: RelationshipFormProps) {
@@ -126,8 +124,59 @@ export default function RelationshipForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Filter out current person from available persons
-  const availablePersons = allPersons.filter(person => person.id !== currentPerson.id);
+  // Async person search state
+  const [personOptions, setPersonOptions] = useState<Person[]>([]);
+  const [personSearch, setPersonSearch] = useState('');
+  const [personPage, setPersonPage] = useState(1);
+  const [personHasMore, setPersonHasMore] = useState(true);
+  const [personLoading, setPersonLoading] = useState(false);
+  const [personTotal, setPersonTotal] = useState(0);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
+
+  // Fetch persons from API
+  const fetchPersons = async (search = '', page = 1, append = false) => {
+    setPersonLoading(true);
+    try {
+      const res = await fetch(`/api/persons?search=${encodeURIComponent(search)}&page=${page}&limit=20`);
+      const data = await res.json();
+      const persons = Array.isArray(data.persons) ? data.persons : [];
+      setPersonTotal(data.pagination?.total || 0);
+      setPersonHasMore((data.pagination?.page || 1) < (data.pagination?.totalPages || 1));
+      // Filter out current person
+      const filtered = persons.filter((p: Person) => p.id !== currentPerson.id);
+      setPersonOptions(prev => append ? [...prev, ...filtered] : filtered);
+    } finally {
+      setPersonLoading(false);
+    }
+  };
+
+  // Initial load and reset on open/search
+  useEffect(() => {
+    if (open) {
+      setPersonPage(1);
+      fetchPersons(personSearch, 1, false);
+    }
+  }, [open, personSearch, currentPerson.id]);
+
+  // Load more on page change
+  useEffect(() => {
+    if (personPage > 1) {
+      fetchPersons(personSearch, personPage, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personPage]);
+
+  // Infinite scroll handler
+  const handleListboxScroll = (event: React.SyntheticEvent) => {
+    const listboxNode = event.currentTarget as HTMLElement;
+    if (
+      listboxNode.scrollTop + listboxNode.clientHeight >= listboxNode.scrollHeight - 10 &&
+      personHasMore &&
+      !personLoading
+    ) {
+      setPersonPage(prev => prev + 1);
+    }
+  };
 
   useEffect(() => {
     if (existingRelationship) {
@@ -207,7 +256,7 @@ export default function RelationshipForm({
     return displayName;
   };
 
-  const selectedPerson = availablePersons.find(p => p.id === formData.toPersonId);
+  const selectedPerson = personOptions.find(p => p.id === formData.toPersonId);
   const selectedRelation = RELATIONSHIP_OPTIONS.find(r => r.value === formData.relationType);
 
   return (
@@ -231,12 +280,23 @@ export default function RelationshipForm({
 
           <Box mb={3}>
             <Autocomplete
-              options={availablePersons}
+              ref={autocompleteRef}
+              options={personOptions}
               getOptionLabel={(option) => getPersonDisplayName(option)}
               value={selectedPerson || null}
+              loading={personLoading}
+              onInputChange={(_, value, reason) => {
+                if (reason === 'input') {
+                  setPersonSearch(value);
+                  setPersonPage(1);
+                }
+              }}
               onChange={(_, newValue) => {
                 setFormData(prev => ({ ...prev, toPersonId: newValue?.id || 0 }));
                 setErrors(prev => ({ ...prev, toPersonId: '' }));
+              }}
+              ListboxProps={{
+                onScroll: handleListboxScroll
               }}
               renderInput={(params) => (
                 <TextField
@@ -245,17 +305,29 @@ export default function RelationshipForm({
                   error={!!errors.toPersonId}
                   helperText={errors.toPersonId}
                   required
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {personLoading ? <span className="MuiCircularProgress-root MuiCircularProgress-indeterminate" style={{ width: 20, height: 20, marginRight: 8 }} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
                 />
               )}
-              renderOption={(props, option) => (
-                <Box component="li" {...props}>
-                  <Box>
-                    <Typography variant="body1">
-                      {getPersonDisplayName(option)}
-                    </Typography>
+              renderOption={(props, option) => {
+                const { key, ...rest } = props;
+                return (
+                  <Box component="li" key={option.id} {...rest}>
+                    <Box>
+                      <Typography variant="body1">
+                        {getPersonDisplayName(option)}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              )}
+                );
+              }}
             />
           </Box>
 

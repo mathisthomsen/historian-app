@@ -73,56 +73,123 @@ const RELATIONSHIP_GROUPS = {
   family: {
     label: 'Familie',
     icon: <FamilyRestroom />,
-    types: ['father', 'mother', 'son', 'daughter', 'brother', 'sister', 'grandfather', 'grandmother', 'grandson', 'granddaughter', 'uncle', 'aunt', 'nephew', 'niece']
+    types: [
+      // Direct
+      'father', 'mother', 'son', 'daughter', 'brother', 'sister',
+      'grandfather', 'grandmother', 'grandson', 'granddaughter',
+      'uncle', 'aunt', 'nephew', 'niece',
+      // Reciprocals
+      'child', 'parent', 'sibling', 'grandchild', 'grandparent',
+      'uncle/aunt', 'nephew/niece'
+    ]
   },
   marriage: {
     label: 'Ehe & Partnerschaft',
     icon: <Favorite />,
-    types: ['husband', 'wife', 'spouse']
+    types: [
+      'husband', 'wife', 'spouse'
+      // Reciprocals are already included (spouse, husband, wife)
+    ]
   },
   professional: {
     label: 'Beruflich',
     icon: <Business />,
-    types: ['colleague', 'boss', 'employee', 'mentor', 'mentee', 'teacher', 'student']
+    types: [
+      'colleague', 'boss', 'employee', 'mentor', 'mentee', 'teacher', 'student'
+      // Reciprocals are already included (colleague, boss, employee, mentor, mentee, teacher, student)
+    ]
   },
   other: {
     label: 'Sonstige',
     icon: <Group />,
-    types: ['friend', 'neighbor', 'acquaintance', 'business_partner', 'rival', 'enemy']
+    types: [
+      'friend', 'neighbor', 'acquaintance', 'business_partner', 'rival', 'enemy'
+      // Reciprocals are already included (friend, neighbor, acquaintance, business_partner, rival, enemy)
+    ]
   }
 };
 
 const RELATIONSHIP_LABELS: Record<string, string> = {
-  father: 'Vater',
-  mother: 'Mutter',
-  son: 'Sohn',
-  daughter: 'Tochter',
-  brother: 'Bruder',
-  sister: 'Schwester',
-  grandfather: 'Großvater',
-  grandmother: 'Großmutter',
-  grandson: 'Enkel',
-  granddaughter: 'Enkelin',
-  uncle: 'Onkel',
-  aunt: 'Tante',
-  nephew: 'Neffe',
-  niece: 'Nichte',
+  father: 'Kind',
+  mother: 'Kind',
+  son: 'Vater',
+  daughter: 'Elternteil',
+  brother: 'Geschwister',
+  sister: 'Geschwister',
+  grandfather: 'Enkelkind',
+  grandmother: 'Enkelkind',
+  grandson: 'Großelternteil',
+  granddaughter: 'Großelternteil',
+  uncle: 'Neffe/Nichte',
+  aunt: 'Neffe/Nichte',
+  nephew: 'Onkel/Tante',
+  niece: 'Onkel/Tante',
   husband: 'Ehemann',
-  wife: 'Ehefrau',
+  wife: 'Ehemann',
   spouse: 'Ehepartner',
   colleague: 'Kollege',
-  boss: 'Vorgesetzter',
-  employee: 'Mitarbeiter',
+  boss: 'Mitarbeiter',
+  employee: 'Vorgesetzter',
   mentor: 'Mentor',
   mentee: 'Mentee',
-  teacher: 'Lehrer',
-  student: 'Schüler',
+  teacher: 'Schüler',
+  student: 'Lehrer',
   friend: 'Freund',
   neighbor: 'Nachbar',
   acquaintance: 'Bekannter',
   business_partner: 'Geschäftspartner',
   rival: 'Rivale',
-  enemy: 'Feind'
+  enemy: 'Feind',
+  child: 'Elternteil',
+  parent: 'Kind',
+  sibling: 'Geschwister',
+  grandchild: 'Großelternteil',
+  grandparent: 'Großelternteil',
+  'uncle/aunt': 'Neffe/Nichte',
+  'nephew/niece': 'Onkel/Tante',
+};
+
+const getReciprocalRelation = (relationType: string): string => {
+  const reciprocals: Record<string, string> = {
+    father: 'Kind',
+    mother: 'Kind',
+    son: 'Elternteil',
+    daughter: 'Elternteil',
+    brother: 'Geschwister',
+    sister: 'Geschwister',
+    grandfather: 'Enkelkind',
+    grandmother: 'Enkelkind',
+    grandson: 'Großelternteil',
+    granddaughter: 'Großelternteil',
+    uncle: 'Neffe/Nichte',
+    aunt: 'Neffe/Nichte',
+    nephew: 'Onkel/Tante',
+    niece: 'Onkel/Tante',
+    husband: 'Ehefrau',
+    wife: 'Ehemann',
+    spouse: 'Ehepartner',
+    colleague: 'Kollege',
+    boss: 'Mitarbeiter',
+    employee: 'Vorgesetzter',
+    mentor: 'Mentee',
+    mentee: 'Mentor',
+    teacher: 'Schüler',
+    student: 'Lehrer',
+    friend: 'Freund',
+    neighbor: 'Nachbar',
+    acquaintance: 'Bekannter',
+    business_partner: 'Geschäftspartner',
+    rival: 'Rivale',
+    enemy: 'Feind',
+    child: 'Elternteil',
+    parent: 'Kind',
+    sibling: 'Geschwister',
+    grandchild: 'Großelternteil',
+    grandparent: 'Enkelkind',
+    'uncle/aunt': 'Neffe/Nichte',
+    'nephew/niece': 'Onkel/Tante',
+  };
+  return reciprocals[relationType] || relationType;
 };
 
 export default function RelationshipNetwork({
@@ -282,7 +349,11 @@ export default function RelationshipNetwork({
                               {relationship.personName}
                             </Typography>
                             <Chip
-                              label={RELATIONSHIP_LABELS[relationship.relationType] || relationship.relationType}
+                              label={
+                                relationship.isOutgoing
+                                  ? getReciprocalRelation(relationship.relationType)
+                                  : (RELATIONSHIP_LABELS[relationship.relationType] || relationship.relationType)
+                              }
                               color={getRelationshipColor(relationship.relationType)}
                               size="small"
                               variant="outlined"
@@ -323,7 +394,7 @@ export default function RelationshipNetwork({
                           color="text.secondary" 
                           sx={{ mt: 1, fontStyle: 'italic' }}
                         >
-                          &ldquo;{relationship.notes}&rdquo;
+                          "{relationship.notes}"
                         </Typography>
                       )}
                     </CardContent>
@@ -348,7 +419,11 @@ export default function RelationshipNetwork({
                   {getPersonDisplayName(currentPerson)} ↔ {selectedRelationship.personName}
                 </Typography>
                 <Chip
-                  label={RELATIONSHIP_LABELS[selectedRelationship.relationType] || selectedRelationship.relationType}
+                  label={
+                    selectedRelationship.isOutgoing
+                      ? getReciprocalRelation(selectedRelationship.relationType)
+                      : (RELATIONSHIP_LABELS[selectedRelationship.relationType] || selectedRelationship.relationType)
+                  }
                   color={getRelationshipColor(selectedRelationship.relationType)}
                   sx={{ mb: 2 }}
                 />

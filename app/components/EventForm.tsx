@@ -16,9 +16,11 @@ type EventData = {
 type Props = {
   mode: 'create' | 'edit';
   eventId?: number;
+  onClose?: () => void;
+  onResult?: (result: { success: boolean; message: string }) => void;
 };
 
-export default function EventForm({ mode, eventId }: Props) {
+export default function EventForm({ mode, eventId, onClose, onResult }: Props) {
   const router = useRouter();
   const [formData, setFormData] = useState<EventData>({
     title: '',
@@ -62,18 +64,27 @@ export default function EventForm({ mode, eventId }: Props) {
     const method = mode === 'create' ? 'POST' : 'PUT';
     const url = mode === 'create' ? '/api/events' : `/api/events/${eventId}`;
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    });
-
-    setLoading(false);
-
-    if (res.ok) {
-      router.push('/events');
-    } else {
-      // Fehlerbehandlung
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      setLoading(false);
+      if (res.ok) {
+        if (onResult) onResult({ success: true, message: 'Event erfolgreich gespeichert.' });
+        if (onClose) onClose();
+      } else {
+        let msg = 'Fehler beim Speichern.';
+        try {
+          const data = await res.json();
+          if (data && data.error) msg += ` ${data.error}`;
+        } catch {}
+        if (onResult) onResult({ success: false, message: msg });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      if (onResult) onResult({ success: false, message: 'Netzwerkfehler oder Server nicht erreichbar.' });
     }
   };
 
@@ -149,6 +160,9 @@ export default function EventForm({ mode, eventId }: Props) {
 
             <Button type="submit" variant="contained" color="primary" disabled={loading}>
             {loading ? 'Speichern...' : mode === 'create' ? 'Event erstellen' : 'Event aktualisieren'}
+            </Button>
+            <Button variant="outlined" color="secondary" onClick={() => onClose && onClose()} disabled={loading}>
+              Abbrechen
             </Button>
         </Stack>
         </form>

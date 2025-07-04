@@ -22,6 +22,8 @@ import {
   Avatar,
   Tabs,
   Tab,
+  Drawer,
+  Snackbar,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import {
@@ -38,6 +40,7 @@ import {
 import SiteHeader from '../../components/SiteHeader';
 import type { GridProps } from '@mui/material/Grid';
 import Grid from '@mui/material/Grid';
+import EventForm from '../../components/EventForm';
 
 interface LifeEvent {
   id: number;
@@ -71,34 +74,40 @@ export default function EventDetailPage({ params }: { params: Params }) {
   const [relatedLifeEvents, setRelatedLifeEvents] = useState<LifeEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
     params.then((p) => setResolvedParams(p));
   }, [params]);
 
+  // Move fetchEventData to top-level scope so it can be called from anywhere
+  const fetchEventData = async () => {
+    setLoading(true);
+    try {
+      if (!resolvedParams) throw new Error('No resolvedParams');
+      const eventId = Number(resolvedParams.id);
+      const [eventRes, lifeEventsRes] = await Promise.all([
+        fetch(`/api/events/${eventId}`),
+        fetch(`/api/life-events?eventId=${eventId}`)
+      ]);
+
+      const eventData = await eventRes.json();
+      const lifeEventsData = await lifeEventsRes.json();
+
+      setEvent(eventData);
+      setRelatedLifeEvents(lifeEventsData);
+    } catch (error) {
+      console.error('Error fetching event data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!resolvedParams) return;
-    async function fetchEventData() {
-      setLoading(true);
-      try {
-        if (!resolvedParams) throw new Error('No resolvedParams');
-        const eventId = Number(resolvedParams.id);
-        const [eventRes, lifeEventsRes] = await Promise.all([
-          fetch(`/api/events/${eventId}`),
-          fetch(`/api/life-events?eventId=${eventId}`)
-        ]);
-
-        const eventData = await eventRes.json();
-        const lifeEventsData = await lifeEventsRes.json();
-
-        setEvent(eventData);
-        setRelatedLifeEvents(lifeEventsData);
-      } catch (error) {
-        console.error('Error fetching event data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchEventData();
   }, [resolvedParams]);
 
@@ -221,10 +230,54 @@ export default function EventDetailPage({ params }: { params: Params }) {
               <Button
                 variant="outlined"
                 startIcon={<Edit />}
-                onClick={() => router.push(`/events/${eventId}/edit`)}
+                onClick={() => setDrawerOpen(true)}
               >
                 Bearbeiten
               </Button>
+              
+              <Drawer
+                anchor="right"
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                sx={{
+                  '& .MuiDrawer-paper': {
+                    width: '500px',
+                    padding: 2,
+                  },
+                  zIndex: 1299,
+                }}
+              >
+                <EventForm
+                  mode="edit"
+                  eventId={eventId}
+                  onClose={() => setDrawerOpen(false)}
+                  onResult={(result) => {
+                    setSnackbarMsg(result.message);
+                    setSnackbarSeverity(result.success ? 'success' : 'error');
+                    setSnackbarOpen(true);
+                    setDrawerOpen(false);
+                    // Refresh event data
+                    if (result.success) {
+                      setLoading(true);
+                      fetchEventData();
+                    }
+                  }}
+                />
+              </Drawer>
+              <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={4000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                <Alert
+                  severity={snackbarSeverity}
+                  onClose={() => setSnackbarOpen(false)}
+                  sx={{ width: '100%' }}
+                >
+                  {snackbarMsg}
+                </Alert>
+              </Snackbar>
               
               <Box textAlign="center">
                 <Typography variant="h6" color="primary">

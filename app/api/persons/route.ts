@@ -95,6 +95,10 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '20')
   const search = searchParams.get('search') || ''
   const skip = (page - 1) * limit
+  const sortField = searchParams.get('sortField');
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
+  const filterField = searchParams.get('filterField');
+  const filterValue = searchParams.get('filterValue');
 
   // Validate pagination parameters
   if (page < 1 || limit < 1 || limit > 100) {
@@ -105,57 +109,42 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Build where clause for filtering
+    let whereClause: any = { userId: user.id };
+    if (search) {
+      whereClause.OR = [
+        { first_name: { contains: search, mode: 'insensitive' } },
+        { last_name: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    if (filterField && filterValue) {
+      whereClause[filterField] = { contains: filterValue };
+    }
+
+    // Build orderBy for sorting
+    let orderBy: any[] = [];
+    if (sortField) {
+      orderBy.push({ [sortField]: sortOrder });
+    }
+    // Always add fallback sort
+    orderBy.push({ last_name: 'asc' }, { first_name: 'asc' });
+
     // Get persons with pagination
     let persons;
     let totalResult;
     
-    if (search) {
-      // Search with pagination
-      [persons, totalResult] = await Promise.all([
-        prisma.persons.findMany({
-          where: {
-            userId: user.id,
-            OR: [
-              { first_name: { contains: search } },
-              { last_name: { contains: search } },
-              { notes: { contains: search } }
-            ]
-          },
-          skip,
-          take: limit,
-          orderBy: [
-            { last_name: 'asc' },
-            { first_name: 'asc' }
-          ]
-        }),
-        prisma.persons.count({
-          where: {
-            userId: user.id,
-            OR: [
-              { first_name: { contains: search } },
-              { last_name: { contains: search } },
-              { notes: { contains: search } }
-            ]
-          }
-        })
-      ]);
-    } else {
-      // Get all persons with pagination
-      [persons, totalResult] = await Promise.all([
-        prisma.persons.findMany({
-          where: { userId: user.id },
-          skip,
-          take: limit,
-          orderBy: [
-            { last_name: 'asc' },
-            { first_name: 'asc' }
-          ]
-        }),
-        prisma.persons.count({
-          where: { userId: user.id }
-        })
-      ]);
-    }
+    [persons, totalResult] = await Promise.all([
+      prisma.persons.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy,
+      }),
+      prisma.persons.count({
+        where: whereClause
+      })
+    ]);
 
     const totalPages = Math.ceil(totalResult / limit);
     const hasNextPage = page < totalPages;

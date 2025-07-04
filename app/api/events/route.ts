@@ -49,52 +49,81 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(req);
+  const { searchParams } = new URL(req.url);
+  const all = searchParams.get('all') === 'true';
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '20');
+  const search = searchParams.get('search') || '';
+  const skip = all ? undefined : (page - 1) * limit;
+  const take = all ? undefined : limit;
+  const sortField = searchParams.get('sortField');
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
+  const filterField = searchParams.get('filterField');
+  const filterValue = searchParams.get('filterValue');
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Validate pagination parameters (skip for all=true)
+  if (!all && (page < 1 || limit < 1 || limit > 100)) {
+    return NextResponse.json({ error: 'Ungültige Paginierungsparameter' }, { status: 400 });
   }
 
   try {
-    const { searchParams } = new URL(req.url);
-    const location = searchParams.get('location');
-
-    let query = `
-      SELECT id, title, description, date, end_date, location
-      FROM events 
-      WHERE "userId" = ${user.id}
-    `;
-
-    if (location) {
-      query += ` AND location = '${location.replace(/'/g, "''")}'`;
+    // Build where clause for filtering
+    let whereClause: any = {};
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { location: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    if (filterField && filterValue) {
+      whereClause[filterField] = { contains: filterValue, mode: 'insensitive' };
     }
 
-    query += ` ORDER BY date ASC`;
+    // Build orderBy for sorting
+    let orderBy: any[] = [];
+    if (sortField) {
+      orderBy.push({ [sortField]: sortOrder });
+    }
+    orderBy.push({ date: 'desc' }, { title: 'asc' });
 
-    const events = await prisma.$queryRawUnsafe(query) as any[]
-
-    const jsonResponse = NextResponse.json(events)
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        })
-      })
+    // Get events with pagination
+    let events, totalResult;
+    if (all) {
+      events = await prisma.events.findMany({
+        where: whereClause,
+        orderBy,
+      });
+      totalResult = events.length;
+    } else {
+      [events, totalResult] = await Promise.all([
+        prisma.events.findMany({
+          where: whereClause,
+          skip,
+          take,
+          orderBy,
+        }),
+        prisma.events.count({ where: whereClause })
+      ]);
     }
 
-    return jsonResponse
+    const totalPages = all ? 1 : Math.ceil(totalResult / limit);
+    const hasNextPage = all ? false : page < totalPages;
+    const hasPrevPage = all ? false : page > 1;
 
+    return NextResponse.json({
+      events,
+      pagination: {
+        page,
+        limit,
+        total: totalResult,
+        totalPages,
+        hasNextPage,
+        hasPrevPage
+      }
+    });
   } catch (error) {
-    console.error('Error fetching events:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch events' },
-      { status: 500 }
-    )
+    console.error('Error fetching events:', error);
+    return NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 });
   }
 }

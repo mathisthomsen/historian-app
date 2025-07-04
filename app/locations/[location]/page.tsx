@@ -69,6 +69,10 @@ export default function LocationDetailPage({ params }: { params: Params }) {
   const [lifeEvents, setLifeEvents] = useState<LifeEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
+  const [error, setError] = useState<string | null>(null);
+
+  // Helper to safely convert BigInt or any value to Number
+  const toNum = (v: any) => (typeof v === 'bigint' ? Number(v) : Number(v) || 0);
 
   useEffect(() => {
     params.then((p) => setResolvedParams(p));
@@ -77,7 +81,7 @@ export default function LocationDetailPage({ params }: { params: Params }) {
   useEffect(() => {
     if (!resolvedParams) return;
     async function fetchLocationData() {
-      if (!resolvedParams) return;
+      setError(null);
       setLoading(true);
       try {
         const decodedLocation = decodeURIComponent(resolvedParams.location);
@@ -85,18 +89,39 @@ export default function LocationDetailPage({ params }: { params: Params }) {
           fetch(`/api/events?location=${encodeURIComponent(decodedLocation)}`),
           fetch(`/api/life-events?location=${encodeURIComponent(decodedLocation)}`)
         ]);
-
         if (eventsRes.ok) {
           const eventsData = await eventsRes.json();
-          setEvents(eventsData.map((event: any) => ({ ...event, type: 'historic' as const })));
+          const safeEvents = Array.isArray(eventsData) ? eventsData : [];
+          setEvents(safeEvents.map((event: any) => ({
+            id: toNum(event.id ?? event.ID),
+            title: event.title ?? event.TITLE ?? '',
+            date: event.date ?? event.DATE ?? '',
+            end_date: event.end_date ?? event.END_DATE ?? '',
+            description: event.description ?? event.DESCRIPTION ?? '',
+            type: 'historic' as const
+          })));
+        } else {
+          throw new Error('Events API error');
         }
-
         if (lifeEventsRes.ok) {
           const lifeEventsData = await lifeEventsRes.json();
-          setLifeEvents(lifeEventsData.map((event: any) => ({ ...event, type: 'life' as const })));
+          const safeLifeEvents = Array.isArray(lifeEventsData) ? lifeEventsData : [];
+          setLifeEvents(safeLifeEvents.map((event: any) => ({
+            id: toNum(event.id ?? event.ID),
+            title: event.title ?? event.TITLE ?? '',
+            start_date: event.start_date ?? event.START_DATE ?? '',
+            end_date: event.end_date ?? event.END_DATE ?? '',
+            description: event.description ?? event.DESCRIPTION ?? '',
+            person: event.person || { id: 0, first_name: '', last_name: '' },
+            type: 'life' as const
+          })));
+        } else {
+          throw new Error('LifeEvents API error');
         }
       } catch (error) {
-        console.error('Error fetching location data:', error);
+        setError('Fehler beim Laden der Ortsdaten. Bitte versuchen Sie es später erneut.');
+        setEvents([]);
+        setLifeEvents([]);
       } finally {
         setLoading(false);
       }
@@ -133,6 +158,28 @@ export default function LocationDetailPage({ params }: { params: Params }) {
         </Paper>
       </Container>
     );
+  }
+
+  if (error) {
+    let title = 'Ort';
+    if (resolvedParams && resolvedParams.location) {
+      title = decodeURIComponent(resolvedParams.location);
+    }
+    return (
+      <Container maxWidth="lg" sx={{ mt: 6 }}>
+        <SiteHeader title={title} showOverline={true} overline="Zurück zur Ortsübersicht" />
+        <Alert severity="error" sx={{ my: 4 }}>
+          {error}
+          <Button color="inherit" size="small" onClick={() => window.location.reload()} sx={{ ml: 2 }}>
+            Erneut versuchen
+          </Button>
+        </Alert>
+      </Container>
+    );
+  }
+
+  if (!resolvedParams) {
+    return <div style={{ color: 'red', padding: 24 }}>Fehler: Ungültige Ortsparameter.</div>;
   }
 
   const decodedLocation = decodeURIComponent(resolvedParams.location);
