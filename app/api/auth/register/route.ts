@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
   const authorizationUrl = workos.userManagement.getAuthorizationUrl({
     clientId,
     redirectUri,
-    provider: 'authkit', // Use the full hosted UI for all options
-    screenHint: 'sign-up', // Correct value
+    provider: 'authkit',
+    screenHint: 'sign-up',
   });
   return NextResponse.redirect(authorizationUrl);
 } 

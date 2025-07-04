@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
   const authorizationUrl = workos.userManagement.getAuthorizationUrl({
     clientId,
     redirectUri,
-    provider: 'GoogleOAuth',
+    provider: 'authkit',
+    screenHint: 'sign-in',
   });
   return NextResponse.redirect(authorizationUrl);
 } 

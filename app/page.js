@@ -87,7 +87,7 @@ export default function Home() {
             <Button
               variant="outlined"
               size="large"
-              onClick={() => router.push('/auth/login')}
+              onClick={() => { window.location.href = '/api/auth/login'; }}
               sx={{
                 borderColor: 'white',
                 color: 'white',

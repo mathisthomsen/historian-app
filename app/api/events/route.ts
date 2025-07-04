@@ -2,21 +2,22 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { NextResponse, NextRequest } from 'next/server';
-import { requireUser } from '../../lib/requireUser';
+import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
 
 export async function POST(req: NextRequest) {
   const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
 
   try {
     const data = await req.json();
 
-    const event = await prisma.$queryRaw`
+    await prisma.$queryRaw`
       INSERT INTO events ("userId", title, description, date, end_date, location)
-      VALUES (${user.id}, ${data.title}, ${data.description || null}, 
+      VALUES (${localUser.id}, ${data.title}, ${data.description || null}, 
               ${data.date ? new Date(data.date) : null}, 
               ${data.end_date ? new Date(data.end_date) : null}, 
               ${data.location || null})
-    ` as any
+    `;
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
 
   const { searchParams } = new URL(req.url);
   const all = searchParams.get('all') === 'true';
@@ -50,7 +52,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Build where clause for filtering
-    let whereClause: any = {};
+    let whereClause: any = { userId: localUser.id };
     if (search) {
       whereClause.OR = [
         { title: { contains: search, mode: 'insensitive' } },

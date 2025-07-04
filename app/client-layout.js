@@ -22,7 +22,8 @@ import {
   MenuItem,
   Button,
   Slide,
-  useScrollTrigger
+  useScrollTrigger,
+  Stack
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -218,9 +219,14 @@ export default function RootLayout({ children }) {
                 </Menu>
               </>
             ) : (
-              <Button color="inherit" onClick={() => window.location.href = '/api/auth/login'}>
-                Login
-              </Button>
+              <Stack direction="row" spacing={2}>
+                <Button color="inherit" onClick={() => window.location.href = 'https://hopeful-bubble-54-staging.authkit.app/sign-up'}>
+                  Registrieren
+                </Button>
+                <Button color="inherit" onClick={() => window.location.href = '/api/auth/login'}>
+                  Login
+                </Button>
+              </Stack>
             )}
           </Toolbar>
         </AppBar>
