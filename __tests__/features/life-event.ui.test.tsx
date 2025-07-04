@@ -2,18 +2,48 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LifeEventForm from '../../app/components/LifeEventForm';
 
+// Mock the authentication system for testing
+jest.mock('../../app/lib/requireUser', () => ({
+  requireUser: jest.fn().mockResolvedValue({
+    id: 1,
+    email: 'test@example.com',
+    workosUserId: 'test-workos-user-id'
+  })
+}));
+
 // Mock fetch globally for all tests
 beforeAll(() => {
   global.fetch = jest.fn();
 });
 
 describe('Life Events UI', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('User can add a life event to a person (UI)', async () => {
     // Mock the POST response for creating a life event
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       status: 201,
-      json: async () => ({ success: true })
+      json: async () => ({ 
+        id: 1,
+        title: 'Geburt',
+        start_date: '1900-01-01',
+        location: 'Berlin',
+        description: 'Geburt in Berlin',
+        person_id: 123
+      })
+    });
+
+    // Mock the events fetch response (for the autocomplete)
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        events: [],
+        total: 0
+      })
     });
 
     // Render the form in create mode for personId 123
