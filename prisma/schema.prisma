@@ -18,6 +18,7 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   lastLoginAt       DateTime?
+  workosUserId      String?   @unique // WorkOS user ID
   
   // Relations
   emailConfirmations EmailConfirmation[]

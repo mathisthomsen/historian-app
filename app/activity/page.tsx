@@ -31,6 +31,8 @@ import {
   TrendingUp,
 } from '@mui/icons-material';
 import SiteHeader from '../components/SiteHeader';
+import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import RequireAuth from '../components/RequireAuth';
 
 interface Activity {
   id: number;
@@ -43,12 +45,14 @@ interface Activity {
 }
 
 export default function ActivityPage() {
+  const { user, loading: authLoading } = useAuth();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
     fetchActivityData();
-  }, []);
+  }, [user]);
 
   const fetchActivityData = async () => {
     setLoading(true);
@@ -162,7 +166,7 @@ export default function ActivityPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || !user) {
     return (
       <Container maxWidth="lg" sx={{ mt: 6 }}>
         <SiteHeader title="Aktivitäten" showOverline={false} />
@@ -184,141 +188,143 @@ export default function ActivityPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 6 }}>
-      <SiteHeader title="Aktivitäten" showOverline={false} />
-      
-      {/* Activity Stats */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Heute
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {activities.filter(a => new Date(a.timestamp).toDateString() === new Date().toDateString()).length}
-                  </Typography>
-                </Box>
-                <TrendingUp sx={{ fontSize: 40, color: 'primary.main' }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Diese Woche
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {activities.filter(a => {
-                      const activityDate = new Date(a.timestamp);
-                      const weekAgo = new Date();
-                      weekAgo.setDate(weekAgo.getDate() - 7);
-                      return activityDate >= weekAgo;
-                    }).length}
-                  </Typography>
-                </Box>
-                <AccessTime sx={{ fontSize: 40, color: 'secondary.main' }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Gesamt
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {activities.length}
-                  </Typography>
-                </Box>
-                <Add sx={{ fontSize: 40, color: 'success.main' }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Activity List */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Letzte Aktivitäten
-        </Typography>
+    <RequireAuth>
+      <Container maxWidth="lg" sx={{ mt: 6 }}>
+        <SiteHeader title="Aktivitäten" showOverline={false} />
         
-        {activities.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="body1" color="text.secondary">
-              Noch keine Aktivitäten vorhanden
-            </Typography>
-          </Box>
-        ) : (
-          <List>
-            {activities.map((activity, index) => (
-              <Box key={activity.id}>
-                <ListItem alignItems="flex-start">
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: `${getActivityColor(activity.type)}.main` }}>
-                      {getActivityIcon(activity.entity)}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="body1" component="span">
-                          {activity.title}
-                        </Typography>
-                        <Chip 
-                          label={getActivityLabel(activity.type)}
-                          size="small"
-                          color={getActivityColor(activity.type) as any}
-                          variant="outlined"
-                        />
-                        <Chip 
-                          label={getEntityLabel(activity.entity)}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </Stack>
-                    }
-                    secondary={
-                      <Stack spacing={1} sx={{ mt: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {activity.description}
-                        </Typography>
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          <Stack direction="row" spacing={0.5} alignItems="center">
-                            <AccessTime fontSize="small" color="action" />
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(activity.timestamp).toLocaleString('de-DE')}
-                            </Typography>
-                          </Stack>
-                          {activity.user && (
-                            <Typography variant="caption" color="text.secondary">
-                              von {activity.user}
-                            </Typography>
-                          )}
+        {/* Activity Stats */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} sm={4}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      Heute
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {activities.filter(a => new Date(a.timestamp).toDateString() === new Date().toDateString()).length}
+                    </Typography>
+                  </Box>
+                  <TrendingUp sx={{ fontSize: 40, color: 'primary.main' }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} sm={4}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      Diese Woche
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {activities.filter(a => {
+                        const activityDate = new Date(a.timestamp);
+                        const weekAgo = new Date();
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        return activityDate >= weekAgo;
+                      }).length}
+                    </Typography>
+                  </Box>
+                  <AccessTime sx={{ fontSize: 40, color: 'secondary.main' }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} sm={4}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      Gesamt
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {activities.length}
+                    </Typography>
+                  </Box>
+                  <Add sx={{ fontSize: 40, color: 'success.main' }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Activity List */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Letzte Aktivitäten
+          </Typography>
+          
+          {activities.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="body1" color="text.secondary">
+                Noch keine Aktivitäten vorhanden
+              </Typography>
+            </Box>
+          ) : (
+            <List>
+              {activities.map((activity, index) => (
+                <Box key={activity.id}>
+                  <ListItem alignItems="flex-start">
+                    <ListItemAvatar>
+                      <Avatar sx={{ bgcolor: `${getActivityColor(activity.type)}.main` }}>
+                        {getActivityIcon(activity.entity)}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="body1" component="span">
+                            {activity.title}
+                          </Typography>
+                          <Chip 
+                            label={getActivityLabel(activity.type)}
+                            size="small"
+                            color={getActivityColor(activity.type) as any}
+                            variant="outlined"
+                          />
+                          <Chip 
+                            label={getEntityLabel(activity.entity)}
+                            size="small"
+                            variant="outlined"
+                          />
                         </Stack>
-                      </Stack>
-                    }
-                  />
-                </ListItem>
-                {index < activities.length - 1 && <Divider variant="inset" component="li" />}
-              </Box>
-            ))}
-          </List>
-        )}
-      </Paper>
-    </Container>
+                      }
+                      secondary={
+                        <Stack spacing={1} sx={{ mt: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {activity.description}
+                          </Typography>
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                              <AccessTime fontSize="small" color="action" />
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(activity.timestamp).toLocaleString('de-DE')}
+                              </Typography>
+                            </Stack>
+                            {activity.user && (
+                              <Typography variant="caption" color="text.secondary">
+                                von {activity.user}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </Stack>
+                      }
+                    />
+                  </ListItem>
+                  {index < activities.length - 1 && <Divider variant="inset" component="li" />}
+                </Box>
+              ))}
+            </List>
+          )}
+        </Paper>
+      </Container>
+    </RequireAuth>
   );
 } 

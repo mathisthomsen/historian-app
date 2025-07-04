@@ -2,21 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-import { getAuthenticatedUser } from '../../lib/api-helpers';
+import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
 
 export async function POST(req: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
   try {
     const data = await req.json();
-
     const lifeEvent = await prisma.life_events.create({
       data: {
-        userId: user.id,
+        userId: localUser.id,
         person_id: data.personId,
         title: data.title,
         description: data.description,
@@ -24,23 +19,7 @@ export async function POST(req: NextRequest) {
         location: data.location
       }
     });
-
-    const jsonResponse = NextResponse.json({ success: true }, { status: 201 });
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        });
-      });
-    }
-
-    return jsonResponse;
+    return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     console.error('Error creating life event:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -48,12 +27,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await requireUser();
+  const localUser = await prisma.user.findUnique({
+    where: { workosUserId: user.id }
+  });
+  if (!localUser) {
+    return NextResponse.json({ error: 'User not found' }, { status: 401 });
   }
-
   try {
     const { searchParams } = new URL(req.url);
     const location = searchParams.get('location');
@@ -61,7 +41,7 @@ export async function GET(req: NextRequest) {
     const eventId = searchParams.get('eventId');
 
     const whereClause: any = {
-      userId: user.id
+      userId: localUser.id
     };
 
     if (location) {
@@ -82,7 +62,7 @@ export async function GET(req: NextRequest) {
         SELECT le.*, p.id as person_id, p.first_name, p.last_name
         FROM life_events le
         LEFT JOIN persons p ON le.person_id = p.id
-        WHERE le."userId" = ${user.id}
+        WHERE le."userId" = ${localUser.id}
           AND LOWER(TRIM(le.location)) = LOWER(TRIM(${location}))
         ORDER BY le.start_date ASC
       ` as any[];
@@ -136,19 +116,6 @@ export async function GET(req: NextRequest) {
 
     const jsonResponse = NextResponse.json(transformedEvents);
     
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        });
-      });
-    }
-
     return jsonResponse;
   } catch (error) {
     console.error('Error fetching life events:', error);

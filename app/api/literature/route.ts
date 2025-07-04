@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getAuthenticatedUser } from '../../lib/api-helpers';
+import { requireUser } from '../../lib/requireUser';
 
 const prisma = new PrismaClient();
 
@@ -20,11 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültige Paginierungsparameter' }, { status: 400 });
   }
 
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const user = await requireUser();
 
   try {
     // Build where clause for filtering
@@ -62,32 +58,17 @@ export async function GET(req: NextRequest) {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    const jsonResponse = NextResponse.json({
+    return NextResponse.json({
       literature,
       pagination: {
-        page,
-        limit,
-        total: totalResult,
-        totalPages,
+        page: Number(page),
+        limit: Number(limit),
+        total: Number(totalResult),
+        totalPages: Number(totalPages),
         hasNextPage,
         hasPrevPage
       }
     });
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        })
-      })
-    }
-
-    return jsonResponse
 
   } catch (error) {
     console.error('Error fetching literature:', error)
@@ -99,11 +80,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const user = await requireUser();
 
   try {
     const body = await req.json();
@@ -115,22 +92,7 @@ export async function POST(req: NextRequest) {
               ${body.type || null}, ${body.description || null}, ${body.url || null})
     ` as any
 
-    const jsonResponse = NextResponse.json({ success: true }, { status: 201 })
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        })
-      })
-    }
-
-    return jsonResponse
+    return NextResponse.json({ success: true }, { status: 201 })
 
   } catch (error) {
     console.error('Error creating literature:', error)

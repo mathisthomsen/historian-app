@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../libs/prisma'
-import { getAuthenticatedUser } from '../../../lib/api-helpers';
+import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
 
 // 🟩 GET
 export async function GET(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
   const { params } = context;
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const resolvedParams = await params;
   const id = Number(resolvedParams.eventId);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
@@ -18,33 +14,19 @@ export async function GET(req: NextRequest, context: { params: Promise<{ eventId
   const event = await prisma.events.findFirst({ 
     where: { 
       id,
-      userId: user.id 
+      userId: localUser.id 
     } 
   });
 
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  const jsonResponse = NextResponse.json(event);
-  
-  // If we have a response with new cookies, merge them
-  if (response) {
-    response.cookies.getAll().forEach(cookie => {
-      jsonResponse.cookies.set(cookie.name, cookie.value, cookie)
-    })
-  }
-
-  return jsonResponse;
+  return NextResponse.json(event);
 }
 
 // 🟨 PUT
 export async function PUT(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
   const { params } = context;
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const resolvedParams = await params;
   const id = Number(resolvedParams.eventId);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
@@ -56,7 +38,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ eventId
     const existingEvent = await prisma.events.findFirst({
       where: { 
         id,
-        userId: user.id 
+        userId: localUser.id 
       }
     });
 
@@ -75,31 +57,18 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ eventId
       },
     });
 
-    const jsonResponse = NextResponse.json(updated);
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, cookie)
-      })
-    }
-
-    return jsonResponse;
+    return NextResponse.json(updated);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Update failed' }, { status: 500 });
   }
 }
 
-// 🟨 Delete
+// 🟥 DELETE
 export async function DELETE(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
   const { params } = context;
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const resolvedParams = await params;
   const id = Number(resolvedParams.eventId);
   if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
@@ -109,7 +78,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ even
     const existingEvent = await prisma.events.findFirst({
       where: { 
         id,
-        userId: user.id 
+        userId: localUser.id 
       }
     });
 
@@ -118,17 +87,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ even
     }
 
     await prisma.events.delete({ where: { id } });
-    
-    const jsonResponse = NextResponse.json(null, { status: 204 });
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, cookie)
-      })
-    }
-
-    return jsonResponse;
+    return NextResponse.json(null, { status: 204 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Fehler beim Löschen' }, { status: 500 });

@@ -1,24 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getAuthenticatedUser } from '../../lib/api-helpers'
+import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser'
 
 const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest) {
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
+  if (!localUser) {
+    return NextResponse.json({ error: 'User not found' }, { status: 401 });
+  }
   try {
-    const { user, response } = await getAuthenticatedUser(request);
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get events by year
     const eventsByYear = await prisma.$queryRaw`
       SELECT 
         EXTRACT(YEAR FROM date) as year,
         COUNT(*) as count
       FROM events 
-      WHERE "userId" = ${user.id} AND date IS NOT NULL
+      WHERE "userId" = ${localUser.id} AND date IS NOT NULL
       GROUP BY year
       ORDER BY year DESC
       LIMIT 10
@@ -30,7 +29,7 @@ export async function GET(request: NextRequest) {
         location,
         COUNT(*) as count
       FROM events 
-      WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
+      WHERE "userId" = ${localUser.id} AND location IS NOT NULL AND location != ''
       GROUP BY location
       ORDER BY count DESC
       LIMIT 10
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest) {
         title,
         "createdAt" as date
       FROM literature 
-      WHERE "userId" = ${user.id}
+      WHERE "userId" = ${localUser.id}
       ORDER BY date DESC
       LIMIT 5
     ` as any[]
@@ -59,7 +58,7 @@ export async function GET(request: NextRequest) {
         end_date,
         location
       FROM events 
-      WHERE "userId" = ${user.id} AND date IS NOT NULL
+      WHERE "userId" = ${localUser.id} AND date IS NOT NULL
       ORDER BY date ASC
     ` as any[]
 
@@ -87,22 +86,7 @@ export async function GET(request: NextRequest) {
       }))
     }
 
-    const jsonResponse = NextResponse.json(analytics)
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        })
-      })
-    }
-
-    return jsonResponse
+    return NextResponse.json(analytics)
 
   } catch (error) {
     console.error('Error fetching analytics data:', error)

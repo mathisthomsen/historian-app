@@ -14,7 +14,15 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation'
 import LoginForm from '../../components/auth/LoginForm'
 
-export default function LoginPage() {
+export default function LoginRedirect() {
+  const router = useRouter()
+  useEffect(() => {
+    window.location.href = '/api/auth/login'
+  }, [router])
+  return null
+}
+
+export function LoginPage() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const router = useRouter()
@@ -41,7 +49,7 @@ export default function LoginPage() {
   }
 
   const handleSwitchToRegister = () => {
-    router.push('/auth/register')
+    window.location.href = '/api/auth/register';
   }
 
   const handleForgotPassword = () => {

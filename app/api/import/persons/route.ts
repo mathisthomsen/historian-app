@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from '@prisma/client';
-import { getAuthenticatedUser } from '../../../lib/api-helpers'
+import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
 
 const prisma = new PrismaClient();
 
@@ -20,11 +20,8 @@ function parseDate(input: any): Date | null {
 }
 
 export async function POST(req: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
 
   try {
     const data = await req.json()
@@ -37,7 +34,7 @@ export async function POST(req: NextRequest) {
     for (const person of data) {
       await prisma.$queryRaw`
         INSERT INTO persons ("userId", first_name, last_name, birth_date, birth_place, death_date, death_place, notes)
-        VALUES (${user.id}, ${person.first_name || null}, ${person.last_name || null}, 
+        VALUES (${localUser.id}, ${person.first_name || null}, ${person.last_name || null}, 
                 ${person.birth_date ? new Date(person.birth_date) : null}, 
                 ${person.birth_place || null}, 
                 ${person.death_date ? new Date(person.death_date) : null}, 
@@ -46,26 +43,10 @@ export async function POST(req: NextRequest) {
       `
     }
 
-    const jsonResponse = NextResponse.json({ 
+    return NextResponse.json({ 
       success: true, 
       message: `Imported ${data.length} persons` 
     })
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        })
-      })
-    }
-
-    return jsonResponse
-
   } catch (error) {
     console.error('Error importing persons:', error)
     return NextResponse.json({ error: 'Import failed' }, { status: 500 })

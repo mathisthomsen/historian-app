@@ -40,10 +40,10 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import { ThemeProvider } from '@mui/material/styles';
 import './globals.css';
-import { logout } from './lib/api';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import LoadingBar from './components/LoadingBar';
 import { createCustomTheme } from './lib/theme';
+import { useAuth } from '@workos-inc/authkit-nextjs/components';
 
 // Hook to detect scroll direction
 function useScrollDirection() {
@@ -70,13 +70,15 @@ function useScrollDirection() {
 
 export default function RootLayout({ children }) {
   const [darkMode, setDarkMode] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const scrollDirection = useScrollDirection();
+
+  // AuthKit user/session
+  const { user, loading } = useAuth();
+  const isAuthenticated = !!user;
 
   // Navigation items for authenticated users
   const authenticatedNavItems = [
@@ -89,11 +91,10 @@ export default function RootLayout({ children }) {
     { path: '/analytics', label: 'Analytics', icon: <AssessmentIcon />, index: 6 },
   ];
 
-  // Navigation items for public users
+  // Navigation items for public users (no register)
   const publicNavItems = [
     { path: '/', label: 'Home', icon: <HomeIcon />, index: 0 },
-    { path: '/auth/login', label: 'Login', icon: <LoginIcon />, index: 1 },
-    { path: '/auth/register', label: 'Register', icon: <PersonIcon />, index: 2 },
+    { path: '/api/auth/login', label: 'Login', icon: <LoginIcon />, index: 1 },
   ];
 
   const toggleDrawer = (newOpen) => () => {
@@ -113,30 +114,9 @@ export default function RootLayout({ children }) {
     setUserMenuAnchor(null);
   };
 
-  const handleLogout = () => {
-    logout(); // This will handle API call, cookie clearing, and redirect
+  const handleLogout = async () => {
+    window.location.href = '/api/auth/logout';
   };
-
-  // Check authentication status on mount and route changes
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/status', { credentials: 'include' });
-        const data = await res.json();
-        if (data.authenticated) {
-          setIsAuthenticated(true);
-          setUser(data.user);
-        } else {
-          setIsAuthenticated(false);
-          setUser(null);
-        }
-      } catch (error) {
-        setIsAuthenticated(false);
-        setUser(null);
-      }
-    };
-    checkAuth();
-  }, [pathname]);
 
   useEffect(() => {
     const storedMode = localStorage.getItem('darkMode');
@@ -158,14 +138,13 @@ export default function RootLayout({ children }) {
     if (darkMode === 'dark' || darkMode === 'light') {
       return createCustomTheme(darkMode);
     }
-    // fallback to system preference if darkMode is null
     if (typeof window !== 'undefined' && window.matchMedia) {
       return createCustomTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     }
     return createCustomTheme('light');
   }, [darkMode]);
 
-  if (darkMode === null) return null; // gegen Hydration-Probleme
+  if (darkMode === null || loading) return null;
 
   const currentNavItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
   const currentPath = pathname;
@@ -207,7 +186,7 @@ export default function RootLayout({ children }) {
                   sx={{ ml: 1 }}
                 >
                   <Avatar sx={{ width: 32, height: 32 }}>
-                    {user.name ? user.name.charAt(0).toUpperCase() : <AccountCircleIcon />}
+                    {user.firstName ? user.firstName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : <AccountCircleIcon />)}
                   </Avatar>
                 </IconButton>
                 <Menu
@@ -223,11 +202,11 @@ export default function RootLayout({ children }) {
                     horizontal: 'right',
                   }}
                 >
-                  <MenuItem onClick={handleUserMenuClose}>
+                  <MenuItem onClick={handleUserMenuClose} disabled>
                     <ListItemIcon>
                       <AccountCircleIcon fontSize="small" />
                     </ListItemIcon>
-                    Profile
+                    {user.firstName || user.email}
                   </MenuItem>
                   <Divider />
                   <MenuItem onClick={handleLogout}>
@@ -239,18 +218,14 @@ export default function RootLayout({ children }) {
                 </Menu>
               </>
             ) : (
-              <Button color="inherit" onClick={() => router.push('/auth/login')}>
+              <Button color="inherit" onClick={() => window.location.href = '/api/auth/login'}>
                 Login
               </Button>
             )}
           </Toolbar>
         </AppBar>
       </Slide>
-      
-      {/* Loading Bar */}
       <LoadingBar />
-      
-      {/* Drawer */}
       <Drawer
         anchor="left"
         open={open}
@@ -261,7 +236,7 @@ export default function RootLayout({ children }) {
           '& .MuiDrawer-paper': {
             width: 240,
             boxSizing: 'border-box',
-            mt: '64px', // Account for fixed AppBar
+            mt: '64px',
           },
         }}
       >
@@ -294,13 +269,11 @@ export default function RootLayout({ children }) {
           ))}
         </List>
       </Drawer>
-
-      {/* Main Content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          pt: '64px', // Account for fixed AppBar
+          pt: '64px',
           minHeight: '100vh',
         }}
       >

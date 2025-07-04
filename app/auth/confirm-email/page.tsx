@@ -52,7 +52,7 @@ export default function ConfirmEmailPage() {
   }
 
   const handleRegister = () => {
-    router.push('/auth/register')
+    window.location.href = '/api/auth/register';
   }
 
   return (

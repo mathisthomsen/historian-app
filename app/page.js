@@ -69,7 +69,7 @@ export default function Home() {
             <Button
               variant="contained"
               size="large"
-              onClick={() => router.push('/auth/register')}
+              onClick={() => { window.location.href = '/api/auth/register'; }}
               sx={{
                 bgcolor: 'white',
                 color: 'primary.main',
@@ -247,7 +247,7 @@ export default function Home() {
           <Button
             variant="contained"
             size="large"
-            onClick={() => router.push('/auth/register')}
+            onClick={() => { window.location.href = '/api/auth/register'; }}
             sx={{
               px: 6,
               py: 2,

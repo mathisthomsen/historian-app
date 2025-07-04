@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '../../../lib/auth';
 import { PrismaClient } from '@prisma/client';
+import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
 const prisma = new PrismaClient();
 
 export async function PUT(
@@ -9,11 +9,8 @@ export async function PUT(
 ) {
   const { params } = context;
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const user = await requireUser();
+    const localUser = await getOrCreateLocalUser(user);
     const resolvedParams = await params;
     const relationshipId = parseInt(resolvedParams.id);
     const body = await request.json();
@@ -29,8 +26,8 @@ export async function PUT(
       where: {
         id: relationshipId,
         OR: [
-          { from_person: { userId: user.id } },
-          { to_person: { userId: user.id } }
+          { from_person: { userId: localUser.id } },
+          { to_person: { userId: localUser.id } }
         ]
       }
     });
@@ -93,11 +90,8 @@ export async function DELETE(
 ) {
   const { params } = context;
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const user = await requireUser();
+    const localUser = await getOrCreateLocalUser(user);
     const resolvedParams = await params;
     const relationshipId = parseInt(resolvedParams.id);
 
@@ -106,8 +100,8 @@ export async function DELETE(
       where: {
         id: relationshipId,
         OR: [
-          { from_person: { userId: user.id } },
-          { to_person: { userId: user.id } }
+          { from_person: { userId: localUser.id } },
+          { to_person: { userId: localUser.id } }
         ]
       }
     });

@@ -45,6 +45,8 @@ import {
 import { useRouter } from 'next/navigation'
 import { api } from '../lib/api'
 import DashboardSkeleton from '../components/DashboardSkeleton'
+import { useAuth } from '@workos-inc/authkit-nextjs/components'
+import RequireAuth from '../components/RequireAuth'
 
 interface DashboardStats {
   totalPersons: number
@@ -78,7 +80,6 @@ export default function DashboardPage() {
     researchProjects: 0
   })
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([])
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Fetch dashboard data
@@ -96,8 +97,6 @@ export default function DashboardPage() {
       setRecentActivities(activitiesData)
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -180,283 +179,280 @@ export default function DashboardPage() {
     </Card>
   )
 
-  // Show skeleton while loading
-  if (loading) {
-    return <DashboardSkeleton />
-  }
-
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
-      <Container maxWidth="xl">
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h3" component="h1" sx={{ fontWeight: 700 }}>
-              Historian Dashboard
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Tooltip title="Search">
-                <IconButton>
-                  <SearchIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Notifications">
-                <IconButton>
-                  <NotificationsIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Settings">
-                <IconButton>
-                  <SettingsIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Profile">
-                <IconButton>
-                  <AccountIcon />
-                </IconButton>
-              </Tooltip>
+    <RequireAuth>
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
+        <Container maxWidth="xl">
+          {/* Header */}
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h3" component="h1" sx={{ fontWeight: 700 }}>
+                Historian Dashboard
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Tooltip title="Search">
+                  <IconButton>
+                    <SearchIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Notifications">
+                  <IconButton>
+                    <NotificationsIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Settings">
+                  <IconButton>
+                    <SettingsIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Profile">
+                  <IconButton>
+                    <AccountIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
+            <Typography variant="h6" color="text.secondary">
+              Manage your historical research data and insights
+            </Typography>
           </Box>
-          <Typography variant="h6" color="text.secondary">
-            Manage your historical research data and insights
-          </Typography>
-        </Box>
 
-        {/* Stats Overview */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Historical Persons"
-              value={stats.totalPersons}
-              icon={<PersonIcon />}
-              color="primary"
-              subtitle="Individuals in your database"
-            />
+          {/* Stats Overview */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Historical Persons"
+                value={stats.totalPersons}
+                icon={<PersonIcon />}
+                color="primary"
+                subtitle="Individuals in your database"
+              />
+            </Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Historical Events"
+                value={stats.totalEvents}
+                icon={<EventIcon />}
+                color="secondary"
+                subtitle="Events documented"
+              />
+            </Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Locations"
+                value={stats.totalLocations}
+                icon={<LocationIcon />}
+                color="success"
+                subtitle="Places mapped"
+              />
+            </Grid>
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Literature Sources"
+                value={stats.totalLiterature}
+                icon={<BookIcon />}
+                color="warning"
+                subtitle="References catalogued"
+              />
+            </Grid>
           </Grid>
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Historical Events"
-              value={stats.totalEvents}
-              icon={<EventIcon />}
-              color="secondary"
-              subtitle="Events documented"
-            />
-          </Grid>
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Locations"
-              value={stats.totalLocations}
-              icon={<LocationIcon />}
-              color="success"
-              subtitle="Places mapped"
-            />
-          </Grid>
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Literature Sources"
-              value={stats.totalLiterature}
-              icon={<BookIcon />}
-              color="warning"
-              subtitle="References catalogued"
-            />
-          </Grid>
-        </Grid>
 
-        <Grid container spacing={4}>
-          {/* Quick Actions */}
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} md={8}>
+          <Grid container spacing={4}>
+            {/* Quick Actions */}
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+            <Grid item xs={12} md={8}>
+              <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+                Quick Actions
+              </Typography>
+              <Grid container spacing={3}>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <QuickActionCard
+                    title="Add Person"
+                    description="Document a historical figure"
+                    icon={<PersonIcon />}
+                    color="primary"
+                    onClick={() => router.push('/persons/create')}
+                  />
+                </Grid>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <QuickActionCard
+                    title="Record Event"
+                    description="Log a historical event"
+                    icon={<EventIcon />}
+                    color="secondary"
+                    onClick={() => router.push('/events/create')}
+                  />
+                </Grid>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <QuickActionCard
+                    title="Add Location"
+                    description="Map a historical place"
+                    icon={<LocationIcon />}
+                    color="success"
+                    onClick={() => router.push('/locations/create')}
+                  />
+                </Grid>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <QuickActionCard
+                    title="Catalog Literature"
+                    description="Add source material"
+                    icon={<BookIcon />}
+                    color="warning"
+                    onClick={() => router.push('/literature/create')}
+                  />
+                </Grid>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <QuickActionCard
+                    title="Import Data"
+                    description="Bulk import from files"
+                    icon={<UploadIcon />}
+                    color="info"
+                    onClick={() => router.push('/import')}
+                  />
+                </Grid>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <QuickActionCard
+                    title="Analytics"
+                    description="View research insights"
+                    icon={<AnalyticsIcon />}
+                    color="error"
+                    onClick={() => router.push('/analytics')}
+                  />
+                </Grid>
+              </Grid>
+            </Grid>
+
+            {/* Recent Activity */}
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+            <Grid item xs={12} md={4}>
+              <Paper sx={{ p: 3, height: 'fit-content' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Recent Activity
+                  </Typography>
+                  <Button size="small" onClick={() => router.push('/activity')}>
+                    View All
+                  </Button>
+                </Box>
+                <List sx={{ p: 0 }}>
+                  {recentActivities.slice(0, 5).map((activity, index) => (
+                    <React.Fragment key={activity.id}>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          {getActivityIcon(activity.type)}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={activity.title}
+                          secondary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip 
+                                label={activity.action} 
+                                size="small" 
+                                color={getActivityColor(activity.action) as any}
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(activity.timestamp).toLocaleDateString()}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                      {index < recentActivities.length - 1 && <Divider />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          {/* Research Tools */}
+          <Box sx={{ mt: 4 }}>
             <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-              Quick Actions
+              Research Tools
             </Typography>
             <Grid container spacing={3}>
               {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-              <Grid item xs={12} sm={6} md={4}>
-                <QuickActionCard
-                  title="Add Person"
-                  description="Document a historical figure"
-                  icon={<PersonIcon />}
-                  color="primary"
-                  onClick={() => router.push('/persons/create')}
-                />
+              <Grid item xs={12} sm={6} md={3}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <TimelineIcon sx={{ mr: 1, color: 'primary.main' }} />
+                      <Typography variant="h6">Timeline Analysis</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Visualize historical events across time periods
+                    </Typography>
+                    <Button variant="outlined" size="small" onClick={() => router.push('/timeline')}>
+                      Explore Timeline
+                    </Button>
+                  </CardContent>
+                </Card>
               </Grid>
               {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-              <Grid item xs={12} sm={6} md={4}>
-                <QuickActionCard
-                  title="Record Event"
-                  description="Log a historical event"
-                  icon={<EventIcon />}
-                  color="secondary"
-                  onClick={() => router.push('/events/create')}
-                />
+              <Grid item xs={12} sm={6} md={3}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <MapIcon sx={{ mr: 1, color: 'success.main' }} />
+                      <Typography variant="h6">Geographic Analysis</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Map historical events and movements
+                    </Typography>
+                    <Button variant="outlined" size="small" onClick={() => router.push('/maps')}>
+                      View Maps
+                    </Button>
+                  </CardContent>
+                </Card>
               </Grid>
               {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-              <Grid item xs={12} sm={6} md={4}>
-                <QuickActionCard
-                  title="Add Location"
-                  description="Map a historical place"
-                  icon={<LocationIcon />}
-                  color="success"
-                  onClick={() => router.push('/locations/create')}
-                />
+              <Grid item xs={12} sm={6} md={3}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <LibraryIcon sx={{ mr: 1, color: 'warning.main' }} />
+                      <Typography variant="h6">Source Management</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Organize and cite your research sources
+                    </Typography>
+                    <Button variant="outlined" size="small" onClick={() => router.push('/sources')}>
+                      Manage Sources
+                    </Button>
+                  </CardContent>
+                </Card>
               </Grid>
               {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-              <Grid item xs={12} sm={6} md={4}>
-                <QuickActionCard
-                  title="Catalog Literature"
-                  description="Add source material"
-                  icon={<BookIcon />}
-                  color="warning"
-                  onClick={() => router.push('/literature/create')}
-                />
-              </Grid>
-              {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-              <Grid item xs={12} sm={6} md={4}>
-                <QuickActionCard
-                  title="Import Data"
-                  description="Bulk import from files"
-                  icon={<UploadIcon />}
-                  color="info"
-                  onClick={() => router.push('/import')}
-                />
-              </Grid>
-              {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-              <Grid item xs={12} sm={6} md={4}>
-                <QuickActionCard
-                  title="Analytics"
-                  description="View research insights"
-                  icon={<AnalyticsIcon />}
-                  color="error"
-                  onClick={() => router.push('/analytics')}
-                />
+              <Grid item xs={12} sm={6} md={3}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <TrendingUpIcon sx={{ mr: 1, color: 'error.main' }} />
+                      <Typography variant="h6">Data Analytics</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Analyze patterns and trends in your data
+                    </Typography>
+                    <Button variant="outlined" size="small" onClick={() => router.push('/analytics')}>
+                      View Analytics
+                    </Button>
+                  </CardContent>
+                </Card>
               </Grid>
             </Grid>
-          </Grid>
-
-          {/* Recent Activity */}
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, height: 'fit-content' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  Recent Activity
-                </Typography>
-                <Button size="small" onClick={() => router.push('/activity')}>
-                  View All
-                </Button>
-              </Box>
-              <List sx={{ p: 0 }}>
-                {recentActivities.slice(0, 5).map((activity, index) => (
-                  <React.Fragment key={activity.id}>
-                    <ListItem sx={{ px: 0 }}>
-                      <ListItemIcon sx={{ minWidth: 40 }}>
-                        {getActivityIcon(activity.type)}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={activity.title}
-                        secondary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Chip 
-                              label={activity.action} 
-                              size="small" 
-                              color={getActivityColor(activity.action) as any}
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(activity.timestamp).toLocaleDateString()}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    {index < recentActivities.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-            </Paper>
-          </Grid>
-        </Grid>
-
-        {/* Research Tools */}
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-            Research Tools
-          </Typography>
-          <Grid container spacing={3}>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <TimelineIcon sx={{ mr: 1, color: 'primary.main' }} />
-                    <Typography variant="h6">Timeline Analysis</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Visualize historical events across time periods
-                  </Typography>
-                  <Button variant="outlined" size="small" onClick={() => router.push('/timeline')}>
-                    Explore Timeline
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <MapIcon sx={{ mr: 1, color: 'success.main' }} />
-                    <Typography variant="h6">Geographic Analysis</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Map historical events and movements
-                  </Typography>
-                  <Button variant="outlined" size="small" onClick={() => router.push('/maps')}>
-                    View Maps
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <LibraryIcon sx={{ mr: 1, color: 'warning.main' }} />
-                    <Typography variant="h6">Source Management</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Organize and cite your research sources
-                  </Typography>
-                  <Button variant="outlined" size="small" onClick={() => router.push('/sources')}>
-                    Manage Sources
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <TrendingUpIcon sx={{ mr: 1, color: 'error.main' }} />
-                    <Typography variant="h6">Data Analytics</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Analyze patterns and trends in your data
-                  </Typography>
-                  <Button variant="outlined" size="small" onClick={() => router.push('/analytics')}>
-                    View Analytics
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Box>
-      </Container>
-    </Box>
+          </Box>
+        </Container>
+      </Box>
+    </RequireAuth>
   )
 } 

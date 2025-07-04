@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '../../lib/auth';
 import { PrismaClient } from '@prisma/client';
+import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
 const prisma = new PrismaClient();
 
 // Define relationship types and their reciprocals
@@ -58,11 +58,8 @@ function isValidRelationshipType(relationType: string): boolean {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const user = await requireUser();
+    const localUser = await getOrCreateLocalUser(user);
     const { searchParams } = new URL(request.url);
     const personId = searchParams.get('personId');
 
@@ -81,8 +78,8 @@ export async function GET(request: NextRequest) {
         AND: [
           {
             OR: [
-              { from_person: { userId: user.id } },
-              { to_person: { userId: user.id } }
+              { from_person: { userId: localUser.id } },
+              { to_person: { userId: localUser.id } }
             ]
           }
         ]
@@ -145,11 +142,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const user = await requireUser();
+    const localUser = await getOrCreateLocalUser(user);
     const body = await request.json();
     const { fromPersonId, toPersonId, relationType, notes } = body;
 
@@ -171,10 +165,10 @@ export async function POST(request: NextRequest) {
     // Check if persons exist and belong to the user
     const [fromPerson, toPerson] = await Promise.all([
       prisma.persons.findFirst({
-        where: { id: fromPersonId, userId: user.id }
+        where: { id: fromPersonId, userId: localUser.id }
       }),
       prisma.persons.findFirst({
-        where: { id: toPersonId, userId: user.id }
+        where: { id: toPersonId, userId: localUser.id }
       })
     ]);
 

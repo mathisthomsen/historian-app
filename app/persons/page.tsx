@@ -11,6 +11,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import { api } from '../lib/api';
 import type { GridSortModel, GridFilterModel } from '@mui/x-data-grid';
 import PersonForm from '../components/PersonForm';
+import RequireAuth from '../components/RequireAuth';
 
 type Person = {
   id: number;
@@ -37,7 +38,7 @@ type ApiResponse = {
 
 export default function PersonsPage() {
   const [rows, setRows] = useState<Person[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0); // DataGrid is 0-based
   const [pageSize, setPageSize] = useState(25);
@@ -52,7 +53,7 @@ export default function PersonsPage() {
     filter = filterModel
   ) => {
     try {
-      setLoading(true);
+      setDataLoading(true);
       setError(null);
       // Build query params for sorting
       let sortParam = '';
@@ -71,7 +72,7 @@ export default function PersonsPage() {
       console.error('Fehler beim Laden der Personen:', error);
       setError('Fehler beim Laden der Daten');
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -194,15 +195,6 @@ export default function PersonsPage() {
     },
   ];
 
-  if (loading) {
-    return (
-      <Container sx={{ mt: 6 }}>
-        <SiteHeader title="Personen" showOverline={false} />
-        <LoadingSkeleton variant="table" rows={10} />
-      </Container>
-    );
-  }
-
   if (error) {
     return (
       <Container sx={{ mt: 6 }}>
@@ -224,77 +216,79 @@ export default function PersonsPage() {
   }
 
   return (
-    <Container sx={{ mt: 6 }}>
-      <SiteHeader title="Personen" showOverline={false} />
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={handleCreate}
-        >
-          Neue Person
-        </Button>
-      </Box>
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-        getRowId={(row) => row.id}
-        showToolbar={true}
-        pagination
-        paginationMode="server"
-        paginationModel={{ page, pageSize }}
-        onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
-          setPage(newPage);
-          setPageSize(newPageSize);
-        }}
-        rowCount={rowCount}
-        pageSizeOptions={[25, 50, 100]}
-        sortingMode="server"
-        sortModel={sortModel}
-        onSortModelChange={(model) => setSortModel(model.slice())}
-        filterMode="server"
-        filterModel={filterModel}
-        onFilterModelChange={(model) => setFilterModel(model)}
-      />
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={handleDetail}>Details</MenuItem>
-        <MenuItem onClick={handleEdit}>Stammdaten Bearbeiten</MenuItem>
-        <MenuItem onClick={handleDelete}>Löschen</MenuItem>
-      </Menu>
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={handleDrawerClose}
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: '500px',
-            padding: 2,
-          },
-          zIndex: 1299,
-        }}
-      >
-        <PersonForm
-          mode={editPersonId ? 'edit' : 'create'}
-          personId={editPersonId || undefined}
-          onClose={handleDrawerClose}
-          onResult={handlePersonFormResult}
+    <RequireAuth>
+      <Container sx={{ mt: 6 }}>
+        <SiteHeader title="Personen" showOverline={false} />
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleCreate}
+          >
+            Neue Person
+          </Button>
+        </Box>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          loading={dataLoading}
+          getRowId={(row) => row.id}
+          showToolbar={true}
+          pagination
+          paginationMode="server"
+          paginationModel={{ page, pageSize }}
+          onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
+            setPage(newPage);
+            setPageSize(newPageSize);
+          }}
+          rowCount={rowCount}
+          pageSizeOptions={[25, 50, 100]}
+          sortingMode="server"
+          sortModel={sortModel}
+          onSortModelChange={(model) => setSortModel(model.slice())}
+          filterMode="server"
+          filterModel={filterModel}
+          onFilterModelChange={(model) => setFilterModel(model)}
         />
-      </Drawer>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          severity={snackbarSeverity}
-          onClose={() => setSnackbarOpen(false)}
-          sx={{ width: '100%' }}
+        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+          <MenuItem onClick={handleDetail}>Details</MenuItem>
+          <MenuItem onClick={handleEdit}>Stammdaten Bearbeiten</MenuItem>
+          <MenuItem onClick={handleDelete}>Löschen</MenuItem>
+        </Menu>
+        <Drawer
+          anchor="right"
+          open={drawerOpen}
+          onClose={handleDrawerClose}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: '500px',
+              padding: 2,
+            },
+            zIndex: 1299,
+          }}
         >
-          {snackbarMsg}
-        </Alert>
-      </Snackbar>
-    </Container>
+          <PersonForm
+            mode={editPersonId ? 'edit' : 'create'}
+            personId={editPersonId || undefined}
+            onClose={handleDrawerClose}
+            onResult={handlePersonFormResult}
+          />
+        </Drawer>
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={4000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert
+            severity={snackbarSeverity}
+            onClose={() => setSnackbarOpen(false)}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMsg}
+          </Alert>
+        </Snackbar>
+      </Container>
+    </RequireAuth>
   );
 }

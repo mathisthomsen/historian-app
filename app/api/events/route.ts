@@ -2,14 +2,10 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { NextResponse, NextRequest } from 'next/server';
-import { getAuthenticatedUser } from '../../lib/api-helpers';
+import { requireUser } from '../../lib/requireUser';
 
 export async function POST(req: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const user = await requireUser();
 
   try {
     const data = await req.json();
@@ -22,23 +18,7 @@ export async function POST(req: NextRequest) {
               ${data.location || null})
     ` as any
 
-    const jsonResponse = NextResponse.json({ success: true }, { status: 201 })
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        })
-      })
-    }
-
-    return jsonResponse
-
+    return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     console.error('Error creating event:', error)
     return NextResponse.json(
@@ -49,6 +29,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const user = await requireUser();
+
   const { searchParams } = new URL(req.url);
   const all = searchParams.get('all') === 'true';
   const page = parseInt(searchParams.get('page') || '1');
@@ -114,10 +96,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       events,
       pagination: {
-        page,
-        limit,
-        total: totalResult,
-        totalPages,
+        page: Number(page),
+        limit: Number(limit),
+        total: Number(totalResult),
+        totalPages: Number(totalPages),
         hasNextPage,
         hasPrevPage
       }

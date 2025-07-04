@@ -1,30 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getAuthenticatedUser } from '../../../lib/api-helpers'
+import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser'
 
 const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest) {
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
+
   try {
-    const { user, response } = await getAuthenticatedUser(request);
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Simple counts using raw queries to avoid type issues
-    const totalPersons = await prisma.$queryRaw`SELECT COUNT(*) as count FROM persons WHERE "userId" = ${user.id}` as any[]
-    const totalEvents = await prisma.$queryRaw`SELECT COUNT(*) as count FROM events WHERE "userId" = ${user.id}` as any[]
-    const totalLifeEvents = await prisma.$queryRaw`SELECT COUNT(*) as count FROM life_events WHERE "userId" = ${user.id}` as any[]
-    const totalLiterature = await prisma.$queryRaw`SELECT COUNT(*) as count FROM literature WHERE "userId" = ${user.id}` as any[]
+    const totalPersons = await prisma.$queryRaw`SELECT COUNT(*) as count FROM persons WHERE "userId" = ${localUser.id}` as any[]
+    const totalEvents = await prisma.$queryRaw`SELECT COUNT(*) as count FROM events WHERE "userId" = ${localUser.id}` as any[]
+    const totalLifeEvents = await prisma.$queryRaw`SELECT COUNT(*) as count FROM life_events WHERE "userId" = ${localUser.id}` as any[]
+    const totalLiterature = await prisma.$queryRaw`SELECT COUNT(*) as count FROM literature WHERE "userId" = ${localUser.id}` as any[]
     
     // Count unique locations from events and life events
     const locationsResult = await prisma.$queryRaw`
       SELECT COUNT(DISTINCT location) as count 
       FROM (
-        SELECT location FROM events WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
+        SELECT location FROM events WHERE "userId" = ${localUser.id} AND location IS NOT NULL AND location != ''
         UNION
-        SELECT location FROM life_events WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
+        SELECT location FROM life_events WHERE "userId" = ${localUser.id} AND location IS NOT NULL AND location != ''
       ) as locations
     ` as any[]
     
@@ -33,7 +30,7 @@ export async function GET(request: NextRequest) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     
     const recentActivityResult = await prisma.$queryRaw`
-      SELECT COUNT(*) as count FROM literature WHERE "userId" = ${user.id} AND "createdAt" >= ${thirtyDaysAgo}
+      SELECT COUNT(*) as count FROM literature WHERE "userId" = ${localUser.id} AND "createdAt" >= ${thirtyDaysAgo}
     ` as any[]
 
     const stats = {
@@ -47,22 +44,7 @@ export async function GET(request: NextRequest) {
     }
 
     const jsonResponse = NextResponse.json(stats)
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        })
-      })
-    }
-
     return jsonResponse
-
   } catch (error) {
     console.error('Error fetching dashboard stats:', error)
     return NextResponse.json(

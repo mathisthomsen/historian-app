@@ -49,9 +49,6 @@ interface SyncConfig {
   lastSyncAt?: string;
   autoSync: boolean;
   syncInterval?: number;
-  accessToken?: string;
-  refreshToken?: string;
-  tokenExpiresAt?: string;
 }
 
 interface SyncResult {
@@ -72,8 +69,6 @@ export default function BibliographySyncPage() {
     name: '',
     apiKey: '',
     apiSecret: '',
-    accessToken: '',
-    refreshToken: '',
     collectionId: '',
     collectionName: '',
     autoSync: false,
@@ -187,8 +182,6 @@ export default function BibliographySyncPage() {
       name: config.name,
       apiKey: '',
       apiSecret: '',
-      accessToken: '',
-      refreshToken: '',
       collectionId: '',
       collectionName: config.collectionName || '',
       autoSync: config.autoSync,
@@ -259,8 +252,6 @@ export default function BibliographySyncPage() {
       name: '',
       apiKey: '',
       apiSecret: '',
-      accessToken: '',
-      refreshToken: '',
       collectionId: '',
       collectionName: '',
       autoSync: false,
@@ -283,15 +274,6 @@ export default function BibliographySyncPage() {
 
   const isOAuthService = (service: string) => {
     return service === 'mendeley';
-  };
-
-  const hasValidTokens = (config: SyncConfig) => {
-    return config.accessToken && config.refreshToken && config.tokenExpiresAt;
-  };
-
-  const isTokenExpired = (config: SyncConfig) => {
-    if (!config.tokenExpiresAt) return true;
-    return new Date(config.tokenExpiresAt) <= new Date();
   };
 
   if (loading) {
@@ -377,34 +359,6 @@ export default function BibliographySyncPage() {
                           color="default"
                         />
                       )}
-                      {isOAuthService(config.service) && (
-                        <>
-                          {hasValidTokens(config) ? (
-                            isTokenExpired(config) ? (
-                              <Chip 
-                                label="Token Expired" 
-                                size="small" 
-                                color="warning"
-                                icon={<ErrorIcon />}
-                              />
-                            ) : (
-                              <Chip 
-                                label="OAuth Connected" 
-                                size="small" 
-                                color="success"
-                                icon={<AccountCircleIcon />}
-                              />
-                            )
-                          ) : (
-                            <Chip 
-                              label="OAuth Required" 
-                              size="small" 
-                              color="error"
-                              icon={<ErrorIcon />}
-                            />
-                          )}
-                        </>
-                      )}
                     </Box>
                   }
                   secondary={
@@ -428,7 +382,7 @@ export default function BibliographySyncPage() {
                 />
                 <ListItemSecondaryAction>
                   <Box display="flex" gap={1}>
-                    {isOAuthService(config.service) && !hasValidTokens(config) && (
+                    {isOAuthService(config.service) && (
                       <Button
                         size="small"
                         variant="outlined"

@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getAuthenticatedUser } from '../../lib/api-helpers';
+import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
 
 const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(request);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
+  if (!localUser) {
+    return NextResponse.json({ error: 'User not found' }, { status: 401 });
   }
-
   try {
     // Get locations with detailed counts and last used dates
     const locations = await prisma.$queryRaw`
@@ -27,7 +26,7 @@ export async function GET(request: NextRequest) {
           0 as life_event_count,
           MAX(date) as last_used
         FROM events 
-        WHERE "userId" = ${user.id} AND location IS NOT NULL AND TRIM(location) != ''
+        WHERE "userId" = ${localUser.id} AND location IS NOT NULL AND TRIM(location) != ''
         GROUP BY norm_location
         
         UNION ALL
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
           COUNT(*) as life_event_count,
           MAX(start_date) as last_used
         FROM life_events 
-        WHERE "userId" = ${user.id} AND location IS NOT NULL AND TRIM(location) != ''
+        WHERE "userId" = ${localUser.id} AND location IS NOT NULL AND TRIM(location) != ''
         GROUP BY norm_location
       ) as all_locations
       GROUP BY location
@@ -60,23 +59,7 @@ export async function GET(request: NextRequest) {
 
     console.log('Transformed locations response:', transformedLocations);
 
-    const jsonResponse = NextResponse.json(transformedLocations)
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: cookie.httpOnly,
-          secure: cookie.secure,
-          sameSite: cookie.sameSite,
-          maxAge: cookie.maxAge,
-          path: cookie.path
-        })
-      })
-    }
-
-    return jsonResponse
-
+    return NextResponse.json(transformedLocations);
   } catch (error) {
     console.error('Error fetching locations:', error)
     return NextResponse.json(

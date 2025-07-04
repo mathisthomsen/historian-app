@@ -13,6 +13,8 @@ import Drawer from '@mui/material/Drawer';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import EventForm from '../components/EventForm';
+import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import RequireAuth from '../components/RequireAuth';
 
 type Event = {
   id: number;
@@ -36,8 +38,9 @@ type ApiResponse = {
 };
 
 export default function EventsPage() {
+  const { user, loading: authLoading } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
@@ -52,7 +55,7 @@ export default function EventsPage() {
     filter = filterModel
   ) => {
     try {
-      setLoading(true);
+      setDataLoading(true);
       setError(null);
       let sortParam = '';
       if (sort && sort.length > 0) {
@@ -71,7 +74,7 @@ export default function EventsPage() {
       console.error('[fetchEvents] Fehler beim Laden der Events:', error);
       setError('Fehler beim Laden der Daten');
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -211,109 +214,114 @@ export default function EventsPage() {
     },
   ];
 
+  if (authLoading || !user) {
+    return <Box sx={{ width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Skeleton variant="rectangular" height={56} width={300} /></Box>;
+  }
+
   return (
-    <Container sx={{ mt: 6 }}>
-      <SiteHeader title="Ereignisse" showOverline={false} />
-      <Box sx={{ width: '100%' }}>
-        <Stack direction="row" spacing={2} alignItems="right" sx={{ mb: 2, justifyContent: 'flex-end' }}>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleCreate}
-          >
-            Neues Event
-          </Button>
-        </Stack>
-        {loading || !Array.isArray(events) ? (
-          <Box sx={{ width: '100%', height: 400, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Skeleton variant="rectangular" height={56} />
-            <Skeleton variant="rectangular" height={56} />
-            <Skeleton variant="rectangular" height={56} />
-            <Skeleton variant="rectangular" height={56} />
-            <Skeleton variant="rectangular" height={56} />
-            <Skeleton variant="rectangular" height={56} />
-          </Box>
-        ) : (
-          <DataGrid
-            rows={events}
-            columns={columns}
-            loading={loading}
-            getRowId={(row) => row.id}
-            pagination
-            paginationMode="server"
-            paginationModel={{ page, pageSize }}
-            onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
-              console.log('[DataGrid] Pagination changed', { newPage, newPageSize });
-              setPage(newPage);
-              setPageSize(newPageSize);
-            }}
-            rowCount={rowCount}
-            pageSizeOptions={[25, 50, 100]}
-            showToolbar={true}
-            sortingMode="server"
-            sortModel={sortModel}
-            onSortModelChange={(model) => {
-              console.log('[DataGrid] Sort model changed', model);
-              setSortModel(model.slice());
-            }}
-            filterMode="server"
-            filterModel={filterModel}
-            onFilterModelChange={(model) => {
-              console.log('[DataGrid] Filter model changed', model);
-              setFilterModel(model);
-            }}
-            disableRowSelectionOnClick
-          />
-        )}
+    <RequireAuth>
+      <Container sx={{ mt: 6 }}>
+        <SiteHeader title="Ereignisse" showOverline={false} />
+        <Box sx={{ width: '100%' }}>
+          <Stack direction="row" spacing={2} alignItems="right" sx={{ mb: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleCreate}
+            >
+              Neues Event
+            </Button>
+          </Stack>
+          {dataLoading || !Array.isArray(events) ? (
+            <Box sx={{ width: '100%', height: 400, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Skeleton variant="rectangular" height={56} />
+              <Skeleton variant="rectangular" height={56} />
+              <Skeleton variant="rectangular" height={56} />
+              <Skeleton variant="rectangular" height={56} />
+              <Skeleton variant="rectangular" height={56} />
+              <Skeleton variant="rectangular" height={56} />
+            </Box>
+          ) : (
+            <DataGrid
+              rows={events}
+              columns={columns}
+              loading={dataLoading}
+              getRowId={(row) => row.id}
+              pagination
+              paginationMode="server"
+              paginationModel={{ page, pageSize }}
+              onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
+                console.log('[DataGrid] Pagination changed', { newPage, newPageSize });
+                setPage(newPage);
+                setPageSize(newPageSize);
+              }}
+              rowCount={rowCount}
+              pageSizeOptions={[25, 50, 100]}
+              showToolbar={true}
+              sortingMode="server"
+              sortModel={sortModel}
+              onSortModelChange={(model) => {
+                console.log('[DataGrid] Sort model changed', model);
+                setSortModel(model.slice());
+              }}
+              filterMode="server"
+              filterModel={filterModel}
+              onFilterModelChange={(model) => {
+                console.log('[DataGrid] Filter model changed', model);
+                setFilterModel(model);
+              }}
+              disableRowSelectionOnClick
+            />
+          )}
 
-        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-          <MenuItem onClick={() => handleEdit()}>Bearbeiten</MenuItem>
-          <MenuItem onClick={() => handleDetail()}>Details</MenuItem>
-        </Menu>
-        <Drawer
-          anchor="right"
-          open={drawerOpen}
-          onClose={handleDrawerClose}
-          sx={{
-            '& .MuiDrawer-paper': {
-              width: '500px',
-              padding: 2,
-            },
-            zIndex: 1299,
-          }}
-        >
-          <EventForm
-            mode={editEventId ? 'edit' : 'create'}
-            eventId={editEventId || undefined}
+          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+            <MenuItem onClick={() => handleEdit()}>Bearbeiten</MenuItem>
+            <MenuItem onClick={() => handleDetail()}>Details</MenuItem>
+          </Menu>
+          <Drawer
+            anchor="right"
+            open={drawerOpen}
             onClose={handleDrawerClose}
-            onResult={handleEventFormResult}
-          />
-        </Drawer>
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={4000}
-          onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <Alert
-            severity={snackbarSeverity}
-            onClose={() => setSnackbarOpen(false)}
-            sx={{ width: '100%' }}
+            sx={{
+              '& .MuiDrawer-paper': {
+                width: '500px',
+                padding: 2,
+              },
+              zIndex: 1299,
+            }}
           >
-            {snackbarMsg}
-          </Alert>
-        </Snackbar>
-      </Box>
-      <ModalDeleteConfirmation
-        open={showDeleteModal}
-        itemName={`das Event "${events.find(e => e.id === selectedId)?.title ?? ''}"`}
-        onConfirmAction={handleConfirmDelete}
-        onCancelAction={() => {
-          setShowDeleteModal(false);
-          handleMenuClose();
-        }}
-      />
-
-    </Container>
+            <EventForm
+              mode={editEventId ? 'edit' : 'create'}
+              eventId={editEventId || undefined}
+              onClose={handleDrawerClose}
+              onResult={handleEventFormResult}
+            />
+          </Drawer>
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={4000}
+            onClose={() => setSnackbarOpen(false)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <Alert
+              severity={snackbarSeverity}
+              onClose={() => setSnackbarOpen(false)}
+              sx={{ width: '100%' }}
+            >
+              {snackbarMsg}
+            </Alert>
+          </Snackbar>
+        </Box>
+        <ModalDeleteConfirmation
+          open={showDeleteModal}
+          itemName={`das Event "${events.find(e => e.id === selectedId)?.title ?? ''}"`}
+          onConfirmAction={handleConfirmDelete}
+          onCancelAction={() => {
+            setShowDeleteModal(false);
+            handleMenuClose();
+          }}
+        />
+      </Container>
+    </RequireAuth>
   );
 }

@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAndSanitize, personSchema, RateLimiter } from '../../lib/validation'
-import { getAuthenticatedUser } from '../../lib/api-helpers'
+import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
 
 // Initialize rate limiter
 const rateLimiter = new RateLimiter(60000, 100); // 100 requests per minute
@@ -15,11 +15,8 @@ function getClientIP(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
 
   // Rate limiting
   const clientIp = getClientIP(req);
@@ -51,20 +48,11 @@ export async function POST(req: NextRequest) {
         death_date: validation.data.death_date ? new Date(validation.data.death_date) : null,
         death_place: validation.data.death_place || null,
         notes: validation.data.notes || null,
-        userId: user.id
+        userId: localUser.id
       }
     });
     
-    const jsonResponse = NextResponse.json({ success: true, person }, { status: 201 });
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, cookie)
-      })
-    }
-    
-    return jsonResponse;
+    return NextResponse.json({ success: true, person }, { status: 201 });
   } catch (error) {
     console.error('Error creating person:', error);
     return NextResponse.json(
@@ -75,10 +63,14 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(req);
+  const user = await requireUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Map WorkOS user to local user
+  const localUser = await prisma.user.findUnique({
+    where: { workosUserId: user.id }
+  });
+  if (!localUser) {
+    return NextResponse.json({ error: 'User not found' }, { status: 401 });
   }
 
   // Rate limiting
@@ -110,7 +102,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Build where clause for filtering
-    let whereClause: any = { userId: user.id };
+    let whereClause: any = { userId: localUser.id };
     if (search) {
       whereClause.OR = [
         { first_name: { contains: search, mode: 'insensitive' } },
@@ -150,26 +142,18 @@ export async function GET(req: NextRequest) {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    const jsonResponse = NextResponse.json({
+    // Use parsed numbers for pagination
+    return NextResponse.json({
       persons,
       pagination: {
-        page,
-        limit,
-        total: totalResult,
-        totalPages,
+        page: Number(page),
+        limit: Number(limit),
+        total: Number(totalResult),
+        totalPages: Number(totalPages),
         hasNextPage,
         hasPrevPage
       }
     });
-    
-    // If we have a response with new cookies, merge them
-    if (response) {
-      response.cookies.getAll().forEach(cookie => {
-        jsonResponse.cookies.set(cookie.name, cookie.value, cookie)
-      })
-    }
-    
-    return jsonResponse;
   } catch (error) {
     console.error('Error fetching persons:', error);
     return NextResponse.json(

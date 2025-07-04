@@ -1,22 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../libs/prisma'
+import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
 
 // 🟩 GET
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
   const { params } = context;
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
-  const lifeEvent = await prisma.life_events.findUnique({ where: { id } });
+  const lifeEvent = await prisma.life_events.findFirst({ where: { id, userId: localUser.id } });
 
   if (!lifeEvent) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
   return NextResponse.json(lifeEvent);
 }
 
 // 🟨 PUT
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
   const { params } = context;
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
@@ -25,6 +29,15 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   const data = await req.json();
 
   try {
+    // Check if life event belongs to user
+    const existingEvent = await prisma.life_events.findFirst({
+      where: { id, userId: localUser.id }
+    });
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: 'Life event not found' }, { status: 404 });
+    }
+
     const updated = await prisma.life_events.update({
       where: { id },
       data: {
@@ -47,14 +60,25 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   }
 }
 
-// 🟨 Delete
+// 🟥 DELETE
 export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const user = await requireUser();
+  const localUser = await getOrCreateLocalUser(user);
   const { params } = context;
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   try {
+    // Check if life event belongs to user
+    const existingEvent = await prisma.life_events.findFirst({
+      where: { id, userId: localUser.id }
+    });
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: 'Life event not found' }, { status: 404 });
+    }
+
     await prisma.life_events.delete({ where: { id } });
     return NextResponse.json(null, { status: 204 });
   } catch (error) {

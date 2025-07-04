@@ -44,6 +44,7 @@ import {
 import SiteHeader from '../components/SiteHeader';
 import { api } from '../lib/api';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import RequireAuth from '../components/RequireAuth';
 
 interface TimelineEvent {
   id: number;
@@ -192,323 +193,325 @@ export default function TimelinePage() {
   }
 
   return (
-    <ErrorBoundary fallback={
-      <Container maxWidth="xl" sx={{ mt: 6 }}>
-        <SiteHeader title="Timeline" showOverline={false} />
-        <Alert severity="error" sx={{ my: 4 }}>
-          Fehler beim Laden der Timeline-Daten. Bitte versuchen Sie es später erneut.
-          <Button color="inherit" size="small" onClick={() => window.location.reload()} sx={{ ml: 2 }}>
-            Erneut versuchen
-          </Button>
-        </Alert>
-      </Container>
-    }>
-      <Container maxWidth="xl" sx={{ mt: 6 }}>
-        <SiteHeader title="Timeline" showOverline={false} />
-        
-        <Grid container spacing={3}>
-          {/* Filters Sidebar */}
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} md={3}>
-            <Paper sx={{ p: 3, position: 'sticky', top: 24 }}>
-              <Typography variant="h6" gutterBottom>
-                <FilterList sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Filter
-              </Typography>
-              
-              <Stack spacing={3}>
-                {/* Search */}
-                <TextField
-                  fullWidth
-                  label="Suche"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                    endAdornment: searchTerm && (
-                      <IconButton size="small" onClick={() => setSearchTerm('')}>
-                        <Clear />
-                      </IconButton>
-                    ),
-                  }}
-                />
-
-                {/* Event Type Filter */}
-                <FormControl fullWidth>
-                  <InputLabel>Ereignistyp</InputLabel>
-                  <Select
-                    value={filterType}
-                    label="Ereignistyp"
-                    onChange={(e: SelectChangeEvent) => setFilterType(e.target.value as any)}
-                  >
-                    <MenuItem value="all">Alle Ereignisse</MenuItem>
-                    <MenuItem value="historic">Historische Ereignisse</MenuItem>
-                    <MenuItem value="life">Lebensereignisse</MenuItem>
-                  </Select>
-                </FormControl>
-
-                {/* Year Range Filter */}
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Zeitraum: {filterYear[0]} - {filterYear[1]}
-                  </Typography>
-                  <Slider
-                    value={filterYear}
-                    onChange={(_, newValue) => setFilterYear(newValue as [number, number])}
-                    min={yearRange[0]}
-                    max={yearRange[1]}
-                    valueLabelDisplay="auto"
-                    sx={{ mt: 2 }}
-                  />
-                </Box>
-
-                {/* Results Count */}
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {filteredEvents.length} von {events.length} Ereignissen
-                  </Typography>
-                </Box>
-
-                {/* Zoom Controls */}
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Zoom
-                  </Typography>
-                  <Stack direction="row" spacing={1}>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))}
-                    >
-                      <ZoomOut />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.1))}
-                    >
-                      <ZoomIn />
-                    </IconButton>
-                  </Stack>
-                </Box>
-              </Stack>
-            </Paper>
-          </Grid>
-
-          {/* Timeline Content */}
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} md={9}>
-            <Paper sx={{ p: 3 }}>
-              {/* Header */}
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                <Box>
-                  <Typography variant="h5" gutterBottom>
-                    Historische Timeline
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {filteredEvents.length} Ereignisse gefunden
-                  </Typography>
-                </Box>
+    <RequireAuth>
+      <ErrorBoundary fallback={
+        <Container maxWidth="xl" sx={{ mt: 6 }}>
+          <SiteHeader title="Timeline" showOverline={false} />
+          <Alert severity="error" sx={{ my: 4 }}>
+            Fehler beim Laden der Timeline-Daten. Bitte versuchen Sie es später erneut.
+            <Button color="inherit" size="small" onClick={() => window.location.reload()} sx={{ ml: 2 }}>
+              Erneut versuchen
+            </Button>
+          </Alert>
+        </Container>
+      }>
+        <Container maxWidth="xl" sx={{ mt: 6 }}>
+          <SiteHeader title="Timeline" showOverline={false} />
+          
+          <Grid container spacing={3}>
+            {/* Filters Sidebar */}
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+            <Grid item xs={12} md={3}>
+              <Paper sx={{ p: 3, position: 'sticky', top: 24 }}>
+                <Typography variant="h6" gutterBottom>
+                  <FilterList sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Filter
+                </Typography>
                 
-                <Tabs 
-                  value={viewMode} 
-                  onChange={(_, newValue) => setViewMode(newValue)}
-                >
-                  <Tab 
-                    value="timeline" 
-                    icon={<TimelineIcon />} 
-                    label="Timeline"
-                    iconPosition="start"
-                  />
-                  <Tab 
-                    value="list" 
-                    icon={<Event />} 
-                    label="Liste"
-                    iconPosition="start"
-                  />
-                </Tabs>
-              </Stack>
-
-              {filteredEvents.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                  <TimelineIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    Keine Ereignisse gefunden
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Versuchen Sie andere Suchkriterien oder Filter.
-                  </Typography>
-                </Box>
-              ) : viewMode === 'timeline' ? (
-                <Box sx={{ position: 'relative', transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}>
-                  {/* Timeline line */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      left: '50%',
-                      top: 0,
-                      bottom: 0,
-                      width: 3,
-                      bgcolor: 'primary.main',
-                      transform: 'translateX(-50%)',
-                      zIndex: 1,
+                <Stack spacing={3}>
+                  {/* Search */}
+                  <TextField
+                    fullWidth
+                    label="Suche"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                      endAdornment: searchTerm && (
+                        <IconButton size="small" onClick={() => setSearchTerm('')}>
+                          <Clear />
+                        </IconButton>
+                      ),
                     }}
                   />
-                  
-                  <Stack spacing={4}>
-                    {sortedEvents.map((event, index) => (
-                      <Box
-                        key={`${event.type}-${event.id}`}
-                        sx={{
-                          position: 'relative',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: index % 2 === 0 ? 'flex-start' : 'flex-end',
-                          width: '100%',
-                        }}
+
+                  {/* Event Type Filter */}
+                  <FormControl fullWidth>
+                    <InputLabel>Ereignistyp</InputLabel>
+                    <Select
+                      value={filterType}
+                      label="Ereignistyp"
+                      onChange={(e: SelectChangeEvent) => setFilterType(e.target.value as any)}
+                    >
+                      <MenuItem value="all">Alle Ereignisse</MenuItem>
+                      <MenuItem value="historic">Historische Ereignisse</MenuItem>
+                      <MenuItem value="life">Lebensereignisse</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  {/* Year Range Filter */}
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Zeitraum: {filterYear[0]} - {filterYear[1]}
+                    </Typography>
+                    <Slider
+                      value={filterYear}
+                      onChange={(_, newValue) => setFilterYear(newValue as [number, number])}
+                      min={yearRange[0]}
+                      max={yearRange[1]}
+                      valueLabelDisplay="auto"
+                      sx={{ mt: 2 }}
+                    />
+                  </Box>
+
+                  {/* Results Count */}
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {filteredEvents.length} von {events.length} Ereignissen
+                    </Typography>
+                  </Box>
+
+                  {/* Zoom Controls */}
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Zoom
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))}
                       >
-                        {/* Timeline dot */}
+                        <ZoomOut />
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.1))}
+                      >
+                        <ZoomIn />
+                      </IconButton>
+                    </Stack>
+                  </Box>
+                </Stack>
+              </Paper>
+            </Grid>
+
+            {/* Timeline Content */}
+            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+            <Grid item xs={12} md={9}>
+              <Paper sx={{ p: 3 }}>
+                {/* Header */}
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+                  <Box>
+                    <Typography variant="h5" gutterBottom>
+                      Historische Timeline
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {filteredEvents.length} Ereignisse gefunden
+                    </Typography>
+                  </Box>
+                  
+                  <Tabs 
+                    value={viewMode} 
+                    onChange={(_, newValue) => setViewMode(newValue)}
+                  >
+                    <Tab 
+                      value="timeline" 
+                      icon={<TimelineIcon />} 
+                      label="Timeline"
+                      iconPosition="start"
+                    />
+                    <Tab 
+                      value="list" 
+                      icon={<Event />} 
+                      label="Liste"
+                      iconPosition="start"
+                    />
+                  </Tabs>
+                </Stack>
+
+                {filteredEvents.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 8 }}>
+                    <TimelineIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                      Keine Ereignisse gefunden
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Versuchen Sie andere Suchkriterien oder Filter.
+                    </Typography>
+                  </Box>
+                ) : viewMode === 'timeline' ? (
+                  <Box sx={{ position: 'relative', transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}>
+                    {/* Timeline line */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: 0,
+                        bottom: 0,
+                        width: 3,
+                        bgcolor: 'primary.main',
+                        transform: 'translateX(-50%)',
+                        zIndex: 1,
+                      }}
+                    />
+                    
+                    <Stack spacing={4}>
+                      {sortedEvents.map((event, index) => (
                         <Box
+                          key={`${event.type}-${event.id}`}
                           sx={{
-                            position: 'absolute',
-                            left: '50%',
-                            width: 20,
-                            height: 20,
-                            borderRadius: '50%',
-                            bgcolor: event.type === 'historic' ? 'primary.main' : 'secondary.main',
-                            border: 3,
-                            borderColor: 'background.paper',
-                            transform: 'translateX(-50%)',
-                            zIndex: 2,
-                          }}
-                        />
-                        
-                        {/* Content */}
-                        <Card
-                          sx={{
-                            width: '45%',
-                            ml: index % 2 === 0 ? 0 : 'auto',
-                            mr: index % 2 === 0 ? 'auto' : 0,
                             position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: index % 2 === 0 ? 'flex-start' : 'flex-end',
+                            width: '100%',
                           }}
                         >
-                          <CardContent>
-                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                              <Box sx={{ flex: 1 }}>
-                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                                  <Chip 
-                                    label={event.type === 'historic' ? 'Historisch' : 'Lebensereignis'}
-                                    size="small"
-                                    color={event.type === 'historic' ? 'primary' : 'secondary'}
-                                    variant="outlined"
-                                  />
-                                  {event.person && (
+                          {/* Timeline dot */}
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              left: '50%',
+                              width: 20,
+                              height: 20,
+                              borderRadius: '50%',
+                              bgcolor: event.type === 'historic' ? 'primary.main' : 'secondary.main',
+                              border: 3,
+                              borderColor: 'background.paper',
+                              transform: 'translateX(-50%)',
+                              zIndex: 2,
+                            }}
+                          />
+                          
+                          {/* Content */}
+                          <Card
+                            sx={{
+                              width: '45%',
+                              ml: index % 2 === 0 ? 0 : 'auto',
+                              mr: index % 2 === 0 ? 'auto' : 0,
+                              position: 'relative',
+                            }}
+                          >
+                            <CardContent>
+                              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                                <Box sx={{ flex: 1 }}>
+                                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                                     <Chip 
-                                      label={`${event.person.first_name || ''} ${event.person.last_name || ''}`}
+                                      label={event.type === 'historic' ? 'Historisch' : 'Lebensereignis'}
                                       size="small"
-                                      icon={<Person />}
+                                      color={event.type === 'historic' ? 'primary' : 'secondary'}
                                       variant="outlined"
                                     />
+                                    {event.person && (
+                                      <Chip 
+                                        label={`${event.person.first_name || ''} ${event.person.last_name || ''}`}
+                                        size="small"
+                                        icon={<Person />}
+                                        variant="outlined"
+                                      />
+                                    )}
+                                  </Stack>
+                                  
+                                  <Typography variant="h6" gutterBottom>
+                                    {event.title}
+                                  </Typography>
+                                  
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                    {formatDate(event.date)}
+                                    {event.end_date && event.end_date !== event.date && (
+                                      ` - ${formatDate(event.end_date)}`
+                                    )}
+                                  </Typography>
+                                  
+                                  {event.location && (
+                                    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 1 }}>
+                                      <LocationOn fontSize="small" color="action" />
+                                      <Typography variant="body2" color="text.secondary">
+                                        {event.location}
+                                      </Typography>
+                                    </Stack>
                                   )}
+                                  
+                                  {event.description && (
+                                    <Typography variant="body2">
+                                      {event.description}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Stack>
+                            </CardContent>
+                          </Card>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+                ) : (
+                  <Stack spacing={2}>
+                    {sortedEvents.map((event) => (
+                      <Card key={`${event.type}-${event.id}`}>
+                        <CardContent>
+                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                            <Box sx={{ flex: 1 }}>
+                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                                <Chip 
+                                  label={event.type === 'historic' ? 'Historisch' : 'Lebensereignis'}
+                                  size="small"
+                                  color={event.type === 'historic' ? 'primary' : 'secondary'}
+                                  variant="outlined"
+                                />
+                                {event.person && (
+                                  <Chip 
+                                    label={`${event.person.first_name || ''} ${event.person.last_name || ''}`}
+                                    size="small"
+                                    icon={<Person />}
+                                    variant="outlined"
+                                  />
+                                )}
+                              </Stack>
+                              
+                              <Typography variant="h6" gutterBottom>
+                                {event.title}
+                              </Typography>
+                              
+                              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                  <CalendarToday fontSize="small" color="action" />
+                                  <Typography variant="body2" color="text.secondary">
+                                    {formatDate(event.date)}
+                                    {event.end_date && event.end_date !== event.date && (
+                                      ` - ${formatDate(event.end_date)}`
+                                    )}
+                                  </Typography>
                                 </Stack>
                                 
-                                <Typography variant="h6" gutterBottom>
-                                  {event.title}
-                                </Typography>
-                                
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                  {formatDate(event.date)}
-                                  {event.end_date && event.end_date !== event.date && (
-                                    ` - ${formatDate(event.end_date)}`
-                                  )}
-                                </Typography>
-                                
                                 {event.location && (
-                                  <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 1 }}>
+                                  <Stack direction="row" spacing={0.5} alignItems="center">
                                     <LocationOn fontSize="small" color="action" />
                                     <Typography variant="body2" color="text.secondary">
                                       {event.location}
                                     </Typography>
                                   </Stack>
                                 )}
-                                
-                                {event.description && (
-                                  <Typography variant="body2">
-                                    {event.description}
-                                  </Typography>
-                                )}
-                              </Box>
-                            </Stack>
-                          </CardContent>
-                        </Card>
-                      </Box>
-                    ))}
-                  </Stack>
-                </Box>
-              ) : (
-                <Stack spacing={2}>
-                  {sortedEvents.map((event) => (
-                    <Card key={`${event.type}-${event.id}`}>
-                      <CardContent>
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                          <Box sx={{ flex: 1 }}>
-                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                              <Chip 
-                                label={event.type === 'historic' ? 'Historisch' : 'Lebensereignis'}
-                                size="small"
-                                color={event.type === 'historic' ? 'primary' : 'secondary'}
-                                variant="outlined"
-                              />
-                              {event.person && (
-                                <Chip 
-                                  label={`${event.person.first_name || ''} ${event.person.last_name || ''}`}
-                                  size="small"
-                                  icon={<Person />}
-                                  variant="outlined"
-                                />
-                              )}
-                            </Stack>
-                            
-                            <Typography variant="h6" gutterBottom>
-                              {event.title}
-                            </Typography>
-                            
-                            <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                              <Stack direction="row" spacing={0.5} alignItems="center">
-                                <CalendarToday fontSize="small" color="action" />
-                                <Typography variant="body2" color="text.secondary">
-                                  {formatDate(event.date)}
-                                  {event.end_date && event.end_date !== event.date && (
-                                    ` - ${formatDate(event.end_date)}`
-                                  )}
-                                </Typography>
                               </Stack>
                               
-                              {event.location && (
-                                <Stack direction="row" spacing={0.5} alignItems="center">
-                                  <LocationOn fontSize="small" color="action" />
-                                  <Typography variant="body2" color="text.secondary">
-                                    {event.location}
-                                  </Typography>
-                                </Stack>
+                              {event.description && (
+                                <Typography variant="body2" color="text.secondary">
+                                  {event.description}
+                                </Typography>
                               )}
-                            </Stack>
-                            
-                            {event.description && (
-                              <Typography variant="body2" color="text.secondary">
-                                {event.description}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Stack>
-              )}
-            </Paper>
+                            </Box>
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
+                )}
+              </Paper>
+            </Grid>
           </Grid>
-        </Grid>
 
-      </Container>
-    </ErrorBoundary>
+        </Container>
+      </ErrorBoundary>
+    </RequireAuth>
   );
 } 
