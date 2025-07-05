@@ -6,7 +6,7 @@ A comprehensive web application for managing historical data, including persons,
 
 ## Features
 
-- **User Authentication**: Secure login/register with email confirmation
+- **User Authentication**: Secure login/register with WorkOS AuthKit
 - **Person Management**: Create and manage historical figures with detailed profiles
 - **Event Management**: Track historical events with dates, locations, and descriptions
 - **Relationship System**: Define and visualize relationships between persons
@@ -23,20 +23,19 @@ A comprehensive web application for managing historical data, including persons,
 - **Frontend**: Next.js 15 with App Router, Material-UI v7, TypeScript
 - **Backend**: Next.js API Routes, Prisma ORM
 - **Database**: PostgreSQL 15+
-- **Authentication**: JWT with refresh tokens
-- **Email**: SMTP integration (MailHog for development/staging)
+- **Authentication**: WorkOS AuthKit with hosted UI
 - **Deployment**: Docker Compose with multi-environment support
 
 ### System Components
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Next.js App   │    │   PostgreSQL DB │    │   MailHog       │
-│   (Port 3000)   │◄──►│   (Port 5432)   │    │   (Port 1025)   │
+│   Next.js App   │    │   PostgreSQL DB │    │   WorkOS Auth   │
+│   (Port 3000)   │◄──►│   (Port 5432)   │    │   (Hosted UI)   │
 │                 │    │                 │    │                 │
-│ - API Routes    │    │ - Users         │    │ - SMTP Server   │
-│ - SSR Pages     │    │ - Persons       │    │ - Web UI        │
-│ - Auth System   │    │ - Events        │    │   (Port 8025)   │
+│ - API Routes    │    │ - Users         │    │ - Authentication│
+│ - SSR Pages     │    │ - Persons       │    │ - User Mgmt     │
+│ - Auth System   │    │ - Events        │    │ - SSO           │
 │ - File Uploads  │    │ - Literature    │    │                 │
 └─────────────────┘    │ - Relationships │    └─────────────────┘
                        └─────────────────┘
@@ -49,6 +48,7 @@ A comprehensive web application for managing historical data, including persons,
 - Node.js 18+
 - PostgreSQL 15+
 - Docker & Docker Compose (for deployment)
+- WorkOS account and API credentials
 
 ### Local Development
 
@@ -66,7 +66,7 @@ A comprehensive web application for managing historical data, including persons,
 3. **Set up environment variables**
    ```bash
    cp env.example .env.local
-   # Edit .env.local with your configuration
+   # Edit .env.local with your WorkOS configuration
    ```
 
 4. **Set up the database**
@@ -87,9 +87,45 @@ A comprehensive web application for managing historical data, including persons,
 
 7. **Access the application**
    - App: http://localhost:3000
-   - MailHog (for email testing): http://localhost:8025
+
+## Authentication Setup
+
+### WorkOS Configuration
+
+1. **Create a WorkOS account** at [workos.com](https://workos.com)
+2. **Create a new project** in your WorkOS dashboard
+3. **Set up AuthKit** with the following configuration:
+   - Redirect URI: `http://localhost:3000/api/auth/callback` (development)
+   - Redirect URI: `https://yourdomain.com/api/auth/callback` (production)
+
+### Environment Variables
+
+Required WorkOS environment variables:
+
+```bash
+# WorkOS Configuration
+WORKOS_API_KEY=your-workos-api-key
+WORKOS_CLIENT_ID=your-workos-client-id
+WORKOS_REDIRECT_URI=http://localhost:3000/api/auth/callback
+WORKOS_COOKIE_PASSWORD=your-workos-cookie-password
+
+# AuthKit Configuration
+AUTHKIT_REDIRECT_URI=http://localhost:3000/api/auth/callback
+```
 
 ## Deployment
+
+### Vercel Deployment (Recommended)
+
+1. **Connect your repository** to Vercel
+2. **Set environment variables** in Vercel dashboard:
+   - `DATABASE_URL`
+   - `WORKOS_API_KEY`
+   - `WORKOS_CLIENT_ID`
+   - `WORKOS_REDIRECT_URI`
+   - `WORKOS_COOKIE_PASSWORD`
+   - `AUTHKIT_REDIRECT_URI`
+3. **Deploy** - Vercel will automatically build and deploy your app
 
 ### Docker Deployment
 
@@ -101,7 +137,7 @@ The application supports multiple environments (development, staging, production
    ```bash
    cp env.staging.example .env.staging
    cp env.production.example .env.production
-   # Edit the files with your configuration
+   # Edit the files with your WorkOS configuration
    ```
 
 2. **Deploy staging environment**
@@ -144,17 +180,17 @@ The application supports multiple environments (development, staging, production
 
 ### Environment Ports
 
-| Environment | App Port | PostgreSQL Port | MailHog SMTP | MailHog UI |
-|-------------|----------|-----------------|--------------|------------|
-| Development | 3000     | 5432            | 1025         | 8025       |
-| Staging     | 3001     | 5433            | 1026         | 8026       |
-| Production  | 3000     | 5432            | 1025         | 8025       |
+| Environment | App Port | PostgreSQL Port |
+|-------------|----------|-----------------|
+| Development | 3000     | 5432            |
+| Staging     | 3001     | 5433            |
+| Production  | 3000     | 5432            |
 
 ### Production Considerations
 
-1. **SSL/TLS**: Use Nginx reverse proxy with SSL certificates
+1. **SSL/TLS**: Use HTTPS for all production deployments
 2. **Database**: Consider using managed PostgreSQL service (Neon, Supabase, AWS RDS)
-3. **Email**: Use production SMTP service (SendGrid, AWS SES, etc.)
+3. **WorkOS**: Configure production redirect URIs in WorkOS dashboard
 4. **Backups**: Regular database backups and monitoring
 5. **Monitoring**: Set up logging and monitoring (ELK stack, Prometheus)
 
@@ -190,7 +226,7 @@ jobs:
 
 ### Core Tables
 
-- **users**: User accounts and authentication
+- **users**: User accounts and authentication (linked to WorkOS)
 - **persons**: Historical figures and their details
 - **events**: Historical events with dates and locations
 - **life_events**: Personal events linked to persons
@@ -214,12 +250,10 @@ events (1) ── (many) life_events
 
 ### Authentication Endpoints
 
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/forgot-password` - Password reset request
-- `POST /api/auth/reset-password` - Password reset
-- `GET /api/auth/status` - Authentication status
+- `GET /api/auth/login` - Redirect to WorkOS hosted UI for login
+- `GET /api/auth/register` - Redirect to WorkOS hosted UI for registration
+- `GET /api/auth/logout` - User logout
+- `GET /api/auth/callback` - WorkOS authentication callback
 
 ### Data Endpoints
 

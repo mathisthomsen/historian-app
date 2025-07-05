@@ -23,17 +23,6 @@ services:
       timeout: 20s
       retries: 10
 
-  # SMTP Server (MailHog for development/staging)
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: historian_mailhog
-    restart: unless-stopped
-    ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Web UI
-    networks:
-      - historian_network
-
   # Next.js Application
   app:
     build:
@@ -44,21 +33,16 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV}
       - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - SMTP_FROM=${SMTP_FROM}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - WORKOS_API_KEY=${WORKOS_API_KEY}
+      - WORKOS_CLIENT_ID=${WORKOS_CLIENT_ID}
+      - WORKOS_REDIRECT_URI=${WORKOS_REDIRECT_URI}
+      - WORKOS_COOKIE_PASSWORD=${WORKOS_COOKIE_PASSWORD}
+      - AUTHKIT_REDIRECT_URI=${AUTHKIT_REDIRECT_URI}
     ports:
       - "3000:3000"
     depends_on:
       mysql:
         condition: service_healthy
-      mailhog:
-        condition: service_started
     networks:
       - historian_network
     volumes:
