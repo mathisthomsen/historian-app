@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Box,
@@ -84,7 +84,7 @@ export default function EventDetailPage({ params }: { params: Params }) {
   }, [params]);
 
   // Move fetchEventData to top-level scope so it can be called from anywhere
-  const fetchEventData = async () => {
+  const fetchEventData = useCallback(async () => {
     setLoading(true);
     try {
       if (!resolvedParams) throw new Error('No resolvedParams');
@@ -104,12 +104,12 @@ export default function EventDetailPage({ params }: { params: Params }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolvedParams]);
 
   useEffect(() => {
     if (!resolvedParams) return;
     fetchEventData();
-  }, [resolvedParams]);
+  }, [resolvedParams, fetchEventData]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '—';

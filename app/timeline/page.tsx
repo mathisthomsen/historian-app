@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Box,
@@ -71,11 +71,7 @@ export default function TimelinePage() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTimelineData();
-  }, []);
-
-  const fetchTimelineData = async () => {
+  const fetchTimelineData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -109,7 +105,11 @@ export default function TimelinePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTimelineData();
+  }, [fetchTimelineData]);
 
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,15 +143,20 @@ export default function TimelinePage() {
 
   useEffect(() => {
     // Sync filterYear with yearRange if out of bounds or on initial load
+    const minYear = yearRange[0];
+    const maxYear = yearRange[1];
+    const currentMinYear = filterYear[0];
+    const currentMaxYear = filterYear[1];
+    
     if (
-      filterYear[0] < yearRange[0] ||
-      filterYear[1] > yearRange[1] ||
-      (filterYear[0] === 1000 && yearRange[0] !== 1000) ||
-      (filterYear[1] === 2024 && yearRange[1] !== 2024)
+      currentMinYear < minYear ||
+      currentMaxYear > maxYear ||
+      (currentMinYear === 1000 && minYear !== 1000) ||
+      (currentMaxYear === 2024 && maxYear !== 2024)
     ) {
-      setFilterYear([yearRange[0], yearRange[1]]);
+      setFilterYear([minYear, maxYear]);
     }
-  }, [yearRange[0], yearRange[1]]);
+  }, [yearRange, filterYear]);
 
   if (loading) {
     return (

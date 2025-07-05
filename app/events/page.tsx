@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
 import { Box, Typography, Container, Button, Stack, Skeleton } from '@mui/material';
 import { IconButton, Menu, MenuItem } from '@mui/material';
@@ -48,7 +48,7 @@ export default function EventsPage() {
   const [sortModel, setSortModel] = useState<any[]>([]);
   const [filterModel, setFilterModel] = useState<any>({ items: [] });
 
-  const fetchEvents = async (
+  const fetchEvents = useCallback(async (
     pageNum = page,
     limitNum = pageSize,
     sort = sortModel,
@@ -76,12 +76,12 @@ export default function EventsPage() {
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [page, pageSize, sortModel, filterModel]);
 
   useEffect(() => {
     console.log('[useEffect] Fetching events with', { page, pageSize, sortModel, filterModel });
     fetchEvents();
-  }, [page, pageSize, sortModel, filterModel]);
+  }, [fetchEvents]);
 
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

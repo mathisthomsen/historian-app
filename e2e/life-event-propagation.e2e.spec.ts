@@ -634,7 +634,7 @@ test.describe('Life Events Propagation E2E', () => {
     // This test would verify that when a historic event is deleted,
     // any life events linked to it are updated to remove the link
     // Implementation depends on the specific cascade behavior
-    test.skip('Historic event cascade not yet implemented');
+    test.skip('Historic event cascade not yet implemented', () => {});
   });
 
   // ========================================
@@ -992,7 +992,7 @@ test.describe('Life Events Propagation E2E', () => {
   test('Handles network failures gracefully', async ({ page }) => {
     // This test would simulate network failures and verify the app handles them gracefully
     // Implementation would depend on the specific error handling mechanisms
-    test.skip('Network failure simulation not yet implemented');
+    test.skip('Network failure simulation not yet implemented', () => {});
   });
 
   test('Handles API error gracefully on life events fetch', async ({ page }) => {

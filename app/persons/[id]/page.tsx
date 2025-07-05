@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import LifeEventForm from '../../components/LifeEventForm';
 import RelationshipForm from '../../components/RelationshipForm';
 import RelationshipNetwork from '../../components/RelationshipNetwork';
@@ -126,7 +126,7 @@ export default function PersonDetailPage() {
   const [activeTab, setActiveTab] = useState(0);
 
   // Fetch person data
-  const fetchPersonData = async () => {
+  const fetchPersonData = useCallback(async () => {
     try {
       const resPerson = await fetch(`/api/persons/${personId}`);
       if (resPerson.ok) {
@@ -140,31 +140,9 @@ export default function PersonDetailPage() {
       console.error('Error fetching person data:', error);
       setPerson(null);
     }
-  };
-
-  useEffect(() => {
-    async function fetchAll() {
-      setLoading(true);
-      try {
-        await Promise.all([
-          fetchPersonData(),
-          fetchLifeEvents(),
-          fetchRelationships(),
-          fetchAllPersons()
-        ]);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (personId && !isNaN(personId)) {
-      fetchAll();
-    }
   }, [personId]);
 
-  const fetchLifeEvents = async () => {
+  const fetchLifeEvents = useCallback(async () => {
     try {
       const res = await fetch(`/api/life-events?personId=${personId}`);
       if (!res.ok) {
@@ -188,9 +166,9 @@ export default function PersonDetailPage() {
       console.error('Error fetching life events:', error);
       setLifeEvents([]);
     }
-  };
+  }, [personId]);
 
-  const fetchRelationships = async () => {
+  const fetchRelationships = useCallback(async () => {
     try {
       const res = await fetch(`/api/person-relations?personId=${personId}`);
       if (res.ok) {
@@ -204,9 +182,9 @@ export default function PersonDetailPage() {
       console.error('Error fetching relationships:', error);
       setRelationships([]);
     }
-  };
+  }, [personId]);
 
-  const fetchAllPersons = async () => {
+  const fetchAllPersons = useCallback(async () => {
     try {
       const res = await fetch('/api/persons');
       if (res.ok) {
@@ -220,7 +198,29 @@ export default function PersonDetailPage() {
       console.error('Error fetching all persons:', error);
       setAllPersons([]);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    async function fetchAll() {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchPersonData(),
+          fetchLifeEvents(),
+          fetchRelationships(),
+          fetchAllPersons()
+        ]);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (personId && !isNaN(personId)) {
+      fetchAll();
+    }
+  }, [personId, fetchPersonData, fetchLifeEvents, fetchRelationships, fetchAllPersons]);
 
   const SnackBarAction = () => {
     if (activeTab === 0) {
