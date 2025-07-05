@@ -125,23 +125,24 @@ export default function PersonDetailPage() {
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
   const [activeTab, setActiveTab] = useState(0);
 
-  useEffect(() => {
-    async function fetchPersonData() {
-      try {
-        const resPerson = await fetch(`/api/persons/${personId}`);
-        if (resPerson.ok) {
-          const personData = await resPerson.json();
-          setPerson(personData);
-        } else {
-          console.error('Failed to fetch person data');
-          setPerson(null);
-        }
-      } catch (error) {
-        console.error('Error fetching person data:', error);
+  // Fetch person data
+  const fetchPersonData = async () => {
+    try {
+      const resPerson = await fetch(`/api/persons/${personId}`);
+      if (resPerson.ok) {
+        const personData = await resPerson.json();
+        setPerson(personData);
+      } else {
+        console.error('Failed to fetch person data');
         setPerson(null);
       }
+    } catch (error) {
+      console.error('Error fetching person data:', error);
+      setPerson(null);
     }
+  };
 
+  useEffect(() => {
     async function fetchAll() {
       setLoading(true);
       try {
@@ -355,10 +356,6 @@ export default function PersonDetailPage() {
         </Stack>
         <Paper sx={{ mt: 4, p: 3, maxWidth: 600 }}>
           <Grid container spacing={2}>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={4}><Skeleton width={80} /></Grid>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={8}><Skeleton width={180} /></Grid>
             {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
             <Grid item xs={4}><Skeleton width={80} /></Grid>
             {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
@@ -852,7 +849,6 @@ export default function PersonDetailPage() {
         }}
         onSubmit={handleRelationshipSubmit}
         currentPerson={person!}
-        allPersons={allPersons}
         existingRelationship={editingRelationship ? {
           id: editingRelationship.id,
           fromPersonId: editingRelationship.isOutgoing ? person!.id : editingRelationship.otherPerson.id,

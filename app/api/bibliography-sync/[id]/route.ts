@@ -5,13 +5,14 @@ import { BibliographySyncManager } from '../../../lib/bibliography-sync';
 // PUT /api/bibliography-sync/[id] - Update sync configuration
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const workosUser = await requireUser();
   const user = await getOrCreateLocalUser(workosUser);
 
   try {
-    const id = parseInt(params.id);
+    const resolvedParams = await params;
+    const id = parseInt(resolvedParams.id);
     const body = await request.json();
     const config = await BibliographySyncManager.updateSyncConfig(id, user.id, body);
     return NextResponse.json(config);
@@ -24,13 +25,14 @@ export async function PUT(
 // DELETE /api/bibliography-sync/[id] - Delete sync configuration
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const workosUser = await requireUser();
   const user = await getOrCreateLocalUser(workosUser);
 
   try {
-    const id = parseInt(params.id);
+    const resolvedParams = await params;
+    const id = parseInt(resolvedParams.id);
     await BibliographySyncManager.deleteSyncConfig(id, user.id);
     return NextResponse.json({ message: 'Sync configuration deleted' });
   } catch (error) {

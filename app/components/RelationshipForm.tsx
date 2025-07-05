@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -133,38 +133,49 @@ export default function RelationshipForm({
   const [personTotal, setPersonTotal] = useState(0);
   const autocompleteRef = useRef<HTMLDivElement>(null);
 
-  // Fetch persons from API
-  const fetchPersons = async (search = '', page = 1, append = false) => {
+  const fetchPersons = useCallback(async (search = '', page = 1, append = false) => {
     setPersonLoading(true);
     try {
-      const res = await fetch(`/api/persons?search=${encodeURIComponent(search)}&page=${page}&limit=20`);
-      const data = await res.json();
-      const persons = Array.isArray(data.persons) ? data.persons : [];
-      setPersonTotal(data.pagination?.total || 0);
-      setPersonHasMore((data.pagination?.page || 1) < (data.pagination?.totalPages || 1));
-      // Filter out current person
-      const filtered = persons.filter((p: Person) => p.id !== currentPerson.id);
-      setPersonOptions(prev => append ? [...prev, ...filtered] : filtered);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20'
+      });
+      
+      if (search.trim()) {
+        params.append('search', search.trim());
+      }
+      
+      const response = await fetch(`/api/persons?${params}`);
+      const data = await response.json();
+      
+      if (append) {
+        setPersonOptions(prev => [...prev, ...data.persons]);
+      } else {
+        setPersonOptions(data.persons);
+      }
+      
+      setPersonHasMore(data.persons.length === 20);
+    } catch (error) {
+      console.error('Error fetching persons:', error);
     } finally {
       setPersonLoading(false);
     }
-  };
+  }, []);
 
-  // Initial load and reset on open/search
+  // Load persons when dialog opens
   useEffect(() => {
     if (open) {
       setPersonPage(1);
       fetchPersons(personSearch, 1, false);
     }
-  }, [open, personSearch, currentPerson.id]);
+  }, [open, personSearch, currentPerson.id, fetchPersons]);
 
   // Load more on page change
   useEffect(() => {
     if (personPage > 1) {
       fetchPersons(personSearch, personPage, true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [personPage]);
+  }, [personPage, personSearch, fetchPersons]);
 
   // Infinite scroll handler
   const handleListboxScroll = (event: React.SyntheticEvent) => {

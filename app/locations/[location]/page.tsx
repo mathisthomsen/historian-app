@@ -84,7 +84,9 @@ export default function LocationDetailPage({ params }: { params: Params }) {
       setError(null);
       setLoading(true);
       try {
-        const decodedLocation = decodeURIComponent(resolvedParams.location);
+        const params = await resolvedParams;
+        if (!params) return;
+        const decodedLocation = decodeURIComponent(params.location);
         const [eventsRes, lifeEventsRes] = await Promise.all([
           fetch(`/api/events?location=${encodeURIComponent(decodedLocation)}`),
           fetch(`/api/life-events?location=${encodeURIComponent(decodedLocation)}`)
