@@ -11,18 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     
     services:
-      mysql:
-        image: mysql:8.0
+      postgres:
+        image: postgres:15
         env:
-          MYSQL_ROOT_PASSWORD: test_password
-          MYSQL_DATABASE: test_db
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
         options: >-
-          --health-cmd "mysqladmin ping"
+          --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 3306:3306
+          - 5432:5432
 
     steps:
       - uses: actions/checkout@v4
@@ -39,33 +40,33 @@ jobs:
       - name: Setup environment
         run: |
           cp env.example .env.test
-          echo "DATABASE_URL=mysql://root:test_password@localhost:3306/test_db" >> .env.test
-          echo "DATABASE_URL_UNPOOLED=mysql://root:test_password@localhost:3306/test_db" >> .env.test
+          echo "DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db" >> .env.test
+          echo "DATABASE_URL_UNPOOLED=postgresql://test_user:test_password@localhost:5432/test_db" >> .env.test
           echo "JWT_SECRET=test_secret" >> .env.test
           echo "NEXTAUTH_SECRET=test_secret" >> .env.test
       
       - name: Generate Prisma client
         env:
-          DATABASE_URL: mysql://root:test_password@localhost:3306/test_db
-          DATABASE_URL_UNPOOLED: mysql://root:test_password@localhost:3306/test_db
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
         run: npx prisma generate
       
       - name: Run database migrations
         env:
-          DATABASE_URL: mysql://root:test_password@localhost:3306/test_db
-          DATABASE_URL_UNPOOLED: mysql://root:test_password@localhost:3306/test_db
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
         run: npx prisma db push
       
       - name: Run tests
         env:
-          DATABASE_URL: mysql://root:test_password@localhost:3306/test_db
-          DATABASE_URL_UNPOOLED: mysql://root:test_password@localhost:3306/test_db
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
         run: npm test
       
       - name: Build application
         env:
-          DATABASE_URL: mysql://root:test_password@localhost:3306/test_db
-          DATABASE_URL_UNPOOLED: mysql://root:test_password@localhost:3306/test_db
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
         run: npm run build
 
   deploy-staging:
