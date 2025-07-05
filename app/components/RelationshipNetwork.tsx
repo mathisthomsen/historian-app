@@ -394,7 +394,7 @@ export default function RelationshipNetwork({
                           color="text.secondary" 
                           sx={{ mt: 1, fontStyle: 'italic' }}
                         >
-                          "{relationship.notes}"
+                          &ldquo;{relationship.notes}&rdquo;
                         </Typography>
                       )}
                     </CardContent>

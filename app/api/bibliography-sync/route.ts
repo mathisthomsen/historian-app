@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '../../lib/api-helpers';
+import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
 import { BibliographySyncManager } from '../../lib/bibliography-sync';
 
 // GET /api/bibliography-sync - Get all sync configurations for user
 export async function GET(request: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(request);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const workosUser = await requireUser();
+  const user = await getOrCreateLocalUser(workosUser);
 
   try {
     const configs = await BibliographySyncManager.getSyncConfigs(user.id);
@@ -21,11 +18,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/bibliography-sync - Create new sync configuration
 export async function POST(request: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(request);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const workosUser = await requireUser();
+  const user = await getOrCreateLocalUser(workosUser);
 
   try {
     const body = await request.json();

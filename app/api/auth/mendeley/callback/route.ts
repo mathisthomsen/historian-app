@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '../../../../lib/api-helpers';
+import { requireUser, getOrCreateLocalUser } from '../../../../lib/requireUser';
 import prisma from '../../../../libs/prisma';
 
 // Mendeley OAuth configuration
@@ -9,11 +9,8 @@ const MENDELEY_REDIRECT_URI = process.env.MENDELEY_REDIRECT_URI || 'http://local
 
 // GET /api/auth/mendeley/callback - Handle OAuth callback
 export async function GET(request: NextRequest) {
-  const { user, response } = await getAuthenticatedUser(request);
-
-  if (!user) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
-  }
+  const workosUser = await requireUser();
+  const user = await getOrCreateLocalUser(workosUser);
 
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
