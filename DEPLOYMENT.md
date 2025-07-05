@@ -22,7 +22,8 @@ git push origin main
 Add these in Vercel dashboard → Project Settings → Environment Variables:
 
 ```
-DATABASE_URL=your_postgresql_connection_string
+DATABASE_URL=your_neon_pooled_connection_string
+DATABASE_URL_UNPOOLED=your_neon_unpooled_connection_string
 WORKOS_API_KEY=your_workos_api_key
 WORKOS_CLIENT_ID=your_workos_client_id
 WORKOS_REDIRECT_URI=https://your-domain.vercel.app/api/auth/callback

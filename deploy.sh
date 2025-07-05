@@ -227,7 +227,7 @@ main() {
     echo "✅ Build successful!"
 
     echo "🔍 Checking environment variables..."
-    required_vars=("DATABASE_URL" "WORKOS_API_KEY" "WORKOS_CLIENT_ID" "WORKOS_REDIRECT_URI" "WORKOS_COOKIE_PASSWORD" "AUTHKIT_REDIRECT_URI")
+    required_vars=("DATABASE_URL" "DATABASE_URL_UNPOOLED" "WORKOS_API_KEY" "WORKOS_CLIENT_ID" "WORKOS_REDIRECT_URI" "WORKOS_COOKIE_PASSWORD" "AUTHKIT_REDIRECT_URI")
     missing_vars=()
 
     for var in "${required_vars[@]}"; do
