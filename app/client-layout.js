@@ -47,27 +47,19 @@ import LoadingBar from './components/LoadingBar';
 import { createCustomTheme } from './lib/theme';
 import { useAuth } from '@workos-inc/authkit-nextjs/components';
 
-// Hook to detect scroll direction
-function useScrollDirection() {
-  const [scrollDirection, setScrollDirection] = useState('up');
-  const [prevScrollY, setPrevScrollY] = useState(0);
+// Hide the app bar when scrolling down and show it when scrolling up (like a sticky header)
+// https://mui.com/material-ui/react-app-bar/#sticky-app-bar
+// https://mui.com/material-ui/react-app-bar/#hide-on-scroll
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > prevScrollY) {
-        setScrollDirection('down');
-      } else {
-        setScrollDirection('up');
-      }
-      setPrevScrollY(currentScrollY);
-    };
+function HideOnScroll(props) {
+  const { children } = props;
+  const trigger = useScrollTrigger();
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [prevScrollY]);
-
-  return scrollDirection;
+  return (
+    <Slide appear={false} direction="down" in={!trigger}>
+      {children}
+    </Slide>
+  );
 }
 
 export default function RootLayout({ children }) {
@@ -76,7 +68,6 @@ export default function RootLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const scrollDirection = useScrollDirection();
 
   // AuthKit user/session
   const { user, loading } = useAuth();
@@ -162,16 +153,15 @@ export default function RootLayout({ children }) {
   const currentNavItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
   const currentPath = pathname;
 
+  
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Slide appear={false} direction="down" in={scrollDirection === 'up'}>
+      <HideOnScroll>
         <AppBar 
           position="fixed" 
           sx={{ 
             zIndex: (theme) => theme.zIndex.drawer + 1,
-            transition: 'transform 0.3s ease-in-out',
-            transform: scrollDirection === 'down' ? 'translateY(-100%)' : 'translateY(0)',
           }}
         >
           <Toolbar>
@@ -259,7 +249,7 @@ export default function RootLayout({ children }) {
             )}
           </Toolbar>
         </AppBar>
-      </Slide>
+      </HideOnScroll>
       <LoadingBar />
       <Drawer
         anchor="left"

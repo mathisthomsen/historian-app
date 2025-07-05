@@ -62,7 +62,7 @@ export function createCustomTheme(mode: 'light' | 'dark') {
       MuiPaper: {
         styleOverrides: {
           root: {
-            borderRadius: 16,
+            borderRadius: 0,
             boxShadow: isDark
               ? '0 2px 8px 0 rgba(30,41,59,0.7)'
               : '0 2px 8px 0 rgba(100,116,139,0.08)',
