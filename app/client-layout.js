@@ -189,13 +189,7 @@ export default function RootLayout({ children }) {
               Historian App
             </Typography>
             {/* Staging indicator */}
-            {typeof window !== 'undefined' && (
-              (window.location.hostname.includes('vercel.app') && 
-               window.location.hostname.includes('git-')) ||
-              (window.location.hostname.includes('vercel.app') && 
-               !window.location.hostname.includes('your-app') &&
-               window.location.hostname !== 'historian-app-phi.vercel.app')
-            ) && (
+            {process.env.NEXT_PUBLIC_IS_STAGING === 'true' && (
               <Chip
                 label="STAGING"
                 size="small"
