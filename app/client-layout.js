@@ -23,7 +23,8 @@ import {
   Button,
   Slide,
   useScrollTrigger,
-  Stack
+  Stack,
+  Chip
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -176,6 +177,27 @@ export default function RootLayout({ children }) {
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               Historian App
             </Typography>
+            {/* Staging indicator */}
+            {typeof window !== 'undefined' && (
+              window.location.hostname.includes('vercel.app') && 
+              !window.location.hostname.includes('your-app') && 
+              window.location.hostname.includes('git-')
+            ) && (
+              <Chip
+                label="STAGING"
+                size="small"
+                color="warning"
+                sx={{
+                  mr: 2,
+                  fontWeight: 'bold',
+                  backgroundColor: '#ff9800',
+                  color: 'white',
+                  '& .MuiChip-label': {
+                    fontWeight: 'bold',
+                  },
+                }}
+              />
+            )}
             <IconButton color="inherit" onClick={toggleDarkMode}>
               {darkMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
