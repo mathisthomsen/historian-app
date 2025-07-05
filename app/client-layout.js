@@ -146,6 +146,17 @@ export default function RootLayout({ children }) {
     return createCustomTheme('light');
   }, [darkMode]);
 
+  // Debug staging detection
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('Hostname:', window.location.hostname);
+      console.log('Is Vercel app:', window.location.hostname.includes('vercel.app'));
+      console.log('Contains git-:', window.location.hostname.includes('git-'));
+      console.log('Is not your-app:', !window.location.hostname.includes('your-app'));
+      console.log('Is not main domain:', window.location.hostname !== 'historian-app-phi.vercel.app');
+    }
+  }, []);
+
   if (darkMode === null || loading) return null;
 
   const currentNavItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
@@ -179,9 +190,11 @@ export default function RootLayout({ children }) {
             </Typography>
             {/* Staging indicator */}
             {typeof window !== 'undefined' && (
-              window.location.hostname.includes('vercel.app') && 
-              !window.location.hostname.includes('your-app') && 
-              window.location.hostname.includes('git-')
+              (window.location.hostname.includes('vercel.app') && 
+               window.location.hostname.includes('git-')) ||
+              (window.location.hostname.includes('vercel.app') && 
+               !window.location.hostname.includes('your-app') &&
+               window.location.hostname !== 'historian-app-phi.vercel.app')
             ) && (
               <Chip
                 label="STAGING"
