@@ -6,33 +6,33 @@ export function createCustomTheme(mode: 'light' | 'dark') {
     palette: {
       mode,
       primary: {
-        main: isDark ? '#26a69a' : '#00796b',
-        contrastText: isDark ? '#0f172a' : '#fff',
+        main: isDark ? '#80e5dd' : '#009688', // frisches, kühles Cyan
+        contrastText: isDark ? '#0f172a' : '#ffffff',
       },
       secondary: {
-        main: isDark ? '#f8bbd0' : '#f06292',
-        contrastText: isDark ? '#0f172a' : '#fff',
+        main: isDark ? '##B4CDE8' : '#1f2c4c', // dunkles marineblau
+        contrastText: isDark ? '#f1f5f9' : '#ffffff',
       },
       background: {
-        default: isDark ? '#1a2224' : '#f8fafc',
-        paper: isDark ? '#23292b' : '#fff',
+        default: isDark ? '#121c24' : '#ffffff',
+        paper: isDark ? '#1c2730' : '#ffffff',
       },
       error: {
-        main: isDark ? '#ef9a9a' : '#d32f2f',
+        main: isDark ? '#ef9a9a' : '#c62828', // etwas gedeckter als klassisch rot
       },
       warning: {
-        main: isDark ? '#ffe082' : '#ffa000',
+        main: isDark ? '#ffe082' : '#ef6c00', // warmer Bernstein-Ton, sehr lesbar
       },
       info: {
-        main: isDark ? '#80cbc4' : '#0288d1',
+        main: isDark ? '#8de3e1' : '#00acc1', // cyanischer Akzent, passend zum Primary
       },
       success: {
-        main: isDark ? '#a5d6a7' : '#388e3c',
+        main: isDark ? '#a5d6a7' : '#2e7d32', // leicht kühler Grünton, sehr angenehm
       },
       divider: isDark ? '#37474f' : '#e0e0e0',
       text: {
         primary: isDark ? '#f1f5f9' : '#1e293b',
-        secondary: isDark ? '#b0bec5' : '#64748b',
+        secondary: isDark ? '#9eb2c4' : '#475569',
       },
     },
     typography: {
@@ -72,8 +72,8 @@ export function createCustomTheme(mode: 'light' | 'dark') {
       MuiAppBar: {
         styleOverrides: {
           root: {
-            background: isDark ? '#23292b' : '#00796b',
-            color: isDark ? '#f1f5f9' : '#fff',
+            background: 'palette.primary.main',
+            color: 'palette.primary.contrastText',
           },
         },
       },

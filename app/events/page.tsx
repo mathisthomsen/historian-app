@@ -220,17 +220,21 @@ export default function EventsPage() {
 
   return (
     <RequireAuth>
-      <Container sx={{ mt: 6 }}>
+      <Container maxWidth="xl" sx={{ mt: 6 }}>
         <SiteHeader title="Ereignisse" showOverline={false} />
         <Box sx={{ width: '100%' }}>
           <Stack direction="row" spacing={2} alignItems="right" sx={{ mb: 2, justifyContent: 'flex-end' }}>
+            <Button variant="outlined" color="secondary" onClick={() => router.push('/events/import')}>
+              Ereignisse importieren
+            </Button>
             <Button
               variant="contained"
-              color="secondary"
+              color="primary"
               onClick={handleCreate}
             >
               Neues Event
             </Button>
+            
           </Stack>
           {dataLoading || !Array.isArray(events) ? (
             <Box sx={{ width: '100%', height: 400, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -245,6 +249,9 @@ export default function EventsPage() {
             <DataGrid
               rows={events}
               columns={columns}
+              columnVisibilityModel={{
+                id: false,
+              }}
               loading={dataLoading}
               getRowId={(row) => row.id}
               pagination

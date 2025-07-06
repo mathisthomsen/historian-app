@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
-import { Box, Typography, Container, Button, Drawer, Snackbar, Alert } from '@mui/material';
+import { Box, Typography, Container, Button, Drawer, Snackbar, Alert, Stack } from '@mui/material';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useRouter } from 'next/navigation';
@@ -84,7 +84,6 @@ export default function PersonsPage() {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editPersonId, setEditPersonId] = useState<number | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -142,16 +141,6 @@ export default function PersonsPage() {
       }
     }
     handleMenuClose();
-  };
-
-  const handleBulkdelete = async (ids: number[]) => {
-    if (ids.length === 0) return;
-    try {
-      await api.delete('/api/persons/bulk', ids);
-      fetchPersons(); // Refresh the data
-    } catch (error) {
-      console.error('Fehler beim Bulk-Löschen:', error);
-    }
   };
 
   const columns: GridColDef[] = [
@@ -217,20 +206,28 @@ export default function PersonsPage() {
 
   return (
     <RequireAuth>
-      <Container sx={{ mt: 6 }}>
+      <Container maxWidth="xl" sx={{ mt: 6 }}>
         <SiteHeader title="Personen" showOverline={false} />
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleCreate}
-          >
-            Neue Person
-          </Button>
+          <Stack direction="row" spacing={2}>
+            <Button variant="outlined" color="secondary" onClick={() => router.push('/persons/import')}>
+              Personen importieren
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreate}
+            >
+              Neue Person
+            </Button>
+          </Stack>
         </Box>
         <DataGrid
           rows={rows}
           columns={columns}
+          columnVisibilityModel={{
+            id: false,
+          }}
           loading={dataLoading}
           getRowId={(row) => row.id}
           showToolbar={true}

@@ -24,7 +24,8 @@ import {
   Slide,
   useScrollTrigger,
   Stack,
-  Chip
+  Chip,
+  Image
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -162,22 +163,28 @@ export default function RootLayout({ children }) {
           position="fixed" 
           sx={{ 
             zIndex: (theme) => theme.zIndex.drawer + 1,
+            boxShadow: '8',
+            background: `linear-gradient(170deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
           }}
         >
-          <Toolbar>
-            <IconButton 
-              edge="start" 
-              color="inherit" 
-              onClick={toggleDrawer(!open)}
-              aria-label="Menü öffnen"
-              aria-expanded={open}
-              aria-controls="navigation-drawer"
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Historian App
-            </Typography>
+          <Toolbar sx={{ justifyContent: 'space-between' }}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <IconButton 
+                edge="start" 
+                color="inherit" 
+                onClick={toggleDrawer(!open)}
+                aria-label="Menü öffnen"
+                aria-expanded={open}
+                aria-controls="navigation-drawer"
+              >
+                <MenuIcon />
+              </IconButton>
+            
+              <img src="/logo1.svg" alt="Evidoxa App" height={56} />
+              <Typography variant="h6" component="p" sx={{ flexGrow: 1, fontWeight: 400, color: '#fff', letterSpacing: -1 }}>
+                Evidoxa
+              </Typography>
+            </Stack>
             {/* Staging indicator */}
             {process.env.NEXT_PUBLIC_IS_STAGING === 'true' && (
               <Chip
@@ -195,10 +202,11 @@ export default function RootLayout({ children }) {
                 }}
               />
             )}
-            <IconButton color="inherit" onClick={toggleDarkMode}>
-              {darkMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
-            {isAuthenticated && user ? (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <IconButton color="inherit" onClick={toggleDarkMode}>
+                {darkMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+              {isAuthenticated && user ? (
               <>
                 <IconButton
                   color="inherit"
@@ -247,6 +255,8 @@ export default function RootLayout({ children }) {
                 </Button>
               </Stack>
             )}
+            </Stack>
+           
           </Toolbar>
         </AppBar>
       </HideOnScroll>

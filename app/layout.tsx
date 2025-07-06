@@ -1,13 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import ClientLayout from './client-layout'
 import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components'
-
-const inter = Inter({ subsets: ['latin'] })
+import { GeistSans } from "geist/font/sans";
 
 export const metadata: Metadata = {
-  title: 'Historian App',
+  title: 'Evidoxa',
   description: 'Verwalten Sie Personen, Ereignisse und historische Daten',
 }
 
@@ -18,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de">
-      <body className={inter.className} suppressHydrationWarning={true}>
+      <body className={GeistSans.className} suppressHydrationWarning={true}>
         <AuthKitProvider>
           <ClientLayout>
             {children}
