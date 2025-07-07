@@ -16,11 +16,12 @@ type EventData = {
 type Props = {
   mode: 'create' | 'edit';
   eventId?: number;
+  parentId?: number;
   onClose?: () => void;
   onResult?: (result: { success: boolean; message: string }) => void;
 };
 
-export default function EventForm({ mode, eventId, onClose, onResult }: Props) {
+export default function EventForm({ mode, eventId, parentId, onClose, onResult }: Props) {
   const router = useRouter();
   const [formData, setFormData] = useState<EventData>({
     title: '',
@@ -65,10 +66,13 @@ export default function EventForm({ mode, eventId, onClose, onResult }: Props) {
     const url = mode === 'create' ? '/api/events' : `/api/events/${eventId}`;
 
     try {
+      const body = mode === 'create' && parentId
+        ? { ...formData, parentId }
+        : formData;
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(body),
       });
       setLoading(false);
       if (res.ok) {

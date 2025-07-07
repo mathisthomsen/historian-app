@@ -10,13 +10,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const data = await req.json();
-
+    // Accept parentId for sub-events
     await prisma.$queryRaw`
-      INSERT INTO events ("userId", title, description, date, end_date, location)
+      INSERT INTO events ("userId", title, description, date, end_date, location, "parentId")
       VALUES (${localUser.id}, ${data.title}, ${data.description || null}, 
               ${data.date ? new Date(data.date) : null}, 
               ${data.end_date ? new Date(data.end_date) : null}, 
-              ${data.location || null})
+              ${data.location || null}, ${data.parentId || null})
     `;
 
     return NextResponse.json({ success: true }, { status: 201 });
@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '20');
   const search = searchParams.get('search') || '';
   const location = searchParams.get('location');
+  const parentId = searchParams.get('parentId');
   const skip = all ? undefined : (page - 1) * limit;
   const take = all ? undefined : limit;
   const sortField = searchParams.get('sortField');
@@ -68,6 +69,14 @@ export async function GET(req: NextRequest) {
     if (location) {
       whereClause.location = { equals: location.trim(), mode: 'insensitive' };
     }
+    // Add parentId filter if present
+    if (parentId !== null && parentId !== undefined) {
+      if (parentId === 'null') {
+        whereClause.parentId = null;
+      } else if (!isNaN(Number(parentId))) {
+        whereClause.parentId = Number(parentId);
+      }
+    }
 
     // Build orderBy for sorting
     let orderBy: any[] = [];
@@ -82,6 +91,7 @@ export async function GET(req: NextRequest) {
       events = await prisma.events.findMany({
         where: whereClause,
         orderBy,
+        include: { _count: { select: { subEvents: true } } },
       });
       totalResult = events.length;
     } else {
@@ -91,17 +101,25 @@ export async function GET(req: NextRequest) {
           skip,
           take,
           orderBy,
+          include: { _count: { select: { subEvents: true } } },
         }),
         prisma.events.count({ where: whereClause })
       ]);
     }
+
+    // Add subEventCount to each event
+    const eventsWithCount = events.map((event) => ({
+      ...event,
+      subEventCount: event._count?.subEvents ?? 0,
+      _count: undefined,
+    }));
 
     const totalPages = all ? 1 : Math.ceil(totalResult / limit);
     const hasNextPage = all ? false : page < totalPages;
     const hasPrevPage = all ? false : page > 1;
 
     return NextResponse.json({
-      events,
+      events: eventsWithCount,
       pagination: {
         page: Number(page),
         limit: Number(limit),

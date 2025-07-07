@@ -11,11 +11,15 @@ export async function GET(req: NextRequest, context: { params: Promise<{ eventId
   const id = Number(resolvedParams.eventId);
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
+  // Fetch event and its sub-events
   const event = await prisma.events.findFirst({ 
     where: { 
       id,
       userId: localUser.id 
-    } 
+    },
+    include: {
+      subEvents: true
+    }
   });
 
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
