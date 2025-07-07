@@ -23,6 +23,7 @@ type Event = {
   date: string | null;
   end_date: string | null;
   location: string | null;
+  subEventCount?: number;
 };
 
 type ApiResponse = {
@@ -65,9 +66,8 @@ export default function EventsPage() {
       if (filter && filter.items && filter.items.length > 0 && filter.items[0].value) {
         filterParam = `&filterField=${encodeURIComponent(filter.items[0].field)}&filterValue=${encodeURIComponent(filter.items[0].value)}`;
       }
-      console.log('[fetchEvents] Requesting /api/events', { page: pageNum, limit: limitNum, sort, filter });
-      const data: ApiResponse = await api.get(`/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}`);
-      console.log('[fetchEvents] Response:', data);
+      const parentIdParam = '&parentId=null';
+      const data: ApiResponse = await api.get(`/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${parentIdParam}`);
       setEvents(data.events);
       setRowCount(data.pagination.total);
     } catch (error) {
@@ -186,6 +186,16 @@ export default function EventsPage() {
       minWidth: 120,
       valueGetter: (params) =>
         params ? new Date(params).toLocaleDateString() : '',
+    },
+    {
+      field: 'subEventCount',
+      headerName: 'Unter-Ereignisse',
+      type: 'number',
+      width: 130,
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      renderCell: (params: any) => params.row.subEventCount ?? 0,
     },
     {
       field: 'description',

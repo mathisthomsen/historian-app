@@ -100,10 +100,16 @@ model events {
   life_events life_events[]
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Sub-events: self-referencing relation
+  parentId    Int?          // nullable for top-level events
+  parent      events?       @relation("SubEvents", fields: [parentId], references: [id])
+  subEvents   events[]      @relation("SubEvents")
+
   @@index([date])
   @@index([title])
   @@index([location])
   @@index([userId])
+  @@index([parentId])
 }
 
 model event_types {

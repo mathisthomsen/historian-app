@@ -24,6 +24,8 @@ import {
   Tab,
   Drawer,
   Snackbar,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import {
@@ -36,11 +38,15 @@ import {
   AccessTime,
   Place,
   People,
+  ChevronLeft,
 } from '@mui/icons-material';
 import SiteHeader from '../../components/SiteHeader';
 import type { GridProps } from '@mui/material/Grid';
 import Grid from '@mui/material/Grid';
 import EventForm from '../../components/EventForm';
+import Link from 'next/link';
+import EventIcon from '@mui/icons-material/Event';
+import Badge from '@mui/material/Badge';
 
 interface LifeEvent {
   id: number;
@@ -63,6 +69,8 @@ interface HistoricEvent {
   end_date?: string;
   location?: string;
   description?: string;
+  subEvents?: any[];
+  parentId?: number;
 }
 
 type Params = Promise<{ id: string }>;
@@ -78,6 +86,9 @@ export default function EventDetailPage({ params }: { params: Params }) {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [subEventDrawerOpen, setSubEventDrawerOpen] = useState(false);
+  const [parentEvent, setParentEvent] = useState<{ id: number; title: string } | null>(null);
+  const [eventViewType, setEventViewType] = useState<'life' | 'sub' | 'both'>('both');
 
   useEffect(() => {
     params.then((p) => setResolvedParams(p));
@@ -111,9 +122,43 @@ export default function EventDetailPage({ params }: { params: Params }) {
     fetchEventData();
   }, [resolvedParams, fetchEventData]);
 
+  useEffect(() => {
+    if (event && event.parentId) {
+      fetch(`/api/events/${event.parentId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.id && data.title) setParentEvent({ id: data.id, title: data.title });
+        });
+    } else {
+      setParentEvent(null);
+    }
+  }, [event]);
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('de-DE');
+  };
+
+  // Helper to merge and sort items for timeline/list
+  const getCombinedItems = () => {
+    if (!event) return [];
+    let items: any[] = [];
+    if (eventViewType === 'life' || eventViewType === 'both') {
+      items = items.concat(relatedLifeEvents.map(lifeEvent => ({
+        ...lifeEvent,
+        _type: 'life',
+        date: lifeEvent.start_date,
+      })));
+    }
+    if ((eventViewType === 'sub' || eventViewType === 'both') && Array.isArray(event.subEvents)) {
+      items = items.concat(event.subEvents.map(subEvent => ({
+        ...subEvent,
+        _type: 'sub',
+        date: subEvent.date,
+      })));
+    }
+    // Sort by date ascending
+    return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
   if (!resolvedParams || loading) {
@@ -150,83 +195,36 @@ export default function EventDetailPage({ params }: { params: Params }) {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 6 }}>
-      <SiteHeader
-        title={event.title}
-        showOverline={true}
-        overline="Zurück zur Ereignisübersicht"
-      />
-      
-      {/* Event Info Card */}
-      <Paper sx={{ mt: 4, p: 3, mb: 4 }}>
-        <Grid container spacing={3}>
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} md={8}>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="h4" component="h1" gutterBottom>
-                  {event.title}
-                </Typography>
-                <Chip 
-                  label="Historisches Ereignis" 
-                  color="primary" 
-                  variant="outlined" 
-                  size="small"
-                />
-              </Box>
-              
-              <Grid container spacing={2}>
-                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-                <Grid item xs={12} sm={6}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <CalendarToday color="action" fontSize="small" />
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Datum
-                      </Typography>
-                      <Typography variant="body1">
-                        {formatDate(event.date || '')}
-                        {event.end_date && event.end_date !== event.date && (
-                          ` - ${formatDate(event.end_date)}`
-                        )}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Grid>
-                
-                {event.location && (
-                  // @ts-expect-error MUI Grid type workaround for Next.js 15
-                  <Grid item xs={12} sm={6}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <LocationOn color="action" fontSize="small" />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Ort
-                        </Typography>
-                        <Typography variant="body1">
-                          {event.location}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Grid>
-                )}
-              </Grid>
-              
-              {event.description && (
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Beschreibung
-                  </Typography>
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                    {event.description}
-                  </Typography>
-                </Box>
-              )}
-            </Stack>
-          </Grid>
-          
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} md={4}>
-            <Stack spacing={2} alignItems="flex-end">
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 8 }} sx={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Back button and parent info */}
+      {event.parentId && parentEvent ? (
+        <Box>
+          <Link href={`/events/${parentEvent?.id ?? ''}`} style={{ textDecoration: 'none' }}>
+            <Button size="small" color="primary" variant="text" startIcon={<ChevronLeft />}>
+              Zurück zu: {parentEvent?.title ?? ''}
+            </Button>
+          </Link>
+        </Box>
+      ) : (
+        <Box>
+          <Link href="/events" style={{ textDecoration: 'none' }}>
+            <Button size="small" color="primary" variant="text" startIcon={<ChevronLeft />}>
+              Zurück zur Ereignisübersicht
+            </Button>
+          </Link>
+        </Box>
+      )}
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <Stack spacing={2} alignItems="flex-end" direction="row">
+                <Button
+                  variant="text"
+                  color="secondary"
+                  onClick={() => setSubEventDrawerOpen(true)}
+                >
+                  Unter-Ereignis hinzufügen
+              </Button>
               <Button
                 variant="outlined"
                 startIcon={<Edit />}
@@ -279,16 +277,109 @@ export default function EventDetailPage({ params }: { params: Params }) {
                 </Alert>
               </Snackbar>
               
-              <Box textAlign="center">
-                <Typography variant="h6" color="primary">
-                  {relatedLifeEvents.length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Verwandte Lebensereignisse
-                </Typography>
-              </Box>
             </Stack>
           </Grid>
+        </Grid>
+        
+      
+      {/* Sub-Event Drawer */}
+      <Drawer
+        anchor="right"
+        open={subEventDrawerOpen}
+        onClose={() => setSubEventDrawerOpen(false)}
+      >
+        <Box sx={{ width: 400, p: 2 }}>
+          <EventForm
+            mode="create"
+            parentId={eventId}
+            onClose={() => setSubEventDrawerOpen(false)}
+            onResult={(result) => {
+              if (result.success) {
+                setSubEventDrawerOpen(false);
+                fetchEventData();
+              }
+            }}
+          />
+        </Box>
+      </Drawer>
+      
+      {/* Event Info Card */}
+      <Paper sx={{ mt: 4, p: 3, mb: 4 }}>
+        <Grid container spacing={3} sx={{ justifyContent: 'space-between' }}>
+          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+          <Grid item xs={12} md={8}>
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="h4" component="h1" gutterBottom>
+                  {event.title}
+                </Typography>
+                <Chip 
+                  label="Historisches Ereignis" 
+                  color="primary" 
+                  variant="outlined" 
+                  size="small"
+                />
+                {parentEvent ? (
+                  <Link href={`/events/${parentEvent.id}`} style={{ marginLeft: 8, textDecoration: 'underline' }}>
+                    <Chip 
+                      label={`Teil von: ${parentEvent.title}`}
+                      color="primary"
+                      variant="outlined"
+                      size="small" />
+                  </Link>
+                ) : null}
+              </Box>
+              
+              <Grid container spacing={2}>
+                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
+                <Grid item xs={12} sm={6}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CalendarToday color="action" fontSize="small" />
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Datum
+                      </Typography>
+                      <Typography variant="body1">
+                        {formatDate(event.date || '')}
+                        {event.end_date && event.end_date !== event.date && (
+                          ` - ${formatDate(event.end_date)}`
+                        )}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Grid>
+                
+                {event.location && (
+                  // @ts-expect-error MUI Grid type workaround for Next.js 15
+                  <Grid item xs={12} sm={6}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <LocationOn color="action" fontSize="small" />
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          Ort
+                        </Typography>
+                        <Typography variant="body1">
+                          {event.location}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Grid>
+                )}
+              </Grid>
+              
+              {event.description && (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Beschreibung
+                  </Typography>
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+                    {event.description}
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
+          </Grid>
+                  
         </Grid>
       </Paper>
 
@@ -297,11 +388,9 @@ export default function EventDetailPage({ params }: { params: Params }) {
         <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
           <Box>
             <Typography variant="h5" gutterBottom>
-              Verwandte Lebensereignisse
+              Verwandte Ereignisse
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {relatedLifeEvents.length} Lebensereignisse sind mit diesem historischen Ereignis verbunden
-            </Typography>
+
           </Box>
           
           <Tabs 
@@ -323,24 +412,94 @@ export default function EventDetailPage({ params }: { params: Params }) {
           </Tabs>
         </Stack>
 
-        {relatedLifeEvents.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <People sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Keine verwandten Lebensereignisse
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Noch keine Lebensereignisse mit diesem historischen Ereignis verknüpft.
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => router.push('/persons')}
-            >
-              Personen verwalten
-            </Button>
-          </Paper>
-        ) : viewMode === 'timeline' ? (
-          // Timeline View
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <ToggleButtonGroup
+            value={eventViewType}
+            exclusive
+            onChange={(_, value) => value && setEventViewType(value)}
+            size="medium"
+            color="primary"
+          >
+            <ToggleButton value="life" sx={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingInline: 2 }}>
+              {relatedLifeEvents.length > 0 ? (
+                <Badge badgeContent={relatedLifeEvents.length} color="primary" />
+              ) : null}
+              Lebensereignisse
+            </ToggleButton>
+            <ToggleButton value="sub" sx={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingInline: 2 }}>
+              {Array.isArray(event?.subEvents) && event.subEvents.length > 0 ? (
+                <Badge badgeContent={event.subEvents.length} color="primary" />
+              ) : null}
+              Unter-Ereignisse
+            </ToggleButton>
+            <ToggleButton value="both" sx={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingInline: 2 }}>
+              {relatedLifeEvents.length + (Array.isArray(event?.subEvents) ? event.subEvents.length : 0) > 0 ? (
+                <Badge badgeContent={relatedLifeEvents.length + (Array.isArray(event?.subEvents) ? event.subEvents.length : 0)} color="primary" />
+              ) : null}
+              Beides
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {event && getCombinedItems().length === 0 ? (
+          eventViewType === 'life' ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <People sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Keine verwandten Lebensereignisse
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Noch keine Lebensereignisse mit diesem historischen Ereignis verknüpft.
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => router.push('/persons')}
+              >
+                Personen verwalten
+              </Button>
+            </Paper>
+          ) : eventViewType === 'sub' ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <EventIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Keine Unter-Ereignisse
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Noch keine Unter-Ereignisse zu diesem historischen Ereignis hinzugefügt.
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => setSubEventDrawerOpen(true)}
+              >
+                Unter-Ereignis hinzufügen
+              </Button>
+            </Paper>
+          ) : (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <People sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Keine verwandten Ereignisse
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Noch keine Lebensereignisse oder Unter-Ereignisse mit diesem historischen Ereignis verknüpft.
+              </Typography>
+              <Stack direction="row" spacing={2} justifyContent="center">
+                <Button
+                  variant="contained"
+                  onClick={() => router.push('/persons')}
+                >
+                  Personen verwalten
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => setSubEventDrawerOpen(true)}
+                >
+                  Unter-Ereignis hinzufügen
+                </Button>
+              </Stack>
+            </Paper>
+          )
+        ) : event && viewMode === 'timeline' ? (
           <Paper sx={{ p: 3 }}>
             <Box sx={{ position: 'relative' }}>
               {/* Timeline line */}
@@ -356,113 +515,104 @@ export default function EventDetailPage({ params }: { params: Params }) {
                 }}
               />
               
-              {relatedLifeEvents
-                .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
-                .map((lifeEvent, index) => (
-                  <Box key={lifeEvent.id} sx={{ position: 'relative', mb: 3 }}>
-                    {/* Timeline dot */}
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        left: 16,
-                        top: 8,
-                        width: 16,
-                        height: 16,
-                        borderRadius: '50%',
-                        bgcolor: 'primary.main',
-                        border: 2,
-                        borderColor: 'background.paper',
-                        zIndex: 1,
-                      }}
-                    />
-                    
-                    {/* Content */}
-                    <Box sx={{ ml: 6 }}>
-                      <Card variant="outlined">
-                        <CardContent>
-                          <Stack direction="row" spacing={2} alignItems="flex-start" justifyContent="space-between">
-                            <Box sx={{ flex: 1 }}>
-                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                                <Typography variant="h6">
-                                  {lifeEvent.title}
+              {getCombinedItems().map((item, index) => (
+                <Box key={item.id + item._type} sx={{ position: 'relative', mb: 3 }}>
+                  {/* Timeline dot */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      left: 16,
+                      top: 8,
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      bgcolor: item._type === 'life' ? 'primary.main' : 'secondary.main',
+                      border: 2,
+                      borderColor: 'background.paper',
+                      zIndex: 1,
+                    }}
+                  />
+                  
+                  {/* Content */}
+                  <Box sx={{ ml: 6 }}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Stack direction="row" spacing={2} alignItems="flex-start" justifyContent="space-between">
+                          <Box sx={{ flex: 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                              <Typography variant="h6">
+                                {item.title}
+                              </Typography>
+                              {item._type === 'life' ? (
+                                <Chip label="Lebensereignis" size="small" color="primary" />
+                              ) : (
+                                <Chip label="Unter-Ereignis" size="small" color="secondary" icon={<EventIcon />} />
+                              )}
+                            </Stack>
+                            
+                            <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                              <Stack direction="row" spacing={0.5} alignItems="center">
+                                <AccessTime fontSize="small" color="action" />
+                                <Typography variant="body2" color="text.secondary">
+                                  {formatDate(item.date)}
+                                  {item.end_date && item.end_date !== item.date && (
+                                    ` - ${formatDate(item.end_date)}`
+                                  )}
                                 </Typography>
-                                <Chip 
-                                  label={`${lifeEvent.person.first_name || ''} ${lifeEvent.person.last_name || ''}`}
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                  onClick={() => router.push(`/persons/${lifeEvent.person.id}`)}
-                                  clickable
-                                />
                               </Stack>
                               
-                              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                              {item.location && (
                                 <Stack direction="row" spacing={0.5} alignItems="center">
-                                  <AccessTime fontSize="small" color="action" />
+                                  <Place fontSize="small" color="action" />
                                   <Typography variant="body2" color="text.secondary">
-                                    {formatDate(lifeEvent.start_date)}
-                                    {lifeEvent.end_date && lifeEvent.end_date !== lifeEvent.start_date && (
-                                      ` - ${formatDate(lifeEvent.end_date)}`
-                                    )}
+                                    {item.location}
                                   </Typography>
                                 </Stack>
-                                
-                                {lifeEvent.location && (
-                                  <Stack direction="row" spacing={0.5} alignItems="center">
-                                    <Place fontSize="small" color="action" />
-                                    <Typography variant="body2" color="text.secondary">
-                                      {lifeEvent.location}
-                                    </Typography>
-                                  </Stack>
-                                )}
-                              </Stack>
-                              
-                              {lifeEvent.description && (
-                                <Typography variant="body2" color="text.secondary">
-                                  {lifeEvent.description}
-                                </Typography>
                               )}
-                            </Box>
+                            </Stack>
                             
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => router.push(`/persons/${lifeEvent.person.id}`)}
-                            >
-                              Zur Person
-                            </Button>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    </Box>
+                            {item.description && (
+                              <Typography variant="body2" color="text.secondary">
+                                {item.description}
+                              </Typography>
+                            )}
+                          </Box>
+                          
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => router.push(`/persons/${item.person.id}`)}
+                          >
+                            Zur Person
+                          </Button>
+                        </Stack>
+                      </CardContent>
+                    </Card>
                   </Box>
-                ))}
+                </Box>
+              ))}
             </Box>
           </Paper>
         ) : (
-          // List View
           <List>
-            {relatedLifeEvents.map((lifeEvent) => (
-              <ListItem key={lifeEvent.id} divider>
+            {getCombinedItems().map((item) => (
+              <ListItem key={item.id + item._type} divider>
                 <ListItemAvatar>
                   <Avatar>
-                    <Person />
+                    {item._type === 'life' ? <Person /> : <EventIcon />}
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
                   primary={
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Typography variant="h6">
-                        {lifeEvent.title}
+                        {item.title}
                       </Typography>
-                      <Chip 
-                        label={`${lifeEvent.person.first_name || ''} ${lifeEvent.person.last_name || ''}`}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                        onClick={() => router.push(`/persons/${lifeEvent.person.id}`)}
-                        clickable
-                      />
+                      {item._type === 'life' ? (
+                        <Chip label="Lebensereignis" size="small" color="primary" />
+                      ) : (
+                        <Chip label="Unter-Ereignis" size="small" color="secondary" icon={<EventIcon />} />
+                      )}
                     </Stack>
                   }
                   secondary={
@@ -471,26 +621,26 @@ export default function EventDetailPage({ params }: { params: Params }) {
                         <Stack direction="row" spacing={0.5} alignItems="center">
                           <AccessTime fontSize="small" color="action" />
                           <Typography variant="body2" color="text.secondary">
-                            {formatDate(lifeEvent.start_date)}
-                            {lifeEvent.end_date && lifeEvent.end_date !== lifeEvent.start_date && (
-                              ` - ${formatDate(lifeEvent.end_date)}`
+                            {formatDate(item.date)}
+                            {item.end_date && item.end_date !== item.date && (
+                              ` - ${formatDate(item.end_date)}`
                             )}
                           </Typography>
                         </Stack>
                         
-                        {lifeEvent.location && (
+                        {item.location && (
                           <Stack direction="row" spacing={0.5} alignItems="center">
                             <Place fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary">
-                              {lifeEvent.location}
+                              {item.location}
                             </Typography>
                           </Stack>
                         )}
                       </Stack>
                       
-                      {lifeEvent.description && (
+                      {item.description && (
                         <Typography variant="body2" color="text.secondary">
-                          {lifeEvent.description}
+                          {item.description}
                         </Typography>
                       )}
                     </Stack>
@@ -499,7 +649,7 @@ export default function EventDetailPage({ params }: { params: Params }) {
                 <ListItemSecondaryAction>
                   <Button
                     size="small"
-                    onClick={() => router.push(`/persons/${lifeEvent.person.id}`)}
+                    onClick={() => router.push(`/persons/${item.person.id}`)}
                   >
                     Zur Person
                   </Button>
