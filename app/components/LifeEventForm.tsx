@@ -111,7 +111,7 @@ export default function LifeEventForm({
           }
           return res.json();
         })
-        .then(data => {
+        .then(async data => {
           setForm({
             title: data.title || '',
             event_id: data.event_id?.toString() || '',
@@ -120,6 +120,18 @@ export default function LifeEventForm({
             location: data.location || '',
             description: data.description || '',
           });
+          // Ensure the related event is loaded in eventOptions
+          if (data.event_id) {
+            const exists = eventOptions.some(ev => ev.id === data.event_id);
+            if (!exists) {
+              // Try to fetch the event by id and add to options
+              const res = await fetch(`/api/events/${data.event_id}`);
+              if (res.ok) {
+                const event = await res.json();
+                setEventOptions(prev => [...prev, event]);
+              }
+            }
+          }
         })
         .catch(err => {
           onErrorAction('Das Event konnte nicht geladen werden.');

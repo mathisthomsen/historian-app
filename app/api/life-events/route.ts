@@ -15,8 +15,10 @@ export async function POST(req: NextRequest) {
         person_id: data.personId,
         title: data.title,
         description: data.description,
-        start_date: data.date ? new Date(data.date) : null,
-        location: data.location
+        start_date: data.start_date ? new Date(data.start_date) : null,
+        end_date: data.end_date ? new Date(data.end_date) : null,
+        location: data.location,
+        event_id: data.event_id ? Number(data.event_id) : null,
       }
     });
     return NextResponse.json({ success: true }, { status: 201 });

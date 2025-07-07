@@ -578,13 +578,15 @@ export default function EventDetailPage({ params }: { params: Params }) {
                             )}
                           </Box>
                           
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => router.push(`/persons/${item.person.id}`)}
-                          >
-                            Zur Person
-                          </Button>
+                          {item._type === 'life' && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => router.push(`/persons/${item.person.id}`)}
+                            >
+                              Zur Person
+                            </Button>
+                          )}
                         </Stack>
                       </CardContent>
                     </Card>
@@ -646,14 +648,16 @@ export default function EventDetailPage({ params }: { params: Params }) {
                     </Stack>
                   }
                 />
-                <ListItemSecondaryAction>
-                  <Button
-                    size="small"
-                    onClick={() => router.push(`/persons/${item.person.id}`)}
-                  >
-                    Zur Person
-                  </Button>
-                </ListItemSecondaryAction>
+                {item._type === 'life' && (
+                  <ListItemSecondaryAction>
+                    <Button
+                      size="small"
+                      onClick={() => router.push(`/persons/${item.person.id}`)}
+                    >
+                      Zur Person
+                    </Button>
+                  </ListItemSecondaryAction>
+                )}
               </ListItem>
             ))}
           </List>
