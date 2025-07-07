@@ -19,6 +19,7 @@ import {
   ListItemSecondaryAction,
   Divider,
   Button,
+  Pagination,
 } from '@mui/material';
 import {
   LocationOn,
@@ -44,37 +45,42 @@ interface LocationData {
 
 export default function LocationsPage() {
   const [locations, setLocations] = useState<LocationData[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false });
+  const [totalEvents, setTotalEvents] = useState(0);
+  const [totalLifeEvents, setTotalLifeEvents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    fetchLocationData();
-  }, []);
-
-  const fetchLocationData = async () => {
+  const fetchLocationData = async (page = 1) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching location data...');
-      const data = await api.get('/api/locations');
-      console.log('Location data received:', data);
-      setLocations(data);
+      const data = await api.get(`/api/locations?page=${page}&limit=20`);
+      setLocations(Array.isArray(data.locations) ? data.locations : []);
+      setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false });
+      setTotalEvents(data.totalEvents || 0);
+      setTotalLifeEvents(data.totalLifeEvents || 0);
     } catch (error) {
-      console.error('Error fetching location data:', error);
       setError('Failed to fetch location data');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchLocationData(1);
+  }, []);
+
+  const handlePageChange = (_: any, value: number) => {
+    fetchLocationData(value);
+  };
+
   const handleLocationClick = (location: string) => {
     router.push(`/locations/${encodeURIComponent(location)}`);
   };
 
-  const totalLocations = locations.length;
-  const totalEvents = locations.reduce((sum, loc) => sum + loc.eventCount, 0);
-  const totalLifeEvents = locations.reduce((sum, loc) => sum + loc.lifeEventCount, 0);
+  const totalLocations = pagination.total;
 
   if (loading) {
     return (
@@ -121,7 +127,7 @@ export default function LocationsPage() {
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
-              <Button color="inherit" size="small" onClick={fetchLocationData} sx={{ ml: 2 }}>
+              <Button color="inherit" size="small" onClick={() => fetchLocationData(1)} sx={{ ml: 2 }}>
                 Erneut versuchen
               </Button>
             </Alert>
@@ -307,6 +313,19 @@ export default function LocationsPage() {
               </List>
             )}
           </Paper>
+
+          {/* Pagination Controls */}
+          <Box display="flex" justifyContent="center" mt={4}>
+            <Pagination
+              count={pagination.totalPages}
+              page={pagination.page}
+              onChange={handlePageChange}
+              color="primary"
+              shape="rounded"
+              showFirstButton
+              showLastButton
+            />
+          </Box>
         </Container>
       </ErrorBoundary>
     </RequireAuth>

@@ -87,13 +87,15 @@ export default function LocationDetailPage({ params }: { params: Params }) {
         const params = await resolvedParams;
         if (!params) return;
         const decodedLocation = decodeURIComponent(params.location);
+        // Fetch all events for this location (no pagination)
         const [eventsRes, lifeEventsRes] = await Promise.all([
-          fetch(`/api/events?location=${encodeURIComponent(decodedLocation)}`),
+          fetch(`/api/events?location=${encodeURIComponent(decodedLocation)}&all=true`),
           fetch(`/api/life-events?location=${encodeURIComponent(decodedLocation)}`)
         ]);
         if (eventsRes.ok) {
           const eventsData = await eventsRes.json();
-          const safeEvents = Array.isArray(eventsData) ? eventsData : [];
+          // Use eventsData.events (API returns { events: [...], pagination: {...} })
+          const safeEvents = Array.isArray(eventsData.events) ? eventsData.events : [];
           setEvents(safeEvents.map((event: any) => ({
             id: toNum(event.id ?? event.ID),
             title: event.title ?? event.TITLE ?? '',

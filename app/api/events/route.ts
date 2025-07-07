@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
   const search = searchParams.get('search') || '';
+  const location = searchParams.get('location');
   const skip = all ? undefined : (page - 1) * limit;
   const take = all ? undefined : limit;
   const sortField = searchParams.get('sortField');
@@ -62,6 +63,10 @@ export async function GET(req: NextRequest) {
     }
     if (filterField && filterValue) {
       whereClause[filterField] = { contains: filterValue, mode: 'insensitive' };
+    }
+    // Add location filter if present
+    if (location) {
+      whereClause.location = { equals: location.trim(), mode: 'insensitive' };
     }
 
     // Build orderBy for sorting

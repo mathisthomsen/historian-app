@@ -169,7 +169,6 @@ export default function DashboardPage() {
             </Typography>
           </Box>
         </Box>
-
       </CardContent>
       <CardActions>
         <Button variant="contained" color="primary" onClick={() => router.push(actionTarget)}>

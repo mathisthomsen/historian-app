@@ -11,7 +11,40 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 401 });
   }
   try {
-    // Get locations with detailed counts and last used dates
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
+
+    // Get total count of unique locations
+    const totalCountResult = await prisma.$queryRaw`
+      SELECT COUNT(*) as count FROM (
+        SELECT LOWER(TRIM(location)) as norm_location
+        FROM events WHERE "userId" = ${localUser.id} AND location IS NOT NULL AND TRIM(location) != ''
+        GROUP BY norm_location
+        UNION
+        SELECT LOWER(TRIM(location)) as norm_location
+        FROM life_events WHERE "userId" = ${localUser.id} AND location IS NOT NULL AND TRIM(location) != ''
+        GROUP BY norm_location
+      ) as all_locations` as any[];
+    const total = Number(totalCountResult[0]?.count || 0);
+    const totalPages = Math.ceil(total / limit);
+
+    // Get total events and life events for all locations (fixed logic)
+    const totalEvents = await prisma.events.count({
+      where: {
+        userId: localUser.id,
+        location: { not: null, notIn: ['', ' '] }
+      }
+    });
+    const totalLifeEvents = await prisma.life_events.count({
+      where: {
+        userId: localUser.id,
+        location: { not: null, notIn: ['', ' '] }
+      }
+    });
+
+    // Get paginated locations
     const locations = await prisma.$queryRaw`
       SELECT 
         norm_location as location,
@@ -42,12 +75,9 @@ export async function GET(request: NextRequest) {
       ) as all_locations
       GROUP BY location
       ORDER BY totalCount DESC, location ASC
-      LIMIT 50
-    ` as any[]
+      LIMIT ${limit} OFFSET ${offset}
+    ` as any[];
 
-    console.log('Raw SQL locations result:', locations);
-
-    // Transform the data to match the expected format, handling possible property name mismatches
     const toNum = (v: any) => (typeof v === 'bigint' ? Number(v) : Number(v) || 0);
     const transformedLocations = locations.map((loc: any) => ({
       location: loc.location || loc.norm_location || '',
@@ -57,9 +87,19 @@ export async function GET(request: NextRequest) {
       lastUsed: loc.lastUsed ?? loc.lastused ? new Date(loc.lastUsed ?? loc.lastused).toISOString() : null
     }));
 
-    console.log('Transformed locations response:', transformedLocations);
-
-    return NextResponse.json(transformedLocations);
+    return NextResponse.json({
+      locations: transformedLocations,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
+      totalEvents,
+      totalLifeEvents
+    });
   } catch (error) {
     console.error('Error fetching locations:', error)
     return NextResponse.json(
