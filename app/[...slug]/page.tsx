@@ -17,7 +17,7 @@ export async function generateStaticParams() {
     }));
 }
 
-export default async function ContentPage({ params }: { params: { slug: string[] } }) {
+export default async function ContentPage({ params }: { params: Promise<{ slug: string[] }> }) {
   const awaitedParams = await params;
   const slug = Array.isArray(awaitedParams.slug) ? awaitedParams.slug.join('/') : awaitedParams.slug;
   const res = await client.collection('content-pages').find({

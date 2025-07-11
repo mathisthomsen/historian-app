@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { Stack } from '@mui/material';
+import Image from 'next/image';
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
@@ -41,12 +42,13 @@ export default function BenefitList({ Title, Benefit }: any) {
             key={b.id}>
               <Stack direction="column" gap={2} alignItems="center">
                 {imageUrl && (
-                  <img
+                  <Image
                     loading="lazy"
                     src={imageUrl}
                     alt={imageAlt}
+                    width={100}
+                    height={140}
                     style={{
-                      //maxWidth: 100,
                       height: 140,
                       marginBlockEnd: 2,
                     }}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import {
   AppBar,
   Toolbar,
@@ -25,7 +26,6 @@ import {
   useScrollTrigger,
   Stack,
   Chip,
-  Image,
   ExpandLess,
   ExpandMore
 } from '@mui/material';
@@ -445,7 +445,7 @@ export default function RootLayout({ children }) {
                   <MenuIcon />
                 </IconButton>
               )}
-              <img src="/logo1.svg" alt="Evidoxa App" height={56} />
+              <Image src="/logo1.svg" alt="Evidoxa App" width={56} height={56} />
               <Typography variant="h6" component="p" sx={{ flexGrow: 1, fontWeight: 400, color: '#fff', letterSpacing: -1 }}>
                 Evidoxa
               </Typography>
