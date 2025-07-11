@@ -41,3 +41,17 @@ a {
   }
 }
 
+@media (min-width: 900px) and (pointer: fine) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .parallax-image-wrapper {
+    perspective: 1200px;
+  }
+  .parallax-image {
+    transition: transform 0.2s cubic-bezier(0.4,0,0.2,1);
+    animation: subtleParallax 10s linear infinite alternate;
+  }
+  @keyframes subtleParallax {
+    0% { transform: translateY(0px) scale(1.03); }
+    100% { transform: translateY(-18px) scale(1.07); }
+  }
+}
+

@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_page_components_heroes",
+  "info": {
+    "displayName": "hero",
+    "icon": "alien"
+  },
+  "options": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "Copy": {
+      "type": "blocks"
+    },
+    "ButtonLabel": {
+      "type": "string"
+    },
+    "Image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    }
+  },
+  "config": {}
+}

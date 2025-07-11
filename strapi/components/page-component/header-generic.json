@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_page_component_header_generics",
+  "info": {
+    "name": "header_generic",
+    "icon": "award"
+  },
+  "options": {},
+  "attributes": {
+    "backgroundIamge": {
+      "model": "file",
+      "via": "related",
+      "allowedTypes": [
+        "images"
+      ],
+      "plugin": "upload",
+      "required": true,
+      "pluginOptions": {}
+    },
+    "hero_title": {
+      "type": "string"
+    },
+    "hero_copy": {
+      "type": "text"
+    },
+    "button_label": {
+      "type": "string"
+    }
+  }
+}

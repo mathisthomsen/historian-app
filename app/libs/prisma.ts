@@ -16,15 +16,9 @@ if (!databaseUrlUnpooled) {
   throw new Error('DATABASE_URL_UNPOOLED environment variable is not set');
 }
 
-// Log the database URL format for debugging (only in development)
-if (process.env.NODE_ENV === 'development') {
-  console.log('Database URL format:', databaseUrl.substring(0, 20) + '...');
-  console.log('Database URL Unpooled format:', databaseUrlUnpooled.substring(0, 20) + '...');
-}
-
-// Create Prisma client with explicit configuration
+// Create Prisma client with minimal logging for faster dev builds
 const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  log: ['error'],
   datasources: {
     db: {
       url: databaseUrl,

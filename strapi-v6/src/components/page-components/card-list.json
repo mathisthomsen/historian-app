@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_page_components_card_lists",
+  "info": {
+    "displayName": "CardList",
+    "icon": "bulletList"
+  },
+  "options": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "Card": {
+      "type": "component",
+      "component": "page-components.card",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

@@ -39,6 +39,7 @@
     "@mui/x-date-pickers": "^8.6.0",
     "@mui/x-internals": "^8.5.0",
     "@prisma/client": "^6.10.0",
+    "@strapi/client": "^1.4.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.17",

@@ -1,0 +1,31 @@
+{
+  "collectionName": "components_page_component_text_images",
+  "info": {
+    "name": "text_image",
+    "icon": "align-justify"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "copy": {
+      "type": "richtext"
+    },
+    "image": {
+      "collection": "file",
+      "via": "related",
+      "allowedTypes": [
+        "images"
+      ],
+      "plugin": "upload",
+      "required": false,
+      "pluginOptions": {}
+    },
+    "image_placement_right": {
+      "type": "boolean",
+      "default": false,
+      "required": false
+    }
+  }
+}

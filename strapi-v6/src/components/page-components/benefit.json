@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_page_components_benefits",
+  "info": {
+    "displayName": "Benefit",
+    "icon": "crown"
+  },
+  "options": {},
+  "attributes": {
+    "Image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "Title": {
+      "type": "string"
+    },
+    "Copy": {
+      "type": "text"
+    }
+  },
+  "config": {}
+}

@@ -1,0 +1,38 @@
+{
+  "collectionName": "components_page_components_cards",
+  "info": {
+    "displayName": "Card",
+    "icon": "archive"
+  },
+  "options": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "Subtitle": {
+      "type": "string"
+    },
+    "Copy": {
+      "type": "blocks"
+    },
+    "Image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "ButtonLabel": {
+      "type": "string"
+    },
+    "content_page": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::content-page.content-page"
+    }
+  },
+  "config": {}
+}
