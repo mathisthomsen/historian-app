@@ -375,9 +375,11 @@ export default function Home() {
           <Grid size={{ xs: 12, md: 6 }}>
             <Card sx={{ boxShadow: 2 }}>
               <CardMedia>
-                <img
+                <Image
                   src="/open.jpeg"
                   alt="Historische Bücher"
+                  width={400}
+                  height={220}
                   style={{ width: '100%', height: 220, objectFit: 'cover' }}
                 />
               </CardMedia>
@@ -394,9 +396,11 @@ export default function Home() {
           <Grid size={{ xs: 12, md: 6 }}>
             <Card sx={{ boxShadow: 2 }}>
               <CardMedia>
-                <img
+                <Image
                   src="/inter.jpeg"
                   alt="Teamarbeit"
+                  width={400}
+                  height={220}
                   style={{ width: '100%', height: 220, objectFit: 'cover' }}
                 />
               </CardMedia>

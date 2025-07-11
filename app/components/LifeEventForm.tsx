@@ -138,7 +138,7 @@ export default function LifeEventForm({
         })
         .finally(() => setInitialLoading(false));
     }
-  }, [mode, lifeEventId, onErrorAction]);
+  }, [mode, lifeEventId, onErrorAction, eventOptions]);
   
 
   // Custom validation
