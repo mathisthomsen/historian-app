@@ -2,6 +2,35 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 # Historian App
 
+## Strapi CMS Integration
+
+The Historian App uses Strapi as a headless CMS for static content, navigation, and dynamic zones. Strapi powers the public navigation, static pages, and dynamic content blocks rendered in Next.js.
+
+### Running Strapi Locally
+- Ensure you have a Postgres database for Strapi (Neon, Supabase, or Docker Postgres).
+- Set up Strapi environment variables in your `.env.local` or `.env`:
+  - `STRAPI_DB_HOST`, `STRAPI_DB_NAME`, `STRAPI_DB_USER`, `STRAPI_DB_PASSWORD`
+  - `STRAPI_JWT_SECRET`, `STRAPI_ADMIN_JWT_SECRET`, `STRAPI_APP_KEYS`, `STRAPI_API_TOKEN_SALT`
+- Start Strapi:
+  ```bash
+  docker-compose up strapi
+  ```
+- Access Strapi admin at [http://localhost:1337/admin](http://localhost:1337/admin)
+
+### Running Strapi in Staging/Production
+- Strapi is included as a service in `docker-compose.yml` (production) and `docker-compose.staging.yml` (staging).
+- Set the `STRAPI_*` environment variables in your deployment platform.
+- For staging, Strapi runs on port 1338 (mapped to 1337 in the container).
+- Access the admin panel at `http://your-staging-domain:1338/admin`.
+
+### Content Migration
+- Navigation and page content must be created in each environment (no automatic sync).
+- Use Strapi's export/import plugins or manual recreation for migration.
+
+### Next.js Integration
+- The Next.js app fetches navigation and page content from Strapi via REST API (see `client-layout.js` and `[...slug]/page.tsx`).
+- Ensure the Strapi API is accessible from your Next.js app in each environment.
+
 A comprehensive web application for managing historical data, including persons, events, literature, and relationships. Built with Next.js, Prisma, PostgreSQL, and Material-UI.
 
 ## Features

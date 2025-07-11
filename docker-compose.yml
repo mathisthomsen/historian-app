@@ -1,28 +1,6 @@
 version: '3.8'
 
 services:
-  # MySQL Database
-  mysql:
-    image: mysql:8.0
-    container_name: historian_mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql/init:/docker-entrypoint-initdb.d
-    ports:
-      - "3306:3306"
-    networks:
-      - historian_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
-
   # Next.js Application
   app:
     build:
@@ -41,8 +19,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      mysql:
-        condition: service_healthy
+      - strapi
     networks:
       - historian_network
     volumes:
@@ -68,8 +45,29 @@ services:
     profiles:
       - production
 
-volumes:
-  mysql_data:
+  strapi:
+    image: strapi/strapi
+    platform: linux/amd64
+    container_name: strapi
+    restart: unless-stopped
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: ${STRAPI_DB_HOST}
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${STRAPI_DB_NAME}
+      DATABASE_USERNAME: ${STRAPI_DB_USER}
+      DATABASE_PASSWORD: ${STRAPI_DB_PASSWORD}
+      DATABASE_SSL: 'true'
+      JWT_SECRET: ${STRAPI_JWT_SECRET}
+      ADMIN_JWT_SECRET: ${STRAPI_ADMIN_JWT_SECRET}
+      APP_KEYS: ${STRAPI_APP_KEYS}
+      API_TOKEN_SALT: ${STRAPI_API_TOKEN_SALT}
+    ports:
+      - "1337:1337"
+    volumes:
+      - ./strapi:/srv/app
+    networks:
+      - historian_network
 
 networks:
   historian_network:

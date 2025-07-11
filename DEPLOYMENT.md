@@ -133,3 +133,39 @@ Set these in your Vercel environment:
 - Vercel: [vercel.com/support](https://vercel.com/support)
 - Neon: [neon.tech/docs](https://neon.tech/docs)
 - WorkOS: [workos.com/docs](https://workos.com/docs)
+
+## Strapi CMS Setup
+
+### What is Strapi Used For?
+Strapi is used as a headless CMS for static content, navigation, and dynamic zones in the Historian App. It powers the public navigation, static pages, and dynamic content blocks rendered in Next.js.
+
+### Running Strapi Locally
+1. Ensure you have a Postgres database available for Strapi (can use Neon, Supabase, or Docker Postgres).
+2. Set up environment variables for Strapi in your `.env.local` or `.env`:
+   - `STRAPI_DB_HOST`, `STRAPI_DB_NAME`, `STRAPI_DB_USER`, `STRAPI_DB_PASSWORD`
+   - `STRAPI_JWT_SECRET`, `STRAPI_ADMIN_JWT_SECRET`, `STRAPI_APP_KEYS`, `STRAPI_API_TOKEN_SALT`
+3. Start Strapi:
+   ```bash
+   docker-compose up strapi
+   # or for staging config:
+   docker-compose -f docker-compose.staging.yml up strapi
+   ```
+4. Access Strapi admin at [http://localhost:1337/admin](http://localhost:1337/admin) (or port 1338 for staging).
+
+### Running Strapi in Staging/Production
+- Strapi is included as a service in `docker-compose.yml` (production) and `docker-compose.staging.yml` (staging).
+- Make sure to set the `STRAPI_*` environment variables in your deployment platform (or in `.env.staging`, `.env.production`).
+- For staging, Strapi runs on port 1338 (mapped to 1337 in the container).
+- You can access the admin panel at `http://your-staging-domain:1338/admin`.
+
+### Strapi Environment Variables
+- `STRAPI_DB_HOST`, `STRAPI_DB_NAME`, `STRAPI_DB_USER`, `STRAPI_DB_PASSWORD`: Postgres connection for Strapi
+- `STRAPI_JWT_SECRET`, `STRAPI_ADMIN_JWT_SECRET`, `STRAPI_APP_KEYS`, `STRAPI_API_TOKEN_SALT`: Strapi secrets (generate strong values for each environment)
+
+### Content Migration
+- Navigation and page content must be created in each environment (no automatic sync between local, staging, and production).
+- You can use Strapi's export/import plugins or manual recreation for migration.
+
+### Next.js Integration
+- The Next.js app fetches navigation and page content from Strapi via REST API (see `client-layout.js` and `[...slug]/page.tsx`).
+- Ensure the Strapi API is accessible from your Next.js app in each environment.

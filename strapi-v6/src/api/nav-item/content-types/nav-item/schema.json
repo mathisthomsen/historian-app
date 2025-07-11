@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "nav_items",
+  "info": {
+    "singularName": "nav-item",
+    "pluralName": "nav-items",
+    "displayName": "navItem"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "label": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "order": {
+      "type": "integer"
+    },
+    "parent_node": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::nav-item.nav-item"
+    },
+    "icon": {
+      "type": "string"
+    }
+  }
+}

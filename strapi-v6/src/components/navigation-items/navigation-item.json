@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_navigation_items_navigation_items",
+  "info": {
+    "displayName": "navigation-item"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "order": {
+      "type": "integer"
+    },
+    "page": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::content-page.content-page"
+    },
+    "parent": {
+      "type": "string"
+    }
+  },
+  "config": {}
+}

@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_page_components_benefit_lists",
+  "info": {
+    "displayName": "BenefitList",
+    "icon": "bulletList"
+  },
+  "options": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "Benefit": {
+      "type": "component",
+      "component": "page-components.benefit",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

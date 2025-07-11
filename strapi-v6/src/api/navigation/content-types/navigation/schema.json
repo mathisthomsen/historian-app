@@ -1,0 +1,20 @@
+{
+  "kind": "collectionType",
+  "collectionName": "navigations",
+  "info": {
+    "singularName": "navigation",
+    "pluralName": "navigations",
+    "displayName": "navigation"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "nav_items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::nav-item.nav-item"
+    }
+  }
+}

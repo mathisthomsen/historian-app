@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_page_component_image_text_lists",
+  "info": {
+    "name": "image_text_list",
+    "icon": "asterisk"
+  },
+  "options": {},
+  "attributes": {
+    "list_item": {
+      "type": "component",
+      "repeatable": true,
+      "component": "page-component.text-image"
+    },
+    "title": {
+      "type": "string"
+    }
+  }
+}
