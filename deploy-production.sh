@@ -68,7 +68,7 @@ start_services() {
     mkdir -p certbot/{conf,www}
     
     # Start services
-    docker-compose -f docker-compose.production.yml up -d
+    docker-compose -f docker-compose.production.yml --env-file .env.production up -d
     
     print_status "Services started successfully!"
     print_status "Application will be available at: https://$DOMAIN"
