@@ -130,7 +130,7 @@ setup_ssl() {
     # Stop nginx temporarily
     docker-compose -f docker-compose.production.yml stop nginx
     
-    # Run certbot to get certificates
+    # Run certbot to get certificates for main domain
     print_status "Requesting SSL certificate for $DOMAIN..."
     docker-compose -f docker-compose.production.yml run --rm certbot certonly \
         --webroot \
@@ -139,6 +139,18 @@ setup_ssl() {
         --agree-tos \
         --no-eff-email \
         -d "$DOMAIN"
+    
+    # If staging domain is configured, get certificate for it too
+    if [ ! -z "$STAGING_DOMAIN" ]; then
+        print_status "Requesting SSL certificate for $STAGING_DOMAIN..."
+        docker-compose -f docker-compose.production.yml run --rm certbot certonly \
+            --webroot \
+            --webroot-path=/var/www/certbot \
+            --email "$SSL_EMAIL" \
+            --agree-tos \
+            --no-eff-email \
+            -d "$STAGING_DOMAIN"
+    fi
     
     # Start nginx again
     docker-compose -f docker-compose.production.yml start nginx
