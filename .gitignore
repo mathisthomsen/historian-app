@@ -149,3 +149,6 @@ verify-*.min.js
 
 # Local development
 *.local
+
+strapi/
+strapi-v6/
