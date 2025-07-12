@@ -31,9 +31,7 @@ services:
 
   # Strapi CMS
   strapi:
-    build:
-      context: ./strapi-v6
-      dockerfile: Dockerfile
+    image: strapi/strapi:latest
     container_name: historian-strapi
     restart: unless-stopped
     environment:
