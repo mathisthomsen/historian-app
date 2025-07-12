@@ -25,6 +25,7 @@ services:
       - WORKOS_COOKIE_PASSWORD=${WORKOS_COOKIE_PASSWORD}
       - AUTHKIT_REDIRECT_URI=${AUTHKIT_REDIRECT_URI}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - NEXT_PUBLIC_STRAPI_URL=${NEXT_PUBLIC_STRAPI_URL}
     volumes:
       - ./logs/production:/app/logs
     depends_on:
