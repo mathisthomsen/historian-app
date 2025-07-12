@@ -230,7 +230,7 @@ chown historian:historian /opt/historian-app/renew-ssl.sh
 print_status "Server setup completed successfully!"
 print_status "Next steps:"
 echo "1. Switch to historian user: su - historian"
-echo "2. Clone the repository: cd /opt && git clone https://github.com/mathisthomsen/historian_app.git historian-app"
+echo "2. Clone the repository: cd /opt && git clone https://github.com/mathisthomsen/historian-app.git historian-app"
 echo "3. Configure environment variables"
 echo "4. Deploy the application"
 
