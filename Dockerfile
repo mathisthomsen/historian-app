@@ -21,6 +21,16 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Accept build arguments for environment variables
+ARG DATABASE_URL
+ARG DATABASE_URL_UNPOOLED
+ARG NODE_ENV=production
+
+# Set environment variables for build
+ENV DATABASE_URL=$DATABASE_URL
+ENV DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED
+ENV NODE_ENV=$NODE_ENV
+
 # Build the application
 RUN npm run build
 

@@ -1,0 +1,52 @@
+# Strapi CMS
+strapi/
+strapi-v6/
+
+# Docker files
+docker-compose*.yml
+Dockerfile
+deploy*.sh
+server-setup.sh
+
+# Environment files
+.env.*
+env.*
+
+# Logs and uploads
+logs/
+uploads/
+backups/
+
+# Nginx configuration
+nginx/
+
+# Certbot SSL certificates
+certbot/
+
+# Test results
+test-results/
+playwright-report/
+
+# Node modules (will be installed by Vercel)
+node_modules/
+
+# Build artifacts
+.next/
+out/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+SERVER_SETUP.md
+DEPLOYMENT.md 
