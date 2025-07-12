@@ -6,6 +6,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - DATABASE_URL=${DATABASE_URL}
+        - DATABASE_URL_UNPOOLED=${DATABASE_URL_UNPOOLED}
     container_name: historian-app
     restart: unless-stopped
     environment:
