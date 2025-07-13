@@ -62,6 +62,8 @@ jobs:
         run: |
           ssh root@217.154.198.215 "cat > /opt/historian-app/production/.env.production << 'EOF'
           AUTHKIT_REDIRECT_URI=${{ secrets.AUTHKIT_REDIRECT_URI }}
+          DOMAIN=${{ secrets.DOMAIN }}
+          SSL_EMAIL=${{ secrets.SSL_EMAIL }}
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           DATABASE_URL_UNPOOLED=${{ secrets.DATABASE_URL_UNPOOLED }}
           ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
