@@ -43,6 +43,13 @@ jobs:
         run: |
           rsync -avz --exclude '.git' ./ root@217.154.198.215:/opt/historian-app/staging
 
+      - name: Write .env.staging on server
+        run: |
+          ssh root@217.154.198.215 "echo 'DATABASE_URL=${{ secrets.DATABASE_URL }}' > /opt/historian-app/staging/.env.staging"
+          ssh root@217.154.198.215 "echo 'DATABASE_URL_UNPOOLED=${{ secrets.DATABASE_URL_UNPOOLED }}' >> /opt/historian-app/staging/.env.staging"
+          # Add other env vars as needed, e.g.:
+          # ssh root@217.154.198.215 "echo 'NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}' >> /opt/historian-app/staging/.env.staging"
+
       - name: Deploy on VPS
         run: |
           ssh root@217.154.198.215 'cd /opt/historian-app/staging && git pull origin develop && docker-compose -f docker-compose.staging.yml pull && docker-compose -f docker-compose.staging.yml up -d'
