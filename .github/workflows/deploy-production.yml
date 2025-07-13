@@ -60,29 +60,31 @@ jobs:
 
       - name: Write .env.production on server
         run: |
-          ssh root@217.154.198.215 "echo 'AUTHKIT_REDIRECT_URI=${{ secrets.AUTHKIT_REDIRECT_URI }}' > /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'DATABASE_URL=${{ secrets.DATABASE_URL }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'DATABASE_URL_UNPOOLED=${{ secrets.DATABASE_URL_UNPOOLED }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'REDIS_URL=${{ secrets.REDIS_URL }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'STRAPI_ADMIN_JWT_SECRET=${{ secrets.STRAPI_ADMIN_JWT_SECRET }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'STRAPI_API_TOKEN_SALT=${{ secrets.STRAPI_API_TOKEN_SALT }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'STRAPI_APP_KEYS=${{ secrets.STRAPI_APP_KEYS }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'STRAPI_DB_HOST=${{ secrets.STRAPI_DB_HOST }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'STRAPI_DB_NAME=${{ secrets.STRAPI_DB_NAME }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'STRAPI_DB_PASSWORD=${{ secrets.STRAPI_DB_PASSWORD }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'STRAPI_DB_USER=${{ secrets.STRAPI_DB_USER }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'STRAPI_JWT_SECRET=${{ secrets.STRAPI_JWT_SECRET }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'WORKOS_API_KEY=${{ secrets.WORKOS_API_KEY }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'WORKOS_CLIENT_ID=${{ secrets.WORKOS_CLIENT_ID }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'WORKOS_COOKIE_PASSWORD=${{ secrets.WORKOS_COOKIE_PASSWORD }}' >> /opt/historian-app/production/.env.production"
-          ssh root@217.154.198.215 "echo 'WORKOS_REDIRECT_URI=${{ secrets.WORKOS_REDIRECT_URI }}' >> /opt/historian-app/production/.env.production"
+          ssh root@217.154.198.215 "cat > /opt/historian-app/production/.env.production << 'EOF'
+          AUTHKIT_REDIRECT_URI=${{ secrets.AUTHKIT_REDIRECT_URI }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED=${{ secrets.DATABASE_URL_UNPOOLED }}
+          ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          REDIS_URL=${{ secrets.REDIS_URL }}
+          STRAPI_ADMIN_JWT_SECRET=${{ secrets.STRAPI_ADMIN_JWT_SECRET }}
+          STRAPI_API_TOKEN_SALT=${{ secrets.STRAPI_API_TOKEN_SALT }}
+          STRAPI_APP_KEYS=${{ secrets.STRAPI_APP_KEYS }}
+          STRAPI_DB_HOST=${{ secrets.STRAPI_DB_HOST }}
+          STRAPI_DB_NAME=${{ secrets.STRAPI_DB_NAME }}
+          STRAPI_DB_PASSWORD=${{ secrets.STRAPI_DB_PASSWORD }}
+          STRAPI_DB_USER=${{ secrets.STRAPI_DB_USER }}
+          STRAPI_JWT_SECRET=${{ secrets.STRAPI_JWT_SECRET }}
+          WORKOS_API_KEY=${{ secrets.WORKOS_API_KEY }}
+          WORKOS_CLIENT_ID=${{ secrets.WORKOS_CLIENT_ID }}
+          WORKOS_COOKIE_PASSWORD=${{ secrets.WORKOS_COOKIE_PASSWORD }}
+          WORKOS_REDIRECT_URI=${{ secrets.WORKOS_REDIRECT_URI }}
+          EOF"
 
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 'cd /opt/historian-app/production && git pull origin main && docker-compose -f docker-compose.production.yml pull && docker-compose -f docker-compose.production.yml up -d'
+          ssh root@217.154.198.215 'cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml pull && docker-compose -f docker-compose.production.yml up -d'
 
       - name: Health check
         run: |
