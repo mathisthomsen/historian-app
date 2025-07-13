@@ -80,13 +80,15 @@ jobs:
           WORKOS_REDIRECT_URI=${{ secrets.WORKOS_REDIRECT_URI }}
           EOF"
 
+
+
       - name: Copy files to VPS
         run: |
           rsync -avz --exclude '.git' ./ root@217.154.198.215:/opt/historian-app/production
 
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 'cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml build && docker-compose -f docker-compose.production.yml up -d'
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' docker-compose -f docker-compose.production.yml build --no-cache && docker-compose -f docker-compose.production.yml up -d"
 
       - name: Health check
         run: |
