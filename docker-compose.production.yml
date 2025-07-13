@@ -25,7 +25,6 @@ services:
     build:
       context: ./strapi
       dockerfile: Dockerfile
-    image: historian-strapi
     container_name: historian-strapi
     restart: unless-stopped
     env_file:
