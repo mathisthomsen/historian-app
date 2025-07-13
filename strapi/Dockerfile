@@ -7,11 +7,14 @@ WORKDIR /opt/app
 # Copy package.json and yarn.lock first for better build caching
 COPY package.json yarn.lock ./
 
-# Install dependencies
-RUN yarn install --frozen-lockfile
+# Install dependencies (including devDependencies for TypeScript)
+RUN yarn install --frozen-lockfile --production=false
 
 # Copy the rest of the Strapi project files
 COPY . .
+
+# Ensure TypeScript types are properly installed
+RUN yarn add @types/minimatch@^6.0.0
 
 # Build the Strapi admin panel
 RUN yarn build
