@@ -2,130 +2,51 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  test:
+  test-and-deploy:
     runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Full Clean (remove .next, node_modules/.cache, .turbo, .tsbuildinfo, .eslintcache, .cache)
-        run: |
-          rm -rf .next
-          rm -rf node_modules/.cache
-          rm -rf .turbo
-          rm -rf **/.tsbuildinfo
-          rm -rf .eslintcache
-          rm -rf .cache
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Clean Next.js and TypeScript cache
-        run: |
-          rm -rf .next
-          rm -rf node_modules/.cache
-      
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Setup environment
-        run: |
-          cp env.example .env.test
-          echo "DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db" >> .env.test
-          echo "DATABASE_URL_UNPOOLED=postgresql://test_user:test_password@localhost:5432/test_db" >> .env.test
-          echo "JWT_SECRET=test_secret" >> .env.test
-          echo "JWT_REFRESH_SECRET=test_refresh_secret" >> .env.test
-          echo "NEXTAUTH_SECRET=test_nextauth_secret" >> .env.test
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env.test
-      
-      - name: Generate Prisma client
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
-        run: npx prisma generate
-      
-      - name: Run database migrations
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
-        run: npx prisma db push
-      
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
+
       - name: Run tests
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
-          JWT_SECRET: test_secret
-          JWT_REFRESH_SECRET: test_refresh_secret
-          NEXTAUTH_SECRET: test_nextauth_secret
-          NEXTAUTH_URL: http://localhost:3000
         run: npm test
-      
+
       - name: Build application
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
-          JWT_SECRET: test_secret
-          JWT_REFRESH_SECRET: test_refresh_secret
-          NEXTAUTH_SECRET: test_nextauth_secret
-          NEXTAUTH_URL: http://localhost:3000
         run: npm run build
 
-  deploy-production:
-    needs: test
-    runs-on: ubuntu-latest
-    environment: production
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          node-version: '18'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build Docker image
-        run: docker build -t historian-app:production .
-      
-      - name: Deploy to production server
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Copy files to VPS
         run: |
-          # This would typically involve:
-          # 1. Pushing to a container registry
-          # 2. SSH to production server
-          # 3. Pull and restart containers
-          # 4. Run database migrations
-          # 5. Health checks
-          echo "Deploying to production server..."
-          # ssh user@production-server "cd /path/to/app && ./deploy.sh production up"
-      
-      - name: Run health checks
+          rsync -avz --exclude '.git' ./ root@217.154.198.215:/opt/historian-app/production
+
+      - name: Deploy on VPS
         run: |
-          # Wait for deployment to complete
-          sleep 30
-          # Check if application is responding
-          # curl -f http://your-domain.com/api/health || exit 1 
+          ssh root@217.154.198.215 'cd /opt/historian-app/production && git pull origin main && docker-compose -f docker-compose.production.yml pull && docker-compose -f docker-compose.production.yml up -d'
+
+      - name: Health check
+        run: |
+          ssh root@217.154.198.215 'curl -f http://localhost/api/health || exit 1' 

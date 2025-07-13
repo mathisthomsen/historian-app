@@ -2,98 +2,51 @@ name: Deploy to Staging
 
 on:
   push:
-    branches: [develop]
-  pull_request:
-    branches: [main]
+    branches:
+      - develop
 
 jobs:
-  test:
+  test-and-deploy:
     runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Setup environment
-        run: |
-          cp env.example .env.test
-          echo "DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db" >> .env.test
-          echo "DATABASE_URL_UNPOOLED=postgresql://test_user:test_password@localhost:5432/test_db" >> .env.test
-          echo "JWT_SECRET=test_secret" >> .env.test
-          echo "NEXTAUTH_SECRET=test_secret" >> .env.test
-      
-      - name: Generate Prisma client
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
-        run: npx prisma generate
-      
-      - name: Run database migrations
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
-        run: npx prisma db push
-      
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
+
       - name: Run tests
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
         run: npm test
-      
+
       - name: Build application
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          DATABASE_URL_UNPOOLED: postgresql://test_user:test_password@localhost:5432/test_db
         run: npm run build
 
-  deploy-staging:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          node-version: '18'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build Docker image
-        run: docker build -t historian-app:staging .
-      
-      - name: Deploy to staging server
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Copy files to VPS
         run: |
-          # This would typically involve:
-          # 1. Pushing to a container registry
-          # 2. SSH to staging server
-          # 3. Pull and restart containers
-          echo "Deploying to staging server..."
-          # ssh user@staging-server "cd /path/to/app && ./deploy.sh staging up" 
+          rsync -avz --exclude '.git' ./ root@217.154.198.215:/opt/historian-app/staging
+
+      - name: Deploy on VPS
+        run: |
+          ssh root@217.154.198.215 'cd /opt/historian-app/staging && git pull origin develop && docker-compose -f docker-compose.staging.yml pull && docker-compose -f docker-compose.staging.yml up -d'
+
+      - name: Health check
+        run: |
+          ssh root@217.154.198.215 'curl -f http://localhost:8080/api/health || exit 1' 
