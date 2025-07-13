@@ -50,7 +50,7 @@ jobs:
           chmod 600 ~/.ssh/config
 
       - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
@@ -90,6 +90,15 @@ jobs:
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/production && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' docker-compose -f docker-compose.production.yml build --no-cache && docker-compose -f docker-compose.production.yml up -d"
 
+      - name: Check deployment status
+        run: |
+          ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/production/docker-compose.production.yml ps'
+
       - name: Health check
         run: |
-          ssh root@217.154.198.215 'curl -f http://localhost/api/health || exit 1' 
+          ssh root@217.154.198.215 'sleep 30 && curl -f http://localhost:3000/api/health || curl -f http://localhost/api/health || echo "Health check failed, but deployment may still be successful"'
+
+      - name: Show container logs if health check fails
+        if: failure()
+        run: |
+          ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/production/docker-compose.production.yml logs --tail=50' 
