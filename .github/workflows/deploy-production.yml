@@ -33,6 +33,12 @@ jobs:
         run: npm test
 
       - name: Build application
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          NODE_ENV: production
+          NEXT_PUBLIC_STRAPI_URL: https://evidoxa.com/strapi
+          NEXT_PUBLIC_IS_STAGING: false
         run: npm run build
 
       - name: Set up SSH
