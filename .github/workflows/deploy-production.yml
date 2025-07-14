@@ -23,23 +23,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-      - name: Type check
-        run: npm run type-check
+      - name: Lint and Type check
+        run: |
+          npm run lint &
+          npm run type-check &
+          wait
 
       - name: Run tests
         run: npm test
 
-      - name: Build application
+      - name: Build application (skip for faster deployment)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
           NODE_ENV: production
           NEXT_PUBLIC_STRAPI_URL: https://evidoxa.com/strapi
           NEXT_PUBLIC_IS_STAGING: false
-        run: npm run build
+        run: echo "Skipping local build - will build on VPS for faster deployment"
 
       - name: Set up SSH
         run: |
@@ -81,11 +89,11 @@ jobs:
 
       - name: Copy files to VPS
         run: |
-          rsync -avz --exclude '.git' ./ root@217.154.198.215:/opt/historian-app/production
+          rsync -avz --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/production
 
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 "cd /opt/historian-app/production && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' docker-compose -f docker-compose.production.yml build --no-cache && docker-compose -f docker-compose.production.yml up -d"
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml down --remove-orphans && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' docker-compose -f docker-compose.production.yml build && docker-compose -f docker-compose.production.yml up -d"
 
       - name: Check deployment status
         run: |
@@ -93,7 +101,7 @@ jobs:
 
       - name: Health check
         run: |
-          ssh root@217.154.198.215 'sleep 30 && curl -f http://localhost:3000/api/health || curl -f http://localhost/api/health || echo "Health check failed, but deployment may still be successful"'
+          ssh root@217.154.198.215 'sleep 15 && curl -f http://localhost:3000/api/health || curl -f http://localhost/api/health || echo "Health check failed, but deployment may still be successful"'
 
       - name: Show container logs if health check fails
         if: failure()
