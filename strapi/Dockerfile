@@ -32,7 +32,6 @@ COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile --production=true
 
 # Copy built application from builder stage
-COPY --from=builder /opt/app/build ./build
 COPY --from=builder /opt/app/public ./public
 COPY --from=builder /opt/app/src ./src
 COPY --from=builder /opt/app/config ./config
