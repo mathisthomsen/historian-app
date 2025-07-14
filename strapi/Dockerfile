@@ -39,6 +39,10 @@ COPY --from=builder /opt/app/database ./database
 COPY --from=builder /opt/app/favicon.png ./favicon.png
 COPY --from=builder /opt/app/dist ./dist
 
+# Copy admin build files to the expected location
+RUN mkdir -p /opt/app/node_modules/@strapi/admin/dist/server/server/build
+COPY --from=builder /opt/app/dist/build/* /opt/app/node_modules/@strapi/admin/dist/server/server/build/
+
 # Expose the default Strapi port
 EXPOSE 1337
 
