@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import {
   AppBar,
   Toolbar,
@@ -25,7 +26,8 @@ import {
   useScrollTrigger,
   Stack,
   Chip,
-  Image
+  ExpandLess,
+  ExpandMore
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -47,6 +49,13 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import LoadingBar from './components/LoadingBar';
 import { createCustomTheme } from './lib/theme';
 import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import React, { useRef } from 'react';
+import * as MuiIcons from '@mui/icons-material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import Tooltip from '@mui/material/Tooltip';
 
 // Hide the app bar when scrolling down and show it when scrolling up (like a sticky header)
 // https://mui.com/material-ui/react-app-bar/#sticky-app-bar
@@ -69,6 +78,17 @@ export default function RootLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [publicNavItems, setPublicNavItems] = useState([]);
+  const [navOpenStates, setNavOpenStates] = useState({});
+  const [menuAnchors, setMenuAnchors] = useState({}); // For public nav menus
+  const theme = useMemo(() => {
+    if (darkMode === 'dark' || darkMode === 'light') {
+      return createCustomTheme(darkMode);
+    }
+    return createCustomTheme('light');
+  }, [darkMode]);
+  const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
+  const [publicDrawerOpen, setPublicDrawerOpen] = useState(false);
 
   // AuthKit user/session
   const { user, loading } = useAuth();
@@ -86,10 +106,10 @@ export default function RootLayout({ children }) {
   ];
 
   // Navigation items for public users (no register)
-  const publicNavItems = [
-    { path: '/', label: 'Home', icon: <HomeIcon />, index: 0 },
-    { path: '/api/auth/login', label: 'Login', icon: <LoginIcon />, index: 1 },
-  ];
+  // const publicNavItems = [
+  //   { path: '/', label: 'Home', icon: <HomeIcon />, index: 0 },
+  //   { path: '/api/auth/login', label: 'Login', icon: <LoginIcon />, index: 1 },
+  // ];
 
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
@@ -112,6 +132,14 @@ export default function RootLayout({ children }) {
     window.location.href = '/api/auth/logout';
   };
 
+  // Accessible menu open/close handlers for public nav
+  const handleMenuOpen = (event, id) => {
+    setMenuAnchors((prev) => ({ ...prev, [id]: event.currentTarget }));
+  };
+  const handleMenuClose = (id) => {
+    setMenuAnchors((prev) => ({ ...prev, [id]: null }));
+  };
+
   useEffect(() => {
     const storedMode = localStorage.getItem('darkMode');
     if (storedMode === 'dark' || storedMode === 'light') {
@@ -128,26 +156,251 @@ export default function RootLayout({ children }) {
     localStorage.setItem('darkMode', newMode);
   };
 
-  const theme = useMemo(() => {
-    if (darkMode === 'dark' || darkMode === 'light') {
-      return createCustomTheme(darkMode);
-    }
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return createCustomTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    }
-    return createCustomTheme('light');
-  }, [darkMode]);
-
   // Debug staging detection
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('Hostname:', window.location.hostname);
-      console.log('Is Vercel app:', window.location.hostname.includes('vercel.app'));
-      console.log('Contains git-:', window.location.hostname.includes('git-'));
-      console.log('Is not your-app:', !window.location.hostname.includes('your-app'));
-      console.log('Is not main domain:', window.location.hostname !== 'historian-app-phi.vercel.app');
-    }
+    // Removed verbose console logs for faster dev builds
   }, []);
+
+  // Fetch navigation from Strapi for public users
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const documentId = 'ctp0vfu1o3lqz3nj3bt98kae';
+      fetch(`http://localhost:1337/api/navigations/${documentId}?populate=nav_items.parent_node`)
+        .then(res => res.json())
+        .then(data => {
+          const flatItems = data.data?.nav_items || [];
+          const tree = buildNavTree(flatItems);
+          setPublicNavItems(tree);
+        });
+    }
+  }, [isAuthenticated]);
+
+  // Build a nested tree from flat nav_items with parent_node
+  function buildNavTree(flatItems) {
+    const idMap = {};
+    flatItems.forEach(item => {
+      idMap[item.id] = { ...item, children: [] };
+    });
+    const tree = [];
+    flatItems.forEach(item => {
+      if (item.parent_node && item.parent_node.id) {
+        if (idMap[item.parent_node.id]) {
+          idMap[item.parent_node.id].children.push(idMap[item.id]);
+        }
+      } else {
+        tree.push(idMap[item.id]);
+      }
+    });
+    // Sort children by order
+    function sortTree(nodes) {
+      nodes.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      nodes.forEach(node => {
+        if (node.children && node.children.length > 0) {
+          sortTree(node.children);
+        }
+      });
+    }
+    sortTree(tree);
+    return tree;
+  }
+
+  // Helper to get Material UI icon by name
+  function getMuiIcon(iconName) {
+    console.log(iconName);
+    if (!iconName) return <HomeIcon />;
+    const IconComponent = MuiIcons[iconName];
+    console.log(IconComponent);
+    return IconComponent ? <IconComponent /> : <HomeIcon />;
+  }
+
+  // Recursive render for nested navigation
+  function renderNavItems(items, level = 0) {
+    return items.map((item) => (
+      <React.Fragment key={item.id}>
+        <ListItem disablePadding sx={{ pl: 2 * level }}>
+          <ListItemButton
+            selected={currentPath === item.url}
+            onClick={() => {
+              setOpen(false);
+              router.push(item.url);
+            }}
+          >
+            <ListItemIcon>
+              {getMuiIcon(item.icon)}
+            </ListItemIcon>
+            <ListItemText primary={item.label} />
+          </ListItemButton>
+        </ListItem>
+        {item.children && item.children.length > 0 && (
+          <List disablePadding>
+            {renderNavItems(item.children, level + 1)}
+          </List>
+        )}
+      </React.Fragment>
+    ));
+  }
+
+  // Render public nav in AppBar (first level as buttons, second level as menus)
+  function renderPublicNavAppBar(items) {
+    return (
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: 2 }}>
+        {items.map((item) => {
+          const hasChildren = item.children && item.children.length > 0;
+          if (!hasChildren) {
+            return (
+              <Button
+                key={item.id}
+                color="inherit"
+                href={item.url}
+                aria-label={item.label}
+                sx={{ fontWeight: 500 }}
+              >
+                {item.label}
+              </Button>
+            );
+          }
+          return (
+            <React.Fragment key={item.id}>
+              <Button
+                color="inherit"
+                aria-haspopup="true"
+                aria-controls={`menu-${item.id}`}
+                aria-expanded={Boolean(menuAnchors[item.id])}
+                onClick={(e) => handleMenuOpen(e, item.id)}
+                sx={{ fontWeight: 500 }}
+                endIcon={
+                  <ExpandMoreIcon
+                    aria-expanded={Boolean(menuAnchors[item.id])}
+                    sx={{
+                      transition: 'transform 0.2s',
+                      transform: Boolean(menuAnchors[item.id]) ? 'rotate(180deg)' : 'rotate(0deg)'
+                    }}
+                  />
+                }
+              >
+                {item.label}
+              </Button>
+              <Menu
+                id={`menu-${item.id}`}
+                anchorEl={menuAnchors[item.id]}
+                open={Boolean(menuAnchors[item.id])}
+                onClose={() => handleMenuClose(item.id)}
+                slotProps={{
+                  menuList: {
+                    'aria-labelledby': `button-${item.id}`,
+                    role: 'menu',
+                  },
+                  paper: {
+                    sx: {
+                      borderRadius: 1,
+                      backgroundColor: 'secondary.main',
+                      color: 'secondary.contrastText',
+                    }
+                  }
+                }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                keepMounted
+              >
+                {item.children.map((child) => (
+                  <MenuItem
+                    key={child.id}
+                    component="a"
+                    href={child.url}
+                    onClick={() => handleMenuClose(item.id)}
+                    role="menuitem"
+                    sx={{
+                      '&:hover': {
+                        backgroundColor: 'secondary.dark',
+                      },
+                      '&:active': {
+                        backgroundColor: 'secondary.dark',
+                      },  
+                      '&:focus': {
+                        backgroundColor: 'secondary.dark',
+                      },
+                      '&:focus-visible': {
+                        backgroundColor: 'secondary.dark',
+                      },
+                      '&:focus-within': {
+                        backgroundColor: 'secondary.dark',
+                      },
+                      paddingInline: 3,
+                      paddingBlock: 1,
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: 'secondary.contrastText' }}>
+                      {getMuiIcon(child.icon)}
+                    </ListItemIcon>
+                    <ListItemText primary={child.label} />
+                  </MenuItem>
+                ))}
+              </Menu>
+            </React.Fragment>
+          );
+        })}
+      </Stack>
+    );
+  }
+
+  // Render public nav for Drawer (mobile)
+  function renderPublicNavDrawer(items) {
+    return (
+      <List>
+        {items.map((item) => {
+          const hasChildren = item.children && item.children.length > 0;
+          if (!hasChildren) {
+            return (
+              <ListItem key={item.id} disablePadding>
+                <ListItemButton
+                  component="a"
+                  href={item.url}
+                  onClick={() => setPublicDrawerOpen(false)}
+                  sx={{ fontWeight: 500 }}
+                >
+                  <ListItemIcon>
+                    {getMuiIcon(item.icon)}
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} />
+                </ListItemButton>
+              </ListItem>
+            );
+          }
+          return (
+            <React.Fragment key={item.id}>
+              <ListItem disablePadding>
+                <ListItemButton
+                  aria-haspopup="true"
+                  aria-controls={`drawer-menu-${item.id}`}
+                  aria-expanded={false}
+                  sx={{ fontWeight: 500 }}
+                >
+                  <ListItemIcon>
+                    {getMuiIcon(item.icon)}
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} />
+                </ListItemButton>
+              </ListItem>
+              {item.children.map((child) => (
+                <ListItem key={child.id} disablePadding sx={{ pl: 4 }}>
+                  <ListItemButton
+                    component="a"
+                    href={child.url}
+                    onClick={() => setPublicDrawerOpen(false)}
+                  >
+                    <ListItemIcon>
+                      {getMuiIcon(child.icon)}
+                    </ListItemIcon>
+                    <ListItemText primary={child.label} />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </React.Fragment>
+          );
+        })}
+      </List>
+    );
+  }
 
   if (darkMode === null || loading) return null;
 
@@ -169,21 +422,35 @@ export default function RootLayout({ children }) {
         >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Stack direction="row" spacing={1} alignItems="center">
-              <IconButton 
-                edge="start" 
-                color="inherit" 
-                onClick={toggleDrawer(!open)}
-                aria-label="Menü öffnen"
-                aria-expanded={open}
-                aria-controls="navigation-drawer"
-              >
-                <MenuIcon />
-              </IconButton>
-            
-              <img src="/logo1.svg" alt="Evidoxa App" height={56} />
+              {isAuthenticated && (
+                <IconButton 
+                  edge="start" 
+                  color="inherit" 
+                  onClick={toggleDrawer(!open)}
+                  aria-label="Menü öffnen"
+                  aria-expanded={open}
+                  aria-controls="navigation-drawer"
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
+              {!isAuthenticated && !isMdUp && (
+                <IconButton
+                  edge="start"
+                  color="inherit"
+                  onClick={() => setPublicDrawerOpen((prev) => !prev)}
+                  aria-label="Menü öffnen"
+                  aria-controls="public-navigation-drawer"
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
+              <Image src="/logo1.svg" alt="Evidoxa App" width={56} height={56} />
               <Typography variant="h6" component="p" sx={{ flexGrow: 1, fontWeight: 400, color: '#fff', letterSpacing: -1 }}>
                 Evidoxa
               </Typography>
+              {/* Public navigation in AppBar (md+) */}
+              {!isAuthenticated && isMdUp && renderPublicNavAppBar(publicNavItems)}
             </Stack>
             {/* Staging indicator */}
             {process.env.NEXT_PUBLIC_IS_STAGING === 'true' && (
@@ -246,14 +513,29 @@ export default function RootLayout({ children }) {
                 </Menu>
               </>
             ) : (
-              <Stack direction="row" spacing={2}>
-                <Button color="inherit" onClick={() => window.location.href = 'https://hopeful-bubble-54-staging.authkit.app/sign-up'}>
-                  Registrieren
-                </Button>
-                <Button color="inherit" onClick={() => window.location.href = '/api/auth/login'}>
-                  Login
-                </Button>
-              </Stack>
+              isMdUp ? (
+                <Stack direction="row" spacing={2}>
+                  <Button color="inherit" onClick={() => window.location.href = 'https://hopeful-bubble-54-staging.authkit.app/sign-up'}>
+                    Registrieren
+                  </Button>
+                  <Button color="inherit" onClick={() => window.location.href = '/api/auth/login'}>
+                    Login
+                  </Button>
+                </Stack>
+              ) : (
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title="Registrieren">
+                    <IconButton color="inherit" aria-label="Registrieren" onClick={() => window.location.href = 'https://hopeful-bubble-54-staging.authkit.app/sign-up'}>
+                      <PersonAddIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Login">
+                    <IconButton color="inherit" aria-label="Login" onClick={() => window.location.href = '/api/auth/login'}>
+                      <LoginIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              )
             )}
             </Stack>
            
@@ -271,44 +553,66 @@ export default function RootLayout({ children }) {
           '& .MuiDrawer-paper': {
             width: 240,
             boxSizing: 'border-box',
-            mt: '64px',
+            mt: { xs: '56px', md: '64px' },
           },
         }}
       >
         <List>
-          {currentNavItems.map((item) => (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                selected={currentPath === item.path}
-                onClick={() => handleNavigate(item.path, item.index)}
-                sx={{
-                  '&.Mui-selected': {
-                    backgroundColor: 'primary.main',
-                    color: 'primary.contrastText',
-                    '&:hover': {
-                      backgroundColor: 'primary.dark',
-                    },
-                  },
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    color: currentPath === item.path ? 'inherit' : 'text.primary',
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            </ListItem>
-          ))}
+          {isAuthenticated
+            ? currentNavItems.map((item) => (
+                <ListItem key={item.path} disablePadding>
+                  <ListItemButton
+                    selected={currentPath === item.path}
+                    onClick={() => handleNavigate(item.path, item.index)}
+                    sx={{
+                      '&.Mui-selected': {
+                        backgroundColor: 'primary.main',
+                        color: 'primary.contrastText',
+                        '&:hover': {
+                          backgroundColor: 'primary.dark',
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        color: currentPath === item.path ? 'inherit' : 'text.primary',
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.label} />
+                  </ListItemButton>
+                </ListItem>
+              ))
+            : null}
         </List>
       </Drawer>
+      {/* Drawer for public nav on mobile */}
+      {!isAuthenticated && !isMdUp && (
+        <Drawer
+          anchor="left"
+          open={publicDrawerOpen}
+          onClose={() => setPublicDrawerOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            width: 240,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: 240,
+              boxSizing: 'border-box',
+              mt: { xs: '56px', md: '64px' },
+            },
+          }}
+        >
+          {renderPublicNavDrawer(publicNavItems)}
+        </Drawer>
+      )}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          pt: '64px',
+          pt: { xs: '56px', md: '64px' },
           minHeight: '100vh',
         }}
       >

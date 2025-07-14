@@ -105,7 +105,7 @@ export default function Home() {
           </Typography>
           <Grid container spacing={4} justifyContent="center">
             {/* Personen */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Card raised={true} sx={{ maxWidth: 345, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: 1, backgroundColor: 'background.default' }}>
                 <CardHeader 
                 title="Personen" 
@@ -136,7 +136,7 @@ export default function Home() {
               </Card>
             </Grid>
             {/* Ereignisse */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Card raised={true} sx={{ maxWidth: 345, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: 1, backgroundColor: 'background.default' }}>
                 <CardHeader 
                 title="Ereignisse" 
@@ -167,7 +167,7 @@ export default function Home() {
               </Card>
             </Grid>
             {/* Beziehungen */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Card raised={true} sx={{ maxWidth: 345, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: 1, backgroundColor: 'background.default' }}>
                 <CardHeader 
                 title="Beziehungen" 
@@ -198,7 +198,7 @@ export default function Home() {
               </Card>
             </Grid>
             {/* Literatur */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Card raised={true} sx={{ maxWidth: 345, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: 1, backgroundColor: 'background.default' }}>
                 <CardHeader 
                 title="Literatur" 
@@ -230,7 +230,7 @@ export default function Home() {
               
             </Grid>
             {/* Analytics */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Card raised={true} sx={{ maxWidth: 345, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: 1, backgroundColor: 'background.default' }}>
                 <CardHeader 
                 title="Analytics" 
@@ -261,7 +261,7 @@ export default function Home() {
               </Card>
             </Grid>
             {/* Zusammenarbeit */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Card raised={true} sx={{ maxWidth: 345, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: 1, backgroundColor: 'background.default' }}>
                 <CardHeader 
                 title="Zusammenarbeit" 
