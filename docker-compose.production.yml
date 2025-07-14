@@ -29,6 +29,7 @@ services:
       - .env.production
     environment:
       - DATABASE_CLIENT=postgres
+      - DATABASE_URL=
     volumes:
       - ./logs/strapi:/opt/app/logs
       - ./uploads:/opt/app/public/uploads
