@@ -44,7 +44,7 @@ docker-compose -f docker-compose.production.yml stop nginx
 
 # Run certbot renewal
 print_status "Running certbot renewal..."
-docker-compose -f docker-compose.production.yml --env-file .env.production run --rm certbot renew
+docker-compose -f docker-compose.production.yml --env-file .env.production run --rm certbot renew --non-interactive --keep-until-expiring
 
 # Start nginx again
 print_status "Starting Nginx..."
