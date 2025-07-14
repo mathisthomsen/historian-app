@@ -33,8 +33,7 @@ function renderCopy(copy: any[]) {
         <Typography
           key={idx}
           variant="h5"
-          color="secondary.contrastText"
-          paragraph
+          color="secondary.contrastText"  
           sx={{
             mb: 3,
             fontSize: 'clamp(1rem, 2.5vw, 1.5rem)',

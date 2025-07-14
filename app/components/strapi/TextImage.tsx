@@ -26,7 +26,6 @@ function renderCopy(copy: any[]) {
         <Typography
           key={idx}
           variant="body1"
-          paragraph
           sx={{
             mb: 2,
             lineHeight: 1.6,
@@ -48,7 +47,7 @@ export default function TextImage({ Title, Copy, Image: Img, ImagePosition = 'ri
     <Box sx={{ py: 4, width: '100%', maxWidth: 1200 }}>
       <Grid container spacing={4} alignItems="center">
         {ImagePosition === 'left' && imageUrl && (
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ position: 'relative', width: '100%', height: 400 }}>
               <Image
                 src={imageUrl}
@@ -61,7 +60,7 @@ export default function TextImage({ Title, Copy, Image: Img, ImagePosition = 'ri
           </Grid>
         )}
         
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Box sx={{ p: 2 }}>
             {Title && (
               <Typography
@@ -81,7 +80,7 @@ export default function TextImage({ Title, Copy, Image: Img, ImagePosition = 'ri
         </Grid>
 
         {ImagePosition === 'right' && imageUrl && (
-          <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ position: 'relative', width: '100%', height: 400 }}>
               <Image
                 src={imageUrl}

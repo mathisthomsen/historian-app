@@ -28,7 +28,6 @@ function renderCopy(copy: any[]) {
         <Typography
           key={idx}
           variant="body1"
-          paragraph
           sx={{
             mb: 2,
             lineHeight: 1.6,
