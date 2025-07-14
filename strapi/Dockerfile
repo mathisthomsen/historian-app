@@ -37,7 +37,7 @@ COPY --from=builder /opt/app/src ./src
 COPY --from=builder /opt/app/config ./config
 COPY --from=builder /opt/app/database ./database
 COPY --from=builder /opt/app/favicon.png ./favicon.png
-COPY --from=builder /opt/app/build ./build
+COPY --from=builder /opt/app/dist ./dist
 
 # Expose the default Strapi port
 EXPOSE 1337
