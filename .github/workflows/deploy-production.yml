@@ -94,13 +94,17 @@ jobs:
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-strapi historian-nginx 2>/dev/null || true && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' docker-compose -f docker-compose.production.yml build && docker-compose -f docker-compose.production.yml up -d"
 
+      - name: Setup SSL certificates
+        run: |
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && ./deploy-production.sh ssl"
+
       - name: Check deployment status
         run: |
           ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/production/docker-compose.production.yml ps'
 
       - name: Health check
         run: |
-          ssh root@217.154.198.215 'sleep 15 && curl -f http://localhost:3000/api/health || curl -f http://localhost/api/health || echo "Health check failed, but deployment may still be successful"'
+          ssh root@217.154.198.215 'sleep 15 && curl -f https://evidoxa.com/api/health || curl -f http://localhost:3000/api/health || curl -f http://localhost/api/health || echo "Health check failed, but deployment may still be successful"'
 
       - name: Show container logs if health check fails
         if: failure()
