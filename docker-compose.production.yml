@@ -30,6 +30,8 @@ services:
     environment:
       - DATABASE_CLIENT=postgres
       - DATABASE_URL=
+      - DATABASE_SSL=true
+      - PGSSLMODE=require
     volumes:
       - ./logs/strapi:/opt/app/logs
       - ./uploads:/opt/app/public/uploads
