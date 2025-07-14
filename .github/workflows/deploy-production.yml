@@ -92,7 +92,7 @@ jobs:
 
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-strapi historian-nginx 2>/dev/null || true && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' docker-compose -f docker-compose.production.yml build && docker-compose -f docker-compose.production.yml up -d"
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-strapi historian-nginx 2>/dev/null || true && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' docker-compose -f docker-compose.production.yml build && docker-compose -f docker-compose.production.yml up -d"
 
       - name: Setup SSL certificates
         run: |
