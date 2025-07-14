@@ -143,6 +143,7 @@ setup_ssl() {
         --email "$SSL_EMAIL" \
         --agree-tos \
         --no-eff-email \
+        --non-interactive \
         -d "$DOMAIN"
     
     # If staging domain is configured, get certificate for it too
@@ -154,6 +155,7 @@ setup_ssl() {
             --email "$SSL_EMAIL" \
             --agree-tos \
             --no-eff-email \
+            --non-interactive \
             -d "$STAGING_DOMAIN"
     fi
     
@@ -311,8 +313,8 @@ renew_ssl() {
     # Stop nginx temporarily
     docker-compose -f docker-compose.production.yml stop nginx
     
-    # Run certbot renewal
-    docker-compose -f docker-compose.production.yml --env-file .env.production run --rm certbot renew
+    # Run certbot renewal with non-interactive flag
+    docker-compose -f docker-compose.production.yml --env-file .env.production run --rm certbot renew --non-interactive --keep-until-expiring
     
     # Start nginx again
     docker-compose -f docker-compose.production.yml start nginx
