@@ -31,7 +31,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build the application (skip db push during build)
-RUN npm run prisma:generate && next build
+RUN npm run prisma:generate && npx next build
 
 # Production image, copy all the files and run next
 FROM base AS runner
