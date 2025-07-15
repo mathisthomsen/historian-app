@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateAndSanitize, personSchema, RateLimiter } from '../../lib/validation'
 import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
 
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
+
 // Initialize rate limiter
 const rateLimiter = new RateLimiter(60000, 100); // 100 requests per minute
 

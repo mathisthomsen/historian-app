@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../libs/prisma'
 import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
 
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
+
 // 🟩 GET
 export async function GET(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {
   const user = await requireUser();

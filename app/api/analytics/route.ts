@@ -4,6 +4,9 @@ import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser'
 
 const prisma = new PrismaClient()
 
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const user = await requireUser();
   const localUser = await getOrCreateLocalUser(user);

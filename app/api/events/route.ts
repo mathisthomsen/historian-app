@@ -4,6 +4,9 @@ const prisma = new PrismaClient();
 import { NextResponse, NextRequest } from 'next/server';
 import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
 
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   const user = await requireUser();
   const localUser = await getOrCreateLocalUser(user);
