@@ -7,6 +7,9 @@ const MENDELEY_CLIENT_ID = process.env.MENDELEY_CLIENT_ID;
 const MENDELEY_CLIENT_SECRET = process.env.MENDELEY_CLIENT_SECRET;
 const MENDELEY_REDIRECT_URI = process.env.MENDELEY_REDIRECT_URI || 'http://localhost:3000/api/auth/mendeley/callback';
 
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
+
 // GET /api/auth/mendeley/callback - Handle OAuth callback
 export async function GET(request: NextRequest) {
   const workosUser = await requireUser();
