@@ -45,7 +45,7 @@ jobs:
 
       - name: Write .env.staging on server
         run: |
-          ssh root@217.154.198.215 "cat > /opt/historian-app/staging/.env.staging << 'EOF'
+          ssh root@217.154.198.215 "cat > /opt/historian-app/staging/.env.staging <<EOF
 NODE_ENV=staging
 DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
 DATABASE_URL_UNPOOLED=${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
