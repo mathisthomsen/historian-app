@@ -30,8 +30,8 @@ ENV DATABASE_URL_UNPOOLED=${DATABASE_URL_UNPOOLED:-${DATABASE_URL}}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application (skip db push during build)
+RUN npm run prisma:generate && next build
 
 # Production image, copy all the files and run next
 FROM base AS runner
