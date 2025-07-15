@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
+
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
 import { BibliographySyncManager } from '../../lib/bibliography-sync';
 
 // GET /api/bibliography-sync - Get all sync configurations for user
