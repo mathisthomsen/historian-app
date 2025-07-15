@@ -6,9 +6,9 @@ services:
     container_name: historian_postgres_staging
     restart: unless-stopped
     environment:
-      POSTGRES_DB: historian_staging
-      POSTGRES_USER: historian_staging
-      POSTGRES_PASSWORD: staging_password
+      POSTGRES_DB: ${MYSQL_DATABASE}
+      POSTGRES_USER: ${MYSQL_USER}
+      POSTGRES_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - postgres_staging_data:/var/lib/postgresql/data
     networks:
@@ -20,12 +20,8 @@ services:
       dockerfile: Dockerfile
     container_name: historian_app_staging
     restart: unless-stopped
-    environment:
-      - NODE_ENV=staging
-      - DATABASE_URL=postgresql://historian_staging:staging_password@postgres:5432/historian_staging
-      - NEXT_PUBLIC_APP_URL=https://staging.evidoxa.com
-      - NEXT_PUBLIC_STRAPI_URL=https://staging.evidoxa.com
-      # ...other env vars as in production
+    env_file:
+      - .env.staging
     ports:
       - "3001:3000"
     depends_on:
@@ -40,15 +36,16 @@ services:
     image: strapi/strapi:5.18.0
     container_name: historian_strapi_staging
     restart: unless-stopped
+    env_file:
+      - .env.staging
     environment:
       - NODE_ENV=staging
       - DATABASE_CLIENT=postgres
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
-      - DATABASE_NAME=historian_staging
-      - DATABASE_USERNAME=historian_staging
-      - DATABASE_PASSWORD=staging_password
-      # ...other Strapi env vars as in production
+      - DATABASE_NAME=${MYSQL_DATABASE}
+      - DATABASE_USERNAME=${MYSQL_USER}
+      - DATABASE_PASSWORD=${MYSQL_PASSWORD}
     ports:
       - "1338:1337"
     depends_on:
