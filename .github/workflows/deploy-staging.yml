@@ -42,10 +42,10 @@ jobs:
 
       - name: Build application (skip for faster deployment)
         env:
-          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          DATABASE_URL_UNPOOLED: ${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
           NODE_ENV: staging
-          NEXT_PUBLIC_STRAPI_URL: ${{ secrets.STAGING_NEXT_PUBLIC_STRAPI_URL }}
+          NEXT_PUBLIC_STRAPI_URL: https://staging.evidoxa.com/strapi
           NEXT_PUBLIC_IS_STAGING: true
         run: echo "Skipping local build - will build on VPS for faster deployment"
 
@@ -63,29 +63,28 @@ jobs:
         run: |
           ssh root@217.154.198.215 "cat > /opt/historian-app/staging/.env.staging << 'EOF'
           NODE_ENV=staging
-          DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
-          DATABASE_URL_UNPOOLED=${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
-          DATABASE_HOST=${{ secrets.STAGING_DATABASE_HOST }}
-          DATABASE_PORT=${{ secrets.STAGING_DATABASE_PORT }}
-          DATABASE_NAME=${{ secrets.STAGING_DATABASE_NAME }}
-          DATABASE_USERNAME=${{ secrets.STAGING_DATABASE_USERNAME }}
-          DATABASE_PASSWORD=${{ secrets.STAGING_DATABASE_PASSWORD }}
-          JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}
-          NEXT_PUBLIC_APP_URL=${{ secrets.STAGING_NEXT_PUBLIC_APP_URL }}
-          NEXT_PUBLIC_STRAPI_URL=${{ secrets.STAGING_NEXT_PUBLIC_STRAPI_URL }}
-          WORKOS_API_KEY=${{ secrets.STAGING_WORKOS_API_KEY }}
-          WORKOS_CLIENT_ID=${{ secrets.STAGING_WORKOS_CLIENT_ID }}
-          WORKOS_REDIRECT_URI=${{ secrets.STAGING_WORKOS_REDIRECT_URI }}
-          WORKOS_COOKIE_PASSWORD=${{ secrets.STAGING_WORKOS_COOKIE_PASSWORD }}
-          REDIS_PASSWORD=${{ secrets.STAGING_REDIS_PASSWORD }}
-          APP_KEYS=${{ secrets.STAGING_APP_KEYS }}
-          ENCRYPTION_KEY=${{ secrets.STAGING_ENCRYPTION_KEY }}
-          REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
-          ADMIN_JWT_SECRET=${{ secrets.STAGING_ADMIN_JWT_SECRET }}
-          ADMIN_API_TOKEN_SALT=${{ secrets.STAGING_ADMIN_API_TOKEN_SALT }}
-          AUTHKIT_REDIRECT_URI=${{ secrets.STAGING_AUTHKIT_REDIRECT_URI }}
-          DOMAIN=${{ secrets.STAGING_DOMAIN }}
-          SSL_EMAIL=${{ secrets.STAGING_SSL_EMAIL }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED=${{ secrets.DATABASE_URL_UNPOOLED }}
+          DATABASE_HOST=${{ secrets.STRAPI_DB_HOST }}
+          DATABASE_NAME=${{ secrets.STRAPI_DB_NAME }}
+          DATABASE_USERNAME=${{ secrets.STRAPI_DB_USER }}
+          DATABASE_PASSWORD=${{ secrets.STRAPI_DB_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_STRAPI_URL=${{ secrets.NEXT_PUBLIC_STRAPI_URL }}
+          WORKOS_API_KEY=${{ secrets.WORKOS_API_KEY }}
+          WORKOS_CLIENT_ID=${{ secrets.WORKOS_CLIENT_ID }}
+          WORKOS_REDIRECT_URI=${{ secrets.WORKOS_REDIRECT_URI }}
+          WORKOS_COOKIE_PASSWORD=${{ secrets.WORKOS_COOKIE_PASSWORD }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          APP_KEYS=${{ secrets.STRAPI_APP_KEYS }}
+          ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+          REDIS_URL=${{ secrets.REDIS_URL }}
+          ADMIN_JWT_SECRET=${{ secrets.STRAPI_ADMIN_JWT_SECRET }}
+          ADMIN_API_TOKEN_SALT=${{ secrets.STRAPI_ADMIN_API_TOKEN_SALT }}
+          AUTHKIT_REDIRECT_URI=${{ secrets.AUTHKIT_REDIRECT_URI }}
+          DOMAIN=${{ secrets.DOMAIN }}
+          SSL_EMAIL=${{ secrets.SSL_EMAIL }}
           EOF"
 
       - name: Copy files to VPS
