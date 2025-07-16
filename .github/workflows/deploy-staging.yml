@@ -8,7 +8,6 @@ on:
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,7 +35,7 @@ jobs:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
           NODE_ENV: staging
-          NEXT_PUBLIC_STRAPI_URL: ${{ secrets.STAGING_NEXT_PUBLIC_STRAPI_URL }}
+          NEXT_PUBLIC_STRAPI_URL: ${{ secrets.STAGING_PUBLIC_STRAPI_URL }}
         run: echo "Skipping local build - will build on VPS for faster deployment"
 
       - name: Set up SSH
