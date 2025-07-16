@@ -53,9 +53,9 @@ jobs:
         run: |
           rsync -avz --exclude '.git' ./ root@217.154.198.215:/opt/historian-app/staging
 
-      - name: Write .env.staging on server
+      - name: Write .env.staging locally
         run: |
-          ssh root@217.154.198.215 "cat > /opt/historian-app/staging/.env.staging <<EOF
+          cat > .env.staging <<EOF
 NODE_ENV=staging
 DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
 DATABASE_URL_UNPOOLED=${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
@@ -80,7 +80,14 @@ ADMIN_API_TOKEN_SALT=${{ secrets.STAGING_ADMIN_API_TOKEN_SALT }}
 AUTHKIT_REDIRECT_URI=${{ secrets.STAGING_AUTHKIT_REDIRECT_URI }}
 DOMAIN=${{ secrets.STAGING_DOMAIN }}
 SSL_EMAIL=${{ secrets.STAGING_SSL_EMAIL }}
-EOF"
+EOF
+
+      - name: Copy .env.staging to VPS
+        run: |
+          scp -o StrictHostKeyChecking=no .env.staging root@217.154.198.215:/opt/historian-app/staging/.env.staging
+
+      - name: Remove local .env.staging
+        run: rm .env.staging
 
       - name: Deploy on VPS
         run: |
