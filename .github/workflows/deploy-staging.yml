@@ -82,7 +82,7 @@ jobs:
 
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 "cd /opt/historian-app/staging && git pull origin development && docker-compose -f docker-compose.staging.yml down --remove-orphans && docker rm -f historian-redis-staging historian-certbot-staging historian_app_staging historian_strapi_staging historian_nginx_staging 2>/dev/null || true && DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.STAGING_REDIS_PASSWORD }}' docker-compose -f docker-compose.staging.yml build && docker-compose -f docker-compose.staging.yml up -d"
+          ssh root@217.154.198.215 "cd /opt/historian-app/staging && git pull origin development && docker-compose -f docker-compose.staging.yml down --remove-orphans && docker rm -f historian-redis-staging historian-certbot-staging historian_app_staging historian_strapi_staging historian_nginx_staging 2>/dev/null || true && DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.STAGING_REDIS_PASSWORD }}' docker-compose -f docker-compose.staging.yml build --no-cache && docker-compose -f docker-compose.staging.yml up -d"
 
       - name: Health check
         run: |
