@@ -23,9 +23,9 @@ WORKDIR /app
 ARG DATABASE_URL
 ARG DATABASE_URL_UNPOOLED
 
-# Set environment variables for build
-ENV DATABASE_URL=${DATABASE_URL}
-ENV DATABASE_URL_UNPOOLED=${DATABASE_URL_UNPOOLED:-${DATABASE_URL}}
+# Set environment variables for build (use $VAR for Docker to substitute build args)
+ENV DATABASE_URL=$DATABASE_URL
+ENV DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
