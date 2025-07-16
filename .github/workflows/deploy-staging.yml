@@ -91,9 +91,18 @@ jobs:
         run: |
           rsync -avz --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/staging
 
+      - name: Show .env.staging on server
+        run: |
+          ssh root@217.154.198.215 "cat /opt/historian-app/staging/.env.staging"
+
+      - name: Debug DATABASE_URL values
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}"
+          echo "DATABASE_URL_UNPOOLED=${{ secrets.DATABASE_URL_UNPOOLED }}"
+
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 "cd /opt/historian-app/staging && git pull origin development && docker-compose -f docker-compose.staging.yml down --remove-orphans && docker rm -f historian-redis-staging historian-certbot-staging historian_app_staging historian_strapi_staging historian_nginx_staging 2>/dev/null || true && DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.STAGING_REDIS_PASSWORD }}' docker-compose -f docker-compose.staging.yml build --no-cache && docker-compose -f docker-compose.staging.yml up -d"
+          ssh root@217.154.198.215 "cd /opt/historian-app/staging && git pull origin development && docker-compose -f docker-compose.staging.yml down --remove-orphans && docker rm -f historian-redis-staging historian-certbot-staging historian_app_staging historian_strapi_staging historian_nginx_staging 2>/dev/null || true && export DATABASE_URL='${{ secrets.DATABASE_URL }}' && export DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' && echo 'DATABASE_URL='$DATABASE_URL && echo 'DATABASE_URL_UNPOOLED='$DATABASE_URL_UNPOOLED && docker-compose -f docker-compose.staging.yml build --no-cache && docker-compose -f docker-compose.staging.yml up -d"
 
       - name: Check deployment status
         run: |
