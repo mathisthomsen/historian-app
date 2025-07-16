@@ -55,30 +55,32 @@ jobs:
 
       - name: Write .env.staging on server
         run: |
-          ssh root@217.154.198.215 "echo 'NODE_ENV=staging' > /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'DATABASE_URL_UNPOOLED=${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'DATABASE_HOST=${{ secrets.STAGING_DATABASE_HOST }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'DATABASE_PORT=${{ secrets.STAGING_DATABASE_PORT }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'DATABASE_NAME=${{ secrets.STAGING_DATABASE_NAME }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'DATABASE_USERNAME=${{ secrets.STAGING_DATABASE_USERNAME }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'DATABASE_PASSWORD=${{ secrets.STAGING_DATABASE_PASSWORD }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'NEXT_PUBLIC_APP_URL=${{ secrets.STAGING_NEXT_PUBLIC_APP_URL }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'NEXT_PUBLIC_STRAPI_URL=${{ secrets.STAGING_NEXT_PUBLIC_STRAPI_URL }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'WORKOS_API_KEY=${{ secrets.STAGING_WORKOS_API_KEY }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'WORKOS_CLIENT_ID=${{ secrets.STAGING_WORKOS_CLIENT_ID }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'WORKOS_REDIRECT_URI=${{ secrets.STAGING_WORKOS_REDIRECT_URI }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'WORKOS_COOKIE_PASSWORD=${{ secrets.STAGING_WORKOS_COOKIE_PASSWORD }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'REDIS_PASSWORD=${{ secrets.STAGING_REDIS_PASSWORD }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'APP_KEYS=${{ secrets.STAGING_APP_KEYS }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'ENCRYPTION_KEY=${{ secrets.STAGING_ENCRYPTION_KEY }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'REDIS_URL=${{ secrets.STAGING_REDIS_URL }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'ADMIN_JWT_SECRET=${{ secrets.STAGING_ADMIN_JWT_SECRET }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'ADMIN_API_TOKEN_SALT=${{ secrets.STAGING_ADMIN_API_TOKEN_SALT }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'AUTHKIT_REDIRECT_URI=${{ secrets.STAGING_AUTHKIT_REDIRECT_URI }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'DOMAIN=${{ secrets.STAGING_DOMAIN }}' >> /opt/historian-app/staging/.env.staging"
-          ssh root@217.154.198.215 "echo 'SSL_EMAIL=${{ secrets.STAGING_SSL_EMAIL }}' >> /opt/historian-app/staging/.env.staging"
+          ssh root@217.154.198.215 "cat > /opt/historian-app/staging/.env.staging <<EOF
+NODE_ENV=staging
+DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
+DATABASE_URL_UNPOOLED=${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
+DATABASE_HOST=${{ secrets.STAGING_DATABASE_HOST }}
+DATABASE_PORT=${{ secrets.STAGING_DATABASE_PORT }}
+DATABASE_NAME=${{ secrets.STAGING_DATABASE_NAME }}
+DATABASE_USERNAME=${{ secrets.STAGING_DATABASE_USERNAME }}
+DATABASE_PASSWORD=${{ secrets.STAGING_DATABASE_PASSWORD }}
+JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}
+NEXT_PUBLIC_APP_URL=${{ secrets.STAGING_NEXT_PUBLIC_APP_URL }}
+NEXT_PUBLIC_STRAPI_URL=${{ secrets.STAGING_NEXT_PUBLIC_STRAPI_URL }}
+WORKOS_API_KEY=${{ secrets.STAGING_WORKOS_API_KEY }}
+WORKOS_CLIENT_ID=${{ secrets.STAGING_WORKOS_CLIENT_ID }}
+WORKOS_REDIRECT_URI=${{ secrets.STAGING_WORKOS_REDIRECT_URI }}
+WORKOS_COOKIE_PASSWORD=${{ secrets.STAGING_WORKOS_COOKIE_PASSWORD }}
+REDIS_PASSWORD=${{ secrets.STAGING_REDIS_PASSWORD }}
+APP_KEYS=${{ secrets.STAGING_APP_KEYS }}
+ENCRYPTION_KEY=${{ secrets.STAGING_ENCRYPTION_KEY }}
+REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
+ADMIN_JWT_SECRET=${{ secrets.STAGING_ADMIN_JWT_SECRET }}
+ADMIN_API_TOKEN_SALT=${{ secrets.STAGING_ADMIN_API_TOKEN_SALT }}
+AUTHKIT_REDIRECT_URI=${{ secrets.STAGING_AUTHKIT_REDIRECT_URI }}
+DOMAIN=${{ secrets.STAGING_DOMAIN }}
+SSL_EMAIL=${{ secrets.STAGING_SSL_EMAIL }}
+EOF"
 
       - name: Deploy on VPS
         run: |

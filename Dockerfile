@@ -27,6 +27,9 @@ ARG DATABASE_URL_UNPOOLED
 ENV DATABASE_URL=$DATABASE_URL
 ENV DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED
 
+# Copy environment file for build context
+COPY .env.staging .env
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
