@@ -8,6 +8,8 @@ on:
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
+    environment: Staging
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,11 +23,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-      - name: Type check
-        run: npm run type-check
+      - name: Lint and Type check
+        run: |
+          npm run lint &
+          npm run type-check &
+          wait
 
       - name: Run tests
         run: npm test
@@ -35,7 +45,8 @@ jobs:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
           NODE_ENV: staging
-          NEXT_PUBLIC_STRAPI_URL: ${{ secrets.STAGING_PUBLIC_STRAPI_URL }}
+          NEXT_PUBLIC_STRAPI_URL: ${{ secrets.STAGING_NEXT_PUBLIC_STRAPI_URL }}
+          NEXT_PUBLIC_IS_STAGING: true
         run: echo "Skipping local build - will build on VPS for faster deployment"
 
       - name: Set up SSH
@@ -48,50 +59,52 @@ jobs:
           echo "    UserKnownHostsFile=/dev/null" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
 
+      - name: Write .env.staging on server
+        run: |
+          ssh root@217.154.198.215 "cat > /opt/historian-app/staging/.env.staging << 'EOF'
+          NODE_ENV=staging
+          DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED=${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
+          DATABASE_HOST=${{ secrets.STAGING_DATABASE_HOST }}
+          DATABASE_PORT=${{ secrets.STAGING_DATABASE_PORT }}
+          DATABASE_NAME=${{ secrets.STAGING_DATABASE_NAME }}
+          DATABASE_USERNAME=${{ secrets.STAGING_DATABASE_USERNAME }}
+          DATABASE_PASSWORD=${{ secrets.STAGING_DATABASE_PASSWORD }}
+          JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}
+          NEXT_PUBLIC_APP_URL=${{ secrets.STAGING_NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_STRAPI_URL=${{ secrets.STAGING_NEXT_PUBLIC_STRAPI_URL }}
+          WORKOS_API_KEY=${{ secrets.STAGING_WORKOS_API_KEY }}
+          WORKOS_CLIENT_ID=${{ secrets.STAGING_WORKOS_CLIENT_ID }}
+          WORKOS_REDIRECT_URI=${{ secrets.STAGING_WORKOS_REDIRECT_URI }}
+          WORKOS_COOKIE_PASSWORD=${{ secrets.STAGING_WORKOS_COOKIE_PASSWORD }}
+          REDIS_PASSWORD=${{ secrets.STAGING_REDIS_PASSWORD }}
+          APP_KEYS=${{ secrets.STAGING_APP_KEYS }}
+          ENCRYPTION_KEY=${{ secrets.STAGING_ENCRYPTION_KEY }}
+          REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
+          ADMIN_JWT_SECRET=${{ secrets.STAGING_ADMIN_JWT_SECRET }}
+          ADMIN_API_TOKEN_SALT=${{ secrets.STAGING_ADMIN_API_TOKEN_SALT }}
+          AUTHKIT_REDIRECT_URI=${{ secrets.STAGING_AUTHKIT_REDIRECT_URI }}
+          DOMAIN=${{ secrets.STAGING_DOMAIN }}
+          SSL_EMAIL=${{ secrets.STAGING_SSL_EMAIL }}
+          EOF"
+
       - name: Copy files to VPS
         run: |
-          rsync -avz --exclude '.git' ./ root@217.154.198.215:/opt/historian-app/staging
-
-      - name: Write .env.staging locally
-        run: |
-          cat > .env.staging <<EOF
-NODE_ENV=staging
-DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
-DATABASE_URL_UNPOOLED=${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}
-DATABASE_HOST=${{ secrets.STAGING_DATABASE_HOST }}
-DATABASE_PORT=${{ secrets.STAGING_DATABASE_PORT }}
-DATABASE_NAME=${{ secrets.STAGING_DATABASE_NAME }}
-DATABASE_USERNAME=${{ secrets.STAGING_DATABASE_USERNAME }}
-DATABASE_PASSWORD=${{ secrets.STAGING_DATABASE_PASSWORD }}
-JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}
-NEXT_PUBLIC_APP_URL=${{ secrets.STAGING_NEXT_PUBLIC_APP_URL }}
-NEXT_PUBLIC_STRAPI_URL=${{ secrets.STAGING_NEXT_PUBLIC_STRAPI_URL }}
-WORKOS_API_KEY=${{ secrets.STAGING_WORKOS_API_KEY }}
-WORKOS_CLIENT_ID=${{ secrets.STAGING_WORKOS_CLIENT_ID }}
-WORKOS_REDIRECT_URI=${{ secrets.STAGING_WORKOS_REDIRECT_URI }}
-WORKOS_COOKIE_PASSWORD=${{ secrets.STAGING_WORKOS_COOKIE_PASSWORD }}
-REDIS_PASSWORD=${{ secrets.STAGING_REDIS_PASSWORD }}
-APP_KEYS=${{ secrets.STAGING_APP_KEYS }}
-ENCRYPTION_KEY=${{ secrets.STAGING_ENCRYPTION_KEY }}
-REDIS_URL=${{ secrets.STAGING_REDIS_URL }}
-ADMIN_JWT_SECRET=${{ secrets.STAGING_ADMIN_JWT_SECRET }}
-ADMIN_API_TOKEN_SALT=${{ secrets.STAGING_ADMIN_API_TOKEN_SALT }}
-AUTHKIT_REDIRECT_URI=${{ secrets.STAGING_AUTHKIT_REDIRECT_URI }}
-DOMAIN=${{ secrets.STAGING_DOMAIN }}
-SSL_EMAIL=${{ secrets.STAGING_SSL_EMAIL }}
-EOF
-
-      - name: Copy .env.staging to VPS
-        run: |
-          scp -o StrictHostKeyChecking=no .env.staging root@217.154.198.215:/opt/historian-app/staging/.env.staging
-
-      - name: Remove local .env.staging
-        run: rm .env.staging
+          rsync -avz --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/staging
 
       - name: Deploy on VPS
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/staging && git pull origin development && docker-compose -f docker-compose.staging.yml down --remove-orphans && docker rm -f historian-redis-staging historian-certbot-staging historian_app_staging historian_strapi_staging historian_nginx_staging 2>/dev/null || true && DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.STAGING_DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.STAGING_REDIS_PASSWORD }}' docker-compose -f docker-compose.staging.yml build --no-cache && docker-compose -f docker-compose.staging.yml up -d"
 
+      - name: Check deployment status
+        run: |
+          ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/staging/docker-compose.staging.yml ps'
+
       - name: Health check
         run: |
-          ssh root@217.154.198.215 'curl -f http://localhost:8080/api/health || exit 1' 
+          ssh root@217.154.198.215 'sleep 15 && curl -f http://localhost:8080/api/health || exit 1' 
+
+      - name: Show container logs if health check fails
+        if: failure()
+        run: |
+          ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/staging/docker-compose.staging.yml ps'
