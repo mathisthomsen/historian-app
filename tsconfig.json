@@ -34,7 +34,7 @@
     "**/*.ts",
     "**/*.tsx",
     "__tests__/**/*"
-  ],
+, "strapi/config/api.js"  ],
   "exclude": [
     "node_modules"
   ]
