@@ -88,9 +88,20 @@ jobs:
           SSL_EMAIL=${{ secrets.SSL_EMAIL }}
           EOF"
 
+      - name: Show local nginx.conf before rsync
+        run: |
+          echo '--- LOCAL nginx.conf ---'
+          cat ./nginx/nginx.conf
+          echo '--- LOCAL nginx.conf SHA256 ---'
+          sha256sum ./nginx/nginx.conf
+
       - name: Copy files to VPS
         run: |
           rsync -avz --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/staging
+
+      - name: Show remote nginx.conf after rsync
+        run: |
+          ssh root@217.154.198.215 "echo '--- REMOTE nginx.conf ---' && cat /opt/historian-app/staging/nginx/nginx.conf && echo '--- REMOTE nginx.conf SHA256 ---' && sha256sum /opt/historian-app/staging/nginx/nginx.conf"
 
       - name: Show .env.staging on server
         run: |
