@@ -82,6 +82,7 @@ jobs:
           REDIS_URL=${{ secrets.REDIS_URL }}
           ADMIN_JWT_SECRET=${{ secrets.STRAPI_ADMIN_JWT_SECRET }}
           ADMIN_API_TOKEN_SALT=${{ secrets.STRAPI_ADMIN_API_TOKEN_SALT }}
+          ADMIN_TRANSFER_TOKEN_SALT=${{ secrets.STRAPI_ADMIN_TRANSFER_TOKEN_SALT }}
           AUTHKIT_REDIRECT_URI=${{ secrets.AUTHKIT_REDIRECT_URI }}
           DOMAIN=${{ secrets.DOMAIN }}
           SSL_EMAIL=${{ secrets.SSL_EMAIL }}
