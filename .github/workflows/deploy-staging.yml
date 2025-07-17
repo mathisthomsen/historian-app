@@ -91,9 +91,9 @@ jobs:
       - name: Show local nginx.conf before rsync
         run: |
           echo '--- LOCAL nginx.conf ---'
-          cat ./nginx/nginx.conf
+          cat ./nginx/nginx.staging.conf
           echo '--- LOCAL nginx.conf SHA256 ---'
-          sha256sum ./nginx/nginx.conf
+          sha256sum ./nginx/nginx.staging.conf
 
       - name: Copy files to VPS
         run: |
@@ -101,7 +101,7 @@ jobs:
 
       - name: Show remote nginx.conf after rsync
         run: |
-          ssh root@217.154.198.215 "echo '--- REMOTE nginx.conf ---' && cat /opt/historian-app/staging/nginx/nginx.conf && echo '--- REMOTE nginx.conf SHA256 ---' && sha256sum /opt/historian-app/staging/nginx/nginx.conf"
+          ssh root@217.154.198.215 "echo '--- REMOTE nginx.conf ---' && cat /opt/historian-app/staging/nginx/nginx.staging.conf && echo '--- REMOTE nginx.conf SHA256 ---' && sha256sum /opt/historian-app/staging/nginx/nginx.staging.conf"
 
       - name: Show .env.staging on server
         run: |

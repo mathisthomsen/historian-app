@@ -84,11 +84,20 @@ jobs:
           WORKOS_REDIRECT_URI=${{ secrets.WORKOS_REDIRECT_URI }}
           EOF"
 
-
+      - name: Show local nginx.conf before rsync
+        run: |
+          echo '--- LOCAL nginx.conf ---'
+          cat ./nginx/nginx.production.conf
+          echo '--- LOCAL nginx.conf SHA256 ---'
+          sha256sum ./nginx/nginx.production.conf
 
       - name: Copy files to VPS
         run: |
           rsync -avz --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/production
+
+      - name: Show remote nginx.conf after rsync
+        run: |
+          ssh root@217.154.198.215 "echo '--- REMOTE nginx.conf ---' && cat /opt/historian-app/production/nginx/nginx.production.conf && echo '--- REMOTE nginx.conf SHA256 ---' && sha256sum /opt/historian-app/production/nginx/nginx.production.conf"
 
       - name: Deploy on VPS
         run: |
