@@ -4,6 +4,22 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 A comprehensive web application for managing historical data, including persons, events, literature, and relationships. Built with Next.js, Prisma, PostgreSQL, and Material-UI.
 
+## Environment-Specific Configuration
+
+This project uses dedicated configuration files for each environment to ensure clarity and prevent accidental misconfiguration:
+
+| Environment   | Nginx Config                | Docker Compose Config           |
+|---------------|----------------------------|---------------------------------|
+| Local Dev     | nginx.local.conf           | docker-compose.local.yml        |
+| Staging       | nginx.staging.conf         | docker-compose.staging.yml      |
+| Production    | nginx.production.conf      | docker-compose.production.yml   |
+
+- **nginx.local.conf** and **docker-compose.local.yml** are for local development only. They should not be used for staging or production deployments.
+- **nginx.staging.conf** and **docker-compose.staging.yml** are for the staging environment.
+- **nginx.production.conf** and **docker-compose.production.yml** are for the production environment.
+
+> **Note:** The old generic `nginx.conf` and `docker-compose.yml` have been replaced by these environment-specific files for clarity and safety.
+
 ## Features
 
 - **User Authentication**: Secure login/register with WorkOS AuthKit

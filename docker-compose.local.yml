@@ -1,3 +1,5 @@
+# LOCAL DEVELOPMENT ONLY: This compose file is for running the stack locally.
+# Do not use for production or staging deployments.
 version: '3.8'
 
 services:
