@@ -20,6 +20,19 @@ This project uses dedicated configuration files for each environment to ensure c
 
 > **Note:** The old generic `nginx.conf` and `docker-compose.yml` have been replaced by these environment-specific files for clarity and safety.
 
+### SSL Certificate Management
+
+The application uses Let's Encrypt for SSL certificates with ACME challenge verification:
+
+- **ACME Challenge Path**: `/.well-known/acme-challenge/`
+- **Challenge Files Location**: `certbot/www/` (mounted to `/etc/nginx/certbot/www` in containers)
+- **Certificate Storage**: `certbot/conf/` (mounted to `/etc/letsencrypt` in containers)
+
+To test ACME challenge functionality:
+```bash
+./test-acme-challenge.sh
+```
+
 ## Features
 
 - **User Authentication**: Secure login/register with WorkOS AuthKit
