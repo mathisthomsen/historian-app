@@ -128,3 +128,7 @@ jobs:
         if: failure()
         run: |
           ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/staging/docker-compose.staging.yml ps'
+
+      - name: Reload host-level Nginx
+        run: |
+          ssh root@217.154.198.215 'nginx -s reload || systemctl reload nginx || echo "Nginx reload failed"'

@@ -107,6 +107,10 @@ jobs:
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/production && ./deploy-production.sh ssl"
 
+      - name: Reload host-level Nginx
+        run: |
+          ssh root@217.154.198.215 'nginx -s reload || systemctl reload nginx || echo "Nginx reload failed"'
+
       - name: Check deployment status
         run: |
           ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/production/docker-compose.production.yml ps'
