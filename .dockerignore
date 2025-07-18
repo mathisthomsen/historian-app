@@ -132,9 +132,6 @@ certbot/
 # Nginx configuration
 nginx/
 
-# Strapi
-strapi/
-
 # Test results
 test-results/
 playwright-report/

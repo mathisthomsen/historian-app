@@ -53,9 +53,6 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy environment file for runtime
-COPY .env.local ./
-
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
