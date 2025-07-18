@@ -1,5 +1,5 @@
 # Use the official Node.js runtime as the base image
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -10,6 +10,10 @@ WORKDIR /app
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
+
+# Set environment variable to ignore Prisma checksum errors
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+
 RUN npm ci
 
 # Generate Prisma client
@@ -24,14 +28,19 @@ ARG DATABASE_URL
 ARG DATABASE_URL_UNPOOLED
 
 # Set environment variables for build
-ENV DATABASE_URL=${DATABASE_URL}
-ENV DATABASE_URL_UNPOOLED=${DATABASE_URL_UNPOOLED:-${DATABASE_URL}}
+ENV DATABASE_URL=$DATABASE_URL
+ENV DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+
+# Set default values if not provided
+ENV DATABASE_URL=${DATABASE_URL:-postgres://historian:historian@postgres:5432/historian}
+ENV DATABASE_URL_UNPOOLED=${DATABASE_URL_UNPOOLED:-postgres://historian:historian@postgres:5432/historian}
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN npm run build:no-db
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -43,6 +52,9 @@ ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+
+# Copy environment file for runtime
+COPY .env.local ./
 
 COPY --from=builder /app/public ./public
 

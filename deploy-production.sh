@@ -68,6 +68,10 @@ start_services() {
     mkdir -p ssl
     mkdir -p certbot/{conf,www}
     
+    # Run Prisma migrations before starting services
+    print_status "Running Prisma migrations (npx prisma migrate deploy)..."
+    docker-compose -f docker-compose.production.yml --env-file .env.production run --rm app npx prisma migrate deploy
+    print_status "Prisma migrations completed."
     # Start services
     docker-compose -f docker-compose.production.yml --env-file .env.production up -d
     

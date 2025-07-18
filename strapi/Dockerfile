@@ -28,15 +28,14 @@ WORKDIR /opt/app
 # Copy package files
 COPY package.json yarn.lock ./
 
-# Install only production dependencies
-RUN yarn install --frozen-lockfile --production=true
+# Install all dependencies (not just production) for dev mode
+RUN yarn install --frozen-lockfile --production=false
 
 # Copy built application from builder stage
 COPY --from=builder /opt/app/public ./public
 COPY --from=builder /opt/app/src ./src
 COPY --from=builder /opt/app/config ./config
 COPY --from=builder /opt/app/database ./database
-COPY --from=builder /opt/app/favicon.png ./favicon.png
 COPY --from=builder /opt/app/dist ./dist
 
 # Copy admin build files to the expected location
