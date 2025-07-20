@@ -3,7 +3,7 @@ module.exports = ({ env }) => ({
     secret: env('ADMIN_JWT_SECRET'),
   },
   apiToken: {
-    salt: env('ADMIN_API_TOKEN_SALT'),
+    salt: env('API_TOKEN_SALT'),
   },
   transfer: {
     token: {
@@ -17,4 +17,7 @@ module.exports = ({ env }) => ({
     nps: env.bool('FLAG_NPS', true),
     promoteEE: env.bool('FLAG_PROMOTE_EE', true),
   },
+  url: env('STRAPI_ADMIN_BACKEND_URL'),
+  serveAdminPanel: true,
+  autoOpen: false,
 }); 

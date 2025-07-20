@@ -31,15 +31,13 @@ services:
       DATABASE_USERNAME: historian
       DATABASE_PASSWORD: historian
       DATABASE_SSL: "false"
-      APP_KEYS: "key1,key2,key3,key4"
-      API_TOKEN_SALT: "salt"
-      ADMIN_JWT_SECRET: "secret"
-      JWT_SECRET: "secret"
+
+
     ports:
       - "1337:1337"
     depends_on:
       - postgres
-    command: yarn develop
+    command: yarn develop --debug
     volumes:
       - strapi_uploads:/opt/app/public/uploads
     networks:

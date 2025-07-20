@@ -16,7 +16,8 @@ COPY . .
 # Ensure TypeScript types are properly installed
 RUN yarn add @types/minimatch@^6.0.0
 
-# Build the Strapi admin panel
+# Build the Strapi admin panel in development mode
+ENV NODE_ENV=development
 RUN yarn build
 
 # Production stage
@@ -45,5 +46,5 @@ COPY --from=builder /opt/app/dist/build/* /opt/app/node_modules/@strapi/admin/di
 # Expose the default Strapi port
 EXPOSE 1337
 
-# Start Strapi
-CMD ["yarn", "start"]
+# Start Strapi in development mode
+CMD ["yarn", "develop"]
