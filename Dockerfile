@@ -31,10 +31,12 @@ ARG DATABASE_URL_UNPOOLED
 ENV DATABASE_URL=$DATABASE_URL
 ENV DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+ENV NODE_ENV=production
+ENV SKIP_ENV_VALIDATION=1
 
 # Set default values if not provided
-ENV DATABASE_URL=${DATABASE_URL:-postgres://historian:historian@postgres:5432/historian}
-ENV DATABASE_URL_UNPOOLED=${DATABASE_URL_UNPOOLED:-postgres://historian:historian@postgres:5432/historian}
+ENV DATABASE_URL=${DATABASE_URL:-postgresql://historian:historian@postgres:5432/historian}
+ENV DATABASE_URL_UNPOOLED=${DATABASE_URL_UNPOOLED:-postgresql://historian:historian@postgres:5432/historian}
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

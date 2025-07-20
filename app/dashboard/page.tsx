@@ -148,7 +148,7 @@ export default function DashboardPage() {
         {stats && (
           <>
             <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Total Persons"
                   value={stats.totalPersons}
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                   color="primary"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Total Events"
                   value={stats.totalEvents}
@@ -164,7 +164,7 @@ export default function DashboardPage() {
                   color="secondary"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Total Locations"
                   value={stats.totalLocations}
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                   color="info"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
                   title="Total Literature"
                   value={stats.totalLiterature}
@@ -183,7 +183,7 @@ export default function DashboardPage() {
             </Grid>
 
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Card sx={{ borderRadius: 3 }}>
                   <CardContent>
                     <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Card sx={{ borderRadius: 3 }}>
                   <CardContent>
                     <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
