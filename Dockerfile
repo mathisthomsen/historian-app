@@ -14,7 +14,8 @@ COPY prisma ./prisma
 # Set environment variable to ignore Prisma checksum errors
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 
-RUN npm ci --legacy-peer-deps
+# Install dependencies with memory optimizations
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 
 # Generate Prisma client
 RUN npx prisma generate
@@ -35,16 +36,25 @@ ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=1
 ENV RESEND_API_KEY=$RESEND_API_KEY
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Set default values if not provided
 ENV DATABASE_URL=${DATABASE_URL:-postgresql://historian:historian@postgres:5432/historian}
 ENV DATABASE_URL_UNPOOLED=${DATABASE_URL_UNPOOLED:-postgresql://historian:historian@postgres:5432/historian}
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY package.json package-lock.json* ./
+COPY prisma ./prisma
+COPY app ./app
+COPY lib ./lib
+COPY libs ./libs
+COPY public ./public
+COPY next.config.mjs ./
+COPY tsconfig.json ./
+COPY middleware.ts ./
 
-# Build the application
-RUN npm run build:no-db
+# Build the application with memory optimizations
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build:no-db
 
 # Production image, copy all the files and run next
 FROM base AS runner
