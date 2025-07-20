@@ -26,6 +26,7 @@ WORKDIR /app
 # Add build arguments for database URLs
 ARG DATABASE_URL
 ARG DATABASE_URL_UNPOOLED
+ARG RESEND_API_KEY
 
 # Set environment variables for build
 ENV DATABASE_URL=$DATABASE_URL
@@ -33,6 +34,7 @@ ENV DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=1
+ENV RESEND_API_KEY=$RESEND_API_KEY
 
 # Set default values if not provided
 ENV DATABASE_URL=${DATABASE_URL:-postgresql://historian:historian@postgres:5432/historian}

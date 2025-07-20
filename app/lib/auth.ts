@@ -5,7 +5,8 @@ import prisma from '@/app/libs/prisma';
 import bcrypt from 'bcryptjs';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend only if API key is available
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export const authOptions: any = {
   adapter: PrismaAdapter(prisma),
@@ -87,6 +88,11 @@ export const authOptions: any = {
       from: process.env.EMAIL_FROM,
       async sendVerificationRequest({ identifier: email, url, provider }) {
         try {
+          if (!resend) {
+            console.error('Resend not configured - skipping email send');
+            throw new Error('Email service not configured');
+          }
+
           const { data, error } = await resend.emails.send({
             from: process.env.EMAIL_FROM!,
             to: email,
