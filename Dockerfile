@@ -46,8 +46,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
 COPY app ./app
-COPY lib ./lib
-COPY libs ./libs
 COPY public ./public
 COPY next.config.mjs ./
 COPY tsconfig.json ./
