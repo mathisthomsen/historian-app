@@ -162,7 +162,7 @@ export default function VerifyEmailPage() {
         </Typography>
         
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          We're verifying your email address to complete your registration.
+          We&apos;re verifying your email address to complete your registration.
         </Typography>
 
         {getStatusContent()}

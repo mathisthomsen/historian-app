@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import {
   Box,
   Typography,
-  Grid,
   Card,
   CardContent,
   CircularProgress,
   Alert,
   Container,
 } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import {
   People,
   Event,
