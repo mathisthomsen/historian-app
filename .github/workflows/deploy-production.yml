@@ -64,6 +64,10 @@ jobs:
           # Add the server to known hosts
           ssh-keyscan -H 217.154.198.215 >> ~/.ssh/known_hosts
 
+      - name: Copy files to VPS
+        run: |
+          rsync -avz --delete --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/production
+
       - name: Write .env.production on server
         run: |
           ssh root@217.154.198.215 "cat > /opt/historian-app/production/.env.production << 'EOF'
@@ -102,12 +106,6 @@ jobs:
           MAX_FILE_SIZE=10485760
           ALLOWED_FILE_TYPES=".csv,.xlsx,.json"
           EOF"
-
-
-
-      - name: Copy files to VPS
-        run: |
-          rsync -avz --delete --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/production
 
       - name: Deploy on VPS
         run: |
