@@ -83,10 +83,6 @@ jobs:
           DATABASE_NAME=${{ secrets.STRAPI_DB_NAME }}
           DATABASE_PASSWORD=${{ secrets.STRAPI_DB_PASSWORD }}
           DATABASE_USERNAME=${{ secrets.STRAPI_DB_USER }}
-          WORKOS_API_KEY=${{ secrets.WORKOS_API_KEY }}
-          WORKOS_CLIENT_ID=${{ secrets.WORKOS_CLIENT_ID }}
-          WORKOS_COOKIE_PASSWORD=${{ secrets.WORKOS_COOKIE_PASSWORD }}
-          WORKOS_REDIRECT_URI=${{ secrets.WORKOS_REDIRECT_URI }}
           # Email Configuration
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM=${{ secrets.EMAIL_FROM }}
