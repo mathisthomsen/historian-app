@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
+import { requireUser } from '../../../lib/requireUser';
 import { BibliographySyncManager } from '../../../lib/bibliography-sync';
 
 // PUT /api/bibliography-sync/[id] - Update sync configuration
@@ -7,8 +7,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const workosUser = await requireUser();
-  const user = await getOrCreateLocalUser(workosUser);
+  const user = await requireUser();
 
   try {
     const resolvedParams = await params;
@@ -27,8 +26,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const workosUser = await requireUser();
-  const user = await getOrCreateLocalUser(workosUser);
+  const user = await requireUser();
 
   try {
     const resolvedParams = await params;

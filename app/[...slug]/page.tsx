@@ -4,6 +4,7 @@ import React from 'react';
 import PageComponentRenderer from '../components/strapi/PageComponentRenderer';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { notFound } from 'next/navigation';
 
 const client = strapi({ baseURL: process.env.NEXT_PUBLIC_STRAPI_URL || 'https://evidoxa.com/strapi' });
 
@@ -25,6 +26,11 @@ export async function generateStaticParams() {
 export default async function ContentPage({ params }: { params: Promise<{ slug: string[] }> }) {
   const awaitedParams = await params;
   const slug = Array.isArray(awaitedParams.slug) ? awaitedParams.slug.join('/') : awaitedParams.slug;
+  
+  // Exclude API routes from this catch-all route
+  if (slug.startsWith('api/')) {
+    notFound();
+  }
   
   try {
     const res = await client.collection('content-pages').find({

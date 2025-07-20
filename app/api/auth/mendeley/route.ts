@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
+import { requireUser } from '../../../lib/requireUser';
 
 // Mendeley OAuth configuration
 const MENDELEY_CLIENT_ID = process.env.MENDELEY_CLIENT_ID;
@@ -8,8 +8,7 @@ const MENDELEY_REDIRECT_URI = process.env.MENDELEY_REDIRECT_URI || 'http://local
 
 // GET /api/auth/mendeley - Generate authorization URL
 export async function GET(request: NextRequest) {
-  const workosUser = await requireUser();
-  const user = await getOrCreateLocalUser(workosUser);
+  const user = await requireUser();
 
   if (!MENDELEY_CLIENT_ID) {
     return NextResponse.json({ error: 'Mendeley OAuth not configured' }, { status: 500 });

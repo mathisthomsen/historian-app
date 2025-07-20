@@ -82,6 +82,24 @@ jobs:
           WORKOS_CLIENT_ID=${{ secrets.WORKOS_CLIENT_ID }}
           WORKOS_COOKIE_PASSWORD=${{ secrets.WORKOS_COOKIE_PASSWORD }}
           WORKOS_REDIRECT_URI=${{ secrets.WORKOS_REDIRECT_URI }}
+          # Email Configuration
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM=${{ secrets.EMAIL_FROM }}
+          # NextAuth Configuration
+          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+          # API Configuration
+          API_RATE_LIMIT_WINDOW_MS=60000
+          API_RATE_LIMIT_MAX_REQUESTS=50
+          # Cache Configuration
+          CACHE_TTL_MS=300000
+          # Production Settings
+          NODE_ENV=production
+          DEBUG=false
+          LOG_LEVEL=warn
+          # File Upload
+          MAX_FILE_SIZE=10485760
+          ALLOWED_FILE_TYPES=".csv,.xlsx,.json"
           EOF"
 
 

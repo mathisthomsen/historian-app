@@ -1,49 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser'
-
-const prisma = new PrismaClient()
+import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '../../../lib/requireUser';
+import prisma from '../../../libs/prisma';
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  const localUser = await getOrCreateLocalUser(user);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
   try {
-    // Get recent activities from literature (only model with createdAt field)
-    const recentLiterature = await prisma.literature.findMany({
-      where: {
-        userId: localUser.id
-      },
+    // Get recent activities for the user from multiple sources
+    const recentActivities = await prisma.authAuditLog.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
       select: {
         id: true,
-        title: true,
-        author: true,
-        createdAt: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 10
+        eventType: true,
+        createdAt: true,
+        details: true
+      }
     });
 
-    const activities = recentLiterature.map(item => ({
-      id: item.id,
-      type: 'literature',
-      title: item.title,
-      description: `Added literature: ${item.title} by ${item.author || 'Unknown'}`,
-      date: item.createdAt
+    // Transform the activities to match the expected format
+    const transformedActivities = recentActivities.map(activity => ({
+      id: activity.id,
+      type: 'activity',
+      action: activity.eventType.toLowerCase().includes('created') ? 'created' : 'updated',
+      title: `${activity.eventType} activity`,
+      timestamp: activity.createdAt.toISOString()
     }));
 
-    return NextResponse.json(activities);
+    return NextResponse.json(transformedActivities);
   } catch (error) {
     console.error('Error fetching recent activities:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch recent activities' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch recent activities' }, { status: 500 });
   }
 } 

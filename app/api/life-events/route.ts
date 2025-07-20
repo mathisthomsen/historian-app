@@ -2,16 +2,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
+import { requireUser } from '../../lib/requireUser';
 
 export async function POST(req: NextRequest) {
   const user = await requireUser();
-  const localUser = await getOrCreateLocalUser(user);
   try {
     const data = await req.json();
     const lifeEvent = await prisma.life_events.create({
       data: {
-        userId: localUser.id,
+        userId: user.id,
         person_id: data.personId,
         title: data.title,
         description: data.description,
@@ -30,12 +29,6 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const user = await requireUser();
-  const localUser = await prisma.user.findUnique({
-    where: { workosUserId: user.id }
-  });
-  if (!localUser) {
-    return NextResponse.json({ error: 'User not found' }, { status: 401 });
-  }
   try {
     const { searchParams } = new URL(req.url);
     const location = searchParams.get('location');
@@ -43,7 +36,7 @@ export async function GET(req: NextRequest) {
     const eventId = searchParams.get('eventId');
 
     const whereClause: any = {
-      userId: localUser.id
+      userId: user.id
     };
 
     if (location) {
@@ -64,7 +57,7 @@ export async function GET(req: NextRequest) {
         SELECT le.*, p.id as person_id, p.first_name, p.last_name
         FROM life_events le
         LEFT JOIN persons p ON le.person_id = p.id
-        WHERE le."userId" = ${localUser.id}
+        WHERE le."userId" = ${user.id}
           AND LOWER(TRIM(le.location)) = LOWER(TRIM(${location}))
         ORDER BY le.start_date ASC
       ` as any[];

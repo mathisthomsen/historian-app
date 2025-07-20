@@ -27,7 +27,8 @@ import {
   Stack,
   Chip,
   ExpandLess,
-  ExpandMore
+  ExpandMore,
+  CircularProgress
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -48,7 +49,7 @@ import './globals.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import LoadingBar from './components/LoadingBar';
 import { createCustomTheme } from './lib/theme';
-import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import { useSession, signOut } from 'next-auth/react';
 import React, { useRef } from 'react';
 import * as MuiIcons from '@mui/icons-material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -75,6 +76,7 @@ function HideOnScroll(props) {
 export default function RootLayout({ children }) {
   const [darkMode, setDarkMode] = useState(null);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -90,9 +92,10 @@ export default function RootLayout({ children }) {
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const [publicDrawerOpen, setPublicDrawerOpen] = useState(false);
 
-  // AuthKit user/session
-  const { user, loading } = useAuth();
-  const isAuthenticated = !!user;
+  // NextAuth session
+  const { data: session, status } = useSession();
+  const isAuthenticated = !!session?.user;
+  const user = session?.user;
 
   // Navigation items for authenticated users
   const authenticatedNavItems = [
@@ -129,7 +132,7 @@ export default function RootLayout({ children }) {
   };
 
   const handleLogout = async () => {
-    window.location.href = '/api/auth/logout';
+    await signOut({ callbackUrl: '/' });
   };
 
   // Accessible menu open/close handlers for public nav
@@ -141,6 +144,7 @@ export default function RootLayout({ children }) {
   };
 
   useEffect(() => {
+    setMounted(true);
     const storedMode = localStorage.getItem('darkMode');
     if (storedMode === 'dark' || storedMode === 'light') {
       setDarkMode(storedMode);
@@ -343,66 +347,31 @@ export default function RootLayout({ children }) {
     );
   }
 
-  // Render public nav for Drawer (mobile)
+  // Render public nav in Drawer (mobile)
   function renderPublicNavDrawer(items) {
     return (
-      <List>
-        {items.map((item) => {
-          const hasChildren = item.children && item.children.length > 0;
-          if (!hasChildren) {
-            return (
-              <ListItem key={item.id} disablePadding>
-                <ListItemButton
-                  component="a"
-                  href={item.url}
-                  onClick={() => setPublicDrawerOpen(false)}
-                  sx={{ fontWeight: 500 }}
-                >
-                  <ListItemIcon>
-                    {getMuiIcon(item.icon)}
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-              </ListItem>
-            );
-          }
-          return (
-            <React.Fragment key={item.id}>
-              <ListItem disablePadding>
-                <ListItemButton
-                  aria-haspopup="true"
-                  aria-controls={`drawer-menu-${item.id}`}
-                  aria-expanded={false}
-                  sx={{ fontWeight: 500 }}
-                >
-                  <ListItemIcon>
-                    {getMuiIcon(item.icon)}
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-              </ListItem>
-              {item.children.map((child) => (
-                <ListItem key={child.id} disablePadding sx={{ pl: 4 }}>
-                  <ListItemButton
-                    component="a"
-                    href={child.url}
-                    onClick={() => setPublicDrawerOpen(false)}
-                  >
-                    <ListItemIcon>
-                      {getMuiIcon(child.icon)}
-                    </ListItemIcon>
-                    <ListItemText primary={child.label} />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </React.Fragment>
-          );
-        })}
-      </List>
+      <Box sx={{ width: 240 }}>
+        <List>
+          <ListSubheader sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}>
+            Navigation
+          </ListSubheader>
+          {renderNavItems(items)}
+        </List>
+      </Box>
     );
   }
 
-  if (darkMode === null || loading) return null;
+  // Don't render until mounted to prevent hydration mismatches
+  if (!mounted) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress />
+        </Box>
+      </ThemeProvider>
+    );
+  }
 
   const currentNavItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
   const currentPath = pathname;
@@ -481,7 +450,7 @@ export default function RootLayout({ children }) {
                   sx={{ ml: 1 }}
                 >
                   <Avatar sx={{ width: 32, height: 32 }}>
-                    {user.firstName ? user.firstName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : <AccountCircleIcon />)}
+                    {user.name ? user.name.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : <AccountCircleIcon />)}
                   </Avatar>
                 </IconButton>
                 <Menu
@@ -501,7 +470,7 @@ export default function RootLayout({ children }) {
                     <ListItemIcon>
                       <AccountCircleIcon fontSize="small" />
                     </ListItemIcon>
-                    {user.firstName || user.email}
+                    {user.name || user.email}
                   </MenuItem>
                   <Divider />
                   <MenuItem onClick={handleLogout}>
@@ -515,22 +484,22 @@ export default function RootLayout({ children }) {
             ) : (
               isMdUp ? (
                 <Stack direction="row" spacing={2}>
-                  <Button color="inherit" onClick={() => window.location.href = 'https://hopeful-bubble-54-staging.authkit.app/sign-up'}>
+                  <Button color="inherit" onClick={() => router.push('/auth/register')}>
                     Registrieren
                   </Button>
-                  <Button color="inherit" onClick={() => window.location.href = '/api/auth/login'}>
+                  <Button color="inherit" onClick={() => router.push('/auth/login')}>
                     Login
                   </Button>
                 </Stack>
               ) : (
                 <Stack direction="row" spacing={1}>
                   <Tooltip title="Registrieren">
-                    <IconButton color="inherit" aria-label="Registrieren" onClick={() => window.location.href = 'https://hopeful-bubble-54-staging.authkit.app/sign-up'}>
+                    <IconButton color="inherit" aria-label="Registrieren" onClick={() => router.push('/auth/register')}>
                       <PersonAddIcon />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Login">
-                    <IconButton color="inherit" aria-label="Login" onClick={() => window.location.href = '/api/auth/login'}>
+                    <IconButton color="inherit" aria-label="Login" onClick={() => router.push('/auth/login')}>
                       <LoginIcon />
                     </IconButton>
                   </Tooltip>

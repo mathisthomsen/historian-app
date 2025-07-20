@@ -31,7 +31,7 @@ import {
   TrendingUp,
 } from '@mui/icons-material';
 import SiteHeader from '../components/SiteHeader';
-import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import { useSession } from 'next-auth/react';
 import RequireAuth from '../components/RequireAuth';
 
 interface Activity {
@@ -45,7 +45,9 @@ interface Activity {
 }
 
 export default function ActivityPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const authLoading = status === 'loading';
+  const user = session?.user;
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 

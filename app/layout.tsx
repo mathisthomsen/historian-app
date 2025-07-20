@@ -1,28 +1,29 @@
-import type { Metadata } from 'next'
-import './globals.css'
-import ClientLayout from './client-layout'
-import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components'
-import { GeistSans } from "geist/font/sans";
+import type { Metadata } from 'next';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
+import './globals.css';
+import ClientLayout from './client-layout';
+import SessionProvider from './components/providers/SessionProvider';
 
 export const metadata: Metadata = {
-  title: 'Evidoxa',
-  description: 'Verwalten Sie Personen, Ereignisse und historische Daten',
-}
+  title: 'Historian App',
+  description: 'A comprehensive platform for historical research and data management',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="de">
-      <body className={GeistSans.className} suppressHydrationWarning={true}>
-        <AuthKitProvider>
+    <html lang="en">
+      <body className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+        <SessionProvider>
           <ClientLayout>
             {children}
           </ClientLayout>
-        </AuthKitProvider>
+        </SessionProvider>
       </body>
     </html>
-  )
+  );
 } 

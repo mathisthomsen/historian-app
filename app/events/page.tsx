@@ -13,7 +13,7 @@ import Drawer from '@mui/material/Drawer';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import EventForm from '../components/EventForm';
-import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import { useSession } from 'next-auth/react';
 import RequireAuth from '../components/RequireAuth';
 
 type Event = {
@@ -39,7 +39,8 @@ type ApiResponse = {
 };
 
 export default function EventsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const authLoading = status === 'loading';
   const [events, setEvents] = useState<Event[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -224,7 +225,7 @@ export default function EventsPage() {
     },
   ];
 
-  if (authLoading || !user) {
+  if (authLoading || !session?.user) {
     return <Box sx={{ width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Skeleton variant="rectangular" height={56} width={300} /></Box>;
   }
 

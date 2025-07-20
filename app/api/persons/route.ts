@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAndSanitize, personSchema, RateLimiter } from '../../lib/validation'
-import { requireUser, getOrCreateLocalUser } from '../../lib/requireUser';
+import { requireUser } from '../../lib/requireUser';
 
 // Initialize rate limiter
 const rateLimiter = new RateLimiter(60000, 100); // 100 requests per minute
@@ -16,7 +16,6 @@ function getClientIP(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   const user = await requireUser();
-  const localUser = await getOrCreateLocalUser(user);
 
   // Rate limiting
   const clientIp = getClientIP(req);
@@ -48,7 +47,7 @@ export async function POST(req: NextRequest) {
         death_date: validation.data.death_date ? new Date(validation.data.death_date) : null,
         death_place: validation.data.death_place || null,
         notes: validation.data.notes || null,
-        userId: localUser.id
+        userId: user.id
       }
     });
     
@@ -64,14 +63,6 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const user = await requireUser();
-
-  // Map WorkOS user to local user
-  const localUser = await prisma.user.findUnique({
-    where: { workosUserId: user.id }
-  });
-  if (!localUser) {
-    return NextResponse.json({ error: 'User not found' }, { status: 401 });
-  }
 
   // Rate limiting
   const clientIp = getClientIP(req);
@@ -102,7 +93,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Build where clause for filtering
-    let whereClause: any = { userId: localUser.id };
+    let whereClause: any = { userId: user.id };
     if (search) {
       whereClause.OR = [
         { first_name: { contains: search, mode: 'insensitive' } },

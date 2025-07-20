@@ -33,10 +33,10 @@ export interface SyncResult {
 }
 
 export abstract class BibliographyService {
-  protected userId: number;
+  protected userId: string;
   protected config: any;
 
-  constructor(userId: number, config: any) {
+  constructor(userId: string, config: any) {
     this.userId = userId;
     this.config = config;
   }
@@ -427,7 +427,7 @@ export class GenericImportService extends BibliographyService {
 
 // Main sync orchestrator
 export class BibliographySyncManager {
-  static async createService(userId: number, serviceType: string, config: any): Promise<BibliographyService> {
+  static async createService(userId: string, serviceType: string, config: any): Promise<BibliographyService> {
     switch (serviceType.toLowerCase()) {
       case 'zotero':
         return new ZoteroService(userId, config);
@@ -440,7 +440,7 @@ export class BibliographySyncManager {
     }
   }
 
-  static async upsertLiteratureItem(userId: number, item: BibliographyItem): Promise<void> {
+  static async upsertLiteratureItem(userId: string, item: BibliographyItem): Promise<void> {
     const existingItem = await prisma.literature.findFirst({
       where: {
         userId,
@@ -486,27 +486,27 @@ export class BibliographySyncManager {
     }
   }
 
-  static async getSyncConfigs(userId: number): Promise<any[]> {
+  static async getSyncConfigs(userId: string): Promise<any[]> {
     return await prisma.bibliographySync.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' }
     });
   }
 
-  static async createSyncConfig(userId: number, config: any): Promise<any> {
+  static async createSyncConfig(userId: string, config: any): Promise<any> {
     return await prisma.bibliographySync.create({
       data: { ...config, userId }
     });
   }
 
-  static async updateSyncConfig(id: number, userId: number, config: any): Promise<any> {
+  static async updateSyncConfig(id: number, userId: string, config: any): Promise<any> {
     return await prisma.bibliographySync.update({
       where: { id, userId },
       data: config
     });
   }
 
-  static async deleteSyncConfig(id: number, userId: number): Promise<void> {
+  static async deleteSyncConfig(id: number, userId: string): Promise<void> {
     await prisma.bibliographySync.delete({
       where: { id, userId }
     });

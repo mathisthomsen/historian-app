@@ -1,196 +1,158 @@
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend';
 
-// Mock email service - replace with real provider in production
-export class EmailService {
-  private transporter: nodemailer.Transporter
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  constructor() {
-    // For development, use a mock transporter that doesn't actually send emails
-    this.transporter = nodemailer.createTransport({
-      host: 'localhost',
-      port: 1025,
-      secure: false,
-      auth: {
-        user: 'test',
-        pass: 'test'
-      },
-      // Add timeout and ignore TLS errors for development
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
-      ignoreTLS: true,
-      requireTLS: false
-    })
+export interface EmailTemplate {
+  subject: string;
+  html: string;
+  text: string;
+}
 
-    // In production, you would use something like:
-    // this.transporter = nodemailer.createTransport({
-    //   service: 'gmail',
-    //   auth: {
-    //     user: process.env.EMAIL_USER,
-    //     pass: process.env.EMAIL_PASS
-    //   }
-    // })
-  }
-
-  async sendEmailConfirmation(email: string, name: string, token: string): Promise<boolean> {
-    // Get the current port from environment or default to 3000
-    const port = process.env.PORT || '3000'
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${port}`
-    const confirmationUrl = `${baseUrl}/auth/confirm-email?token=${token}`
-    
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || 'noreply@historianapp.com',
-      to: email,
-      subject: 'Confirm your email address',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Welcome to Historian App!</h2>
-          <p>Hi ${name},</p>
-          <p>Thank you for registering with Historian App. Please confirm your email address by clicking the button below:</p>
+export const createVerificationEmail = (email: string, token: string): EmailTemplate => {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const verificationUrl = `${baseUrl}/auth/verify?token=${token}&email=${encodeURIComponent(email)}`;
+  
+  return {
+    subject: 'Verify your email address - Historian App',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%); color: white; padding: 30px; border-radius: 10px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">Welcome to Historian App!</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9;">Please verify your email address to complete your registration.</p>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-top: 20px;">
+          <p style="margin: 0 0 20px 0; color: #333; font-size: 16px;">
+            Hi there! Thanks for signing up for Historian App. To complete your registration, please click the button below to verify your email address:
+          </p>
+          
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${confirmationUrl}" 
-               style="background-color: #1976d2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Confirm Email Address
+            <a href="${verificationUrl}" 
+               style="background: #1976d2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
+              Verify Email Address
             </a>
           </div>
-          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; color: #666;">${confirmationUrl}</p>
-          <p>This link will expire in 24 hours.</p>
-          <p>If you didn't create an account with Historian App, you can safely ignore this email.</p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #666; font-size: 12px;">
-            This is an automated message from Historian App. Please do not reply to this email.
+          
+          <p style="margin: 20px 0 0 0; color: #666; font-size: 14px;">
+            If the button doesn't work, you can copy and paste this link into your browser:
+          </p>
+          <p style="margin: 10px 0 0 0; color: #1976d2; font-size: 14px; word-break: break-all;">
+            ${verificationUrl}
+          </p>
+          
+          <p style="margin: 30px 0 0 0; color: #666; font-size: 14px;">
+            This link will expire in 24 hours. If you didn't create an account with Historian App, you can safely ignore this email.
           </p>
         </div>
-      `
-    }
+        
+        <div style="text-align: center; margin-top: 20px; color: #666; font-size: 12px;">
+          <p>© 2024 Historian App. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+    text: `
+Welcome to Historian App!
 
-    return this.sendEmail(mailOptions)
-  }
+Please verify your email address to complete your registration.
 
-  async sendPasswordReset(email: string, name: string, token: string): Promise<boolean> {
-    // Get the current port from environment or default to 3000
-    const port = process.env.PORT || '3000'
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${port}`
-    const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`
-    
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || 'noreply@historianapp.com',
-      to: email,
-      subject: 'Reset your password',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Password Reset Request</h2>
-          <p>Hi ${name},</p>
-          <p>You requested to reset your password for your Historian App account. Click the button below to create a new password:</p>
+Click this link to verify your email: ${verificationUrl}
+
+This link will expire in 24 hours. If you didn't create an account with Historian App, you can safely ignore this email.
+
+© 2024 Historian App. All rights reserved.
+    `,
+  };
+};
+
+export const createPasswordResetEmail = (email: string, token: string): EmailTemplate => {
+  const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+  
+  return {
+    subject: 'Reset your password - Historian App',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #dc004e 0%, #ff5983 100%); color: white; padding: 30px; border-radius: 10px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">Password Reset Request</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9;">We received a request to reset your password.</p>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-top: 20px;">
+          <p style="margin: 0 0 20px 0; color: #333; font-size: 16px;">
+            Hi there! We received a request to reset your password for your Historian App account. Click the button below to create a new password:
+          </p>
+          
           <div style="text-align: center; margin: 30px 0;">
             <a href="${resetUrl}" 
-               style="background-color: #1976d2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+               style="background: #dc004e; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
               Reset Password
             </a>
           </div>
-          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; color: #666;">${resetUrl}</p>
-          <p>This link will expire in 1 hour.</p>
-          <p>If you didn't request a password reset, you can safely ignore this email.</p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #666; font-size: 12px;">
-            This is an automated message from Historian App. Please do not reply to this email.
+          
+          <p style="margin: 20px 0 0 0; color: #666; font-size: 14px;">
+            If the button doesn't work, you can copy and paste this link into your browser:
+          </p>
+          <p style="margin: 10px 0 0 0; color: #dc004e; font-size: 14px; word-break: break-all;">
+            ${resetUrl}
+          </p>
+          
+          <p style="margin: 30px 0 0 0; color: #666; font-size: 14px;">
+            This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
           </p>
         </div>
-      `
-    }
+        
+        <div style="text-align: center; margin-top: 20px; color: #666; font-size: 12px;">
+          <p>© 2024 Historian App. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+    text: `
+Password Reset Request
 
-    return this.sendEmail(mailOptions)
-  }
+We received a request to reset your password for your Historian App account.
 
-  async sendWelcomeEmail(email: string, name: string): Promise<boolean> {
-    // Get the current port from environment or default to 3000
-    const port = process.env.PORT || '3000'
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${port}`
+Click this link to reset your password: ${resetUrl}
+
+This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+
+© 2024 Historian App. All rights reserved.
+    `,
+  };
+};
+
+export const sendEmail = async (to: string, template: EmailTemplate): Promise<boolean> => {
+  try {
+    console.log('Attempting to send email to:', to);
+    console.log('Using API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
+    console.log('Using from address:', process.env.EMAIL_FROM);
     
-    const mailOptions = {
+    const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@historianapp.com',
-      to: email,
-      subject: 'Welcome to Historian App!',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Welcome to Historian App!</h2>
-          <p>Hi ${name},</p>
-          <p>Your email has been confirmed and your account is now active!</p>
-          <p>You can now:</p>
-          <ul>
-            <li>Create and manage historical persons</li>
-            <li>Document historical events</li>
-            <li>Map historical locations</li>
-            <li>Catalog literature and sources</li>
-            <li>Analyze your research data</li>
-          </ul>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${baseUrl}/dashboard" 
-               style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Go to Dashboard
-            </a>
-          </div>
-          <p>Happy researching!</p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #666; font-size: 12px;">
-            This is an automated message from Historian App. Please do not reply to this email.
-          </p>
-        </div>
-      `
+      to: [to],
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+    
+    if (error) {
+      console.error('Resend API error:', error);
+      return false;
     }
-
-    return this.sendEmail(mailOptions)
+    
+    console.log('Email sent successfully:', data);
+    return true;
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    return false;
   }
+};
 
-  private async sendEmail(mailOptions: nodemailer.SendMailOptions): Promise<boolean> {
-    try {
-      // For development, just log the email instead of actually sending
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📧 EMAIL (Development Mode):')
-        console.log('To:', mailOptions.to)
-        console.log('Subject:', mailOptions.subject)
-        if (mailOptions.html && typeof mailOptions.html === 'string') {
-          // Extract URL from HTML content
-          const urlMatch = mailOptions.html.match(/href="([^"]+)"/)
-          if (urlMatch) {
-            console.log('URL:', urlMatch[1])
-          }
-        }
-        console.log('---')
-        return true
-      }
-
-      await this.transporter.sendMail(mailOptions)
-      console.log(`Email sent to ${mailOptions.to}`)
-      return true
-    } catch (error) {
-      console.error('Failed to send email:', error)
-      // In development, don't fail if email fails
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Email service failed, but continuing (development mode)')
-        return true
-      }
-      return false
-    }
-  }
-}
-
-// Export singleton instance
-export const emailService = new EmailService()
-
-// Convenience functions for direct use
-export const sendEmailConfirmation = async (email: string, name: string, token: string): Promise<boolean> => {
-  return emailService.sendEmailConfirmation(email, name, token)
-}
+export const sendVerificationEmail = async (email: string, token: string): Promise<boolean> => {
+  const template = createVerificationEmail(email, token);
+  return sendEmail(email, template);
+};
 
 export const sendPasswordResetEmail = async (email: string, token: string): Promise<boolean> => {
-  // Get user name from email (for now, just use email prefix)
-  const name = email.split('@')[0]
-  return emailService.sendPasswordReset(email, name, token)
-}
-
-export const sendWelcomeEmail = async (email: string, name: string): Promise<boolean> => {
-  return emailService.sendWelcomeEmail(email, name)
-} 
+  const template = createPasswordResetEmail(email, token);
+  return sendEmail(email, template);
+}; 

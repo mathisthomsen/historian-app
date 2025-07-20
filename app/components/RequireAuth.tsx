@@ -1,20 +1,24 @@
 "use client";
-import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useEffect } from 'react';
 
 export default function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/api/auth/login');
+    if (status === 'unauthenticated') {
+      router.replace('/auth/login');
     }
-  }, [user, loading, router]);
+  }, [session, status, router]);
 
-  if (loading || !user) {
+  if (status === 'loading') {
     return <div style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
+  }
+
+  if (!session) {
+    return null;
   }
 
   return <>{children}</>;
