@@ -7,8 +7,8 @@ WORKDIR /opt/app
 # Copy package.json and yarn.lock first for better build caching
 COPY package.json yarn.lock ./
 
-# Install dependencies (including devDependencies for TypeScript)
-RUN yarn install --frozen-lockfile --production=false
+# Install dependencies (including devDependencies for TypeScript) with memory optimizations
+RUN yarn install --frozen-lockfile --production=false --network-timeout 1000000
 
 # Copy the rest of the Strapi project files
 COPY . .
@@ -16,8 +16,9 @@ COPY . .
 # Ensure TypeScript types are properly installed
 RUN yarn add @types/minimatch@^6.0.0
 
-# Build the Strapi admin panel in development mode
+# Build the Strapi admin panel in development mode with memory optimizations
 ENV NODE_ENV=development
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN yarn build
 
 # Production stage
@@ -29,8 +30,8 @@ WORKDIR /opt/app
 # Copy package files
 COPY package.json yarn.lock ./
 
-# Install all dependencies (not just production) for dev mode
-RUN yarn install --frozen-lockfile --production=false
+# Install all dependencies (not just production) for dev mode with memory optimizations
+RUN yarn install --frozen-lockfile --production=false --network-timeout 1000000
 
 # Copy built application from builder stage
 COPY --from=builder /opt/app/public ./public
