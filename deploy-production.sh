@@ -136,9 +136,6 @@ setup_ssl() {
     mkdir -p certbot/{conf,www}
     mkdir -p certbot/www/.well-known/acme-challenge
     
-    # Stop nginx temporarily to avoid conflicts
-    docker-compose -f docker-compose.production.yml stop nginx
-    
     # Run certbot to get certificates for main domain
     print_status "Requesting SSL certificate for $DOMAIN..."
     docker-compose -f docker-compose.production.yml --env-file .env.production run --rm certbot certonly \
@@ -302,9 +299,6 @@ EOF
     else
         print_warning "SSL certificates not found. Using HTTP-only configuration."
     fi
-    
-    # Start nginx again
-    docker-compose -f docker-compose.production.yml start nginx
     
     print_status "SSL setup completed!"
     print_status "Certificate will auto-renew daily at 12:00 PM"

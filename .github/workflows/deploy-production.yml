@@ -111,6 +111,10 @@ jobs:
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-strapi historian-nginx 2>/dev/null || true && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' docker-compose -f docker-compose.production.yml build --no-cache --build-arg DATABASE_URL='${{ secrets.DATABASE_URL }}' --build-arg DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' --build-arg RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' && docker-compose -f docker-compose.production.yml up -d"
 
+      - name: Wait for containers to be ready
+        run: |
+          ssh root@217.154.198.215 "sleep 30 && docker-compose -f /opt/historian-app/production/docker-compose.production.yml ps"
+
       - name: Setup SSL certificates
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/production && ./deploy-production.sh ssl"
