@@ -87,7 +87,7 @@ export default function Home() {
                 color="primary"
                 size="large"
                 component={Link}
-                href="/api/auth/register"
+                href="/auth/register"
               >
                 Jetzt registrieren
               </Button>
@@ -433,7 +433,7 @@ export default function Home() {
               color="secondary"
               size="large"
               component={Link}
-              href="/api/auth/register"
+                              href="/auth/register"
             >
               Kostenlos registrieren
             </Button>
@@ -442,7 +442,7 @@ export default function Home() {
               color="secondary"
               size="large"
               component={Link}
-              href="/api/auth/login"
+                              href="/auth/login"
             >
               Anmelden
             </Button>

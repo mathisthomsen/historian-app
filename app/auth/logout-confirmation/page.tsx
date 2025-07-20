@@ -15,7 +15,7 @@ export default function LogoutConfirmationPage() {
   const router = useRouter()
 
   const handleSignIn = () => {
-    window.location.href = '/api/auth/login'
+    window.location.href = '/auth/login'
   }
 
   const handleGoHome = () => {

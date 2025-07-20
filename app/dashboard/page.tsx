@@ -11,8 +11,8 @@ import {
   CircularProgress,
   Alert,
   Container,
+  Grid,
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import {
   People,
   Event,
@@ -183,7 +183,7 @@ export default function DashboardPage() {
             </Grid>
 
             <Grid container spacing={3}>
-              <Grid item xs={12} md={8}>
+              <Grid item xs={12} md={6}>
                 <Card sx={{ borderRadius: 3 }}>
                   <CardContent>
                     <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <Card sx={{ borderRadius: 3 }}>
                   <CardContent>
                     <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
