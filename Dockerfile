@@ -14,7 +14,7 @@ COPY prisma ./prisma
 # Set environment variable to ignore Prisma checksum errors
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Generate Prisma client
 RUN npx prisma generate
