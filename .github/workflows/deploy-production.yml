@@ -51,15 +51,34 @@ jobs:
 
       - name: Set up SSH
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          # Debug: Check current directory and permissions
+          pwd
+          ls -la ~/
+          
+          # Create SSH directory with error handling
+          mkdir -p ~/.ssh || echo "Failed to create .ssh directory"
+          ls -la ~/.ssh || echo "SSH directory not created"
+          
+          # Check if SSH key secret exists
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "ERROR: VPS_SSH_KEY secret is not set!"
+            exit 1
+          fi
+          
+          # Write SSH key with error handling
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa || echo "Failed to write SSH key"
+          chmod 600 ~/.ssh/id_rsa || echo "Failed to set SSH key permissions"
+          
+          # Create SSH config
           echo "Host *" > ~/.ssh/config
           echo "    StrictHostKeyChecking no" >> ~/.ssh/config
           echo "    UserKnownHostsFile=/dev/null" >> ~/.ssh/config
           echo "    ServerAliveInterval=60" >> ~/.ssh/config
           echo "    ServerAliveCountMax=3" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
+          
+          # Debug: Check SSH files
+          ls -la ~/.ssh/
           
           # Add the server to known hosts
           ssh-keyscan -H 217.154.198.215 >> ~/.ssh/known_hosts
