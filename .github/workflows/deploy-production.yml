@@ -49,13 +49,10 @@ jobs:
           NEXT_PUBLIC_IS_STAGING: false
         run: echo "Skipping local build - will build on VPS for faster deployment"
 
-      - name: Ping server
-        run: |
-          echo "Pinging server 217.154.198.215..."
-          ping -c 4 217.154.198.215 || (echo "Ping failed! Server may be down or unreachable." && exit 1)
-
       # --- IMPORTANT: If you have a firewall or cloud security group, make sure to allow SSH (port 22) from GitHub Actions IPs. See:
       # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-githubs-ip-addresses
+
+      # (Ping step removed because some providers block ICMP/ping)
 
       - name: Prepare SSH known_hosts
         run: |
