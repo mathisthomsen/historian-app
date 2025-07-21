@@ -155,3 +155,4 @@ strapi/.cache/
 strapi/.tmp/
 strapi/build/
 strapi/public/uploads/
+certbot/conf/

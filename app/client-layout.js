@@ -166,10 +166,11 @@ export default function RootLayout({ children }) {
   }, []);
 
   // Fetch navigation from Strapi for public users
+  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
   useEffect(() => {
     if (!isAuthenticated) {
       const documentId = 'ctp0vfu1o3lqz3nj3bt98kae';
-      fetch(`http://localhost:1337/api/navigations/${documentId}?populate=nav_items.parent_node`)
+      fetch(`${STRAPI_API_URL}/api/navigations/${documentId}?populate=nav_items.parent_node`)
         .then(res => res.json())
         .then(data => {
           const flatItems = data.data?.nav_items || [];
