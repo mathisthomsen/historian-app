@@ -54,6 +54,14 @@ jobs:
           echo "Pinging server 217.154.198.215..."
           ping -c 4 217.154.198.215 || (echo "Ping failed! Server may be down or unreachable." && exit 1)
 
+      # --- IMPORTANT: If you have a firewall or cloud security group, make sure to allow SSH (port 22) from GitHub Actions IPs. See:
+      # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-githubs-ip-addresses
+
+      - name: Prepare SSH known_hosts
+        run: |
+          rm -f ~/.ssh/known_hosts
+          ssh-keyscan -H 217.154.198.215 >> ~/.ssh/known_hosts
+
       - name: Set up SSH
         run: |
           # Debug: Check current directory and permissions
@@ -84,9 +92,6 @@ jobs:
           
           # Debug: Check SSH files
           ls -la ~/.ssh/
-          
-          # Add the server to known hosts
-          ssh-keyscan -H 217.154.198.215 >> ~/.ssh/known_hosts
           
           # Test SSH connection
           echo "Testing SSH connection to root@217.154.198.215..."
