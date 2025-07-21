@@ -49,6 +49,11 @@ jobs:
           NEXT_PUBLIC_IS_STAGING: false
         run: echo "Skipping local build - will build on VPS for faster deployment"
 
+      - name: Ping server
+        run: |
+          echo "Pinging server 217.154.198.215..."
+          ping -c 4 217.154.198.215 || (echo "Ping failed! Server may be down or unreachable." && exit 1)
+
       - name: Set up SSH
         run: |
           # Debug: Check current directory and permissions
@@ -82,6 +87,10 @@ jobs:
           
           # Add the server to known hosts
           ssh-keyscan -H 217.154.198.215 >> ~/.ssh/known_hosts
+          
+          # Test SSH connection
+          echo "Testing SSH connection to root@217.154.198.215..."
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@217.154.198.215 'echo "SSH connection successful!"' || (echo "SSH connection failed!" && exit 1)
 
       - name: Copy files to VPS
         run: |
