@@ -77,7 +77,7 @@ services:
       - ./logs/nginx:/var/log/nginx
       - ./ssl:/etc/nginx/ssl
       - ./certbot/conf:/etc/letsencrypt
-      - /Users/Lily/Documents/historian_app/certbot/www:/var/www/certbot
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - app
       - strapi
@@ -90,7 +90,7 @@ services:
     container_name: historian-certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
-      - /Users/Lily/Documents/historian_app/certbot/www:/var/www/certbot
+      - ./certbot/www:/var/www/certbot
     command: certonly --webroot --webroot-path=/var/www/certbot --email $SSL_EMAIL --agree-tos --no-eff-email -d $DOMAIN --staging
     networks:
       - historian-network
