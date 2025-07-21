@@ -52,7 +52,7 @@ COPY tsconfig.json ./
 COPY middleware.ts ./
 
 # Build the application with memory optimizations
-RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build:no-db
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build:no-db
 
 # Production image, copy all the files and run next
 FROM base AS runner

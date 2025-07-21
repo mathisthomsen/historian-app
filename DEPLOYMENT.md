@@ -133,3 +133,30 @@ Set these in your Vercel environment:
 - Vercel: [vercel.com/support](https://vercel.com/support)
 - Neon: [neon.tech/docs](https://neon.tech/docs)
 - WorkOS: [workos.com/docs](https://workos.com/docs)
+
+## Adding Swap Space to Prevent OOM Kills
+
+If your server has limited RAM, adding swap space can help prevent out-of-memory (OOM) errors during Docker builds and deployments. Swap is not a replacement for real RAM, but it can help your server survive memory spikes.
+
+### To add a 2GB swap file:
+
+```sh
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
+
+To make the swap file permanent (enabled on reboot):
+
+```sh
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+You can check swap usage with:
+
+```sh
+free -h
+```
+
+**Tip:** If you still see OOM kills, consider increasing swap size or upgrading your server's RAM.

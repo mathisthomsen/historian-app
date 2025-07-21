@@ -18,7 +18,7 @@ RUN yarn add @types/minimatch@^6.0.0
 
 # Build the Strapi admin panel in development mode with memory optimizations
 ENV NODE_ENV=development
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 RUN yarn build
 
 # Production stage
