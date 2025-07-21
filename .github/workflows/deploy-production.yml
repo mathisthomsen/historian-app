@@ -54,6 +54,9 @@ jobs:
 
       # (Ping step removed because some providers block ICMP/ping)
 
+      - name: Ensure .ssh directory exists
+        run: mkdir -p ~/.ssh
+
       - name: Prepare SSH known_hosts
         run: |
           rm -f ~/.ssh/known_hosts
