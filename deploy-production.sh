@@ -23,15 +23,15 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if .env.production exists
-if [ ! -f .env.production ]; then
-    print_error ".env.production file not found!"
-    echo "Please copy env.production.example to .env.production and configure it."
+# Check if .env exists
+if [ ! -f .env ]; then
+    print_error ".env file not found!"
+    echo "Please copy env.example to .env and configure it."
     exit 1
 fi
 
 # Load environment variables
-export $(cat .env.production | grep -v '^#' | xargs)
+export $(cat .env | grep -v '^#' | xargs)
 
 # Function to check if containers are running
 check_containers() {
@@ -70,10 +70,10 @@ start_services() {
     
     # Run Prisma migrations before starting services
     print_status "Running Prisma migrations (npx prisma migrate deploy)..."
-    docker-compose -f docker-compose.production.yml --env-file .env.production run --rm app npx prisma migrate deploy
+    docker-compose -f docker-compose.production.yml --env-file .env run --rm app npx prisma migrate deploy
     print_status "Prisma migrations completed."
     # Start services
-    docker-compose -f docker-compose.production.yml --env-file .env.production up -d
+    docker-compose -f docker-compose.production.yml --env-file .env up -d
     
     print_status "Services started successfully!"
     print_status "Application will be available at: https://$DOMAIN"
@@ -122,13 +122,13 @@ setup_ssl() {
     
     # Check if domain is configured
     if [ -z "$DOMAIN" ]; then
-        print_error "DOMAIN not configured in .env.production"
+        print_error "DOMAIN not configured in .env"
         exit 1
     fi
     
     # Check if SSL_EMAIL is configured
     if [ -z "$SSL_EMAIL" ]; then
-        print_error "SSL_EMAIL not configured in .env.production"
+        print_error "SSL_EMAIL not configured in .env"
         exit 1
     fi
     
@@ -138,7 +138,7 @@ setup_ssl() {
     
     # Run certbot to get certificates for main domain
     print_status "Requesting SSL certificate for $DOMAIN..."
-    docker-compose -f docker-compose.production.yml --env-file .env.production run --rm certbot certonly \
+    docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot certonly \
         --webroot \
         --webroot-path=/var/www/certbot \
         --email "$SSL_EMAIL" \
@@ -150,7 +150,7 @@ setup_ssl() {
     # If staging domain is configured, get certificate for it too
     if [ ! -z "$STAGING_DOMAIN" ]; then
         print_status "Requesting SSL certificate for $STAGING_DOMAIN..."
-        docker-compose -f docker-compose.production.yml --env-file .env.production run --rm certbot certonly \
+        docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot certonly \
             --webroot \
             --webroot-path=/var/www/certbot \
             --email "$SSL_EMAIL" \
@@ -312,7 +312,7 @@ renew_ssl() {
     docker-compose -f docker-compose.production.yml stop nginx
     
     # Run certbot renewal with non-interactive flag
-    docker-compose -f docker-compose.production.yml --env-file .env.production run --rm certbot renew --non-interactive --keep-until-expiring
+    docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot renew --non-interactive --keep-until-expiring
     
     # Start nginx again
     docker-compose -f docker-compose.production.yml start nginx
