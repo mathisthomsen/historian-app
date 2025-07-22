@@ -76,7 +76,7 @@ export default function Home() {
           <Stack spacing={4} alignItems="center">
             
             <Typography variant="h2" component="h1" sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: { xs: '2.2rem', md: '3.5rem' } }}>
-              Historian App
+              Evidoxa
             </Typography>
             <Typography variant="h5" sx={{ color: 'primary.contrastText', opacity: 0.95, maxWidth: 600, fontWeight: 400 }}>
               Die moderne Plattform zur Verwaltung, Analyse und Präsentation historischer Daten. Erfassen Sie Personen, Ereignisse, Beziehungen und Literatur – sicher, kollaborativ und intuitiv.
