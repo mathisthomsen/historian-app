@@ -76,7 +76,7 @@ services:
       - ./nginx/nginx.active.conf:/etc/nginx/nginx.conf:ro
       - ./logs/nginx:/var/log/nginx
       - ./ssl:/etc/nginx/ssl
-      - ./certbot-www:/var/www/certbot
+      - certbot-www:/var/www/certbot
     depends_on:
       - app
       - strapi
