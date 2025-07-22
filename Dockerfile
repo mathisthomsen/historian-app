@@ -49,7 +49,6 @@ COPY app ./app
 COPY public ./public
 COPY next.config.mjs ./
 COPY tsconfig.json ./
-COPY middleware.ts ./
 
 # Build the application with memory optimizations
 RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build:no-db
