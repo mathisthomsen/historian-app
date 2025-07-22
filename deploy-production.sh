@@ -24,9 +24,7 @@ print_error() {
 }
 
 # Ensure nginx.active.conf exists for initial deployment
-if [ ! -f nginx/nginx.active.conf ]; then
-    cp nginx/nginx.conf nginx/nginx.active.conf
-fi
+cp nginx/nginx.conf nginx/nginx.active.conf
 
 # Check if .env exists
 if [ ! -f .env ]; then
@@ -144,7 +142,6 @@ setup_ssl() {
     # Ensure nginx is using HTTP-only config for ACME challenge
     print_status "Ensuring nginx is running with HTTP-only config for ACME challenge..."
     cp nginx/nginx.conf nginx/nginx.active.conf
-    sed -i 's|nginx-ssl.conf|nginx.conf|g' docker-compose.production.yml
     docker-compose -f docker-compose.production.yml up -d nginx
 
     print_status "Waiting for nginx to be ready..."
@@ -188,7 +185,6 @@ setup_ssl() {
     if [ -f "certbot/conf/live/$DOMAIN/fullchain.pem" ]; then
         print_status "SSL certificates found. Switching to SSL-enabled Nginx configuration..."
         cp nginx/nginx-ssl.conf nginx/nginx.active.conf
-        sed -i 's|nginx.conf|nginx-ssl.conf|g' docker-compose.production.yml
         docker-compose -f docker-compose.production.yml up -d nginx
         print_status "Nginx SSL configuration updated and nginx reloaded!"
     else
