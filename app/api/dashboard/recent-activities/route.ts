@@ -20,7 +20,12 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform the activities to match the expected format
-    const transformedActivities = recentActivities.map(activity => ({
+    const transformedActivities = recentActivities.map((activity: {
+      id: number;
+      eventType: string;
+      createdAt: Date;
+      details: any;
+    }) => ({
       id: activity.id,
       type: 'activity',
       action: activity.eventType.toLowerCase().includes('created') ? 'created' : 'updated',

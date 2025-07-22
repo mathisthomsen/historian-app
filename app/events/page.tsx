@@ -82,7 +82,7 @@ export default function EventsPage() {
   useEffect(() => {
     console.log('[useEffect] Fetching events with', { page, pageSize, sortModel, filterModel });
     fetchEvents();
-  }, [fetchEvents]);
+  }, [fetchEvents, page, pageSize, sortModel, filterModel]);
 
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

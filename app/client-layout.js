@@ -179,7 +179,7 @@ export default function RootLayout({ children }) {
           setPublicNavItems(tree);
         });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, STRAPI_API_URL]);
 
   // Build a nested tree from flat nav_items with parent_node
   function buildNavTree(flatItems) {
