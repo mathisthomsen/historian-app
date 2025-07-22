@@ -182,7 +182,7 @@ setup_ssl() {
     fi
 
     # Update Nginx config to use SSL if certificates exist
-    if [ -f "certbot/conf/live/$DOMAIN/fullchain.pem" ]; then
+    if docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
         print_status "SSL certificates found. Switching to SSL-enabled Nginx configuration..."
         cp nginx/nginx-ssl.conf nginx/nginx.active.conf
         docker-compose -f docker-compose.production.yml up -d nginx
