@@ -23,6 +23,11 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Ensure nginx.active.conf exists for initial deployment
+if [ ! -f nginx/nginx.active.conf ]; then
+    cp nginx/nginx.conf nginx/nginx.active.conf
+fi
+
 # Check if .env exists
 if [ ! -f .env ]; then
     print_error ".env file not found!"
