@@ -97,6 +97,21 @@ jobs:
           echo "Testing SSH connection to root@217.154.198.215..."
           ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@217.154.198.215 'echo "SSH connection successful!"' || (echo "SSH connection failed!" && exit 1)
 
+      - name: Enable SSH multiplexing
+        run: |
+          echo "Host 217.154.198.215
+            ControlMaster auto
+            ControlPath ~/.ssh/cm-%r@%h:%p
+            ControlPersist 10m
+          " >> ~/.ssh/config
+
+      - name: Start SSH master connection
+        run: |
+          ssh -fN root@217.154.198.215
+
+      - name: Ensure nginx.active.conf exists
+        run: cp nginx/nginx.conf nginx/nginx.active.conf
+
       - name: Copy files to VPS
         run: |
           rsync -avz --delete --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/production
@@ -142,11 +157,22 @@ jobs:
 
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-strapi historian-nginx 2>/dev/null || true && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' docker-compose -f docker-compose.production.yml build --no-cache --build-arg DATABASE_URL='${{ secrets.DATABASE_URL }}' --build-arg DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' --build-arg RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' && docker-compose -f docker-compose.production.yml up -d"
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-strapi historian-nginx 2>/dev/null || true && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' docker-compose -f docker-compose.production.yml build --build-arg DATABASE_URL='${{ secrets.DATABASE_URL }}' --build-arg DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' --build-arg RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' && docker-compose -f docker-compose.production.yml up -d"
 
       - name: Wait for containers to be ready
         run: |
-          ssh root@217.154.198.215 "sleep 30 && docker-compose -f /opt/historian-app/production/docker-compose.production.yml ps"
+          ssh root@217.154.198.215 '
+            for i in {1..12}; do
+              if docker-compose -f /opt/historian-app/production/docker-compose.production.yml ps | grep -q "Up"; then
+                echo "All containers are up!"
+                break
+              else
+                echo "Waiting for containers to be up (attempt $i)..."
+                sleep 5
+              fi
+            done
+            docker-compose -f /opt/historian-app/production/docker-compose.production.yml ps
+          '
 
       - name: Setup SSL certificates
         run: |
@@ -164,3 +190,7 @@ jobs:
         if: failure()
         run: |
           ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/production/docker-compose.production.yml logs --tail=50' 
+
+      - name: Close SSH master connection
+        run: |
+          ssh -O exit root@217.154.198.215 || true 
