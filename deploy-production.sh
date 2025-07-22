@@ -136,6 +136,25 @@ setup_ssl() {
     mkdir -p certbot/{conf,www}
     mkdir -p certbot/www/.well-known/acme-challenge
     
+    # Ensure nginx is running before certbot
+    print_status "Ensuring nginx is running for ACME challenge..."
+    docker-compose -f docker-compose.production.yml up -d nginx
+
+    # Wait for nginx to be ready
+    print_status "Waiting for nginx to be ready..."
+    sleep 5
+
+    # Check if nginx is serving HTTP
+    for i in {1..10}; do
+        if curl -s "http://localhost/.well-known/acme-challenge/test" || curl -s "http://127.0.0.1/.well-known/acme-challenge/test"; then
+            print_status "nginx is up and serving HTTP."
+            break
+        else
+            print_status "Waiting for nginx to serve HTTP (attempt $i)..."
+            sleep 2
+        fi
+    done
+
     # Run certbot to get certificates for main domain
     print_status "Requesting SSL certificate for $DOMAIN..."
     docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot certonly \
