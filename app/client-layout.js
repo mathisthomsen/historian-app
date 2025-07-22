@@ -57,6 +57,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Tooltip from '@mui/material/Tooltip';
+import Link from 'next/link';
 
 // Hide the app bar when scrolling down and show it when scrolling up (like a sticky header)
 // https://mui.com/material-ui/react-app-bar/#sticky-app-bar
@@ -415,30 +416,16 @@ export default function RootLayout({ children }) {
                   <MenuIcon />
                 </IconButton>
               )}
-              <Image src="/logo1.svg" alt="Evidoxa App" width={56} height={56} />
-              <Typography variant="h6" component="p" sx={{ flexGrow: 1, fontWeight: 400, color: '#fff', letterSpacing: -1 }}>
-                Evidoxa
-              </Typography>
+              <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                <Image src="/logo1.svg" alt="Evidoxa App" width={56} height={56} />
+                <Typography variant="h6" component="p" sx={{ flexGrow: 1, fontWeight: 400, color: '#fff', letterSpacing: -1 }}>
+                  Evidoxa
+                </Typography>
+              </Link>
               {/* Public navigation in AppBar (md+) */}
               {!isAuthenticated && isMdUp && renderPublicNavAppBar(publicNavItems)}
             </Stack>
-            {/* Staging indicator */}
-            {process.env.NEXT_PUBLIC_IS_STAGING === 'true' && (
-              <Chip
-                label="STAGING"
-                size="small"
-                color="warning"
-                sx={{
-                  mr: 2,
-                  fontWeight: 'bold',
-                  backgroundColor: '#ff9800',
-                  color: 'white',
-                  '& .MuiChip-label': {
-                    fontWeight: 'bold',
-                  },
-                }}
-              />
-            )}
+            
             <Stack direction="row" spacing={1} alignItems="center">
               <IconButton color="inherit" onClick={toggleDarkMode}>
                 {darkMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}

@@ -167,14 +167,10 @@ export default function EventDetailPage({ params }: { params: Params }) {
         <Skeleton variant="text" width={300} height={48} />
         <Paper sx={{ mt: 4, p: 3 }}>
           <Grid container spacing={2}>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={4}><Skeleton width={80} /></Grid>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={8}><Skeleton width={180} /></Grid>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={4}><Skeleton width={80} /></Grid>
-            {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-            <Grid item xs={8}><Skeleton width={180} /></Grid>
+            <Grid size={{ xs: 4 }}><Skeleton width={80} /></Grid>
+            <Grid size={{ xs: 8 }}><Skeleton width={180} /></Grid>
+            <Grid size={{ xs: 4 }}><Skeleton width={80} /></Grid>
+            <Grid size={{ xs: 8 }}><Skeleton width={180} /></Grid>
           </Grid>
         </Paper>
       </Container>
@@ -306,8 +302,7 @@ export default function EventDetailPage({ params }: { params: Params }) {
       {/* Event Info Card */}
       <Paper sx={{ mt: 4, p: 3, mb: 4 }}>
         <Grid container spacing={3} sx={{ justifyContent: 'space-between' }}>
-          {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-          <Grid item xs={12} md={8}>
+          <Grid size={{ xs: 12, md: 8 }}>
             <Stack spacing={2}>
               <Box>
                 <Typography variant="h4" component="h1" gutterBottom>
@@ -331,8 +326,7 @@ export default function EventDetailPage({ params }: { params: Params }) {
               </Box>
               
               <Grid container spacing={2}>
-                {/* @ts-expect-error MUI Grid type workaround for Next.js 15 */}
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CalendarToday color="action" fontSize="small" />
                     <Box>
@@ -350,8 +344,7 @@ export default function EventDetailPage({ params }: { params: Params }) {
                 </Grid>
                 
                 {event.location && (
-                  // @ts-expect-error MUI Grid type workaround for Next.js 15
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <LocationOn color="action" fontSize="small" />
                       <Box>

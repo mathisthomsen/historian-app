@@ -126,7 +126,7 @@ export default function Home() {
                 }}
                 />
                 <CardMedia align="center" sx={{ pt: 3, backgroundColor: 'secondary.light', width: '100%', height: '100%', p: 2 }}>
-                  <Image src="/undraw_personal_information.svg" alt="Personen" width={240} height={240} />
+                  <Image src="/undraw_personal_information.svg" alt="Personen" width={240} height={240} loading="lazy" />
                 </CardMedia>
                 <CardContent>
                   <Typography variant="body1" sx={{ mb: 1 }} component='p' color="text.secondary">
@@ -157,7 +157,7 @@ export default function Home() {
                 }}
                 />
                 <CardMedia align="center" sx={{ pt: 3, backgroundColor: 'secondary.light', width: '100%', height: '100%', p: 2 }}>
-                  <Image src="/undraw_events.svg" alt="Ereignisse" width={240} height={240} />
+                  <Image src="/undraw_events.svg" alt="Ereignisse" width={240} height={240} loading="lazy" />
                 </CardMedia>
                 <CardContent>
                   <Typography variant="body1" sx={{ mb: 1 }} component='p' color="text.secondary">
@@ -188,7 +188,7 @@ export default function Home() {
                 }}
                 />
                 <CardMedia align="center" sx={{ pt: 3, backgroundColor: 'secondary.light', width: '100%', height: '100%', p: 2 }}>
-                  <Image src="/undraw_connected_world.svg" alt="Beziehungen" width={240} height={240} />
+                  <Image src="/undraw_connected_world.svg" alt="Beziehungen" width={240} height={240} loading="lazy" />
                 </CardMedia>
                 <CardContent>
                   <Typography variant="body1" sx={{ mb: 1 }} component='p' color="text.secondary">
@@ -219,7 +219,7 @@ export default function Home() {
                 }}
                 />
                 <CardMedia align="center" sx={{ pt: 3, backgroundColor: 'secondary.light', width: '100%', height: '100%', p: 2 }}>
-                  <Image src="/undraw_reading_time.svg" alt="Literatur" width={240} height={240} />
+                  <Image src="/undraw_reading_time.svg" alt="Literatur" width={240} height={240} loading="lazy" />
                 </CardMedia>
                 <CardContent>
                   <Typography variant="body1" sx={{ mb: 1 }} component='p' color="text.secondary">
@@ -282,7 +282,7 @@ export default function Home() {
                 }}
                 />
                 <CardMedia align="center" sx={{ pt: 3, backgroundColor: 'secondary.light', width: '100%', height: '100%', p: 2 }}>
-                  <Image src="/undraw_teamwork.svg" alt="Zusammenarbeit" width={240} height={240} />
+                  <Image src="/undraw_teamwork.svg" alt="Zusammenarbeit" width={240} height={240} loading="lazy" />
                 </CardMedia>
                 <CardContent>
                   <Typography variant="body1" sx={{ mb: 1 }} component='p' color="text.secondary">
@@ -375,9 +375,11 @@ export default function Home() {
           <Grid size={{ xs: 12, md: 6 }}>
             <Card sx={{ boxShadow: 2 }}>
               <CardMedia>
-                <img
+                <Image
+                  loading="lazy"
                   src="/open.jpeg"
                   alt="Historische Bücher"
+                  width={1000}
                   style={{ width: '100%', height: 220, objectFit: 'cover' }}
                 />
               </CardMedia>
@@ -394,9 +396,11 @@ export default function Home() {
           <Grid size={{ xs: 12, md: 6 }}>
             <Card sx={{ boxShadow: 2 }}>
               <CardMedia>
-                <img
+                <Image
+                  loading="lazy"
                   src="/inter.jpeg"
                   alt="Teamarbeit"
+                  width={1000}
                   style={{ width: '100%', height: 220, objectFit: 'cover' }}
                 />
               </CardMedia>

@@ -29,7 +29,7 @@ interface AuthFormProps {
     icon?: React.ReactNode;
     validation?: (value: string) => string | null;
   }[];
-  onSubmit: (data: Record<string, string>) => void;
+  onSubmitAction: (data: Record<string, string>) => void;
   submitText: string;
   isLoading?: boolean;
   error?: string;
@@ -47,7 +47,7 @@ export default function AuthForm({
   title,
   subtitle,
   fields,
-  onSubmit,
+  onSubmitAction,
   submitText,
   isLoading = false,
   error,
@@ -109,7 +109,7 @@ export default function AuthForm({
     setErrors(newErrors);
 
     if (!hasErrors) {
-      onSubmit(formData);
+      onSubmitAction(formData);
     }
   };
 
@@ -129,11 +129,10 @@ export default function AuthForm({
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        //minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
         py: 4,
         px: 2,
       }}
@@ -142,7 +141,7 @@ export default function AuthForm({
         elevation={3}
         sx={{
           p: 4,
-          maxWidth: 400,
+          maxWidth: 560,
           width: '100%',
           borderRadius: 3,
         }}

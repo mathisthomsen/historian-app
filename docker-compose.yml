@@ -32,7 +32,6 @@ services:
       DATABASE_PASSWORD: historian
       DATABASE_SSL: "false"
 
-
     ports:
       - "1337:1337"
     depends_on:
@@ -50,6 +49,7 @@ services:
       args:
         - DATABASE_URL
         - DATABASE_URL_UNPOOLED
+        - RESEND_API_KEY
     container_name: historian_app
     restart: unless-stopped
     env_file:
@@ -58,6 +58,7 @@ services:
       - DATABASE_URL=postgres://historian:historian@postgres:5432/historian
       - DATABASE_URL_UNPOOLED=postgres://historian:historian@postgres:5432/historian
       - PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+      - RESEND_API_KEY=${RESEND_API_KEY}
       # ...other env vars...
     ports:
       - "3000:3000"

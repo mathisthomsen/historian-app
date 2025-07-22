@@ -6,8 +6,11 @@ import ClientLayout from './client-layout';
 import SessionProvider from './components/providers/SessionProvider';
 
 export const metadata: Metadata = {
-  title: 'Historian App',
-  description: 'A comprehensive platform for historical research and data management',
+  title: 'Evidoxa - Your Digital Historian',
+  description: 'Evidoxa is a platform for historical research and data management',
+  icons: {
+    icon: '/fav@2x.png',
+  },
 };
 
 export default function RootLayout({

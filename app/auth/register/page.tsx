@@ -184,12 +184,12 @@ export default function RegisterPage() {
   ];
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ bgcolor: 'primary.main' }}>
       <AuthForm
         title="Create Account"
         subtitle="Join Historian App to start managing your historical research"
         fields={fields}
-        onSubmit={handleSubmit}
+        onSubmitAction={handleSubmit}
         submitText="Create Account"
         isLoading={isLoading}
         error={error}

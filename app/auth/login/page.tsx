@@ -151,27 +151,31 @@ export default function LoginPage() {
   ];
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+    <Box sx={{ bgcolor: 'secondary.main' }}>
+      <Box sx={{ mb: 3 }}>
         <Tabs
           value={mode}
           onChange={(_, newValue) => setMode(newValue)}
           centered
+          color="secondary"
           sx={{
             '& .MuiTab-root': {
               textTransform: 'none',
               fontWeight: 600,
               fontSize: '1rem',
             },
+            borderBottom: '0px',
           }}
         >
           <Tab
             label="Sign in with Password"
             value="credentials"
+            color="secondary"
           />
           <Tab
             label="Sign in with Email"
             value="email"
+            color="secondary"
           />
         </Tabs>
       </Box>
@@ -182,7 +186,7 @@ export default function LoginPage() {
             title="Welcome Back"
             subtitle="Sign in to your account to continue"
             fields={credentialsFields}
-            onSubmit={handleCredentialsSubmit}
+            onSubmitAction={handleCredentialsSubmit}
             submitText="Sign In"
             isLoading={isLoading}
             error={error}
@@ -199,7 +203,7 @@ export default function LoginPage() {
             title="Sign in with Email"
             subtitle="We'll send you a magic link to sign in"
             fields={emailFields}
-            onSubmit={handleEmailSubmit}
+            onSubmitAction={handleEmailSubmit}
             submitText="Send Magic Link"
             isLoading={isLoading}
             error={error}
