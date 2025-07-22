@@ -89,14 +89,16 @@ services:
     image: certbot/certbot
     container_name: historian-certbot
     volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - certbot-etc:/etc/letsencrypt
+      - certbot-www: /var/www/certbot
     command: certonly --webroot --webroot-path=/var/www/certbot --email $SSL_EMAIL --agree-tos --no-eff-email -d $DOMAIN --staging
     networks:
       - historian-network
 
 volumes:
   redis_data:
+  certbot-etc:
+  certbot-www:
 
 networks:
   historian-network:
