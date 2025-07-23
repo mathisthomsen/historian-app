@@ -150,9 +150,3 @@ verify-*.min.js
 # Local development
 *.local
 
-strapi/node_modules/
-strapi/.cache/
-strapi/.tmp/
-strapi/build/
-strapi/public/uploads/
-certbot/conf/

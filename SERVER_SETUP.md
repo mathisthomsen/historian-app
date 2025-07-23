@@ -81,17 +81,7 @@ JWT_SECRET="your-super-secret-jwt-key-here"
 ENCRYPTION_KEY="your-32-character-encryption-key-here"
 ```
 
-#### Strapi Configuration
-```bash
-STRAPI_DB_HOST=your-neon-strapi-host.region.aws.neon.tech
-STRAPI_DB_NAME=strapi_production
-STRAPI_DB_USER=your-strapi-db-user
-STRAPI_DB_PASSWORD=your-strapi-db-password
-STRAPI_JWT_SECRET=your-strapi-jwt-secret-here
-STRAPI_ADMIN_JWT_SECRET=your-strapi-admin-jwt-secret-here
-STRAPI_APP_KEYS=your-strapi-app-keys-here
-STRAPI_API_TOKEN_SALT=your-strapi-api-token-salt-here
-```
+
 
 #### Other Required Variables
 ```bash
@@ -126,14 +116,7 @@ AUTHKIT_REDIRECT_URI=https://your-domain.com/api/auth/callback
 
 ### 3.1 Access your application
 - Main application: `https://your-domain.com`
-- Strapi admin: `https://your-domain.com/admin`
 - Health check: `https://your-domain.com/health`
-
-### 3.2 Set up Strapi
-1. Visit `https://your-domain.com/admin`
-2. Create your admin account
-3. Configure your content types and navigation
-4. Set up your pages and components
 
 ### 3.3 Configure your domain
 Make sure your domain's DNS A record points to your server's IP address.
@@ -170,7 +153,6 @@ The setup script configures the following automatic tasks:
 ### 4.3 Log locations
 - Application logs: `/opt/historian-app/logs/production/`
 - Nginx logs: `/opt/historian-app/logs/nginx/`
-- Strapi logs: `/opt/historian-app/logs/strapi/`
 - System logs: `/var/log/`
 
 ## Step 5: Security Considerations
@@ -235,15 +217,6 @@ docker-compose -f docker-compose.production.yml exec app npx prisma db push
 
 # Check database logs
 docker-compose -f docker-compose.production.yml logs app
-```
-
-#### 4. Strapi not accessible
-```bash
-# Check Strapi logs
-docker-compose -f docker-compose.production.yml logs strapi
-
-# Restart Strapi service
-docker-compose -f docker-compose.production.yml restart strapi
 ```
 
 ## Support

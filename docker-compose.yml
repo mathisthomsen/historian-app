@@ -14,34 +14,6 @@ services:
     networks:
       - historian_network
 
-  strapi:
-    build:
-      context: ./strapi
-      dockerfile: Dockerfile
-    container_name: historian_strapi
-    restart: unless-stopped
-    env_file:
-      - .env.local
-    environment:
-      NODE_ENV: development
-      DATABASE_CLIENT: postgres
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_NAME: historian
-      DATABASE_USERNAME: historian
-      DATABASE_PASSWORD: historian
-      DATABASE_SSL: "false"
-
-    ports:
-      - "1337:1337"
-    depends_on:
-      - postgres
-    command: yarn develop --debug
-    volumes:
-      - strapi_uploads:/opt/app/public/uploads
-    networks:
-      - historian_network
-
   app:
     build:
       context: .
@@ -64,7 +36,6 @@ services:
       - "3000:3000"
     depends_on:
       - postgres
-      - strapi
     volumes:
       - ./prisma:/app/prisma
       - ./uploads:/app/uploads
@@ -75,7 +46,6 @@ services:
 
 volumes:
   pg_data:
-  strapi_uploads:
 
 networks:
   historian_network:

@@ -25,32 +25,6 @@ services:
     networks:
       - historian-network
 
-  # Strapi CMS
-  strapi:
-    build:
-      context: ./strapi
-      dockerfile: Dockerfile
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 1G
-    container_name: historian-strapi
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      - DATABASE_CLIENT=postgres
-      - DATABASE_URL=
-      - DATABASE_SSL=true
-      - PGSSLMODE=require
-    volumes:
-      - ./logs/strapi:/opt/app/logs
-      - ./uploads:/opt/app/public/uploads
-    networks:
-      - historian-network
-
   # Redis
   redis:
     image: redis:7-alpine
@@ -80,7 +54,6 @@ services:
       - certbot-www:/var/www/certbot
     depends_on:
       - app
-      - strapi
     networks:
       - historian-network
 

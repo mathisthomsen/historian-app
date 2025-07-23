@@ -18,10 +18,6 @@ if ! docker ps | grep -q "historian-app"; then
     echo "$DATE - ERROR: app container is not running" >> $LOG_FILE
 fi
 
-if ! docker ps | grep -q "historian-strapi"; then
-    echo "$DATE - ERROR: strapi container is not running" >> $LOG_FILE
-fi
-
 if ! docker ps | grep -q "historian-redis"; then
     echo "$DATE - ERROR: redis container is not running" >> $LOG_FILE
 fi
@@ -29,10 +25,6 @@ fi
 # Check if services are responding
 if ! curl -f -s https://evidoxa.com > /dev/null; then
     echo "$DATE - ERROR: evidoxa.com is not responding" >> $LOG_FILE
-fi
-
-if ! curl -f -s https://staging.evidoxa.com > /dev/null; then
-    echo "$DATE - ERROR: staging.evidoxa.com is not responding" >> $LOG_FILE
 fi
 
 # Check disk space

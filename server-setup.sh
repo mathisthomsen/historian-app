@@ -144,7 +144,7 @@ EOF
 
 # Create application directories
 print_status "Creating application directories..."
-mkdir -p /opt/historian-app/logs/{production,nginx,strapi}
+mkdir -p /opt/historian-app/logs/{production,nginx}
 mkdir -p /opt/historian-app/backups
 chown -R historian:historian /opt/historian-app
 

@@ -67,7 +67,7 @@ start_services() {
     print_status "Starting Historian App services..."
     
     # Create necessary directories
-    mkdir -p logs/{production,nginx,strapi}
+    mkdir -p logs/{production,nginx}
     mkdir -p ssl
     mkdir -p certbot/{conf,www}
     
@@ -80,7 +80,6 @@ start_services() {
     
     print_status "Services started successfully!"
     print_status "Application will be available at: https://$DOMAIN"
-    print_status "Strapi admin at: https://$DOMAIN/admin"
     print_status "Health check at: https://$DOMAIN/health"
 }
 

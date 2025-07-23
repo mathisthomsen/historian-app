@@ -58,6 +58,8 @@ import { useTheme } from '@mui/material/styles';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Tooltip from '@mui/material/Tooltip';
 import Link from 'next/link';
+import { AppBarNavigation } from './components/AppBarNavigation';
+import { mainNavLoggedOut } from './components/navConfig';
 
 // Hide the app bar when scrolling down and show it when scrolling up (like a sticky header)
 // https://mui.com/material-ui/react-app-bar/#sticky-app-bar
@@ -166,20 +168,7 @@ export default function RootLayout({ children }) {
     // Removed verbose console logs for faster dev builds
   }, []);
 
-  // Fetch navigation from Strapi for public users
-  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-  useEffect(() => {
-    if (!isAuthenticated) {
-      const documentId = 'ctp0vfu1o3lqz3nj3bt98kae';
-      fetch(`${STRAPI_API_URL}/api/navigations/${documentId}?populate=nav_items.parent_node`)
-        .then(res => res.json())
-        .then(data => {
-          const flatItems = data.data?.nav_items || [];
-          const tree = buildNavTree(flatItems);
-          setPublicNavItems(tree);
-        });
-    }
-  }, [isAuthenticated, STRAPI_API_URL]);
+
 
   // Build a nested tree from flat nav_items with parent_node
   function buildNavTree(flatItems) {
@@ -423,7 +412,7 @@ export default function RootLayout({ children }) {
                 </Typography>
               </Link>
               {/* Public navigation in AppBar (md+) */}
-              {!isAuthenticated && isMdUp && renderPublicNavAppBar(publicNavItems)}
+              {!isAuthenticated && isMdUp && <AppBarNavigation items={mainNavLoggedOut} />}
             </Stack>
             
             <Stack direction="row" spacing={1} alignItems="center">

@@ -4,7 +4,6 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Image from 'next/image';
 
-const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'https://evidoxa.com/strapi';
 
 function getBestImageUrl(image: any) {
   if (!image) return null;
@@ -15,7 +14,6 @@ function getBestImageUrl(image: any) {
     image.formats?.thumbnail?.url ||
     image.url;
   if (!url) return null;
-  return url.startsWith('/') ? `${STRAPI_BASE_URL}${url}` : url;
 }
 
 function getImageDimensions(image: any) {
