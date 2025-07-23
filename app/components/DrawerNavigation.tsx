@@ -7,10 +7,10 @@ import * as MuiIcons from '@mui/icons-material';
 import { NavItem } from './navConfig';
 
 function getMuiIcon(iconName?: string) {
-  if (!iconName) return <MuiIcons.Home />;
-  const IconComponent = (MuiIcons as any)[iconName];
-  return IconComponent ? <IconComponent /> : <MuiIcons.Home />;
-}
+    if (!iconName) return <MuiIcons.Home />;
+    const IconComponent = (MuiIcons as any)[iconName];
+    return IconComponent ? <IconComponent /> : <MuiIcons.Home />;
+  }
 
 export function DrawerNavigation({ items }: { items: NavItem[] }) {
   const [openStates, setOpenStates] = useState<{ [key: string]: boolean }>({});

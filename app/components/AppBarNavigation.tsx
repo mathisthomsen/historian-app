@@ -7,7 +7,7 @@ import * as MuiIcons from '@mui/icons-material';
 
 function getMuiIcon(iconName?: string) {
   if (!iconName) return <MuiIcons.Home />;
-  const IconComponent = MuiIcons[iconName];
+  const IconComponent = (MuiIcons as any)[iconName];
   return IconComponent ? <IconComponent /> : <MuiIcons.Home />;
 }
 
