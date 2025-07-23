@@ -117,7 +117,15 @@ jobs:
 
       - name: Run Prisma migrations on server
         run: |
-          ssh root@217.154.198.215 "cd /opt/historian-app/production && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' npx prisma migrate deploy"
+          ssh root@217.154.198.215 "
+            cd /opt/historian-app/production &&
+            docker run --rm \
+              -v \$PWD:/app \
+              -w /app \
+              -e DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+              -e DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' \
+              node:18 npx prisma migrate deploy
+          "
 
       - name: Write .env on server
         run: |
