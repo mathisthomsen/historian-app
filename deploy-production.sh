@@ -167,19 +167,6 @@ setup_ssl() {
         --no-eff-email \
         --non-interactive \
         -d "$DOMAIN"
-    
-    # If staging domain is configured, get certificate for it too
-    if [ ! -z "$STAGING_DOMAIN" ]; then
-        print_status "Requesting SSL certificate for $STAGING_DOMAIN..."
-        docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot certonly \
-            --webroot \
-            --webroot-path=/var/www/certbot \
-            --email "$SSL_EMAIL" \
-            --agree-tos \
-            --no-eff-email \
-            --non-interactive \
-            -d "$STAGING_DOMAIN"
-    fi
 
     # Update Nginx config to use SSL if certificates exist
     if docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
