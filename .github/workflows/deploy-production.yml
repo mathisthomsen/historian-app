@@ -115,6 +115,10 @@ jobs:
         run: |
           rsync -avz --delete --exclude '.git' --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'build' --exclude 'logs' --exclude 'test-results' --exclude 'playwright-report' ./ root@217.154.198.215:/opt/historian-app/production
 
+      - name: Run Prisma migrations on server
+        run: |
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' npx prisma migrate deploy"
+
       - name: Write .env on server
         run: |
           ssh root@217.154.198.215 "cat > /opt/historian-app/production/.env << 'EOF'
