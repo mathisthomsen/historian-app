@@ -43,12 +43,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Ensure userId is a string
+    const userId = typeof user.id === 'string' ? user.id : String(user.id);
+
     // Create email confirmation token
     const token = uuidv4();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     await prisma.emailConfirmation.create({
       data: {
-        userId: user.id,
+        userId,
         token,
         expiresAt,
       },
