@@ -6,14 +6,20 @@ export type NavItem = {
 };
 
 export const mainNavLoggedOut: NavItem[] = [
-  { label: "Home", href: "/", icon: "Home" },
-  { label: "About", href: "/about", icon: "Info" },
-  { label: "Features", href: "/features", icon: "Star", children: [
-      { label: "Personen", href: "/features/personen", icon: "Person" },
+  { label: "Funktionen", href: "/funktionen", icon: "Star", children: [
+      { label: "Personen", href: "/funktionen/personen", icon: "Person" },
+      { label: "Ereignisse", href: "/funktionen/ereignisse", icon: "Event" },
+      { label: "Orte", href: "/funktionen/orte", icon: "Place" },
+      { label: "Organisationen", href: "/funktionen/organisationen", icon: "Business" },
+      { label: "Dokumente", href: "/funktionen/dokumente", icon: "Document" },
+      { label: "Quellen", href: "/funktionen/quellen", icon: "Source" },
+      { label: "Karten", href: "/funktionen/karten", icon: "Map" },
+      { label: "Statistiken", href: "/funktionen/statistiken", icon: "BarChart" },
+      { label: "Berichte", href: "/funktionen/berichte", icon: "Report" },
     ]
   },
   { label: "Blog", href: "/blog", icon: "Book" },
-  { label: "Login", href: "/auth/login", icon: "Login" },
+  { label: "Über uns", href: "/ueber-uns", icon: "Info" },
 ];
 
 export const mainNavLoggedIn: NavItem[] = [

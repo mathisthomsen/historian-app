@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
-import { Button, Menu, MenuItem, Stack } from '@mui/material';
+import { Button, ListItemText, ListItemIcon, Menu, MenuItem, Stack } from '@mui/material';
 import { NavItem } from './navConfig';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import * as MuiIcons from '@mui/icons-material';
@@ -22,18 +22,17 @@ export function AppBarNavigation({ items }: { items: NavItem[] }) {
   };
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: 2 }}>
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: 2, pl: 2 }}>
       {items.map((item) => {
         const hasChildren = item.children && item.children.length > 0;
         if (!hasChildren) {
           return (
             <Button
               key={item.href}
-              color="inherit"
+              variant='text'
               component={Link}
               href={item.href}
-              sx={{ fontWeight: 500 }}
-              startIcon={getMuiIcon(item.icon)}
+              sx={{ fontWeight: 500, color: 'white' }}
             >
               {item.label}
             </Button>
@@ -43,12 +42,11 @@ export function AppBarNavigation({ items }: { items: NavItem[] }) {
           <>
             <Button
               key={item.href}
-              color="inherit"
               aria-haspopup="true"
               aria-controls={`menu-${item.href}`}
               aria-expanded={Boolean(anchorEls[item.href])}
               onClick={(e) => handleMenuOpen(e, item.href)}
-              sx={{ fontWeight: 500 }}
+              sx={{ fontWeight: 500, color: 'white' }}
               endIcon={
                 <ExpandMoreIcon
                   aria-expanded={Boolean(anchorEls[item.href])}
@@ -58,7 +56,6 @@ export function AppBarNavigation({ items }: { items: NavItem[] }) {
                   }}
                 />
               }
-              startIcon={getMuiIcon(item.icon)}
             >
               {item.label}
             </Button>
@@ -70,6 +67,16 @@ export function AppBarNavigation({ items }: { items: NavItem[] }) {
               anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
               keepMounted
+              PaperProps={{
+                sx: {
+                  background: 'rgba(30, 41, 59, 0.55)',
+                  backdropFilter: 'blur(18px)',
+                  WebkitBackdropFilter: 'blur(18px)',
+                  boxShadow: '0 4px 32px 0 rgba(0,0,0,0.10)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#fff',
+                }
+              }}
             >
               {item.children?.map((child) => (
                 <MenuItem
@@ -78,8 +85,8 @@ export function AppBarNavigation({ items }: { items: NavItem[] }) {
                   href={child.href}
                   onClick={() => handleMenuClose(item.href)}
                 >
-                  {getMuiIcon(child.icon)}
-                  {child.label}
+                  <ListItemIcon>{getMuiIcon(child.icon)}</ListItemIcon>
+                  <ListItemText primary={child.label} />
                 </MenuItem>
               ))}
             </Menu>

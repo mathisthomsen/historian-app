@@ -14,7 +14,6 @@ import {
   ListItemText,
   ListItemIcon,
   ListItemButton,
-  ListSubheader,
   CssBaseline,
   Box,
   Divider,
@@ -25,9 +24,6 @@ import {
   Slide,
   useScrollTrigger,
   Stack,
-  Chip,
-  ExpandLess,
-  ExpandMore,
   CircularProgress
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -60,6 +56,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Link from 'next/link';
 import { AppBarNavigation } from './components/AppBarNavigation';
 import { mainNavLoggedOut } from './components/navConfig';
+import { DrawerNavigation } from './components/DrawerNavigation';
 
 // Hide the app bar when scrolling down and show it when scrolling up (like a sticky header)
 // https://mui.com/material-ui/react-app-bar/#sticky-app-bar
@@ -138,14 +135,6 @@ export default function RootLayout({ children }) {
     await signOut({ callbackUrl: '/' });
   };
 
-  // Accessible menu open/close handlers for public nav
-  const handleMenuOpen = (event, id) => {
-    setMenuAnchors((prev) => ({ ...prev, [id]: event.currentTarget }));
-  };
-  const handleMenuClose = (id) => {
-    setMenuAnchors((prev) => ({ ...prev, [id]: null }));
-  };
-
   useEffect(() => {
     setMounted(true);
     const storedMode = localStorage.getItem('darkMode');
@@ -162,195 +151,6 @@ export default function RootLayout({ children }) {
     setDarkMode(newMode);
     localStorage.setItem('darkMode', newMode);
   };
-
-  // Debug staging detection
-  useEffect(() => {
-    // Removed verbose console logs for faster dev builds
-  }, []);
-
-
-
-  // Build a nested tree from flat nav_items with parent_node
-  function buildNavTree(flatItems) {
-    const idMap = {};
-    flatItems.forEach(item => {
-      idMap[item.id] = { ...item, children: [] };
-    });
-    const tree = [];
-    flatItems.forEach(item => {
-      if (item.parent_node && item.parent_node.id) {
-        if (idMap[item.parent_node.id]) {
-          idMap[item.parent_node.id].children.push(idMap[item.id]);
-        }
-      } else {
-        tree.push(idMap[item.id]);
-      }
-    });
-    // Sort children by order
-    function sortTree(nodes) {
-      nodes.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      nodes.forEach(node => {
-        if (node.children && node.children.length > 0) {
-          sortTree(node.children);
-        }
-      });
-    }
-    sortTree(tree);
-    return tree;
-  }
-
-  // Helper to get Material UI icon by name
-  function getMuiIcon(iconName) {
-    console.log(iconName);
-    if (!iconName) return <HomeIcon />;
-    const IconComponent = MuiIcons[iconName];
-    console.log(IconComponent);
-    return IconComponent ? <IconComponent /> : <HomeIcon />;
-  }
-
-  // Recursive render for nested navigation
-  function renderNavItems(items, level = 0) {
-    return items.map((item) => (
-      <React.Fragment key={item.id}>
-        <ListItem disablePadding sx={{ pl: 2 * level }}>
-          <ListItemButton
-            selected={currentPath === item.url}
-            onClick={() => {
-              setOpen(false);
-              router.push(item.url);
-            }}
-          >
-            <ListItemIcon>
-              {getMuiIcon(item.icon)}
-            </ListItemIcon>
-            <ListItemText primary={item.label} />
-          </ListItemButton>
-        </ListItem>
-        {item.children && item.children.length > 0 && (
-          <List disablePadding>
-            {renderNavItems(item.children, level + 1)}
-          </List>
-        )}
-      </React.Fragment>
-    ));
-  }
-
-  // Render public nav in AppBar (first level as buttons, second level as menus)
-  function renderPublicNavAppBar(items) {
-    return (
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: 2 }}>
-        {items.map((item) => {
-          const hasChildren = item.children && item.children.length > 0;
-          if (!hasChildren) {
-            return (
-              <Button
-                key={item.id}
-                color="inherit"
-                href={item.url}
-                aria-label={item.label}
-                sx={{ fontWeight: 500 }}
-              >
-                {item.label}
-              </Button>
-            );
-          }
-          return (
-            <React.Fragment key={item.id}>
-              <Button
-                color="inherit"
-                aria-haspopup="true"
-                aria-controls={`menu-${item.id}`}
-                aria-expanded={Boolean(menuAnchors[item.id])}
-                onClick={(e) => handleMenuOpen(e, item.id)}
-                sx={{ fontWeight: 500 }}
-                endIcon={
-                  <ExpandMoreIcon
-                    aria-expanded={Boolean(menuAnchors[item.id])}
-                    sx={{
-                      transition: 'transform 0.2s',
-                      transform: Boolean(menuAnchors[item.id]) ? 'rotate(180deg)' : 'rotate(0deg)'
-                    }}
-                  />
-                }
-              >
-                {item.label}
-              </Button>
-              <Menu
-                id={`menu-${item.id}`}
-                anchorEl={menuAnchors[item.id]}
-                open={Boolean(menuAnchors[item.id])}
-                onClose={() => handleMenuClose(item.id)}
-                slotProps={{
-                  menuList: {
-                    'aria-labelledby': `button-${item.id}`,
-                    role: 'menu',
-                  },
-                  paper: {
-                    sx: {
-                      borderRadius: 1,
-                      backgroundColor: 'secondary.main',
-                      color: 'secondary.contrastText',
-                    }
-                  }
-                }}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                keepMounted
-              >
-                {item.children.map((child) => (
-                  <MenuItem
-                    key={child.id}
-                    component="a"
-                    href={child.url}
-                    onClick={() => handleMenuClose(item.id)}
-                    role="menuitem"
-                    sx={{
-                      '&:hover': {
-                        backgroundColor: 'secondary.dark',
-                      },
-                      '&:active': {
-                        backgroundColor: 'secondary.dark',
-                      },  
-                      '&:focus': {
-                        backgroundColor: 'secondary.dark',
-                      },
-                      '&:focus-visible': {
-                        backgroundColor: 'secondary.dark',
-                      },
-                      '&:focus-within': {
-                        backgroundColor: 'secondary.dark',
-                      },
-                      paddingInline: 3,
-                      paddingBlock: 1,
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: 'secondary.contrastText' }}>
-                      {getMuiIcon(child.icon)}
-                    </ListItemIcon>
-                    <ListItemText primary={child.label} />
-                  </MenuItem>
-                ))}
-              </Menu>
-            </React.Fragment>
-          );
-        })}
-      </Stack>
-    );
-  }
-
-  // Render public nav in Drawer (mobile)
-  function renderPublicNavDrawer(items) {
-    return (
-      <Box sx={{ width: 240 }}>
-        <List>
-          <ListSubheader sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}>
-            Navigation
-          </ListSubheader>
-          {renderNavItems(items)}
-        </List>
-      </Box>
-    );
-  }
 
   // Don't render until mounted to prevent hydration mismatches
   if (!mounted) {
@@ -376,8 +176,12 @@ export default function RootLayout({ children }) {
           position="fixed" 
           sx={{ 
             zIndex: (theme) => theme.zIndex.drawer + 1,
-            boxShadow: '8',
-            background: `linear-gradient(170deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+            background: 'rgba(30, 41, 59, 0.55)', // semi-transparent dark
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
+            boxShadow: '0 4px 32px 0 rgba(0,0,0,0.10)',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            color: '#fff',
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
@@ -442,6 +246,16 @@ export default function RootLayout({ children }) {
                     vertical: 'top',
                     horizontal: 'right',
                   }}
+                  PaperProps={{
+                    sx: {
+                      background: 'rgba(30, 41, 59, 0.55)',
+                      backdropFilter: 'blur(18px)',
+                      WebkitBackdropFilter: 'blur(18px)',
+                      boxShadow: '0 4px 32px 0 rgba(0,0,0,0.10)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: '#fff',
+                    }
+                  }}
                 >
                   <MenuItem onClick={handleUserMenuClose} disabled>
                     <ListItemIcon>
@@ -502,8 +316,18 @@ export default function RootLayout({ children }) {
             mt: { xs: '56px', md: '64px' },
           },
         }}
+        PaperProps={{
+          sx: {
+            background: 'rgba(30, 41, 59, 0.55)',
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
+            boxShadow: '0 4px 32px 0 rgba(0,0,0,0.10)',
+            borderRight: '1px solid rgba(255,255,255,0.08)',
+            color: '#fff',
+          }
+        }}
       >
-        <List>
+        <List id="logged-in-navigation-drawer-content">
           {isAuthenticated
             ? currentNavItems.map((item) => (
                 <ListItem key={item.path} disablePadding>
@@ -537,6 +361,7 @@ export default function RootLayout({ children }) {
       {/* Drawer for public nav on mobile */}
       {!isAuthenticated && !isMdUp && (
         <Drawer
+          id="public-navigation-drawer"
           anchor="left"
           open={publicDrawerOpen}
           onClose={() => setPublicDrawerOpen(false)}
@@ -550,15 +375,24 @@ export default function RootLayout({ children }) {
               mt: { xs: '56px', md: '64px' },
             },
           }}
+          PaperProps={{
+            sx: {
+              background: 'rgba(30, 41, 59, 0.55)',
+              backdropFilter: 'blur(18px)',
+              WebkitBackdropFilter: 'blur(18px)',
+              boxShadow: '0 4px 32px 0 rgba(0,0,0,0.10)',
+              borderRight: '1px solid rgba(255,255,255,0.08)',
+              color: '#fff',
+            }
+          }}
         >
-          {renderPublicNavDrawer(publicNavItems)}
+          <DrawerNavigation id="public-navigation-drawer-content" items={mainNavLoggedOut} />
         </Drawer>
       )}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          pt: { xs: '56px', md: '64px' },
           minHeight: '100vh',
         }}
       >

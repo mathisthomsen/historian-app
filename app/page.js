@@ -33,6 +33,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import EventIcon from '@mui/icons-material/Event';
 import LinkIcon from '@mui/icons-material/Link';
+import { HeroNoImage } from './components/content/Hero';
 
 export default function Home() {
   const theme = useTheme();
@@ -41,62 +42,12 @@ export default function Home() {
   return (
     <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Hero Section with background image and overlay */}
-      <Box
-        sx={{
-          position: 'relative',
-          py: { xs: 8, md: 12 },
-          textAlign: 'center',
-          minHeight: { xs: 400, md: 520 },
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Background image */}
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 0,
-            background: `url('/hero.jpeg') center/cover no-repeat, black`,
-            '&:after': {
-              content: '""',
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: `black`,
-              opacity: 0.6,
-              zIndex: 1,
-            },
-          }}
-        />
-        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 2 }}>
-          <Stack spacing={4} alignItems="center">
-            
-            <Typography variant="h2" component="h1" sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: { xs: '2.2rem', md: '3.5rem' } }}>
-              Evidoxa
-            </Typography>
-            <Typography variant="h5" sx={{ color: 'primary.contrastText', opacity: 0.95, maxWidth: 600, fontWeight: 400 }}>
-              Die moderne Plattform zur Verwaltung, Analyse und Präsentation historischer Daten. Erfassen Sie Personen, Ereignisse, Beziehungen und Literatur – sicher, kollaborativ und intuitiv.
-            </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                component={Link}
-                href="/auth/register"
-              >
-                Jetzt registrieren
-              </Button>
-             
-            </Stack>
-          </Stack>
-        </Container>
-      </Box>
-
+      <HeroNoImage
+        Title="Welcome to Evidoxa!"
+        Copy={[{ type: 'paragraph', children: [{ text: 'Discover history with style.' }] }]}
+        ButtonLabel="Get Started"
+      />
+      
       {/* Features Section with subtle background and spacing */}
       <Box sx={{ bgcolor: 'background.paper', py: { xs: 6, md: 10 }, px: { xs: 0, md: 2 } }}>
         <Container maxWidth="lg">
@@ -380,6 +331,7 @@ export default function Home() {
                   src="/open.jpeg"
                   alt="Historische Bücher"
                   width={1000}
+                  height={220}
                   style={{ width: '100%', height: 220, objectFit: 'cover' }}
                 />
               </CardMedia>
@@ -401,6 +353,7 @@ export default function Home() {
                   src="/inter.jpeg"
                   alt="Teamarbeit"
                   width={1000}
+                  height={220}
                   style={{ width: '100%', height: 220, objectFit: 'cover' }}
                 />
               </CardMedia>

@@ -14,7 +14,8 @@ function getBestImageUrl(image: any) {
     image.formats?.small?.url ||
     image.formats?.thumbnail?.url ||
     image.url;
-  if (!url) return null;
+  if (!url) return  ;
+  return url;
 }
 
 function renderCopy(copy: any[]) {
