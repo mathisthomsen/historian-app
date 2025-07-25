@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/build-mdx-manifest.js && prisma generate && next build",
-    "build:no-db": "node scripts/build-mdx-manifest.js && prisma generate && SKIP_ENV_VALIDATION=1 next build",
+    "build": "prisma generate && next build",
+    "build:no-db": "prisma generate && SKIP_ENV_VALIDATION=1 next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -16,11 +16,10 @@
     "check": "npm run lint && npm run type-check && npm run test && npm run build",
     "check:quick": "npm run lint && npm run type-check",
     "postinstall": "prisma generate",
-    "vercel-build": "node scripts/build-mdx-manifest.js && prisma generate && prisma db push && next build",
+    "vercel-build": "prisma generate && prisma db push && next build",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "prisma:migrate": "prisma migrate dev",
-    "mdx:manifest": "node scripts/build-mdx-manifest.js"
+    "prisma:migrate": "prisma migrate dev"
   },
   "prisma": {
     "schema": "prisma/schema.prisma",
@@ -34,7 +33,6 @@
     "@fontsource/permanent-marker": "^5.2.5",
     "@fontsource/roboto": "^5.2.5",
     "@hookform/resolvers": "^5.1.1",
-    "@mdx-js/loader": "^3.1.0",
     "@mui/icons-material": "^7.2.0",
     "@mui/lab": "^7.0.0-beta.14",
     "@mui/material": "^7.1.2",
@@ -42,7 +40,6 @@
     "@mui/x-data-grid": "^8.6.0",
     "@mui/x-date-pickers": "^8.6.0",
     "@mui/x-internals": "^8.5.0",
-    "@next/mdx": "^15.4.3",
     "@prisma/client": "^6.10.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
@@ -60,7 +57,6 @@
     "mysql2": "^3.11.5",
     "next": "^15.0.3",
     "next-auth": "^4.24.11",
-    "next-mdx-remote": "^5.0.0",
     "node-fetch": "^2.7.0",
     "nodemailer": "^6.10.1",
     "papaparse": "^5.5.2",
