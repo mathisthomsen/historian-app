@@ -254,6 +254,24 @@ export default function AuthForm({
                     </MuiLink>
                   </Link>
                 </Typography>
+                {fields.some(f => f.name === 'password') && mode === 'login' && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <Link href="/auth/forgot-password" passHref>
+                      <MuiLink
+                        component="span"
+                        sx={{
+                          color: 'primary.main',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                          fontSize: '0.95rem',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        Forgot password?
+                      </MuiLink>
+                    </Link>
+                  </Typography>
+                )}
               </Box>
             )}
           </Stack>

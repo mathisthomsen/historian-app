@@ -151,7 +151,7 @@ export default function LoginPage() {
   ];
 
   return (
-    <Box sx={{ bgcolor: 'secondary.main' }}>
+    <Box sx={{ bgcolor: 'secondary.main', pt: 8 }}>
       <Box sx={{ mb: 3 }}>
         <Tabs
           value={mode}
