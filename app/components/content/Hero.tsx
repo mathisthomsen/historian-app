@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -158,6 +158,18 @@ const circle2move = keyframes`
 `;
 
 export function HeroNoImage({ Title, Copy, ButtonLabel }: any) {
+  const [enhanced, setEnhanced] = useState(false);
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      // Defer enhancement to idle time if possible
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(() => setEnhanced(true));
+      } else {
+        setTimeout(() => setEnhanced(true), 200);
+      }
+    }
+  }, []);
   return (
     <Box
       sx={{
@@ -174,7 +186,7 @@ export function HeroNoImage({ Title, Copy, ButtonLabel }: any) {
         background: 'linear-gradient(170deg, #1f2c4c 80%, #009688 100%)',
       }}
     >
-      {/* Animated teal circles */}
+      {/* Progressive enhancement: static circles by default, animated+blur if enhanced */}
       <Box sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, overflow: 'hidden' }}>
         <Box
           sx={{
@@ -185,8 +197,10 @@ export function HeroNoImage({ Title, Copy, ButtonLabel }: any) {
             height: { xs: 180, md: 320 },
             borderRadius: '50%',
             bgcolor: 'rgba(0, 150, 136, 0.25)',
-            filter: 'blur(2px)',
-            animation: `${circle1move} 18s linear infinite`,
+            filter: enhanced ? 'blur(2px)' : 'none',
+            animation: enhanced ? `${circle1move} 18s linear infinite` : 'none',
+            willChange: enhanced ? 'transform' : undefined,
+            transition: 'filter 0.3s',
           }}
         />
         <Box
@@ -198,12 +212,14 @@ export function HeroNoImage({ Title, Copy, ButtonLabel }: any) {
             height: { xs: 120, md: 220 },
             borderRadius: '50%',
             bgcolor: 'rgba(0, 150, 136, 0.18)',
-            filter: 'blur(2px)',
-            animation: `${circle2move} 22s linear infinite`,
+            filter: enhanced ? 'blur(2px)' : 'none',
+            animation: enhanced ? `${circle2move} 22s linear infinite` : 'none',
+            willChange: enhanced ? 'transform' : undefined,
+            transition: 'filter 0.3s',
           }}
         />
       </Box>
-      {/* Glassmorphism text layer */}
+      {/* Glassmorphism text layer, blur only if enhanced */}
       <Box
         sx={{
           position: 'relative',
@@ -216,10 +232,11 @@ export function HeroNoImage({ Title, Copy, ButtonLabel }: any) {
           overflow: 'hidden',
           border: '2px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 0 80px rgba(0, 0, 0, 0.25)',
-          backdropFilter: 'blur(32px)',
+          backdropFilter: enhanced ? 'blur(32px)' : 'none',
           background: 'rgba(255, 255, 255, 0.1)',
           opacity: 0.92,
           color: 'white',
+          transition: 'backdrop-filter 0.3s',
         }}
       >
         <Typography
