@@ -68,11 +68,23 @@ export default function EventsPage() {
         filterParam = `&filterField=${encodeURIComponent(filter.items[0].field)}&filterValue=${encodeURIComponent(filter.items[0].value)}`;
       }
       const parentIdParam = '&parentId=null';
-      const data: ApiResponse = await api.get(`/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${parentIdParam}`);
-      setEvents(data.events);
-      setRowCount(data.pagination.total);
+      const data = await api.get(`/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${parentIdParam}`);
+      if (data && Array.isArray(data.events) && data.pagination) {
+        setEvents(data.events);
+        setRowCount(data.pagination.total);
+      } else {
+        setEvents([]);
+        setRowCount(0);
+        if (data && data.error) {
+          setError(data.error);
+        } else {
+          setError('Fehler beim Laden der Daten');
+        }
+      }
     } catch (error) {
       console.error('[fetchEvents] Fehler beim Laden der Events:', error);
+      setEvents([]);
+      setRowCount(0);
       setError('Fehler beim Laden der Daten');
     } finally {
       setDataLoading(false);
@@ -332,7 +344,7 @@ export default function EventsPage() {
         </Box>
         <ModalDeleteConfirmation
           open={showDeleteModal}
-          itemName={`das Event "${events.find(e => e.id === selectedId)?.title ?? ''}"`}
+          itemName={`das Event "${(Array.isArray(events) && selectedId != null && events.find(e => e.id === selectedId)?.title) || ''}"`}
           onConfirmAction={handleConfirmDelete}
           onCancelAction={() => {
             setShowDeleteModal(false);
