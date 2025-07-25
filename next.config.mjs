@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-import withMDX from '@next/mdx';
 
 const nextConfig = {
   // Performance optimizations
@@ -57,13 +56,5 @@ const nextConfig = {
     ]
   },
   output: 'standalone',
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
 };
-
-export default withMDX({
-  extension: /\.mdx?$/,
-  options: {
-    remarkPlugins: [],
-    rehypePlugins: [],
-  },
-})(nextConfig);
