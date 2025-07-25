@@ -346,7 +346,7 @@ export default function RootLayout({ children }) {
                   >
                     <ListItemIcon
                       sx={{
-                        color: currentPath === item.path ? 'inherit' : 'text.primary',
+                        color: 'white',
                       }}
                     >
                       {item.icon}

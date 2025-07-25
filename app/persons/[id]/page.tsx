@@ -774,23 +774,6 @@ export default function PersonDetailPage() {
         )}
       </Box>
 
-      {/* Floating Action Button */}
-      <Fab
-        color="primary"
-        aria-label="add"
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        onClick={() => {
-          if (activeTab === 0) {
-            setSelectedId(null);
-            setShowLifeEventForm(true);
-          } else {
-            handleAddRelationship();
-          }
-        }}
-      >
-        <Add />
-      </Fab>
-
       {/* Context Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuItem onClick={handleEdit}>

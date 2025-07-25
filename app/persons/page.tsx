@@ -5,6 +5,7 @@ import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
 import { Box, Typography, Container, Button, Drawer, Snackbar, Alert, Stack } from '@mui/material';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import InfoIcon from '@mui/icons-material/Info';
 import { useRouter } from 'next/navigation';
 import SiteHeader from '../components/SiteHeader';
 import LoadingSkeleton from '../components/LoadingSkeleton';
@@ -176,9 +177,12 @@ export default function PersonsPage() {
       align: 'right',
       renderCell: (params) => (
         <>
-          <IconButton onClick={(e) => handleMenuOpen(e, params.row.id)}>
-            <MoreVertIcon />
-          </IconButton>
+          <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+            <IconButton onClick={(e) => router.push(`/persons/${params.row.id}`)}>
+              <InfoIcon />
+            </IconButton>
+          
+          </Stack>
         </>
       ),
     },

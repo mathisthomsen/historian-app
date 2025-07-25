@@ -26,7 +26,7 @@ export function DrawerNavigation({ items }: { items: NavItem[] }) {
         return (
           <li key={item.href}>
             <ListItemButton onClick={() => handleToggle(item.href)} component={'button'} sx={{width: '100%'}}>
-                <ListItemIcon>{getMuiIcon(item.icon)}</ListItemIcon>
+                <ListItemIcon sx={{ color: 'white' }}>{getMuiIcon(item.icon)}</ListItemIcon>
                 <ListItemText primary={item.label} />
                 {openStates[item.href] ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>

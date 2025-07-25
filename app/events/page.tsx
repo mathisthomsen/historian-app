@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
 import { Box, Typography, Container, Button, Stack, Skeleton } from '@mui/material';
+import type { GridSortModel, GridFilterModel } from '@mui/x-data-grid';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useRouter } from 'next/navigation';
@@ -47,8 +48,8 @@ export default function EventsPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [rowCount, setRowCount] = useState(0);
-  const [sortModel, setSortModel] = useState<any[]>([]);
-  const [filterModel, setFilterModel] = useState<any>({ items: [] });
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
+  const [filterModel, setFilterModel] = useState<GridFilterModel>({ items: [] });
 
   const fetchEvents = useCallback(async (
     pageNum = page,
@@ -291,13 +292,11 @@ export default function EventsPage() {
               sortingMode="server"
               sortModel={sortModel}
               onSortModelChange={(model) => {
-                console.log('[DataGrid] Sort model changed', model);
                 setSortModel(model.slice());
               }}
               filterMode="server"
               filterModel={filterModel}
               onFilterModelChange={(model) => {
-                console.log('[DataGrid] Filter model changed', model);
                 setFilterModel(model);
               }}
               disableRowSelectionOnClick

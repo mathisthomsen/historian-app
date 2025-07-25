@@ -80,12 +80,13 @@ export function AppBarNavigation({ items }: { items: NavItem[] }) {
             >
               {item.children?.map((child) => (
                 <MenuItem
+                  id={`menu-item-${child.href}`}
                   key={child.href}
                   component={Link}
                   href={child.href}
                   onClick={() => handleMenuClose(item.href)}
                 >
-                  <ListItemIcon>{getMuiIcon(child.icon)}</ListItemIcon>
+                  <ListItemIcon sx={{ color: 'white' }}>{getMuiIcon(child.icon)}</ListItemIcon>
                   <ListItemText primary={child.label} />
                 </MenuItem>
               ))}
