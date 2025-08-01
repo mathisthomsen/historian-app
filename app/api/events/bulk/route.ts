@@ -5,8 +5,10 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function DELETE(req: NextRequest) {
+  console.log('DELETE called');
   try {
-    const ids = await req.json(); // erwartet z. B. [1, 2, 3]
+    const ids = await req.json();
+    console.log('IDs:', ids);
 
     if (!Array.isArray(ids) || !ids.every(id => typeof id === 'number')) {
       return NextResponse.json({ error: 'Invalid ID array' }, { status: 400 });

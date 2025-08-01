@@ -1,21 +1,22 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
-import { Box, Typography, Container, Button, Stack, Skeleton } from '@mui/material';
-import type { GridSortModel, GridFilterModel } from '@mui/x-data-grid';
-import { IconButton, Menu, MenuItem } from '@mui/material';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import React, { useEffect, useState, useCallback } from 'react';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { Box, Typography, Container, Button, Stack, Skeleton, Tooltip } from '@mui/material';
+import type { GridSortModel, GridFilterModel, GridRowSelectionModel } from '@mui/x-data-grid';
+import { IconButton } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import ModalDeleteConfirmation from '../components/ModalDeleteConfirmation';
 import SiteHeader from '../components/SiteHeader';
-import { api } from '../lib/api';
+import { api } from '../lib/api'; 
 import Drawer from '@mui/material/Drawer';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import EventForm from '../components/EventForm';
 import { useSession } from 'next-auth/react';
 import RequireAuth from '../components/RequireAuth';
+import DeleteIcon from '@mui/icons-material/Delete';
+import MoreIcon from '@mui/icons-material/More';
 
 type Event = {
   id: number;
@@ -50,12 +51,18 @@ export default function EventsPage() {
   const [rowCount, setRowCount] = useState(0);
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [filterModel, setFilterModel] = useState<GridFilterModel>({ items: [] });
+  const [searchValue, setSearchValue] = useState<string>('');
+  const [rowSelectionModel, setRowSelectionModel] =
+    React.useState<GridRowSelectionModel>({ type: 'include', ids: new Set() });
 
-  const fetchEvents = useCallback(async (
+  // Fetch Events
+
+  const fetchEvents = async (
     pageNum = page,
     limitNum = pageSize,
     sort = sortModel,
-    filter = filterModel
+    filter = filterModel,
+    search = searchValue
   ) => {
     try {
       setDataLoading(true);
@@ -68,100 +75,108 @@ export default function EventsPage() {
       if (filter && filter.items && filter.items.length > 0 && filter.items[0].value) {
         filterParam = `&filterField=${encodeURIComponent(filter.items[0].field)}&filterValue=${encodeURIComponent(filter.items[0].value)}`;
       }
+      let searchParam = '';
+      if (search && search.trim()) {
+        searchParam = `&search=${encodeURIComponent(search.trim())}`;
+      }
       const parentIdParam = '&parentId=null';
-      const data = await api.get(`/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${parentIdParam}`);
+      const url = `/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${searchParam}${parentIdParam}`;
+      console.log('[fetchEvents] Calling URL:', url);
+      const data = await api.get(url);
+      
+      // Check if the response contains an error
+      if (data && data.error) {
+        setEvents([]);
+        setRowCount(0);
+        setError(data.error);
+        return;
+      }
+      
       if (data && Array.isArray(data.events) && data.pagination) {
         setEvents(data.events);
         setRowCount(data.pagination.total);
       } else {
         setEvents([]);
         setRowCount(0);
-        if (data && data.error) {
-          setError(data.error);
-        } else {
-          setError('Fehler beim Laden der Daten');
-        }
+        setError('Fehler beim Laden der Daten');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[fetchEvents] Fehler beim Laden der Events:', error);
       setEvents([]);
       setRowCount(0);
-      setError('Fehler beim Laden der Daten');
+      
+      // Handle authentication errors specifically
+      if (error.message && error.message.includes('401')) {
+        setError('Bitte melden Sie sich an, um die Daten zu sehen');
+        // Optionally redirect to login
+        router.push('/auth/login');
+      } else if (error.message && error.message.includes('500')) {
+        setError('Serverfehler beim Laden der Daten');
+      } else {
+        setError('Fehler beim Laden der Daten');
+      }
     } finally {
       setDataLoading(false);
     }
-  }, [page, pageSize, sortModel, filterModel]);
-
-  useEffect(() => {
-    console.log('[useEffect] Fetching events with', { page, pageSize, sortModel, filterModel });
-    fetchEvents();
-  }, [fetchEvents, page, pageSize, sortModel, filterModel]);
+  };  
+  
+  // State
 
   const router = useRouter();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editEventId, setEditEventId] = useState<number | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [selectionSnackbarOpen, setSelectionSnackbarOpen] = useState(false);
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, id: number) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedId(id);
-  };
+  // Datagrid Tools
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedId(null);
-  };
-
-  const handleEdit = () => {
-    if (selectedId) {
-      setEditEventId(selectedId);
-      setDrawerOpen(true);
+  const handleFilterModelChange = useCallback((model: GridFilterModel) => {
+    console.log('[DataGrid] Filter model changed:', JSON.stringify(model, null, 2));
+    
+    // Check if there are quickFilterValues (this is how the search works)
+    if (model.quickFilterValues && model.quickFilterValues.length > 0) {
+      const searchValue = model.quickFilterValues[0];
+      console.log('[DataGrid] Quick filter search detected:', searchValue);
+      setSearchValue(searchValue);
+      // Keep the filter model as is, but we'll handle search separately in API calls
+      setFilterModel(model);
+    } else {
+      // This is a regular column filter
+      console.log('[DataGrid] Regular column filter detected');
+      setFilterModel(model);
+      setSearchValue(''); // Clear search when using column filters
     }
-    setSelectedId(null);
-    handleMenuClose();
-  };
+  }, []);
 
-  const handleDetail = () => {
-    if (selectedId) router.push(`/events/${selectedId}`);
-    setSelectedId(null);
-    handleMenuClose();
-  };
+  const handleSortModelChange = useCallback((model: GridSortModel) => {
+    setSortModel(model.slice());
+  }, []);
 
-  const handleDelete = async () => {
-    if (selectedId) {
-      try {
-        await api.delete(`/api/events/${selectedId}`);
-        fetchEvents();
-      } catch (error) {
-        console.error('Fehler beim Löschen:', error);
-      }
-    }
-    handleMenuClose();
-  };
+  const handlePaginationModelChange = useCallback(({ page: newPage, pageSize: newPageSize }: { page: number; pageSize: number }) => {
+    console.log('[DataGrid] Pagination changed', { newPage, newPageSize });
+    setPage(newPage);
+    setPageSize(newPageSize);
+  }, []);
 
-  const handleOpenDeleteModal = () => {
-    if (selectedId !== null) {
-      const event = events.find(e => e.id === selectedId);
-      console.log('Open delete modal called. Event ID:', selectedId, 'Event:', event ? event.title : '');
-      setShowDeleteModal(true);
-    }
-  };
+  // Debounced filter effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchEvents();
+    }, 750); // 750ms debounce
 
-  const handleConfirmDelete = async () => {
-    console.log('Confirm delete called');
-    if (selectedId != null) {
-      console.log('Called with ID:', selectedId);
-      await handleDelete();
-      setShowDeleteModal(false);
-      setSelectedId(null);
-      return;
-    }
-  };
+    return () => clearTimeout(timeoutId);
+  }, [filterModel, searchValue]);
+
+  // Immediate effect for pagination and sorting
+  useEffect(() => {
+    fetchEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, sortModel]);
+
+  // Create Event
 
   const handleCreate = () => {
     setEditEventId(null);
@@ -181,15 +196,103 @@ export default function EventsPage() {
     handleDrawerClose();
   };
 
+  // Deleting Row Selection
+
+  const handleOpenDeleteModal = () => {
+    const hasSelection = rowSelectionModel.type === 'include' ? rowSelectionModel.ids.size > 0 : 
+                       rowSelectionModel.type === 'exclude' && rowSelectionModel.ids.size === 0;
+    
+    if (hasSelection) {
+      let items;
+      if (rowSelectionModel.type === 'include') {
+        items = events.filter(e => rowSelectionModel.ids.has(e.id));
+      } else {
+        // For exclude type with empty set, all items are selected
+        items = events;
+      }
+      console.log('Open delete modal called. Event IDs:', rowSelectionModel.type === 'include' ? Array.from(rowSelectionModel.ids) : 'ALL', 'Events:', items.map(e => e.title));
+      setShowDeleteModal(true);
+      setSelectionSnackbarOpen(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    console.log('Confirm delete called');
+    const hasSelection = rowSelectionModel.type === 'include' ? rowSelectionModel.ids.size > 0 : 
+                       rowSelectionModel.type === 'exclude' && rowSelectionModel.ids.size === 0;
+    
+    if (hasSelection) {
+      console.log('Called with selection model:', rowSelectionModel);
+      await handleDeleteSelection();
+      setShowDeleteModal(false);
+      setRowSelectionModel({ type: 'include', ids: new Set() });
+      setSnackbarMsg('Ereignisse erfolgreich gelöscht');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+      return;
+    }
+  };
+
+  const handleDeleteSelection = async () => {
+    console.log('Delete selection called');
+    console.log('Selected IDs:', rowSelectionModel.ids);
+    
+    let idsToDelete: number[];
+    if (rowSelectionModel.type === 'include') {
+      idsToDelete = Array.from(rowSelectionModel.ids).map(id => Number(id));
+    } else {
+      // For exclude type with empty set, delete all visible events
+      idsToDelete = events.map(e => e.id);
+    }
+    
+    if (idsToDelete.length > 0) {
+      const res = await fetch(`/api/events/bulk`, {  
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },  
+        body: JSON.stringify(idsToDelete),
+      });
+      if (res.ok) {
+        console.log('Deleted selected IDs:', idsToDelete);
+        fetchEvents();
+        setRowSelectionModel({ type: 'include', ids: new Set() });
+      } else {
+        console.error('Failed to delete selected IDs');
+      }
+    }
+  };
+
+  // Row Selection
+
+  const handleSelectionChange = (newModel: GridRowSelectionModel) => {
+    console.log('handleSelectionChange called');
+    console.log('New model: ', newModel);
+    console.log('Row selection model: ', rowSelectionModel);
+    console.log('Events: ', events);
+    console.log('Row selection model changed:', newModel);
+    
+    // Check if any items are selected (either include with IDs or exclude with empty set = select all)
+    const hasSelection = newModel.type === 'include' ? newModel.ids.size > 0 : 
+                       newModel.type === 'exclude' && newModel.ids.size === 0;
+    
+    console.log('Has selection: ', hasSelection);
+
+    setRowSelectionModel(newModel);
+    console.log('Row selection model changed:', newModel);
+    setSelectionSnackbarOpen(hasSelection);
+  };
+
+  // Columns
+
   const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 70 },
-    { field: 'title', headerName: 'Titel', flex: 1, minWidth: 150 },
-    { field: 'location', headerName: 'Ort', flex: 1, width: 150 },
+    { field: 'id', headerName: 'ID', width: 70, filterable: false },
+    { field: 'title', headerName: 'Titel', flex: 1, minWidth: 150, filterable: true },
+    { field: 'location', headerName: 'Ort', flex: 1, width: 150, filterable: true },
     {
       field: 'date',
       headerName: 'Startdatum',
       flex: 1,
       minWidth: 120,
+      filterable: false,
       valueGetter: (params) =>
         params ? new Date(params).toLocaleDateString() : '',
     },
@@ -198,6 +301,7 @@ export default function EventsPage() {
       headerName: 'Enddatum',
       flex: 1,
       minWidth: 120,
+      filterable: false,
       valueGetter: (params) =>
         params ? new Date(params).toLocaleDateString() : '',
     },
@@ -209,6 +313,7 @@ export default function EventsPage() {
       align: 'center',
       headerAlign: 'center',
       sortable: false,
+      filterable: false,
       renderCell: (params: any) => params.row.subEventCount ?? 0,
     },
     {
@@ -216,6 +321,7 @@ export default function EventsPage() {
       headerName: 'Beschreibung',
       flex: 1,
       minWidth: 300,
+      filterable: true,
       renderCell: (params) =>
         params.value ? params.value.slice(0, 100) + (params.value.length > 100 ? '…' : '') : '',
     },
@@ -230,83 +336,87 @@ export default function EventsPage() {
       align: 'right',
       renderCell: (params) => (
         <>
-          <IconButton onClick={(e) => handleMenuOpen(e, params.row.id)}>
-            <MoreVertIcon />
-          </IconButton>
+          <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+            <Tooltip title="Details" placement="left">
+              <IconButton onClick={(e) => router.push(`/events/${params.row.id}`)}>
+                <MoreIcon />
+              </IconButton>
+            </Tooltip>
+          </Stack>
         </>
       ),
     },
   ];
 
+  // Skeleton
+
   if (authLoading || !session?.user) {
     return <Box sx={{ width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Skeleton variant="rectangular" height={56} width={300} /></Box>;
   }
 
+  // Main
+
   return (
     <RequireAuth>
-      <Container maxWidth="xl" sx={{ mt: 6 }}>
-        <SiteHeader title="Ereignisse" showOverline={false} />
-        <Box sx={{ width: '100%' }}>
-          <Stack direction="row" spacing={2} alignItems="right" sx={{ mb: 2, justifyContent: 'flex-end' }}>
-            <Button variant="outlined" color="secondary" onClick={() => router.push('/events/import')}>
-              Ereignisse importieren
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCreate}
-            >
-              Neues Event
-            </Button>
-            
-          </Stack>
-          {dataLoading || !Array.isArray(events) ? (
-            <Box sx={{ width: '100%', height: 400, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Skeleton variant="rectangular" height={56} />
-              <Skeleton variant="rectangular" height={56} />
-              <Skeleton variant="rectangular" height={56} />
-              <Skeleton variant="rectangular" height={56} />
-              <Skeleton variant="rectangular" height={56} />
-              <Skeleton variant="rectangular" height={56} />
-            </Box>
-          ) : (
-            <DataGrid
-              rows={events}
-              columns={columns}
-              columnVisibilityModel={{
-                id: false,
-              }}
-              loading={dataLoading}
-              getRowId={(row) => row.id}
-              pagination
-              paginationMode="server"
-              paginationModel={{ page, pageSize }}
-              onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
-                console.log('[DataGrid] Pagination changed', { newPage, newPageSize });
-                setPage(newPage);
-                setPageSize(newPageSize);
-              }}
-              rowCount={rowCount}
-              pageSizeOptions={[25, 50, 100]}
-              showToolbar={true}
-              sortingMode="server"
-              sortModel={sortModel}
-              onSortModelChange={(model) => {
-                setSortModel(model.slice());
-              }}
-              filterMode="server"
-              filterModel={filterModel}
-              onFilterModelChange={(model) => {
-                setFilterModel(model);
-              }}
-              disableRowSelectionOnClick
-            />
-          )}
+      <Container maxWidth="xl" sx={{ position: 'relative', mt: 8 }}>
+        <SiteHeader title="Ereignisse" showOverline={false}>
+          <Button variant="outlined" color="secondary" onClick={() => router.push('/events/import')}>
+            Ereignisse importieren
+          </Button>
+          <Button variant="contained" color="primary" onClick={handleCreate}>
+            Neues Event
+          </Button>
+        </SiteHeader>  
+          <DataGrid
+            checkboxSelection
+            onRowSelectionModelChange={handleSelectionChange}
+            rowSelectionModel={rowSelectionModel}
+            rows={events}
+            columns={columns}
+            columnVisibilityModel={{
+              id: false,
+            }}
+            loading={dataLoading}
+            getRowId={(row) => row.id}
+            pagination
+            paginationMode="server"
+            paginationModel={{ page, pageSize }}
+            onPaginationModelChange={handlePaginationModelChange}
+            rowCount={rowCount}
+            pageSizeOptions={[25, 50, 100]}
+            showToolbar={true}
+            sortingMode="server"
+            sortModel={sortModel}
+            onSortModelChange={handleSortModelChange}
+            filterMode="server"
+            filterModel={filterModel}
+            onFilterModelChange={handleFilterModelChange}
+            disableRowSelectionOnClick
+            filterDebounceMs={500}
+            slotProps={{
+              toolbar: {
+                showQuickFilter: true,
+                quickFilterProps: { 
+                  debounceMs: 750,
+                },
+              },
+              
+            }}
+            sx={{
+              '& .MuiDataGrid-columnHeader': {
+                backgroundColor: 'rgba(0, 0, 0, 0.075)',
+              },
+              '& .MuiDataGrid-cell': {
+                color: 'text.primary',
+                borderBottom: '.5px solid',
+                borderColor: 'divider',
+              },
+              '& .MuiDataGrid-row:has(.MuiDataGrid-cell:hover)': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              },
+            }}
+          />
 
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-            <MenuItem onClick={() => handleEdit()}>Bearbeiten</MenuItem>
-            <MenuItem onClick={() => handleDetail()}>Details</MenuItem>
-          </Menu>
           <Drawer
             anchor="right"
             open={drawerOpen}
@@ -340,16 +450,39 @@ export default function EventsPage() {
               {snackbarMsg}
             </Alert>
           </Snackbar>
-        </Box>
+          <Snackbar
+            open={selectionSnackbarOpen}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert severity="info" 
+              icon={<DeleteIcon />}
+              action={
+                <Button variant="contained" color="inherit" onClick={handleOpenDeleteModal}>
+                  Löschen
+                </Button>
+              }
+              sx={{ width: '100%' }}>
+              <Typography variant="body1">
+                {rowSelectionModel.ids.size == 1 ? 'Ein ausgewähltes Ereignis löschen.' : rowSelectionModel.ids.size + ' ausgewählte Ereignisse löschen.'}
+              </Typography>
+            </Alert>
+          </Snackbar>
         <ModalDeleteConfirmation
           open={showDeleteModal}
-          itemName={`das Event "${(Array.isArray(events) && selectedId != null && events.find(e => e.id === selectedId)?.title) || ''}"`}
+          items={
+            Array.isArray(events) && 
+            ((rowSelectionModel.type === 'include' && rowSelectionModel.ids.size > 0) || 
+             (rowSelectionModel.type === 'exclude' && rowSelectionModel.ids.size === 0)) 
+            ? (rowSelectionModel.type === 'include' 
+               ? events.filter(e => rowSelectionModel.ids.has(e.id)).map(e => e.title)
+               : events.map(e => e.title))
+            : []
+          }
           onConfirmAction={handleConfirmDelete}
           onCancelAction={() => {
             setShowDeleteModal(false);
-            handleMenuClose();
           }}
-        />
+        /> 
       </Container>
     </RequireAuth>
   );

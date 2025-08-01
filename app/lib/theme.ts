@@ -11,7 +11,7 @@ export function createCustomTheme(mode: 'light' | 'dark') {
       },
       secondary: {
         main: isDark ? '#B4CDE8' : '#1f2c4c', // dunkles marineblau
-        contrastText: isDark ? '#f1f5f9' : '#ffffff',
+        contrastText: isDark ? '#0f172a' : '#ffffff',
       },
       background: {
         default: isDark ? '#121c24' : '#ffffff',

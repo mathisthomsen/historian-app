@@ -1,18 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
-import { Box, Typography, Container, Button, Drawer, Snackbar, Alert, Stack } from '@mui/material';
-import { IconButton, Menu, MenuItem } from '@mui/material';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import InfoIcon from '@mui/icons-material/Info';
+import React, { useEffect, useState, useCallback } from 'react';
+import { DataGrid, GridColDef, GridToolbar, GridRowSelectionModel } from '@mui/x-data-grid';
+import { Box, Typography, Container, Button, Drawer, Snackbar, Alert, Stack, Tooltip } from '@mui/material';
+import { IconButton } from '@mui/material';
+import MoreIcon from '@mui/icons-material/MoreOutlined';
 import { useRouter } from 'next/navigation';
 import SiteHeader from '../components/SiteHeader';
-import LoadingSkeleton from '../components/LoadingSkeleton';
 import { api } from '../lib/api';
 import type { GridSortModel, GridFilterModel } from '@mui/x-data-grid';
 import PersonForm from '../components/PersonForm';
 import RequireAuth from '../components/RequireAuth';
+import ModalDeleteConfirmation from '../components/ModalDeleteConfirmation';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 type Person = {
   id: number;
@@ -25,18 +25,6 @@ type Person = {
   notes: string | null;
 };
 
-type ApiResponse = {
-  persons: Person[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
-};
-
 export default function PersonsPage() {
   const [rows, setRows] = useState<Person[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -46,12 +34,16 @@ export default function PersonsPage() {
   const [rowCount, setRowCount] = useState(0);
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [filterModel, setFilterModel] = useState<GridFilterModel>({ items: [] });
+  const [searchValue, setSearchValue] = useState<string>('');
+  const [rowSelectionModel, setRowSelectionModel] =
+    React.useState<GridRowSelectionModel>({ type: 'include', ids: new Set() });
 
   const fetchPersons = async (
     pageNum = page,
     limitNum = pageSize,
     sort = sortModel,
-    filter = filterModel
+    filter = filterModel,
+    search = searchValue
   ) => {
     try {
       setDataLoading(true);
@@ -66,48 +58,60 @@ export default function PersonsPage() {
       if (filter && filter.items && filter.items.length > 0 && filter.items[0].value) {
         filterParam = `&filterField=${encodeURIComponent(filter.items[0].field)}&filterValue=${encodeURIComponent(filter.items[0].value)}`;
       }
-      const data: ApiResponse = await api.get(`/api/persons?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}`);
+      let searchParam = '';
+      if (search && search.trim()) {
+        searchParam = `&search=${encodeURIComponent(search.trim())}`;
+      }
+      const data: any = await api.get(`/api/persons?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${searchParam}`);
+      
+      // Check if the response contains an error
+      if (data && data.error) {
+        setRows([]);
+        setRowCount(0);
+        setError(data.error);
+        return;
+      }
+      
       setRows(data.persons);
       setRowCount(data.pagination.total);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fehler beim Laden der Personen:', error);
-      setError('Fehler beim Laden der Daten');
+      
+      // Handle authentication errors specifically
+      if (error.message && error.message.includes('401')) {
+        setError('Bitte melden Sie sich an, um die Daten zu sehen');
+        // Optionally redirect to login
+        router.push('/auth/login');
+      } else if (error.message && error.message.includes('500')) {
+        setError('Serverfehler beim Laden der Daten');
+      } else {
+        setError('Fehler beim Laden der Daten');
+      }
     } finally {
       setDataLoading(false);
     }
   };
 
+  // Immediate effect for pagination and sorting
   useEffect(() => {
     fetchPersons();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, sortModel, filterModel]);
+  }, [page, pageSize, sortModel]);
+
+ 
+
+  // State
 
   const router = useRouter();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editPersonId, setEditPersonId] = useState<number | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [selectionSnackbarOpen, setSelectionSnackbarOpen] = useState(false);
 
-  const handleMenuOpen = (person: React.MouseEvent<HTMLButtonElement>, id: number) => {
-    setAnchorEl(person.currentTarget);
-    setSelectedId(id);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedId(null);
-  };
-
-  const handleEdit = () => {
-    if (selectedId) {
-      setEditPersonId(selectedId);
-      setDrawerOpen(true);
-    }
-    handleMenuClose();
-  };
+  // Create Person
 
   const handleCreate = () => {
     setEditPersonId(null);
@@ -127,22 +131,131 @@ export default function PersonsPage() {
     handleDrawerClose();
   };
 
-  const handleDetail = () => {
-    if (selectedId) router.push(`/persons/${selectedId}`);
-    handleMenuClose();
+  // Datagrid Tools
+
+  const handleFilterModelChange = useCallback((model: GridFilterModel) => {
+    console.log('[DataGrid] Filter model changed:', JSON.stringify(model, null, 2));
+    
+    // Check if there are quickFilterValues (this is how the search works)
+    if (model.quickFilterValues && model.quickFilterValues.length > 0) {
+      const searchValue = model.quickFilterValues[0];
+      console.log('[DataGrid] Quick filter search detected:', searchValue);
+      setSearchValue(searchValue);
+      // Keep the filter model as is, but we'll handle search separately in API calls
+      setFilterModel(model);
+    } else {
+      // This is a regular column filter
+      console.log('[DataGrid] Regular column filter detected');
+      setFilterModel(model);
+      setSearchValue(''); // Clear search when using column filters
+    }
+  }, []);
+
+  const handleSortModelChange = useCallback((model: GridSortModel) => {
+    setSortModel(model.slice());
+  }, []);
+
+  const handlePaginationModelChange = useCallback(({ page: newPage, pageSize: newPageSize }: { page: number; pageSize: number }) => {
+    console.log('[DataGrid] Pagination changed', { newPage, newPageSize });
+    setPage(newPage);
+    setPageSize(newPageSize);
+  }, []);
+
+  // Debounced filter effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchPersons();
+    }, 750); // 750ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [filterModel, searchValue]);
+
+  // Deleting Row Selection
+
+  const handleOpenDeleteModal = () => {
+    const hasSelection = rowSelectionModel.type === 'include' ? rowSelectionModel.ids.size > 0 : 
+                       rowSelectionModel.type === 'exclude' && rowSelectionModel.ids.size === 0;
+    
+    if (hasSelection) {
+      let items;
+      if (rowSelectionModel.type === 'include') {
+        items = rows.filter(e => rowSelectionModel.ids.has(e.id));
+      } else {
+        // For exclude type with empty set, all items are selected
+        items = rows;
+      }
+      console.log('Open delete modal called. Person IDs:', rowSelectionModel.type === 'include' ? Array.from(rowSelectionModel.ids) : 'ALL', 'Persons:', items.map(e => e.first_name + ' ' + e.last_name));
+      setShowDeleteModal(true);
+      setSelectionSnackbarOpen(false);
+    }
   };
 
-  const handleDelete = async () => {
-    if (selectedId) {
-      try {
-        await api.delete(`/api/persons/${selectedId}`);
-        fetchPersons(); // Refresh the data
-      } catch (error) {
-        console.error('Fehler beim Löschen:', error);
+  const handleConfirmDelete = async () => {
+    console.log('Confirm delete called');
+    const hasSelection = rowSelectionModel.type === 'include' ? rowSelectionModel.ids.size > 0 : 
+                       rowSelectionModel.type === 'exclude' && rowSelectionModel.ids.size === 0;
+    
+    if (hasSelection) {
+      console.log('Called with selection model:', rowSelectionModel);
+      await handleDeleteSelection();
+      setShowDeleteModal(false);
+      setRowSelectionModel({ type: 'include', ids: new Set() });
+      setSnackbarMsg('Personen erfolgreich gelöscht');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+      return;
+    }
+  };
+
+  const handleDeleteSelection = async () => {
+    console.log('Delete selection called');
+    console.log('Selected IDs:', rowSelectionModel.ids);
+    
+    let idsToDelete: number[];
+    if (rowSelectionModel.type === 'include') {
+      idsToDelete = Array.from(rowSelectionModel.ids).map(id => Number(id));
+    } else {
+      // For exclude type with empty set, delete all visible persons
+      idsToDelete = rows.map(e => e.id);
+    }
+    
+    if (idsToDelete.length > 0) {
+      const res = await fetch(`/api/persons/bulk`, {  
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },  
+        body: JSON.stringify(idsToDelete),
+      });
+      if (res.ok) {
+        console.log('Deleted selected IDs:', idsToDelete);
+        fetchPersons();
+        setRowSelectionModel({ type: 'include', ids: new Set() });
+      } else {
+        console.error('Failed to delete selected IDs');
       }
     }
-    handleMenuClose();
   };
+
+  // Row Selection
+
+  const handleSelectionChange = (newModel: GridRowSelectionModel) => {
+    console.log('handleSelectionChange called');
+    console.log('New model: ', newModel);
+    console.log('Row selection model: ', rowSelectionModel);
+    console.log('Persons: ', rows);
+    console.log('Row selection model changed:', newModel);
+    
+    // Check if any items are selected (either include with IDs or exclude with empty set = select all)
+    const hasSelection = newModel.type === 'include' ? newModel.ids.size > 0 : 
+                       newModel.type === 'exclude' && newModel.ids.size === 0;
+    
+    console.log('Has selection: ', hasSelection);
+
+    setRowSelectionModel(newModel);
+    console.log('Row selection model changed:', newModel);
+    setSelectionSnackbarOpen(hasSelection);
+  };
+
+  // Columns
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
@@ -178,15 +291,18 @@ export default function PersonsPage() {
       renderCell: (params) => (
         <>
           <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
-            <IconButton onClick={(e) => router.push(`/persons/${params.row.id}`)}>
-              <InfoIcon />
-            </IconButton>
-          
+            <Tooltip title="Details" placement="left">
+              <IconButton onClick={(e) => router.push(`/persons/${params.row.id}`)}>
+                <MoreIcon />
+              </IconButton>
+            </Tooltip>
           </Stack>
         </>
       ),
     },
   ];
+
+  // Skeleton
 
   if (error) {
     return (
@@ -208,25 +324,31 @@ export default function PersonsPage() {
     );
   }
 
+  // Main
+
   return (
     <RequireAuth>
-      <Container maxWidth="xl" sx={{ mt: 6 }}>
-        <SiteHeader title="Personen" showOverline={false} />
-        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
-          <Stack direction="row" spacing={2}>
-            <Button variant="outlined" color="secondary" onClick={() => router.push('/persons/import')}>
-              Personen importieren
-            </Button>
-            <Button
+      <Container maxWidth="xl" sx={{ position: 'relative', mt: 8 }}>
+        <SiteHeader
+        title="Personen"
+        showOverline={false}
+        >
+          <Button variant="outlined" color="secondary" onClick={() => router.push('/persons/import')}>
+            Personen importieren
+          </Button>
+          <Button
               variant="contained"
               color="primary"
               onClick={handleCreate}
             >
               Neue Person
             </Button>
-          </Stack>
-        </Box>
+        </SiteHeader>
         <DataGrid
+          checkboxSelection
+          onRowSelectionModelChange={handleSelectionChange}
+          keepNonExistentRowsSelected={true}
+          rowSelectionModel={rowSelectionModel}
           rows={rows}
           columns={columns}
           columnVisibilityModel={{
@@ -238,24 +360,40 @@ export default function PersonsPage() {
           pagination
           paginationMode="server"
           paginationModel={{ page, pageSize }}
-          onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
-            setPage(newPage);
-            setPageSize(newPageSize);
-          }}
+          onPaginationModelChange={handlePaginationModelChange}
           rowCount={rowCount}
           pageSizeOptions={[25, 50, 100]}
           sortingMode="server"
           sortModel={sortModel}
-          onSortModelChange={(model) => setSortModel(model.slice())}
+          onSortModelChange={handleSortModelChange}
           filterMode="server"
           filterModel={filterModel}
-          onFilterModelChange={(model) => setFilterModel(model)}
+          onFilterModelChange={handleFilterModelChange}
+          disableRowSelectionOnClick
+          filterDebounceMs={500}
+          slotProps={{
+            toolbar: {
+              showQuickFilter: true,
+              quickFilterProps: { 
+                debounceMs: 750,
+              },
+            },
+          }}
+          sx={{
+            '& .MuiDataGrid-columnHeader': {
+              backgroundColor: 'rgba(0, 0, 0, 0.075)',
+            },
+            '& .MuiDataGrid-cell': {
+              color: 'text.primary',
+              borderBottom: '.5px solid',
+              borderColor: 'divider',
+            },
+            '& .MuiDataGrid-row:has(.MuiDataGrid-cell:hover)': {
+              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+            },
+          }}
         />
-        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-          <MenuItem onClick={handleDetail}>Details</MenuItem>
-          <MenuItem onClick={handleEdit}>Stammdaten Bearbeiten</MenuItem>
-          <MenuItem onClick={handleDelete}>Löschen</MenuItem>
-        </Menu>
+        
         <Drawer
           anchor="right"
           open={drawerOpen}
@@ -289,7 +427,40 @@ export default function PersonsPage() {
             {snackbarMsg}
           </Alert>
         </Snackbar>
+        <Snackbar
+            open={selectionSnackbarOpen}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert severity="info" 
+              icon={<DeleteIcon />}
+              action={
+                <Button variant="contained" color="inherit" onClick={handleOpenDeleteModal}>
+                  Löschen
+                </Button>
+              }
+              sx={{ width: '100%' }}>
+              <Typography variant="body1">
+                {rowSelectionModel.ids.size == 1 ? 'Eine ausgewählte Person löschen.' : rowSelectionModel.ids.size + ' ausgewählte Personen löschen.'}
+              </Typography>
+            </Alert>
+          </Snackbar>
       </Container>
+      <ModalDeleteConfirmation
+          open={showDeleteModal}
+          items={
+            Array.isArray(rows) && 
+            ((rowSelectionModel.type === 'include' && rowSelectionModel.ids.size > 0) || 
+             (rowSelectionModel.type === 'exclude' && rowSelectionModel.ids.size === 0)) 
+            ? (rowSelectionModel.type === 'include' 
+               ? rows.filter(e => rowSelectionModel.ids.has(e.id)).map(e => e.first_name + ' ' + e.last_name)
+               : rows.map(e => e.first_name + ' ' + e.last_name))
+            : []
+          }
+          onConfirmAction={handleConfirmDelete}
+          onCancelAction={() => {
+            setShowDeleteModal(false);
+          }}
+        /> 
     </RequireAuth>
   );
 }

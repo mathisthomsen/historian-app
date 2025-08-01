@@ -31,6 +31,9 @@ model User {
   event_types        event_types[]
   literature         literature[]
   bibliographySyncs  BibliographySync[]
+  importHistory      import_history[]
+  dataUncertainty    data_uncertainty[]
+  duplicateMatches   duplicate_matches[]
   
   // NextAuth Relations
   accounts          Account[]
@@ -160,6 +163,16 @@ model events {
   date        DateTime?
   end_date    DateTime?
   location    String?
+  
+  // Enhanced fuzzy data support
+  date_uncertainty          String?             @db.VarChar(20)
+  end_date_uncertainty      String?             @db.VarChar(20)
+  date_original             String?             @db.VarChar(100)
+  end_date_original         String?             @db.VarChar(100)
+  location_normalized       String?             @db.VarChar(255)
+  location_confidence       Decimal?            @db.Decimal(3,2)
+  title_confidence          Decimal?            @db.Decimal(3,2)
+
   life_events life_events[]
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -168,11 +181,17 @@ model events {
   parent      events?       @relation("SubEvents", fields: [parentId], references: [id])
   subEvents   events[]      @relation("SubEvents")
 
+  // Import tracking
+  import_batch_id String?   @db.VarChar(100)
+  created_via_import Boolean @default(false)
+
   @@index([date])
   @@index([title])
   @@index([location])
   @@index([userId])
   @@index([parentId])
+  @@index([import_batch_id])
+  @@index([location_normalized])
 }
 
 model event_types {
@@ -230,12 +249,27 @@ model persons {
   death_place   String?             @db.VarChar(255)
   notes         String?             @db.Text
 
+  // Enhanced fuzzy data support
+  birth_date_uncertainty    String?             @db.VarChar(20)  // exact, approximate, estimated, unknown
+  death_date_uncertainty    String?             @db.VarChar(20)
+  birth_date_original       String?             @db.VarChar(100) // Store original input
+  death_date_original       String?             @db.VarChar(100)
+  birth_place_normalized    String?             @db.VarChar(255) // Normalized place name
+  death_place_normalized    String?             @db.VarChar(255)
+  birth_place_confidence    Decimal?            @db.Decimal(3,2) // 0.00 to 1.00
+  death_place_confidence    Decimal?            @db.Decimal(3,2)
+  name_confidence           Decimal?            @db.Decimal(3,2) // Overall confidence score
+
   life_events   life_events[]
   user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Beziehungen
   relations_from person_relations[] @relation("from_person")
   relations_to   person_relations[] @relation("to_person")
+
+  // Import tracking
+  import_batch_id String?           @db.VarChar(100) // Track which import created this record
+  created_via_import Boolean        @default(false)
 
   @@index([first_name])
   @@index([last_name])
@@ -245,6 +279,9 @@ model persons {
   @@index([death_place])
   @@index([first_name, last_name])
   @@index([userId])
+  @@index([import_batch_id])
+  @@index([birth_place_normalized])
+  @@index([death_place_normalized])
 }
 
 model person_relations {
@@ -345,5 +382,74 @@ model BibliographySync {
   @@index([isActive])
   @@index([userId, service])
   @@map("bibliography_syncs")
+}
+
+// Import history tracking
+model import_history {
+  id              String    @id @default(cuid())
+  userId          String
+  import_type     String    // 'persons' or 'events'
+  batch_id        String    @unique
+  file_name       String
+  total_records   Int
+  imported_count  Int
+  error_count     Int
+  skipped_count   Int
+  processing_time Int       // in milliseconds
+  status          String    // 'completed', 'failed', 'partial'
+  error_details   Json?     // Store detailed error information
+  created_at      DateTime  @default(now())
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([import_type])
+  @@index([created_at])
+  @@index([status])
+}
+
+// Data uncertainty tracking
+model data_uncertainty {
+  id                Int       @id @default(autoincrement())
+  userId            String
+  table_name        String    @db.VarChar(50)
+  record_id         Int
+  field_name        String    @db.VarChar(50)
+  original_value    String?   @db.Text
+  normalized_value  String?   @db.Text
+  confidence        Decimal   @db.Decimal(3,2)
+  uncertainty_type  String    @db.VarChar(20) // 'date', 'place', 'name', 'general'
+  created_at        DateTime  @default(now())
+  
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([table_name, record_id])
+  @@index([field_name])
+  @@index([uncertainty_type])
+  @@index([confidence])
+}
+
+// Duplicate detection tracking
+model duplicate_matches {
+  id                Int       @id @default(autoincrement())
+  userId            String
+  table_name        String    @db.VarChar(50)
+  record_id         Int
+  duplicate_id      Int
+  confidence        Decimal   @db.Decimal(3,2)
+  match_reason      String    @db.VarChar(100) // 'name_similarity', 'date_place_match', etc.
+  status            String    @db.VarChar(20)   // 'pending', 'resolved', 'ignored'
+  resolved_action   String?   @db.VarChar(50)   // 'merge', 'keep_both', 'ignore'
+  created_at        DateTime  @default(now())
+  resolved_at       DateTime?
+  
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([table_name, record_id])
+  @@index([duplicate_id])
+  @@index([status])
+  @@index([confidence])
 }
 

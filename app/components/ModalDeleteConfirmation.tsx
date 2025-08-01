@@ -7,20 +7,25 @@ import {
   DialogContentText,
   DialogActions,
   Button,
+  ListItem,
+  List,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import React, { use } from 'react';
 import { useState } from 'react';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 type ModalDeleteConfirmationProps = {
   open: boolean;
-  itemName: string; // z.B. "das Event 'Zweiter Weltkrieg'"
+  items: string[]; // z.B. "das Event 'Zweiter Weltkrieg'"
   onConfirmAction: () => void;
   onCancelAction: () => void;
 };
 
 export default function ModalDeleteConfirmation({
   open,
-  itemName,
+  items,
   onConfirmAction,
   onCancelAction,
 }: ModalDeleteConfirmationProps) {
@@ -36,8 +41,19 @@ export default function ModalDeleteConfirmation({
     <Dialog open={open} onClose={onCancelAction}>
       <DialogTitle>Löschen bestätigen</DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          Willst du wirklich <strong>{itemName}</strong> löschen? Diese Aktion
+        <DialogContentText component="div">
+          Willst du wirklich 
+          <List dense sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {items.map((item, index) => (
+            <ListItem key={index}>  
+                <ListItemIcon>
+                  <DeleteIcon />
+                </ListItemIcon>
+                <ListItemText primary={item} />
+              </ListItem>
+            ))}
+          </List>
+          löschen? Diese Aktion
           kann nicht rückgängig gemacht werden.
         </DialogContentText>
       </DialogContent>

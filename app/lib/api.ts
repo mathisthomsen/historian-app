@@ -11,10 +11,14 @@ export const apiFetch = async (url: string, options: RequestInit = {}) => {
   };
 
   const response = await fetch(url, defaultOptions);
+  const data = await response.json();
+  
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    // Return the error response instead of throwing
+    return { error: data.error || `API request failed: ${response.status} ${response.statusText}`, status: response.status };
   }
-  return response.json();
+  
+  return data;
 };
 
 // Helper functions for common API operations
