@@ -184,40 +184,6 @@ export default function EventForm({ mode, eventId, parentId, onClose, onResult }
         {mode === 'create' ? 'Neues Event' : 'Event bearbeiten'}
       </Typography>
 
-      {showDuplicates && duplicates.length > 0 && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Mögliche Duplikate gefunden:
-          </Typography>
-          <Stack spacing={1}>
-            {duplicates.map((dup, index) => (
-              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip 
-                  label={`${Math.round(dup.confidence * 100)}%`} 
-                  size="small" 
-                  color="warning" 
-                />
-                <Typography variant="body2">
-                  {dup.title} - {dup.reason}
-                </Typography>
-              </Box>
-            ))}
-          </Stack>
-          <Box sx={{ mt: 2 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => {
-                setShowDuplicates(false);
-                setDuplicates([]);
-              }}
-            >
-              Trotzdem erstellen
-            </Button>
-          </Box>
-        </Alert>
-      )}
-
       <form onSubmit={handleSubmit}>
         <Stack spacing={3}>
           <TextField
@@ -268,6 +234,40 @@ export default function EventForm({ mode, eventId, parentId, onClose, onResult }
             rows={4}
             fullWidth
           />
+
+          {showDuplicates && duplicates.length > 0 && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Mögliche Duplikate gefunden:
+              </Typography>
+              <Stack spacing={1}>
+                {duplicates.map((dup, index) => (
+                  <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip 
+                      label={`${Math.round(dup.confidence * 100)}%`} 
+                      size="small" 
+                      color="warning" 
+                    />
+                    <Typography variant="body2">
+                      {dup.title} - {dup.reason}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => {
+                    setShowDuplicates(false);
+                    setDuplicates([]);
+                  }}
+                >
+                  Trotzdem erstellen
+                </Button>
+              </Box>
+            </Alert>
+          )}
 
           <Stack direction="row" spacing={2}>
             <Button

@@ -16,7 +16,7 @@ import EventForm from '../components/EventForm';
 import { useSession } from 'next-auth/react';
 import RequireAuth from '../components/RequireAuth';
 import DeleteIcon from '@mui/icons-material/Delete';
-import MoreIcon from '@mui/icons-material/More';
+import MoreIcon from '@mui/icons-material/MoreOutlined';
 
 type Event = {
   id: number;

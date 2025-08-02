@@ -32,7 +32,7 @@ type PersonFormProps = {
 }
 
 type DuplicateMatch = {
-  match_reason: ReactNode
+  match_reason: string
   matchedPerson: any
   id: number;
   first_name: string;
