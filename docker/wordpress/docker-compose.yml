@@ -29,7 +29,9 @@ services:
 
   # WordPress
   wordpress:
-    image: wordpress:php8.2-fpm-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: wordpress-app
     restart: unless-stopped
     depends_on:
