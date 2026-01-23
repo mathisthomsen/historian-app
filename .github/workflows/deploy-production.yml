@@ -159,6 +159,26 @@ jobs:
           ALLOWED_FILE_TYPES=".csv,.xlsx,.json"
           EOF"
 
+      - name: Ensure WordPress network and volume exist
+        run: |
+          ssh root@217.154.198.215 "
+            # Create wordpress-network if it doesn't exist
+            if ! docker network inspect wordpress-network >/dev/null 2>&1; then
+              echo 'Creating wordpress-network...'
+              docker network create wordpress-network
+            else
+              echo 'wordpress-network already exists'
+            fi
+            
+            # Create production_wordpress_data volume if it doesn't exist
+            if ! docker volume inspect production_wordpress_data >/dev/null 2>&1; then
+              echo 'Creating production_wordpress_data volume...'
+              docker volume create production_wordpress_data
+            else
+              echo 'production_wordpress_data volume already exists'
+            fi
+          "
+
       - name: Deploy on VPS
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker-compose.production.yml down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-nginx 2>/dev/null || true && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' docker-compose -f docker-compose.production.yml build --build-arg DATABASE_URL='${{ secrets.DATABASE_URL }}' --build-arg DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' --build-arg RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' && docker-compose -f docker-compose.production.yml up -d"
