@@ -60,18 +60,28 @@ tail -f /var/log/monit.log
 
 ### Web-Interface
 
-**URL:** `http://localhost:2812` (nur lokal, nicht öffentlich!)
+**URL auf Server:** `http://localhost:2812` (nur lokal auf dem Server!)
 
-**Zugriff von außen (optional):**
-```bash
-# SSH Tunnel
-ssh -L 2812:localhost:2812 root@217.154.198.215
-# Dann öffnen: http://localhost:2812
-```
+**Zugriff von deinem Rechner (SSH-Tunnel):**
 
-**Login:**
-- User: `admin`
-- Passwort: (wird während Setup gesetzt)
+1. **SSH-Tunnel erstellen:**
+   ```bash
+   ssh -L 2812:localhost:2812 root@217.154.198.215
+   ```
+   (Lass diese SSH-Session offen!)
+
+2. **Im Browser öffnen:**
+   ```
+   http://localhost:2812
+   ```
+
+3. **Login:**
+   - User: `admin`
+   - Passwort: (wurde während Setup gesetzt, Standard: `monit`)
+
+**Alternative: Nginx Reverse Proxy (für dauerhaften Zugriff)**
+
+Falls du das Web-Interface dauerhaft zugänglich machen willst (z.B. über `monit.evidoxa.com`), kannst du einen Nginx Reverse Proxy einrichten. **Achtung:** Dann sollte ein starkes Passwort gesetzt werden!
 
 ---
 
