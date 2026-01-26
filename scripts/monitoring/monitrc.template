@@ -1,0 +1,142 @@
+###############################################################################
+## Monit control file - Template
+## 
+## Kopiere diese Datei nach /etc/monit/monitrc und passe an:
+##   - E-Mail-Adresse für Alerts
+##   - Web-Interface Passwort
+##   - Optional: Telegram-Integration
+###############################################################################
+
+###############################################################################
+## Global section
+###############################################################################
+  set daemon 60              # Check services at 60 seconds intervals
+  set logfile /var/log/monit.log
+  set idfile /var/lib/monit/id
+  set statefile /var/lib/monit/state
+
+###############################################################################
+## Mail settings
+###############################################################################
+  set mailserver localhost
+  set mail-format {
+    from: monit@$HOST
+    subject: $SERVICE $EVENT at $DATE
+    message: $EVENT Service $SERVICE
+              Date:        $DATE
+              Action:      $ACTION
+              Host:        $HOST
+              Description: $DESCRIPTION
+
+              Your faithful employee,
+              Monit
+  }
+  set alert YOUR_EMAIL@example.com
+
+###############################################################################
+## Web interface
+###############################################################################
+  set httpd port 2812 and
+      use address localhost  # only accept connection from localhost
+      allow localhost        # allow localhost to connect to the server and
+      allow admin:CHANGE_ME_PASSWORD  # require user 'admin' with password
+
+###############################################################################
+## System monitoring
+###############################################################################
+  check system $HOST
+    if loadavg (1min) > 4 then alert
+    if loadavg (5min) > 2 then alert
+    if memory usage > 80% then alert
+    if swap usage > 20% then alert
+    if cpu usage (user) > 80% then alert
+    if cpu usage (system) > 80% then alert
+
+###############################################################################
+## Filesystem monitoring
+###############################################################################
+  check filesystem rootfs with path /
+    if space usage > 80% then alert
+    if inode usage > 80% then alert
+
+  check filesystem disk with path /opt
+    if space usage > 85% then alert
+    if inode usage > 80% then alert
+
+###############################################################################
+## Docker Container Monitoring
+###############################################################################
+  # Historian App
+  check process historian-app matching "historian-app"
+    start program = "/usr/bin/docker start historian-app"
+    stop program = "/usr/bin/docker stop historian-app"
+    if failed port 3000 protocol http
+      with timeout 10 seconds
+      for 2 cycles
+    then restart
+    if 3 restarts within 5 cycles then alert
+
+  # Nginx
+  check process historian-nginx matching "historian-nginx"
+    start program = "/usr/bin/docker start historian-nginx"
+    stop program = "/usr/bin/docker stop historian-nginx"
+    if failed port 80 protocol http
+      with timeout 5 seconds
+      for 2 cycles
+    then restart
+    if 3 restarts within 5 cycles then alert
+
+  # Redis
+  check process historian-redis matching "historian-redis"
+    start program = "/usr/bin/docker start historian-redis"
+    stop program = "/usr/bin/docker stop historian-redis"
+    if failed port 6379 protocol redis
+      with timeout 5 seconds
+      for 2 cycles
+    then restart
+    if 3 restarts within 5 cycles then alert
+
+  # WordPress App
+  check process wordpress-app matching "wordpress-app"
+    start program = "/usr/bin/docker start wordpress-app"
+    stop program = "/usr/bin/docker stop wordpress-app"
+    if 3 restarts within 5 cycles then alert
+
+  # WordPress MySQL
+  check process wordpress-mysql matching "wordpress-mysql"
+    start program = "/usr/bin/docker start wordpress-mysql"
+    stop program = "/usr/bin/docker stop wordpress-mysql"
+    if failed port 3306 protocol mysql
+      with timeout 5 seconds
+      for 2 cycles
+    then restart
+    if 3 restarts within 5 cycles then alert
+
+###############################################################################
+## Docker Service Monitoring
+###############################################################################
+  check program docker with path "/bin/bash -c 'if ! docker ps > /dev/null 2>&1; then exit 1; fi'"
+    if status != 0 then alert
+
+###############################################################################
+## Optional: External URL Checks
+###############################################################################
+  # Historian App Health Check
+  check host evidoxa.com with address evidoxa.com
+    if failed url https://evidoxa.com/api/health
+      with timeout 10 seconds
+      for 2 cycles
+    then alert
+
+  # WordPress Health Check
+  check host bhgv.evidoxa.com with address bhgv.evidoxa.com
+    if failed url https://bhgv.evidoxa.com
+      with timeout 10 seconds
+      for 2 cycles
+    then alert
+
+###############################################################################
+## Optional: Telegram Alert Handler
+###############################################################################
+  # Uncomment to enable Telegram alerts
+  # set alert sysadmin@localhost {exec "/usr/local/bin/monit-telegram-alert.sh"} if {instance}
