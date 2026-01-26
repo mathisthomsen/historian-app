@@ -66,51 +66,35 @@
 ###############################################################################
 ## Docker Container Monitoring
 ###############################################################################
-  # Historian App
-  check process historian-app matching "historian-app"
+  # Historian App (Docker Container)
+  check program historian-app with path "/bin/bash -c 'docker ps --format \"{{.Names}}\" | grep -q \"^historian-app$\" && docker inspect historian-app --format \"{{.State.Status}}\" | grep -q running'"
+    if status != 0 then alert
     start program = "/usr/bin/docker start historian-app"
     stop program = "/usr/bin/docker stop historian-app"
-    if failed port 3000 protocol http
-      with timeout 10 seconds
-      for 2 cycles
-    then restart
-    if 3 restarts within 5 cycles then alert
 
-  # Nginx
-  check process historian-nginx matching "historian-nginx"
+  # Nginx (Docker Container)
+  check program historian-nginx with path "/bin/bash -c 'docker ps --format \"{{.Names}}\" | grep -q \"^historian-nginx$\" && docker inspect historian-nginx --format \"{{.State.Status}}\" | grep -q running'"
+    if status != 0 then alert
     start program = "/usr/bin/docker start historian-nginx"
     stop program = "/usr/bin/docker stop historian-nginx"
-    if failed port 80 protocol http
-      with timeout 5 seconds
-      for 2 cycles
-    then restart
-    if 3 restarts within 5 cycles then alert
 
-  # Redis
-  check process historian-redis matching "historian-redis"
+  # Redis (Docker Container)
+  check program historian-redis with path "/bin/bash -c 'docker ps --format \"{{.Names}}\" | grep -q \"^historian-redis$\" && docker inspect historian-redis --format \"{{.State.Status}}\" | grep -q running'"
+    if status != 0 then alert
     start program = "/usr/bin/docker start historian-redis"
     stop program = "/usr/bin/docker stop historian-redis"
-    if failed port 6379 protocol redis
-      with timeout 5 seconds
-      for 2 cycles
-    then restart
-    if 3 restarts within 5 cycles then alert
 
-  # WordPress App
-  check process wordpress-app matching "wordpress-app"
+  # WordPress App (Docker Container)
+  check program wordpress-app with path "/bin/bash -c 'docker ps --format \"{{.Names}}\" | grep -q \"^wordpress-app$\" && docker inspect wordpress-app --format \"{{.State.Status}}\" | grep -q running'"
+    if status != 0 then alert
     start program = "/usr/bin/docker start wordpress-app"
     stop program = "/usr/bin/docker stop wordpress-app"
-    if 3 restarts within 5 cycles then alert
 
-  # WordPress MySQL
-  check process wordpress-mysql matching "wordpress-mysql"
+  # WordPress MySQL (Docker Container)
+  check program wordpress-mysql with path "/bin/bash -c 'docker ps --format \"{{.Names}}\" | grep -q \"^wordpress-mysql$\" && docker inspect wordpress-mysql --format \"{{.State.Status}}\" | grep -q running'"
+    if status != 0 then alert
     start program = "/usr/bin/docker start wordpress-mysql"
     stop program = "/usr/bin/docker stop wordpress-mysql"
-    if failed port 3306 protocol mysql
-      with timeout 5 seconds
-      for 2 cycles
-    then restart
-    if 3 restarts within 5 cycles then alert
 
 ###############################################################################
 ## Docker Service Monitoring
