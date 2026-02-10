@@ -1,12 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUser } from '../../lib/requireUser';
-import prisma from '../../libs/prisma';
+import { requireUser } from '../../lib/auth/requireUser';
+import prisma from '@/app/lib/database/prisma';
+import { geocodingService } from '../../lib/services/geocoding';
+
+// Helper function to get user's accessible project IDs
+async function getUserProjectIds(userId: string) {
+  const userProjects = await prisma.userProject.findMany({
+    where: { user_id: userId },
+    select: { project_id: true }
+  });
+  return userProjects.map((up: any) => up.project_id);
+}
+
+// Helper function to geocode a location
+async function geocodeLocation(locationName: string) {
+  try {
+    const result = await geocodingService.geocode(locationName);
+    return result;
+  } catch (error) {
+    console.warn(`Failed to geocode ${locationName}:`, error);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
+  const projectId = searchParams.get('projectId') || '';
   const skip = (page - 1) * limit;
 
   // Validate pagination parameters
@@ -15,83 +37,115 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get all unique locations for the user from both tables
-    const locationsRaw = await prisma.$queryRaw`
-      SELECT location FROM (
-        SELECT location FROM events WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
-        UNION
-        SELECT location FROM life_events WHERE "userId" = ${user.id} AND location IS NOT NULL AND location != ''
-      ) as locations
-      ORDER BY location ASC
-    ` as Array<{ location: string }>;
+    // Get user's accessible project IDs
+    const userProjectIds = await getUserProjectIds(user.id);
+    console.log('User project IDs:', userProjectIds, 'Requested project ID:', projectId);
+    
+    // Validate project access if projectId is provided
+    if (projectId) {
+      if (!userProjectIds.includes(projectId)) {
+        return NextResponse.json({ error: 'Keine Berechtigung für dieses Projekt' }, { status: 403 });
+      }
+      
+      // Verify the project actually exists
+      const project = await prisma.project.findUnique({
+        where: { id: projectId }
+      });
+      
+      if (!project) {
+        return NextResponse.json({ error: 'Projekt nicht gefunden' }, { status: 404 });
+      }
+    }
 
-    const allLocations = locationsRaw.map(l => l.location);
-    const totalLocations = allLocations.length;
-    const pagedLocations = allLocations.slice(skip, skip + limit);
+    // Handle case where user has no projects
+    if (userProjectIds.length === 0 && !projectId) {
+      console.log('User has no projects, returning empty result');
+      return NextResponse.json({
+        locations: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: false
+        },
+        totalEvents: 0,
+        totalLifeEvents: 0
+      });
+    }
 
-    // For each paged location, get stats
-    const locations = await Promise.all(
-      pagedLocations.map(async (location) => {
-        const [eventCount, lifeEventCount, lastEvent, lastLifeEvent] = await Promise.all([
-          prisma.events.count({ where: { userId: user.id, location } }),
-          prisma.life_events.count({ where: { userId: user.id, location } }),
-          prisma.events.findFirst({
-            where: { userId: user.id, location },
-            orderBy: { date: 'desc' },
-            select: { date: true }
-          }),
-          prisma.life_events.findFirst({
-            where: { userId: user.id, location },
-            orderBy: { start_date: 'desc' },
-            select: { start_date: true }
-          })
-        ]);
-        // Find the most recent date
-        let lastUsed: string | null = null;
-        const eventDate = lastEvent?.date ? new Date(lastEvent.date) : null;
-        const lifeEventDate = lastLifeEvent?.start_date ? new Date(lastLifeEvent.start_date) : null;
-        if (eventDate && lifeEventDate) {
-          lastUsed = eventDate > lifeEventDate ? eventDate.toISOString() : lifeEventDate.toISOString();
-        } else if (eventDate) {
-          lastUsed = eventDate.toISOString();
-        } else if (lifeEventDate) {
-          lastUsed = lifeEventDate.toISOString();
-        }
+    // Build where clauses for project filtering
+    const projectWhereClause = projectId 
+      ? { equals: projectId }
+      : { in: userProjectIds };
+    
+    console.log('Project where clause:', JSON.stringify(projectWhereClause));
+
+    // Get all unique locations for the user from events table
+    const eventLocations = await prisma.events.findMany({
+      where: {
+        userId: user.id,
+        AND: [
+          { location: { not: null } },
+          { location: { not: '' } }
+        ],
+        project_id: projectWhereClause
+      },
+      select: { location: true }
+    });
+
+    // Extract unique locations
+    const uniqueLocations = [...new Set(eventLocations.map(e => e.location).filter(Boolean))];
+    
+    // Get total count for pagination
+    const total = uniqueLocations.length;
+    
+    // Apply pagination
+    const paginatedLocations = uniqueLocations.slice(skip, skip + limit);
+    
+    // Get detailed location information with counts
+    const locationsWithStats = await Promise.all(
+      paginatedLocations.map(async (locationName) => {
+        const eventCount = await prisma.events.count({
+          where: {
+            userId: user.id,
+            location: locationName,
+            project_id: projectWhereClause
+          }
+        });
+
+        const location = await prisma.locations.findFirst({
+          where: { name: locationName || '' }
+        });
+
         return {
-          location,
-          eventCount,
-          lifeEventCount,
-          totalCount: eventCount + lifeEventCount,
-          lastUsed
+          name: locationName,
+          events: eventCount,
+          total: eventCount,
+          location: location || null
         };
       })
     );
 
-    // Get total event and life event counts for stats
-    const [totalEvents, totalLifeEvents] = await Promise.all([
-      prisma.events.count({ where: { userId: user.id } }),
-      prisma.life_events.count({ where: { userId: user.id } })
-    ]);
-
-    const totalPages = Math.ceil(totalLocations / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
     return NextResponse.json({
-      locations,
+      locations: locationsWithStats,
       pagination: {
         page,
         limit,
-        total: totalLocations,
-        totalPages,
-        hasNextPage,
-        hasPrevPage
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
       },
-      totalEvents,
-      totalLifeEvents
+      totalEvents: total
     });
-  } catch (error) {
+
+  } catch (error: unknown) {
     console.error('Error fetching locations:', error);
-    return NextResponse.json({ error: 'Failed to fetch locations' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to fetch locations',
+      details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    }, { status: 500 });
   }
 } 

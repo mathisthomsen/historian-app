@@ -3,42 +3,77 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+  owner_id    String
+  events      events[]
+  literature  literature[]
+  persons     persons[]
+  owner       User          @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  members     UserProject[]
+  // New relations for restructured system
+  sources     sources[]
+  statements  statements[]
+  personEventRelations personEventRelations[]
+  sourceOnRelations sourceOnRelations[]
+
+  @@map("projects")
+}
+
+model UserProject {
+  id         Int     @id @default(autoincrement())
+  user_id    String
+  project_id String
+  role       String  @default("member") // editor, viewer, owner
+  project    Project @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, project_id])
+  @@map("user_projects")
+}
+
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  name              String
-  password          String?
-  role              UserRole  @default(USER)
-  emailVerified     Boolean   @default(false)
-  emailVerifiedAt   DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  lastLoginAt       DateTime?
-  workosUserId      String?   @unique // WorkOS user ID (legacy)
-  
-  // Relations
-  emailConfirmations EmailConfirmation[]
-  passwordResets     PasswordReset[]
-  refreshTokens      RefreshToken[]
-  events             events[]
-  persons            persons[]
-  life_events        life_events[]
-  event_types        event_types[]
-  literature         literature[]
-  bibliographySyncs  BibliographySync[]
-  importHistory      import_history[]
+  id                 String               @id @default(cuid())
+  email              String               @unique
+  name               String
+  password           String?
+  role               UserRole             @default(USER)
+  emailVerified      Boolean              @default(false)
+  emailVerifiedAt    DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  lastLoginAt        DateTime?
+  workosUserId       String?              @unique
+  accounts           Account[]
+  authAuditLogs      AuthAuditLog[]
+  bibliography_syncs bibliography_syncs[]
   dataUncertainty    data_uncertainty[]
   duplicateMatches   duplicate_matches[]
-  
-  // NextAuth Relations
-  accounts          Account[]
-  sessions          Session[]
-  authAuditLogs     AuthAuditLog[]
+  emailConfirmations EmailConfirmation[]
+  event_types        event_types[]
+  events             events[]
+  importHistory      import_history[]
+  literature         literature[]
+  passwordResets     PasswordReset[]
+  persons            persons[]
+  projects           Project[]
+  refreshTokens      RefreshToken[]
+  sessions           Session[]
+  userProjects       UserProject[]
+  // New relations for restructured system
+  sources            sources[]
+  statements         statements[]
+  personEventRelations personEventRelations[]
+  sourceOnRelations  sourceOnRelations[]
 
   @@index([email])
   @@index([role])
@@ -52,7 +87,6 @@ model EmailConfirmation {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
-  
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
@@ -68,7 +102,6 @@ model PasswordReset {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
-  
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
@@ -83,7 +116,6 @@ model RefreshToken {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
-  
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
@@ -92,22 +124,20 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-// NextAuth Tables
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -132,7 +162,6 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// Audit Logging
 model AuthAuditLog {
   id        Int      @id @default(autoincrement())
   userId    String?
@@ -141,8 +170,7 @@ model AuthAuditLog {
   userAgent String?
   details   Json?
   createdAt DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([eventType])
@@ -150,40 +178,39 @@ model AuthAuditLog {
   @@map("auth_audit_logs")
 }
 
-enum UserRole {
-  USER
-  ADMIN
-}
-
 model events {
-  id          Int           @id @default(autoincrement())
-  userId      String        // User who owns this event
-  title       String
-  description String?
-  date        DateTime?
-  end_date    DateTime?
-  location    String?
-  
-  // Enhanced fuzzy data support
-  date_uncertainty          String?             @db.VarChar(20)
-  end_date_uncertainty      String?             @db.VarChar(20)
-  date_original             String?             @db.VarChar(100)
-  end_date_original         String?             @db.VarChar(100)
-  location_normalized       String?             @db.VarChar(255)
-  location_confidence       Decimal?            @db.Decimal(3,2)
-  title_confidence          Decimal?            @db.Decimal(3,2)
-
-  life_events life_events[]
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Sub-events: self-referencing relation
-  parentId    Int?          // nullable for top-level events
-  parent      events?       @relation("SubEvents", fields: [parentId], references: [id])
-  subEvents   events[]      @relation("SubEvents")
-
-  // Import tracking
-  import_batch_id String?   @db.VarChar(100)
-  created_via_import Boolean @default(false)
+  id                   Int           @id @default(autoincrement())
+  userId               String
+  title                String
+  description          String?
+  date                 DateTime?
+  end_date             DateTime?
+  location             String?
+  location_id          Int?          // Reference to locations table
+  parentId             Int?
+  created_via_import   Boolean       @default(false)
+  date_original        String?       @db.VarChar(100)
+  date_uncertainty     String?       @db.VarChar(20)
+  end_date_original    String?       @db.VarChar(100)
+  end_date_uncertainty String?       @db.VarChar(20)
+  import_batch_id      String?       @db.VarChar(100)
+  location_confidence  Decimal?      @db.Decimal(3, 2)
+  location_normalized  String?       @db.VarChar(255)
+  title_confidence     Decimal?      @db.Decimal(3, 2)
+  project_id           String?
+  // Location validation fields
+  latitude             Decimal?      @db.Decimal(10, 8)
+  longitude            Decimal?      @db.Decimal(11, 8)
+  country              String?       @db.VarChar(255)
+  region               String?       @db.VarChar(255)
+  city                 String?       @db.VarChar(255)
+  parent               events?       @relation("SubEvents", fields: [parentId], references: [id])
+  subEvents            events[]      @relation("SubEvents")
+  project              Project?      @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location_ref         locations?    @relation("location_ref", fields: [location_id], references: [id])
+  // New relations for restructured system
+  personEventRelations personEventRelations[]
 
   @@index([date])
   @@index([title])
@@ -192,84 +219,54 @@ model events {
   @@index([parentId])
   @@index([import_batch_id])
   @@index([location_normalized])
+  @@index([location_id])
 }
 
 model event_types {
   id          Int           @id @default(autoincrement())
-  userId      String        // User who owns this event type
+  userId      String
   name        String?
   icon        String?
   color       String?
-  life_events life_events[]
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Removed life_events relation since we're replacing that system
 
   @@index([name])
   @@index([userId])
 }
 
-model life_events {
-  id            Int          @id @default(autoincrement())
-  userId        String       // User who owns this life event
-  person_id     Int?
-  event_id      Int?         // ⬅️ Neue Referenz auf globales Event
-  title         String?
-  start_date    DateTime?
-  end_date      DateTime?
-  location      String?
-  description   String?
-  metadata      Json?
-  event_type_id Int?
-
-  // Relationen
-  event         events?      @relation(fields: [event_id], references: [id], onDelete: SetNull, map: "fk_event_life_events")
-  event_type    event_types? @relation(fields: [event_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_type_life_events")
-  persons       persons?     @relation(fields: [person_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "life_events_ibfk_1")
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([person_id], map: "person_id")
-  @@index([event_type_id], map: "fk_event_type_idx")
-  @@index([event_id], map: "fk_event_idx")
-  @@index([start_date])
-  @@index([end_date])
-  @@index([title])
-  @@index([location])
-  @@index([person_id, start_date])
-  @@index([person_id, end_date])
-  @@index([userId])
-}
-
 model persons {
-  id            Int                 @id @default(autoincrement())
-  userId        String              // User who owns this person
-  first_name    String?             @db.VarChar(100)
-  last_name     String?             @db.VarChar(100)
-  birth_date    DateTime?           @db.Date
-  birth_place   String?             @db.VarChar(255)
-  death_date    DateTime?           @db.Date
-  death_place   String?             @db.VarChar(255)
-  notes         String?             @db.Text
-
-  // Enhanced fuzzy data support
-  birth_date_uncertainty    String?             @db.VarChar(20)  // exact, approximate, estimated, unknown
-  death_date_uncertainty    String?             @db.VarChar(20)
-  birth_date_original       String?             @db.VarChar(100) // Store original input
-  death_date_original       String?             @db.VarChar(100)
-  birth_place_normalized    String?             @db.VarChar(255) // Normalized place name
-  death_place_normalized    String?             @db.VarChar(255)
-  birth_place_confidence    Decimal?            @db.Decimal(3,2) // 0.00 to 1.00
-  death_place_confidence    Decimal?            @db.Decimal(3,2)
-  name_confidence           Decimal?            @db.Decimal(3,2) // Overall confidence score
-
-  life_events   life_events[]
-  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Beziehungen
-  relations_from person_relations[] @relation("from_person")
-  relations_to   person_relations[] @relation("to_person")
-
-  // Import tracking
-  import_batch_id String?           @db.VarChar(100) // Track which import created this record
-  created_via_import Boolean        @default(false)
+  id                     Int                @id @default(autoincrement())
+  userId                 String
+  first_name             String?            @db.VarChar(100)
+  last_name              String?            @db.VarChar(100)
+  birth_date             DateTime?          @db.Date
+  birth_place            String?            @db.VarChar(255)
+  birth_location_id      Int?               // Reference to locations table for birth place
+  death_date             DateTime?          @db.Date
+  death_place            String?            @db.VarChar(255)
+  death_location_id      Int?               // Reference to locations table for death place
+  notes                  String?
+  birth_date_original    String?            @db.VarChar(100)
+  birth_date_uncertainty String?            @db.VarChar(20)
+  birth_place_confidence Decimal?           @db.Decimal(3, 2)
+  birth_place_normalized String?            @db.VarChar(255)
+  created_via_import     Boolean            @default(false)
+  death_date_original    String?            @db.VarChar(100)
+  death_date_uncertainty String?            @db.VarChar(20)
+  death_place_confidence Decimal?           @db.Decimal(3, 2)
+  death_place_normalized String?            @db.VarChar(255)
+  import_batch_id        String?            @db.VarChar(100)
+  name_confidence        Decimal?           @db.Decimal(3, 2)
+  project_id             String?
+  relations_from         person_relations[] @relation("from_person")
+  relations_to           person_relations[] @relation("to_person")
+  project                Project?           @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  birth_location_ref     locations?         @relation("birth_location", fields: [birth_location_id], references: [id])
+  death_location_ref     locations?         @relation("death_location", fields: [death_location_id], references: [id])
+  // New relations for restructured system
+  personEventRelations   personEventRelations[]
 
   @@index([first_name])
   @@index([last_name])
@@ -282,19 +279,18 @@ model persons {
   @@index([import_batch_id])
   @@index([birth_place_normalized])
   @@index([death_place_normalized])
+  @@index([birth_location_id])
+  @@index([death_location_id])
 }
 
 model person_relations {
-  id            Int       @id @default(autoincrement())
-  from_person   persons   @relation("from_person", fields: [from_person_id], references: [id])
+  id             Int     @id @default(autoincrement())
   from_person_id Int
-
-  to_person     persons   @relation("to_person", fields: [to_person_id], references: [id])
   to_person_id   Int
-
-  relation_type String    @db.VarChar(100) // z.B. "spouse", "parent", "sibling"
-
-  notes         String?   @db.Text
+  relation_type  String  @db.VarChar(100)
+  notes          String?
+  from_person    persons @relation("from_person", fields: [from_person_id], references: [id])
+  to_person      persons @relation("to_person", fields: [to_person_id], references: [id])
 
   @@index([from_person_id])
   @@index([to_person_id])
@@ -304,38 +300,34 @@ model person_relations {
 }
 
 model literature {
-  id              Int       @id @default(autoincrement())
-  userId          String    // User who owns this literature entry
-  title           String    @db.VarChar(255)
-  author          String    @db.VarChar(255)
+  id               Int       @id @default(autoincrement())
+  userId           String
+  title            String    @db.VarChar(255)
+  author           String    @db.VarChar(255)
   publication_year Int?
-  type            String    @db.VarChar(100) // book, article, journal, website, etc.
-  description     String?   @db.Text
-  url             String?   @db.VarChar(500)
-  
-  // Additional bibliographic fields
-  publisher       String?   @db.VarChar(255)
-  journal         String?   @db.VarChar(255)
-  volume          String?   @db.VarChar(50)
-  issue           String?   @db.VarChar(50)
-  pages           String?   @db.VarChar(100)
-  doi             String?   @db.VarChar(255)
-  isbn            String?   @db.VarChar(50)
-  issn            String?   @db.VarChar(50)
-  language        String?   @db.VarChar(50)
-  keywords        String?   @db.Text
-  abstract        String?   @db.Text
-  
-  // Sync metadata
-  externalId      String?   @db.VarChar(255) // ID from external service
-  syncSource      String?   @db.VarChar(50)  // zotero, mendeley, citavi, etc.
-  lastSyncedAt    DateTime?
-  syncMetadata    Json?     // Additional sync data
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type             String    @db.VarChar(100)
+  description      String?
+  url              String?   @db.VarChar(500)
+  publisher        String?   @db.VarChar(255)
+  journal          String?   @db.VarChar(255)
+  volume           String?   @db.VarChar(50)
+  issue            String?   @db.VarChar(50)
+  pages            String?   @db.VarChar(100)
+  doi              String?   @db.VarChar(255)
+  isbn             String?   @db.VarChar(50)
+  issn             String?   @db.VarChar(50)
+  language         String?   @db.VarChar(50)
+  keywords         String?
+  abstract         String?
+  externalId       String?   @db.VarChar(255)
+  syncSource       String?   @db.VarChar(50)
+  lastSyncedAt     DateTime?
+  syncMetadata     Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  project_id       String?
+  project          Project?  @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([title])
@@ -347,81 +339,40 @@ model literature {
   @@index([externalId, syncSource])
 }
 
-model BibliographySync {
-  id              Int       @id @default(autoincrement())
-  userId          String    // User who owns this sync config
-  service         String    @db.VarChar(50)  // zotero, mendeley, citavi
-  name            String    @db.VarChar(255) // User-friendly name
-  isActive        Boolean   @default(false)
-  
-  // Service-specific configuration
-  apiKey          String?   @db.VarChar(500) // For API-based services
-  apiSecret       String?   @db.VarChar(500) // For OAuth services
-  accessToken     String?   @db.VarChar(500) // OAuth access token
-  refreshToken    String?   @db.VarChar(500) // OAuth refresh token
-  tokenExpiresAt  DateTime?
-  
-  // Collection/library configuration
-  collectionId    String?   @db.VarChar(255) // External collection ID
-  collectionName  String?   @db.VarChar(255) // External collection name
-  
-  // Sync settings
-  autoSync        Boolean   @default(false)
-  syncInterval    Int?      // in minutes
-  lastSyncAt      DateTime?
-  syncMetadata    Json?     // Additional sync configuration
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, service])
-  @@index([userId])
-  @@index([service])
-  @@index([isActive])
-  @@index([userId, service])
-  @@map("bibliography_syncs")
-}
-
-// Import history tracking
 model import_history {
-  id              String    @id @default(cuid())
+  id              String   @id @default(cuid())
   userId          String
-  import_type     String    // 'persons' or 'events'
-  batch_id        String    @unique
+  import_type     String
+  batch_id        String   @unique
   file_name       String
   total_records   Int
   imported_count  Int
   error_count     Int
   skipped_count   Int
-  processing_time Int       // in milliseconds
-  status          String    // 'completed', 'failed', 'partial'
-  error_details   Json?     // Store detailed error information
-  created_at      DateTime  @default(now())
-  
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  processing_time Int
+  status          String
+  error_details   Json?
+  created_at      DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([import_type])
-  @@index([created_at])
   @@index([status])
+  @@index([created_at])
 }
 
-// Data uncertainty tracking
 model data_uncertainty {
-  id                Int       @id @default(autoincrement())
-  userId            String
-  table_name        String    @db.VarChar(50)
-  record_id         Int
-  field_name        String    @db.VarChar(50)
-  original_value    String?   @db.Text
-  normalized_value  String?   @db.Text
-  confidence        Decimal   @db.Decimal(3,2)
-  uncertainty_type  String    @db.VarChar(20) // 'date', 'place', 'name', 'general'
-  created_at        DateTime  @default(now())
-  
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               Int      @id @default(autoincrement())
+  userId           String
+  table_name       String   @db.VarChar(50)
+  record_id        Int
+  field_name       String   @db.VarChar(50)
+  original_value   String?
+  normalized_value String?
+  confidence       Decimal  @db.Decimal(3, 2)
+  uncertainty_type String   @db.VarChar(20)
+  created_at       DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([table_name, record_id])
@@ -430,21 +381,19 @@ model data_uncertainty {
   @@index([confidence])
 }
 
-// Duplicate detection tracking
 model duplicate_matches {
-  id                Int       @id @default(autoincrement())
-  userId            String
-  table_name        String    @db.VarChar(50)
-  record_id         Int
-  duplicate_id      Int
-  confidence        Decimal   @db.Decimal(3,2)
-  match_reason      String    @db.VarChar(100) // 'name_similarity', 'date_place_match', etc.
-  status            String    @db.VarChar(20)   // 'pending', 'resolved', 'ignored'
-  resolved_action   String?   @db.VarChar(50)   // 'merge', 'keep_both', 'ignore'
-  created_at        DateTime  @default(now())
-  resolved_at       DateTime?
-  
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              Int       @id @default(autoincrement())
+  userId          String
+  table_name      String    @db.VarChar(50)
+  record_id       Int
+  duplicate_id    Int
+  confidence      Decimal   @db.Decimal(3, 2)
+  match_reason    String    @db.VarChar(100)
+  status          String    @db.VarChar(20)
+  resolved_action String?   @db.VarChar(50)
+  created_at      DateTime  @default(now())
+  resolved_at     DateTime?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([table_name, record_id])
@@ -453,3 +402,162 @@ model duplicate_matches {
   @@index([confidence])
 }
 
+model bibliography_syncs {
+  id             Int       @id @default(autoincrement())
+  userId         String
+  service        String    @db.VarChar(50)
+  name           String    @db.VarChar(255)
+  isActive       Boolean   @default(false)
+  apiKey         String?   @db.VarChar(500)
+  apiSecret      String?   @db.VarChar(500)
+  accessToken    String?   @db.VarChar(500)
+  refreshToken   String?   @db.VarChar(500)
+  tokenExpiresAt DateTime?
+  collectionId   String?   @db.VarChar(255)
+  collectionName String?   @db.VarChar(255)
+  autoSync       Boolean   @default(false)
+  syncInterval   Int?
+  lastSyncAt     DateTime?
+  syncMetadata   Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime
+  users          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, service])
+  @@index([isActive])
+  @@index([service])
+  @@index([userId])
+  @@index([userId, service])
+}
+
+model locations {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  normalized  String?
+  country     String?
+  region      String?
+  city        String?
+  latitude    Decimal?  @db.Decimal(10, 8)
+  longitude   Decimal?  @db.Decimal(11, 8)
+  geocoded_at DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  // Relations
+  events          events[]          @relation("location_ref")
+  birth_persons   persons[]         @relation("birth_location")
+  death_persons   persons[]         @relation("death_location")
+
+  @@index([country, region, city])
+  @@index([latitude, longitude])
+  @@index([name])
+  @@index([normalized])
+  @@map("locations")
+}
+
+// New core tables for the restructured system
+model sources {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  project_id  String?
+  title       String
+  url         String?
+  author      String?
+  publication String?
+  year        Int?
+  reliability Decimal? @db.Decimal(3, 2) // 0.00 to 1.00
+  notes       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  statements  statements[]
+  sourceOnRelations sourceOnRelations[]
+
+  @@index([userId])
+  @@index([project_id])
+  @@index([title])
+  @@index([reliability])
+  @@map("sources")
+}
+
+model statements {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  project_id  String?
+  content     String
+  confidence  Decimal? @db.Decimal(3, 2) // 0.00 to 1.00
+  source_id   Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  source      sources? @relation(fields: [source_id], references: [id], onDelete: SetNull)
+  personEventRelations personEventRelations[]
+
+  @@index([userId])
+  @@index([project_id])
+  @@index([source_id])
+  @@index([confidence])
+  @@map("statements")
+}
+
+model personEventRelations {
+  id                Int      @id @default(autoincrement())
+  userId            String
+  project_id        String?
+  person_id         Int
+  event_id          Int
+  relationship_type String   // participant, witness, affected, organizer, etc.
+  statement_id      Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  person      persons  @relation(fields: [person_id], references: [id], onDelete: Cascade)
+  event       events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  statement   statements? @relation(fields: [statement_id], references: [id], onDelete: SetNull)
+  sourceOnRelations sourceOnRelations[]
+
+  @@unique([person_id, event_id, relationship_type])
+  @@index([userId])
+  @@index([project_id])
+  @@index([person_id])
+  @@index([event_id])
+  @@index([relationship_type])
+  @@index([statement_id])
+  @@map("person_event_relations")
+}
+
+model sourceOnRelations {
+  id                Int      @id @default(autoincrement())
+  userId            String
+  project_id        String?
+  source_id         Int
+  relation_id       Int
+  created_at        DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  source      sources  @relation(fields: [source_id], references: [id], onDelete: Cascade)
+  relation    personEventRelations @relation(fields: [relation_id], references: [id], onDelete: Cascade)
+
+  @@unique([source_id, relation_id])
+  @@index([userId])
+  @@index([project_id])
+  @@index([source_id])
+  @@index([relation_id])
+  @@map("source_on_relations")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}

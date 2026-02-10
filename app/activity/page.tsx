@@ -30,9 +30,9 @@ import {
   AccessTime,
   TrendingUp,
 } from '@mui/icons-material';
-import SiteHeader from '../components/SiteHeader';
+import SiteHeader from '../components/layout/SiteHeader';
 import { useSession } from 'next-auth/react';
-import RequireAuth from '../components/RequireAuth';
+import RequireAuth from '../components/layout/RequireAuth';
 
 interface Activity {
   id: number;

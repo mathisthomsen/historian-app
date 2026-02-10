@@ -1,22 +1,21 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { Box, Typography, Container, Button, Stack, Skeleton, Tooltip } from '@mui/material';
-import type { GridSortModel, GridFilterModel, GridRowSelectionModel } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridToolbar, GridRowSelectionModel } from '@mui/x-data-grid';
+import { Box, Typography, Container, Button, Drawer, Snackbar, Alert, Stack, Tooltip, Chip, Skeleton } from '@mui/material';
 import { IconButton } from '@mui/material';
-import { useRouter } from 'next/navigation';
-import ModalDeleteConfirmation from '../components/ModalDeleteConfirmation';
-import SiteHeader from '../components/SiteHeader';
-import { api } from '../lib/api'; 
-import Drawer from '@mui/material/Drawer';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
-import EventForm from '../components/EventForm';
-import { useSession } from 'next-auth/react';
-import RequireAuth from '../components/RequireAuth';
-import DeleteIcon from '@mui/icons-material/Delete';
 import MoreIcon from '@mui/icons-material/MoreOutlined';
+import { useRouter } from 'next/navigation';
+import SiteHeader from '../components/layout/SiteHeader';
+import { api } from '../lib';
+import type { GridSortModel, GridFilterModel } from '@mui/x-data-grid';
+import EventForm from '../components/forms/EventForm';
+import RequireAuth from '../components/layout/RequireAuth';
+import ModalDeleteConfirmation from '../components/ui/ModalDeleteConfirmation';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useSession } from 'next-auth/react';
+import { useProject } from '../contexts/ProjectContext';
+import { useProjectApi } from '../hooks/useProjectApi';
 
 type Event = {
   id: number;
@@ -42,6 +41,8 @@ type ApiResponse = {
 
 export default function EventsPage() {
   const { data: session, status } = useSession();
+  const { selectedProject, isLoading: projectLoading, canEdit, canDelete } = useProject();
+  const { fetchWithProject } = useProjectApi();
   const authLoading = status === 'loading';
   const [events, setEvents] = useState<Event[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -64,6 +65,14 @@ export default function EventsPage() {
     filter = filterModel,
     search = searchValue
   ) => {
+    // Don't fetch if no project is selected
+    if (!selectedProject) {
+      setEvents([]);
+      setRowCount(0);
+      setDataLoading(false);
+      return;
+    }
+
     try {
       setDataLoading(true);
       setError(null);
@@ -80,7 +89,9 @@ export default function EventsPage() {
         searchParam = `&search=${encodeURIComponent(search.trim())}`;
       }
       const parentIdParam = '&parentId=null';
-      const url = `/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${searchParam}${parentIdParam}`;
+      // Add projectId to the query parameters
+      const projectParam = `&projectId=${encodeURIComponent(selectedProject.id)}`;
+      const url = `/api/events?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${searchParam}${parentIdParam}${projectParam}`;
       console.log('[fetchEvents] Calling URL:', url);
       const data = await api.get(url);
       
@@ -174,7 +185,7 @@ export default function EventsPage() {
   useEffect(() => {
     fetchEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, sortModel]);
+  }, [page, pageSize, sortModel, selectedProject]);
 
   // Create Event
 
@@ -360,15 +371,45 @@ export default function EventsPage() {
     <RequireAuth>
       <Container maxWidth="xl" sx={{ position: 'relative', mt: 8 }}>
         <SiteHeader title="Ereignisse" showOverline={false}>
-          <Button variant="outlined" color="secondary" onClick={() => router.push('/events/import')}>
-            Ereignisse importieren
-          </Button>
-          <Button variant="contained" color="primary" onClick={handleCreate}>
-            Neues Event
-          </Button>
+          {selectedProject && (
+            <Chip 
+              label={selectedProject.name} 
+              color="primary" 
+              variant="outlined"
+              size="small"
+              sx={{ mr: 2 }}
+            />
+          )}
+          {canEdit() && (
+            <>
+              <Button variant="outlined" color="secondary" onClick={() => router.push('/events/import')}>
+                Ereignisse importieren
+              </Button>
+              <Button variant="contained" color="primary" onClick={handleCreate}>
+                Neues Event
+              </Button>
+            </>
+          )}
         </SiteHeader>  
+        {!selectedProject ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Kein Projekt ausgewählt
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Bitte wählen Sie ein Projekt aus, um Ereignisse anzuzeigen, oder erstellen Sie ein neues Projekt.
+            </Typography>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => router.push('/account/projekte')}
+            >
+              Projekt erstellen
+            </Button>
+          </Box>
+        ) : (
           <DataGrid
-            checkboxSelection
+            checkboxSelection={canDelete()}
             onRowSelectionModelChange={handleSelectionChange}
             rowSelectionModel={rowSelectionModel}
             rows={events}
@@ -376,7 +417,7 @@ export default function EventsPage() {
             columnVisibilityModel={{
               id: false,
             }}
-            loading={dataLoading}
+            loading={dataLoading || projectLoading}
             getRowId={(row) => row.id}
             pagination
             paginationMode="server"
@@ -416,6 +457,7 @@ export default function EventsPage() {
               },
             }}
           />
+        )}
 
           <Drawer
             anchor="right"
@@ -457,9 +499,11 @@ export default function EventsPage() {
             <Alert severity="info" 
               icon={<DeleteIcon />}
               action={
-                <Button variant="contained" color="inherit" onClick={handleOpenDeleteModal}>
-                  Löschen
-                </Button>
+                canDelete() && (
+                  <Button variant="contained" color="inherit" onClick={handleOpenDeleteModal}>
+                    Löschen
+                  </Button>
+                )
               }
               sx={{ width: '100%' }}>
               <Typography variant="body1">

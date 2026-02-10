@@ -24,7 +24,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
-import { api } from '../lib/api';
+import { api } from '@/app/lib';
 
 interface Literature {
   id: number;

@@ -35,7 +35,7 @@ import {
   List as ListIcon,
   ArrowBack,
 } from '@mui/icons-material';
-import SiteHeader from '../../components/SiteHeader';
+import SiteHeader from '../../components/layout/SiteHeader';
 
 interface Event {
   id: number;
@@ -66,7 +66,7 @@ export default function LocationDetailPage({ params }: { params: Params }) {
   const [resolvedParams, setResolvedParams] = useState<{ location: string } | null>(null);
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
-  const [lifeEvents, setLifeEvents] = useState<LifeEvent[]>([]);
+  const [relations, setLifeEvents] = useState<LifeEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
   const [error, setError] = useState<string | null>(null);
@@ -88,9 +88,9 @@ export default function LocationDetailPage({ params }: { params: Params }) {
         if (!params) return;
         const decodedLocation = decodeURIComponent(params.location);
         // Fetch all events for this location (no pagination)
-        const [eventsRes, lifeEventsRes] = await Promise.all([
+        const [eventsRes, relationsRes] = await Promise.all([
           fetch(`/api/events?location=${encodeURIComponent(decodedLocation)}&all=true`),
-          fetch(`/api/life-events?location=${encodeURIComponent(decodedLocation)}`)
+          fetch(`/api/person-event-relations?location=${encodeURIComponent(decodedLocation)}`)
         ]);
         if (eventsRes.ok) {
           const eventsData = await eventsRes.json();
@@ -107,9 +107,9 @@ export default function LocationDetailPage({ params }: { params: Params }) {
         } else {
           throw new Error('Events API error');
         }
-        if (lifeEventsRes.ok) {
-          const lifeEventsData = await lifeEventsRes.json();
-          const safeLifeEvents = Array.isArray(lifeEventsData) ? lifeEventsData : [];
+        if (relationsRes.ok) {
+          const relationsData = await relationsRes.json();
+          const safeLifeEvents = Array.isArray(relationsData) ? relationsData : [];
           setLifeEvents(safeLifeEvents.map((event: any) => ({
             id: toNum(event.id ?? event.ID),
             title: event.title ?? event.TITLE ?? '',
@@ -138,7 +138,7 @@ export default function LocationDetailPage({ params }: { params: Params }) {
     return new Date(dateString).toLocaleDateString('de-DE');
   };
 
-  const allEvents = [...events, ...lifeEvents].sort((a, b) => {
+  const allEvents = [...events, ...relations].sort((a, b) => {
     const dateA = a.type === 'historic' ? (a.date ? new Date(a.date).getTime() : 0) : (a.start_date ? new Date(a.start_date).getTime() : 0);
     const dateB = b.type === 'historic' ? (b.date ? new Date(b.date).getTime() : 0) : (b.start_date ? new Date(b.start_date).getTime() : 0);
     return dateA - dateB;
@@ -240,7 +240,7 @@ export default function LocationDetailPage({ params }: { params: Params }) {
                         Lebensereignisse
                       </Typography>
                       <Typography variant="body1">
-                        {lifeEvents.length} Ereignisse
+                        {relations.length} Ereignisse
                       </Typography>
                     </Box>
                   </Stack>

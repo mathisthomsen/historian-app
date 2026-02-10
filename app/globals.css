@@ -41,3 +41,19 @@ a {
   }
 }
 
+
+
+.custom-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Leaflet custom icons */
+.custom-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-div-icon svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}

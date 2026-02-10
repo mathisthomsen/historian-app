@@ -15,7 +15,7 @@ import {
   Book,
   Add,
 } from '@mui/icons-material';
-import SiteHeader from '../../components/SiteHeader';
+import SiteHeader from '../../components/layout/SiteHeader';
 import { useRouter } from 'next/navigation';
 
 export default function LiteratureCreatePage() {

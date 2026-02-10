@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUser } from '../../../lib/requireUser';
+import { requireUser } from '../../../lib/auth/requireUser';
 
 // Mendeley OAuth configuration
 const MENDELEY_CLIENT_ID = process.env.MENDELEY_CLIENT_ID;

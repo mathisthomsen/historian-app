@@ -29,11 +29,14 @@ import {
   Map,
   Visibility,
 } from '@mui/icons-material';
-import { useRouter } from 'next/navigation';
-import SiteHeader from '../components/SiteHeader';
-import { api } from '../lib/api';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import RequireAuth from '../components/RequireAuth';
+import { useParams, useRouter } from 'next/navigation';
+import SiteHeader from '../components/layout/SiteHeader';
+import { api } from '@/app/lib';
+import { ErrorBoundary } from '../components/layout/ErrorBoundary';
+import RequireAuth from '../components/layout/RequireAuth';
+import { useProject } from '@/app/contexts/ProjectContext';
+import { useProjectApi } from '@/app/hooks/useProjectApi';
+import SimpleLocationMap from '../components/maps/SimpleLocationMap';
 
 interface LocationData {
   location: string;
@@ -51,17 +54,30 @@ export default function LocationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { selectedProject, isLoading: projectLoading, canEdit, canDelete } = useProject();
+  const { fetchWithProject } = useProjectApi();
 
   const fetchLocationData = async (page = 1) => {
+    // Don't fetch if no project is selected
+    if (!selectedProject) {
+      setLocations([]);
+      setPagination({ page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false });
+      setTotalEvents(0);
+      setTotalLifeEvents(0);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const data = await api.get(`/api/locations?page=${page}&limit=20`);
+      const data = await api.get(`/api/locations?page=${page}&limit=20&projectId=${encodeURIComponent(selectedProject.id)}`);
       setLocations(Array.isArray(data.locations) ? data.locations : []);
       setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false });
       setTotalEvents(data.totalEvents || 0);
       setTotalLifeEvents(data.totalLifeEvents || 0);
     } catch (error) {
+      console.error('Error fetching location data:', error);
       setError('Failed to fetch location data');
     } finally {
       setLoading(false);
@@ -69,8 +85,10 @@ export default function LocationsPage() {
   };
 
   useEffect(() => {
-    fetchLocationData(1);
-  }, []);
+    if (selectedProject && !projectLoading) {
+      fetchLocationData(1);
+    }
+  }, [selectedProject, projectLoading]);
 
   const handlePageChange = (_: any, value: number) => {
     fetchLocationData(value);
@@ -82,7 +100,7 @@ export default function LocationsPage() {
 
   const totalLocations = pagination.total;
 
-  if (loading) {
+  if (loading || projectLoading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 6 }}>
         <SiteHeader title="Orte" showOverline={false} />
@@ -108,6 +126,29 @@ export default function LocationsPage() {
     );
   }
 
+  if (!selectedProject) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 6 }}>
+        <SiteHeader title="Orte" showOverline={false} />
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            Kein Projekt ausgewählt
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Bitte wählen Sie ein Projekt aus, um Orte anzuzeigen, oder erstellen Sie ein neues Projekt.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => router.push('/account/projekte')}
+          >
+            Projekt erstellen
+          </Button>
+        </Box>
+      </Container>
+    );
+  }
+
   return (
     <RequireAuth>
       <ErrorBoundary fallback={
@@ -123,6 +164,16 @@ export default function LocationsPage() {
       }>
         <Container maxWidth="lg" sx={{ mt: 6 }}>
           <SiteHeader title="Orte" showOverline={false} />
+          
+          {/* Project Header */}
+          <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Projekt: {selectedProject.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedProject.description || 'Keine Beschreibung verfügbar'}
+            </Typography>
+          </Box>
           
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
@@ -211,6 +262,19 @@ export default function LocationsPage() {
               </Card>
             </Grid>
           </Grid>
+
+          {/* Interactive Map */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              <Map sx={{ mr: 1, verticalAlign: 'middle' }} />
+              Übersicht der Orte
+            </Typography>
+            <SimpleLocationMap 
+              locations={locations}
+              height={400}
+              onLocationClick={(location) => handleLocationClick(location)}
+            />
+          </Paper>
 
           {/* Locations List */}
           <Paper sx={{ p: 3 }}>

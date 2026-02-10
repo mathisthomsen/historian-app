@@ -121,7 +121,7 @@ monit-tunnel
 - SSH-Tunnel läuft nicht → Starte ihn neu
 - Falscher Port → Prüfe `-L 2812:localhost:2812`
 
-### Passwort vergessen
+### Login funktioniert nicht / Passwort vergessen
 
 ```bash
 # Auf dem Server

@@ -40,27 +40,15 @@ import {
   People,
   ChevronLeft,
 } from '@mui/icons-material';
-import SiteHeader from '../../components/SiteHeader';
+import SiteHeader from '../../components/layout/SiteHeader';
 import type { GridProps } from '@mui/material/Grid';
 import Grid from '@mui/material/Grid';
-import EventForm from '../../components/EventForm';
+import EventForm from '../../components/forms/EventForm';
 import Link from 'next/link';
 import EventIcon from '@mui/icons-material/Event';
 import Badge from '@mui/material/Badge';
 
-interface LifeEvent {
-  id: number;
-  title: string;
-  start_date: string;
-  end_date?: string;
-  location?: string;
-  description?: string;
-  person: {
-    id: number;
-    first_name?: string;
-    last_name?: string;
-  };
-}
+
 
 interface HistoricEvent {
   id: number;
@@ -79,7 +67,7 @@ export default function EventDetailPage({ params }: { params: Params }) {
   const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
   const router = useRouter();
   const [event, setEvent] = useState<HistoricEvent | null>(null);
-  const [relatedLifeEvents, setRelatedLifeEvents] = useState<LifeEvent[]>([]);
+  const [personEventRelations, setPersonEventRelations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -100,16 +88,26 @@ export default function EventDetailPage({ params }: { params: Params }) {
     try {
       if (!resolvedParams) throw new Error('No resolvedParams');
       const eventId = Number(resolvedParams.id);
-      const [eventRes, lifeEventsRes] = await Promise.all([
-        fetch(`/api/events/${eventId}`),
-        fetch(`/api/life-events?eventId=${eventId}`)
-      ]);
-
+      
+      // Fetch event data
+      const eventRes = await fetch(`/api/events/${eventId}`);
       const eventData = await eventRes.json();
-      const lifeEventsData = await lifeEventsRes.json();
-
       setEvent(eventData);
-      setRelatedLifeEvents(lifeEventsData);
+      
+      // Try to fetch relations, but handle gracefully if API is not available
+      try {
+        const relationsRes = await fetch(`/api/person-event-relations?eventId=${eventId}`);
+        if (relationsRes.ok) {
+          const relationsData = await relationsRes.json();
+          setPersonEventRelations(relationsData.relations || []);
+        } else {
+          // If API is not available, set empty array
+          setPersonEventRelations([]);
+        }
+      } catch (relationsError) {
+        console.warn('Person-event relations API not available:', relationsError);
+        setPersonEventRelations([]);
+      }
     } catch (error) {
       console.error('Error fetching event data:', error);
     } finally {
@@ -144,10 +142,11 @@ export default function EventDetailPage({ params }: { params: Params }) {
     if (!event) return [];
     let items: any[] = [];
     if (eventViewType === 'life' || eventViewType === 'both') {
-      items = items.concat(relatedLifeEvents.map(lifeEvent => ({
-        ...lifeEvent,
-        _type: 'life',
-        date: lifeEvent.start_date,
+      items = items.concat(personEventRelations.map(relation => ({
+        ...relation,
+        _type: 'relation',
+        date: relation.event?.date || new Date().toISOString(),
+        title: `${relation.person?.first_name} ${relation.person?.last_name} - ${relation.relationship_type}`,
       })));
     }
     if ((eventViewType === 'sub' || eventViewType === 'both') && Array.isArray(event.subEvents)) {
@@ -414,10 +413,10 @@ export default function EventDetailPage({ params }: { params: Params }) {
             color="primary"
           >
             <ToggleButton value="life" sx={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingInline: 2 }}>
-              {relatedLifeEvents.length > 0 ? (
-                <Badge badgeContent={relatedLifeEvents.length} color="primary" />
+              {personEventRelations.length > 0 ? (
+                <Badge badgeContent={personEventRelations.length} color="primary" />
               ) : null}
-              Lebensereignisse
+              Personen-Beziehungen
             </ToggleButton>
             <ToggleButton value="sub" sx={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingInline: 2 }}>
               {Array.isArray(event?.subEvents) && event.subEvents.length > 0 ? (
@@ -426,8 +425,8 @@ export default function EventDetailPage({ params }: { params: Params }) {
               Unter-Ereignisse
             </ToggleButton>
             <ToggleButton value="both" sx={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingInline: 2 }}>
-              {relatedLifeEvents.length + (Array.isArray(event?.subEvents) ? event.subEvents.length : 0) > 0 ? (
-                <Badge badgeContent={relatedLifeEvents.length + (Array.isArray(event?.subEvents) ? event.subEvents.length : 0)} color="primary" />
+              {personEventRelations.length + (Array.isArray(event?.subEvents) ? event.subEvents.length : 0) > 0 ? (
+                <Badge badgeContent={personEventRelations.length + (Array.isArray(event?.subEvents) ? event.subEvents.length : 0)} color="primary" />
               ) : null}
               Beides
             </ToggleButton>
@@ -439,16 +438,16 @@ export default function EventDetailPage({ params }: { params: Params }) {
             <Paper sx={{ p: 4, textAlign: 'center' }}>
               <People sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Keine verwandten Lebensereignisse
+                Keine Personen-Beziehungen
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Noch keine Lebensereignisse mit diesem historischen Ereignis verknüpft.
+                Noch keine Personen mit diesem historischen Ereignis verknüpft.
               </Typography>
               <Button
                 variant="contained"
-                onClick={() => router.push('/persons')}
+                onClick={() => router.push('/relationships')}
               >
-                Personen verwalten
+                Beziehungen verwalten
               </Button>
             </Paper>
           ) : eventViewType === 'sub' ? (
@@ -474,14 +473,14 @@ export default function EventDetailPage({ params }: { params: Params }) {
                 Keine verwandten Ereignisse
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Noch keine Lebensereignisse oder Unter-Ereignisse mit diesem historischen Ereignis verknüpft.
+                Noch keine Personen-Beziehungen oder Unter-Ereignisse mit diesem historischen Ereignis verknüpft.
               </Typography>
               <Stack direction="row" spacing={2} justifyContent="center">
                 <Button
                   variant="contained"
-                  onClick={() => router.push('/persons')}
+                  onClick={() => router.push('/relationships')}
                 >
-                  Personen verwalten
+                  Beziehungen verwalten
                 </Button>
                 <Button
                   variant="contained"

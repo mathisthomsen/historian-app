@@ -111,6 +111,8 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+__todo.txt
+app/__todo.txt
 
 # Editor directories and files
 .vscode/
@@ -150,3 +152,18 @@ verify-*.min.js
 # Local development
 *.local
 
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Test results
+test-results/
+playwright-report/
+
+# Screenshots
+public/images/*.png
+!public/images/
+
+# Backup files
+*.backup
+backup-*.json

@@ -47,6 +47,10 @@ if [ -z "$LOGWATCH_EMAIL" ]; then
     exit 1
 fi
 
+# MailFrom für Resend: muss verifizierte Domain sein (z.B. logwatch@evidoxa.com)
+read -p "Absender-Adresse für Logwatch (z.B. logwatch@evidoxa.com, Enter = logwatch@evidoxa.com): " LOGWATCH_FROM
+LOGWATCH_FROM=${LOGWATCH_FROM:-logwatch@evidoxa.com}
+
 # Config erstellen
 cat > "$LOGWATCH_CONFIG" << EOF
 # Logwatch Configuration
@@ -55,9 +59,9 @@ cat > "$LOGWATCH_CONFIG" << EOF
 # Detail-Level: Low, Med, High
 Detail = Med
 
-# E-Mail-Einstellungen
+# E-Mail-Einstellungen (MailFrom = bei Resend verifizierte Domain!)
 MailTo = $LOGWATCH_EMAIL
-MailFrom = logwatch@\$(hostname)
+MailFrom = $LOGWATCH_FROM
 
 # Format: text oder html
 Format = text
@@ -65,11 +69,8 @@ Format = text
 # Services die überwacht werden sollen
 Service = All
 
-# Services die ignoriert werden
+# Services die ignoriert werden (nur Einträge, die auf diesem System existieren – zz-misc/zz-network/zz-sys fehlen oft)
 Service = "-eximstats"
-Service = "-zz-network"
-Service = "-zz-sys"
-Service = "-zz-misc"
 
 # Range: All, Today, Yesterday
 Range = yesterday

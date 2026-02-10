@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { sendVerificationEmail } from '../../../lib/email';
-import { RateLimiter } from '../../../lib/validation';
+import { sendVerificationEmail } from '../../../lib/services/email';
+import { RateLimiter } from '../../../lib/utils/validation';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();

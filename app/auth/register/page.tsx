@@ -11,7 +11,7 @@ import {
   Stack,
 } from '@mui/material';
 import AuthForm from '../../components/ui/AuthForm';
-import { validateEmail, validatePassword, validateName, validateConfirmPassword, getPasswordStrength } from '../../lib/validation';
+import { validateEmail, validatePassword, validateName, validateConfirmPassword, getPasswordStrength } from '../../lib/utils/validation';
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);

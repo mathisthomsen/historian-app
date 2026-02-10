@@ -41,10 +41,10 @@ import {
   ZoomIn,
   ZoomOut,
 } from '@mui/icons-material';
-import SiteHeader from '../components/SiteHeader';
-import { api } from '../lib/api';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import RequireAuth from '../components/RequireAuth';
+import SiteHeader from '../components/layout/SiteHeader';
+import { api } from '@/app/lib';
+import { ErrorBoundary } from '../components/layout/ErrorBoundary';
+import RequireAuth from '../components/layout/RequireAuth';
 
 interface TimelineEvent {
   id: number;
@@ -53,7 +53,7 @@ interface TimelineEvent {
   end_date?: string;
   location?: string;
   description?: string;
-  type: 'historic' | 'life';
+  type: 'historic' | 'relation';
   person?: {
     id: number;
     first_name?: string;
@@ -65,7 +65,7 @@ export default function TimelinePage() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'historic' | 'life'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'historic' | 'relation'>('all');
   const [filterYear, setFilterYear] = useState<[number, number]>([1000, 2024]);
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -76,12 +76,19 @@ export default function TimelinePage() {
       setLoading(true);
       setError(null);
       
-      const [eventsRes, lifeEvents] = await Promise.all([
-        api.get('/api/events?all=true'),
-        api.get('/api/life-events')
-      ]);
+      // Fetch events
+      const eventsRes = await api.get('/api/events?all=true');
       const historicEvents = Array.isArray(eventsRes?.events) ? eventsRes.events : [];
-      const safeLifeEvents = Array.isArray(lifeEvents) ? lifeEvents : [];
+      
+      // Try to fetch relations, but handle gracefully if API is not available
+      let safeRelations = [];
+      try {
+        const relationsRes = await api.get('/api/person-event-relations');
+        safeRelations = Array.isArray(relationsRes?.relations) ? relationsRes.relations : [];
+      } catch (relationsError) {
+        console.warn('Person-event relations API not available:', relationsError);
+        safeRelations = [];
+      }
       const timelineEvents: TimelineEvent[] = [
         ...historicEvents
           .filter((event: any) => !!event.date && !isNaN(new Date(event.date).getTime()))
@@ -89,12 +96,13 @@ export default function TimelinePage() {
             ...event,
             type: 'historic' as const,
           })),
-        ...safeLifeEvents
-          .filter((event: any) => !!event.start_date && !isNaN(new Date(event.start_date).getTime()))
-          .map((event: any) => ({
-            ...event,
-            type: 'life' as const,
-            date: event.start_date,
+        ...safeRelations
+          .filter((relation: any) => !!relation.event?.date && !isNaN(new Date(relation.event.date).getTime()))
+          .map((relation: any) => ({
+            ...relation.event,
+            type: 'relation' as const,
+            date: relation.event.date,
+            title: `${relation.person?.first_name} ${relation.person?.last_name} - ${relation.relationship_type}`,
           })),
       ];
 
@@ -250,7 +258,7 @@ export default function TimelinePage() {
                     >
                       <MenuItem value="all">Alle Ereignisse</MenuItem>
                       <MenuItem value="historic">Historische Ereignisse</MenuItem>
-                      <MenuItem value="life">Lebensereignisse</MenuItem>
+                      <MenuItem value="relation">Personen-Beziehungen</MenuItem>
                     </Select>
                   </FormControl>
 

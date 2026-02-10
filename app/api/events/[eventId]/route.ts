@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../libs/prisma'
-import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
+import prisma from '@/app/lib/database/prisma';
+import { requireUser, getOrCreateLocalUser } from '../../../lib/auth/requireUser';
 
 // 🟩 GET
 export async function GET(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {

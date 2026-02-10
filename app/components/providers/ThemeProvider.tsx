@@ -2,7 +2,7 @@
 
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import { createCustomTheme } from '../../lib/theme';
+import { createCustomTheme } from '../../lib/config/theme';
 import { useState, useEffect } from 'react';
 
 export default function ThemeProvider({

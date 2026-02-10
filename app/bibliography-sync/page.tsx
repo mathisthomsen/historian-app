@@ -38,7 +38,7 @@ import {
   Error as ErrorIcon,
   AccountCircle as AccountCircleIcon
 } from '@mui/icons-material';
-import { api } from '../lib/api';
+import { api } from '@/app/lib';
 
 interface SyncConfig {
   id: number;

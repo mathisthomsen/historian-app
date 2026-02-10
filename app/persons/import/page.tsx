@@ -1,4 +1,4 @@
-import CsvImporter from '../../components/ImportPersons';
+import CsvImporter from '../../components/data/ImportPersons';
 import { Container, Typography } from '@mui/material';
 
 export default function ImportPersonsPage() {

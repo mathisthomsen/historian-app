@@ -1,0 +1,35 @@
+# Use the official Node.js runtime as the base image
+FROM node:20-alpine
+
+# Install dependencies
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Set environment variable to ignore Prisma checksum errors
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+ENV NODE_ENV=development
+
+# Install dependencies based on the preferred package manager
+COPY package.json package-lock.json* ./
+COPY prisma ./prisma
+
+# Install dependencies with memory optimizations
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy source code
+COPY app ./app
+COPY public ./public
+COPY config/next.config.mjs ./next.config.mjs
+COPY tsconfig.json ./
+
+# Expose port
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Run in development mode
+CMD ["npm", "run", "dev"]

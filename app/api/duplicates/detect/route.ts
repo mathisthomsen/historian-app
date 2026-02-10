@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from '@prisma/client';
-import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
-import { detectPersonDuplicates, calculateNameSimilarity } from '../../../lib/fuzzyData';
+import { requireUser, getOrCreateLocalUser } from '../../../lib/auth/requireUser';
+import { detectPersonDuplicates, calculateNameSimilarity } from '../../../lib/utils/fuzzyData';
 
 const prisma = new PrismaClient();
 

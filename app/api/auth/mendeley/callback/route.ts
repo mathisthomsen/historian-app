@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUser } from '../../../../lib/requireUser';
-import prisma from '../../../../libs/prisma';
+import { requireUser } from '../../../../lib/auth/requireUser';
+import prisma from '../../../../lib/database/prisma';
 
 // Mendeley OAuth configuration
 const MENDELEY_CLIENT_ID = process.env.MENDELEY_CLIENT_ID;
@@ -59,13 +59,14 @@ export async function GET(request: NextRequest) {
     console.log('Token exchange successful, storing tokens...');
     
     // Store tokens in database
-    await prisma.bibliographySync.upsert({
+    await prisma.bibliography_syncs.upsert({
       where: { userId_service: { userId: user.id, service: 'Mendeley' } },
       update: {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token,
         tokenExpiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null,
         isActive: true,
+        updatedAt: new Date(),
       },
       create: {
         userId: user.id,
@@ -75,6 +76,7 @@ export async function GET(request: NextRequest) {
         refreshToken: tokenData.refresh_token,
         tokenExpiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null,
         isActive: true,
+        updatedAt: new Date(),
       },
     });
 

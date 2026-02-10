@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUser } from '../../lib/requireUser';
-import { BibliographySyncManager } from '../../lib/bibliography-sync';
+import { requireUser } from '../../lib/auth/requireUser';
+import { BibliographySyncManager } from '../../lib/services/bibliography-sync';
 
 // GET /api/bibliography-sync - Get all sync configurations for user
 export async function GET(request: NextRequest) {

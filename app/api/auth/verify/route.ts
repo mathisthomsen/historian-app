@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { RateLimiter } from '../../../lib/validation';
+import { RateLimiter } from '../../../lib/utils/validation';
 
 const prisma = new PrismaClient();
 const rateLimiter = new RateLimiter(60000, 10); // 10 requests per minute per IP

@@ -3,7 +3,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import ClientLayout from './client-layout';
-import SessionProvider from './components/providers/SessionProvider';
+import Providers from './providers';
 
 export const metadata: Metadata = {
   title: 'Evidoxa - Your Digital Historian',
@@ -21,11 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
-        <SessionProvider>
+        <Providers>
           <ClientLayout>
             {children}
           </ClientLayout>
-        </SessionProvider>
+        </Providers>
       </body>
     </html>
   );

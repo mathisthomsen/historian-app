@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/app/libs/prisma';
+import prisma from '@/app/lib/database/prisma';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { validateName, validateEmail, validatePassword } from '@/app/lib/validation';
-import { sendVerificationEmail } from '@/app/lib/email';
+import { validateName, validateEmail, validatePassword } from '@/app/lib/utils/validation';
+import { sendVerificationEmail } from '@/app/lib/services/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +40,24 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         emailVerified: false,
+      },
+    });
+
+    // Create project
+    const project = await prisma.project.create({
+      data: {
+        name: 'Default Project',
+        owner_id: user.id,
+        updated_at: new Date(),
+      },
+    });
+
+    // Add user to project
+    await prisma.userProject.create({
+      data: {
+        user_id: user.id,
+        project_id: project.id,
+        role: 'owner'
       },
     });
 

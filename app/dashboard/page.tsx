@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useProject } from '../contexts/ProjectContext';
 import {
   Box,
   Typography,
@@ -12,6 +13,7 @@ import {
   Alert,
   Container,
   Grid,
+  Button,
 } from '@mui/material';
 import {
   People,
@@ -61,13 +63,14 @@ interface DashboardStats {
   totalPersons: number;
   totalEvents: number;
   totalLocations: number;
-  totalLiterature: number;
+  totalSources: number;
   recentActivities: any[];
 }
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { userProjects } = useProject();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -98,7 +101,7 @@ export default function DashboardPage() {
           totalPersons: statsData.totalPersons || 0,
           totalEvents: statsData.totalEvents || 0,
           totalLocations: statsData.totalLocations || 0,
-          totalLiterature: statsData.totalLiterature || 0,
+          totalSources: statsData.totalSources || 0,
           recentActivities: activitiesData.activities || [],
         });
       } catch (error) {
@@ -147,6 +150,26 @@ export default function DashboardPage() {
 
         {stats && (
           <>
+            {/* Show Create Project prompt if no projects exist */}
+            {userProjects.length === 0 && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Willkommen bei Evidoxa! 🎉
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  Sie haben noch keine Projekte erstellt. Projekte helfen Ihnen dabei, Ihre historischen Daten zu organisieren und mit anderen zu teilen.
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={() => router.push('/account/projekte')}
+                  sx={{ mt: 1 }}
+                >
+                  Erstes Projekt erstellen
+                </Button>
+              </Alert>
+            )}
+            
             <Grid container spacing={3} sx={{ mb: 4 }}>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
@@ -174,8 +197,8 @@ export default function DashboardPage() {
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <StatCard
-                  title="Total Literature"
-                  value={stats.totalLiterature}
+                  title="Total Sources"
+                  value={stats.totalSources}
                   icon={<Book />}
                   color="success"
                 />
@@ -240,6 +263,9 @@ export default function DashboardPage() {
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         • Import data
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        • Manage projects
                       </Typography>
                     </Box>
                   </CardContent>

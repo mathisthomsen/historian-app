@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/app/libs/prisma';
+import prisma from '@/app/lib/database/prisma';
 import crypto from 'crypto';
-import { sendPasswordResetEmail } from '@/app/lib/email';
+import { sendPasswordResetEmail } from '@/app/lib/services/email';
 
 export async function POST(request: NextRequest) {
   const { email } = await request.json();

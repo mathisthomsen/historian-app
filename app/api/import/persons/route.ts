@@ -2,8 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from '@prisma/client';
-import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
-import { parseFuzzyDate, normalizePlaceName, DateUncertainty, detectPersonDuplicates } from '../../../lib/fuzzyData';
+import { requireUser, getOrCreateLocalUser } from '../../../lib/auth/requireUser';
+import { parseFuzzyDate, normalizePlaceName, DateUncertainty, detectPersonDuplicates } from '../../../lib/utils/fuzzyData';
 
 const prisma = new PrismaClient();
 
@@ -55,6 +55,18 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireUser();
     const localUser = await getOrCreateLocalUser(user);
+
+    // Get user's default project
+    const defaultProject = await prisma.project.findFirst({
+      where: { owner_id: localUser.id }
+    });
+
+    if (!defaultProject) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'No default project found for user' 
+      }, { status: 400 });
+    }
 
     const data = await req.json();
     
@@ -162,6 +174,7 @@ export async function POST(req: NextRequest) {
           name_confidence: 1.0, // Assuming exact match for imported data
           import_batch_id: `import_${Date.now()}`,
           created_via_import: true,
+          project_id: defaultProject.id, // Associate with default project
         };
 
         const createdPerson = await prisma.persons.create({

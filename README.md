@@ -6,7 +6,7 @@ A comprehensive web application for managing historical data, including persons,
 
 ## Features
 
-- **User Authentication**: Secure login/register with WorkOS AuthKit
+- **User Authentication**: Secure login/register with nextAuth
 - **Person Management**: Create and manage historical figures with detailed profiles
 - **Event Management**: Track historical events with dates, locations, and descriptions
 - **Relationship System**: Define and visualize relationships between persons
@@ -23,19 +23,19 @@ A comprehensive web application for managing historical data, including persons,
 - **Frontend**: Next.js 15 with App Router, Material-UI v7, TypeScript
 - **Backend**: Next.js API Routes, Prisma ORM
 - **Database**: PostgreSQL 15+
-- **Authentication**: WorkOS AuthKit with hosted UI
+- **Authentication**: nextAuth
 - **Deployment**: Docker Compose with multi-environment support
 
 ### System Components
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Next.js App   │    │   PostgreSQL DB │    │   WorkOS Auth   │
-│   (Port 3000)   │◄──►│   (Port 5432)   │    │   (Hosted UI)   │
+│   Next.js App   │    │   PostgreSQL DB │    │   next Auth     │
+│   (Port 3000)   │◄──►│   (Port 5432)   │    │                 │
 │                 │    │                 │    │                 │
 │ - API Routes    │    │ - Users         │    │ - Authentication│
-│ - SSR Pages     │    │ - Persons       │    │ - User Mgmt     │
-│ - Auth System   │    │ - Events        │    │ - SSO           │
+│ - SSR Pages     │    │ - Persons       │    │                 │
+│ - Auth System   │    │ - Events        │    │                 │
 │ - File Uploads  │    │ - Literature    │    │                 │
 └─────────────────┘    │ - Relationships │    └─────────────────┘
                        └─────────────────┘
@@ -48,7 +48,6 @@ A comprehensive web application for managing historical data, including persons,
 - Node.js 18+
 - PostgreSQL 15+
 - Docker & Docker Compose (for deployment)
-- WorkOS account and API credentials
 
 ### Local Development
 
@@ -100,18 +99,7 @@ A comprehensive web application for managing historical data, including persons,
 
 ### Environment Variables
 
-Required WorkOS environment variables:
 
-```bash
-# WorkOS Configuration
-WORKOS_API_KEY=your-workos-api-key
-WORKOS_CLIENT_ID=your-workos-client-id
-WORKOS_REDIRECT_URI=http://localhost:3000/api/auth/callback
-WORKOS_COOKIE_PASSWORD=your-workos-cookie-password
-
-# AuthKit Configuration
-AUTHKIT_REDIRECT_URI=http://localhost:3000/api/auth/callback
-```
 
 ## Deployment
 

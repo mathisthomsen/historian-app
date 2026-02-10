@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { requireUser } from '../../lib/requireUser';
+import { requireUser } from '../../lib/auth/requireUser';
 
 const prisma = new PrismaClient();
 
@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   const sortOrder = searchParams.get('sortOrder') || 'asc';
   const filterField = searchParams.get('filterField');
   const filterValue = searchParams.get('filterValue');
+  const projectId = searchParams.get('projectId');
 
   // Validate pagination parameters
   if (page < 1 || limit < 1 || limit > 100) {
@@ -23,8 +24,31 @@ export async function GET(req: NextRequest) {
   const user = await requireUser();
 
   try {
+    // Get user's accessible project IDs
+    const userProjects = await prisma.userProject.findMany({
+      where: { user_id: user.id },
+      select: { project_id: true }
+    });
+    const userProjectIds = userProjects.map((up: any) => up.project_id);
+
     // Build where clause for filtering
-    let whereClause: any = {};
+    let whereClause: any = {
+      OR: [
+        { userId: user.id, project_id: null }, // Personal literature
+        { project_id: { in: userProjectIds } } // Project literature (all data in accessible projects)
+      ]
+    };
+
+    // Filter by specific project if provided
+    if (projectId) {
+      if (!userProjectIds.includes(projectId)) {
+        return NextResponse.json({ error: 'Keine Berechtigung für dieses Projekt' }, { status: 403 });
+      }
+      whereClause = { 
+        project_id: projectId
+      };
+    }
+
     if (search) {
       whereClause.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -84,13 +108,33 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    const { projectId, ...literatureData } = body;
 
-    const literature = await prisma.$queryRaw`
-      INSERT INTO literature ("userId", title, author, publication_year, type, description, url)
-      VALUES (${user.id}, ${body.title}, ${body.author || null}, 
-              ${body.publicationYear ? parseInt(body.publicationYear) : null}, 
-              ${body.type || null}, ${body.description || null}, ${body.url || null})
-    ` as any
+    // Validate project access if projectId is provided
+    if (projectId) {
+      const userProjects = await prisma.userProject.findMany({
+        where: { user_id: user.id },
+        select: { project_id: true }
+      });
+      const userProjectIds = userProjects.map((up: any) => up.project_id);
+      
+      if (!userProjectIds.includes(projectId)) {
+        return NextResponse.json({ error: 'Keine Berechtigung für dieses Projekt' }, { status: 403 });
+      }
+    }
+
+    const literature = await prisma.literature.create({
+      data: {
+        userId: user.id,
+        title: literatureData.title,
+        author: literatureData.author || '',
+        publication_year: literatureData.publicationYear ? parseInt(literatureData.publicationYear) : null,
+        type: literatureData.type || null,
+        description: literatureData.description || null,
+        url: literatureData.url || null,
+        project_id: projectId || null,
+      }
+    });
 
     return NextResponse.json({ success: true }, { status: 201 })
 

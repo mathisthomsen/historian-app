@@ -2,17 +2,19 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { DataGrid, GridColDef, GridToolbar, GridRowSelectionModel } from '@mui/x-data-grid';
-import { Box, Typography, Container, Button, Drawer, Snackbar, Alert, Stack, Tooltip } from '@mui/material';
+import { Box, Typography, Container, Button, Drawer, Snackbar, Alert, Stack, Tooltip, Chip } from '@mui/material';
 import { IconButton } from '@mui/material';
 import MoreIcon from '@mui/icons-material/MoreOutlined';
 import { useRouter } from 'next/navigation';
-import SiteHeader from '../components/SiteHeader';
-import { api } from '../lib/api';
+import SiteHeader from '../components/layout/SiteHeader';
+import { api } from '../lib';
 import type { GridSortModel, GridFilterModel } from '@mui/x-data-grid';
-import PersonForm from '../components/PersonForm';
-import RequireAuth from '../components/RequireAuth';
-import ModalDeleteConfirmation from '../components/ModalDeleteConfirmation';
+import PersonForm from '../components/forms/PersonForm';
+import RequireAuth from '../components/layout/RequireAuth';
+import ModalDeleteConfirmation from '../components/ui/ModalDeleteConfirmation';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useProject } from '../contexts/ProjectContext';
+import { useProjectApi } from '../hooks/useProjectApi';
 
 type Person = {
   id: number;
@@ -26,6 +28,9 @@ type Person = {
 };
 
 export default function PersonsPage() {
+  const { selectedProject, isLoading: projectLoading, canEdit, canDelete } = useProject();
+  const { fetchWithProject } = useProjectApi();
+  
   const [rows, setRows] = useState<Person[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +50,14 @@ export default function PersonsPage() {
     filter = filterModel,
     search = searchValue
   ) => {
+    // Don't fetch if no project is selected
+    if (!selectedProject) {
+      setRows([]);
+      setRowCount(0);
+      setDataLoading(false);
+      return;
+    }
+
     try {
       setDataLoading(true);
       setError(null);
@@ -62,7 +75,9 @@ export default function PersonsPage() {
       if (search && search.trim()) {
         searchParam = `&search=${encodeURIComponent(search.trim())}`;
       }
-      const data: any = await api.get(`/api/persons?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${searchParam}`);
+      // Add projectId to the query parameters
+      const projectParam = `&projectId=${encodeURIComponent(selectedProject.id)}`;
+      const data: any = await api.get(`/api/persons?page=${pageNum + 1}&limit=${limitNum}${sortParam}${filterParam}${searchParam}${projectParam}`);
       
       // Check if the response contains an error
       if (data && data.error) {
@@ -96,7 +111,7 @@ export default function PersonsPage() {
   useEffect(() => {
     fetchPersons();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, sortModel]);
+  }, [page, pageSize, sortModel, selectedProject]);
 
  
 
@@ -220,9 +235,8 @@ export default function PersonsPage() {
     }
     
     if (idsToDelete.length > 0) {
-      const res = await fetch(`/api/persons/bulk`, {  
+      const res = await fetchWithProject(`/api/persons/bulk`, {  
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },  
         body: JSON.stringify(idsToDelete),
       });
       if (res.ok) {
@@ -333,66 +347,97 @@ export default function PersonsPage() {
         title="Personen"
         showOverline={false}
         >
-          <Button variant="outlined" color="secondary" onClick={() => router.push('/persons/import')}>
-            Personen importieren
-          </Button>
-          <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCreate}
-            >
-              Neue Person
-            </Button>
+          {selectedProject && (
+            <Chip 
+              label={selectedProject.name} 
+              color="primary" 
+              variant="outlined"
+              size="small"
+              sx={{ mr: 2 }}
+            />
+          )}
+          {canEdit() && (
+            <>
+              <Button variant="outlined" color="secondary" onClick={() => router.push('/persons/import')}>
+                Personen importieren
+              </Button>
+              <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleCreate}
+                >
+                  Neue Person
+                </Button>
+            </>
+          )}
         </SiteHeader>
-        <DataGrid
-          checkboxSelection
-          onRowSelectionModelChange={handleSelectionChange}
-          keepNonExistentRowsSelected={true}
-          rowSelectionModel={rowSelectionModel}
-          rows={rows}
-          columns={columns}
-          columnVisibilityModel={{
-            id: false,
-          }}
-          loading={dataLoading}
-          getRowId={(row) => row.id}
-          showToolbar={true}
-          pagination
-          paginationMode="server"
-          paginationModel={{ page, pageSize }}
-          onPaginationModelChange={handlePaginationModelChange}
-          rowCount={rowCount}
-          pageSizeOptions={[25, 50, 100]}
-          sortingMode="server"
-          sortModel={sortModel}
-          onSortModelChange={handleSortModelChange}
-          filterMode="server"
-          filterModel={filterModel}
-          onFilterModelChange={handleFilterModelChange}
-          disableRowSelectionOnClick
-          filterDebounceMs={500}
-          slotProps={{
-            toolbar: {
-              showQuickFilter: true,
-              quickFilterProps: { 
-                debounceMs: 750,
+        {!selectedProject ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Kein Projekt ausgewählt
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Bitte wählen Sie ein Projekt aus, um Personen anzuzeigen, oder erstellen Sie ein neues Projekt.
+            </Typography>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => router.push('/account/projekte')}
+            >
+              Projekt erstellen
+            </Button>
+          </Box>
+        ) : (
+          <DataGrid
+            checkboxSelection={canDelete()}
+            onRowSelectionModelChange={handleSelectionChange}
+            keepNonExistentRowsSelected={true}
+            rowSelectionModel={rowSelectionModel}
+            rows={rows}
+            columns={columns}
+            columnVisibilityModel={{
+              id: false,
+            }}
+            loading={dataLoading || projectLoading}
+            getRowId={(row) => row.id}
+            showToolbar={true}
+            pagination
+            paginationMode="server"
+            paginationModel={{ page, pageSize }}
+            onPaginationModelChange={handlePaginationModelChange}
+            rowCount={rowCount}
+            pageSizeOptions={[25, 50, 100]}
+            sortingMode="server"
+            sortModel={sortModel}
+            onSortModelChange={handleSortModelChange}
+            filterMode="server"
+            filterModel={filterModel}
+            onFilterModelChange={handleFilterModelChange}
+            disableRowSelectionOnClick
+            filterDebounceMs={500}
+            slotProps={{
+              toolbar: {
+                showQuickFilter: true,
+                quickFilterProps: { 
+                  debounceMs: 750,
+                },
               },
-            },
-          }}
-          sx={{
-            '& .MuiDataGrid-columnHeader': {
-              backgroundColor: 'rgba(0, 0, 0, 0.075)',
-            },
-            '& .MuiDataGrid-cell': {
-              color: 'text.primary',
-              borderBottom: '.5px solid',
-              borderColor: 'divider',
-            },
-            '& .MuiDataGrid-row:has(.MuiDataGrid-cell:hover)': {
-              backgroundColor: 'rgba(0, 0, 0, 0.05)',
-            },
-          }}
-        />
+            }}
+            sx={{
+              '& .MuiDataGrid-columnHeader': {
+                backgroundColor: 'rgba(0, 0, 0, 0.075)',
+              },
+              '& .MuiDataGrid-cell': {
+                color: 'text.primary',
+                borderBottom: '.5px solid',
+                borderColor: 'divider',
+              },
+              '& .MuiDataGrid-row:has(.MuiDataGrid-cell:hover)': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              },
+            }}
+          />
+        )}
         
         <Drawer
           anchor="right"
@@ -434,9 +479,11 @@ export default function PersonsPage() {
             <Alert severity="info" 
               icon={<DeleteIcon />}
               action={
-                <Button variant="contained" color="inherit" onClick={handleOpenDeleteModal}>
-                  Löschen
-                </Button>
+                canDelete() && (
+                  <Button variant="contained" color="inherit" onClick={handleOpenDeleteModal}>
+                    Löschen
+                  </Button>
+                )
               }
               sx={{ width: '100%' }}>
               <Typography variant="body1">

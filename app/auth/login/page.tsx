@@ -5,7 +5,7 @@ import { Box, Tabs, Tab, Snackbar, Alert, Button, Typography } from '@mui/materi
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import AuthForm from '@/app/components/ui/AuthForm';
-import { validateEmail, validatePassword } from '@/app/lib/validation';
+import { validateEmail, validatePassword } from '@/app/lib/utils/validation';
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'credentials' | 'email'>('credentials');

@@ -25,11 +25,11 @@ import {
   LocationOn,
   Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
-import SiteHeader from '../components/SiteHeader';
-import ChartsEvents from '../components/ChartsEvents';
-import { api } from '../lib/api';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import RequireAuth from '../components/RequireAuth';
+import SiteHeader from '../components/layout/SiteHeader';
+import ChartsEvents from '../components/data/ChartsEvents';
+import { api } from '@/app/lib';
+import { ErrorBoundary } from '../components/layout/ErrorBoundary';
+import RequireAuth from '../components/layout/RequireAuth';
 
 interface AnalyticsData {
   totalPersons: number;

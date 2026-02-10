@@ -8,7 +8,7 @@ import {
   Paper,
   Stack,
 } from '@mui/material';
-import { getPasswordStrength } from '../../lib/validation';
+import { getPasswordStrength } from '../../lib/utils/validation';
 
 interface PasswordStrengthIndicatorProps {
   password: string;

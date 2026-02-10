@@ -2,8 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from '@prisma/client';
-import { requireUser, getOrCreateLocalUser } from '../../../lib/requireUser';
-import { parseFuzzyDate, normalizePlaceName, DateUncertainty, detectPersonDuplicates, calculateNameSimilarity } from '../../../lib/fuzzyData';
+import { requireUser, getOrCreateLocalUser } from '../../../lib/auth/requireUser';
+import { parseFuzzyDate, normalizePlaceName, DateUncertainty, detectPersonDuplicates, calculateNameSimilarity } from '../../../lib/utils/fuzzyData';
 
 const prisma = new PrismaClient();
 
@@ -58,22 +58,64 @@ export async function POST(req: NextRequest) {
 
     const data = await req.json();
     
-    if (!Array.isArray(data)) {
+    // Check if data has the new format with project context
+    let events: any[];
+    let projectId: string | null = null;
+    
+    if (data.events && data.projectId) {
+      // New format with project context
+      events = data.events;
+      projectId = data.projectId;
+    } else if (Array.isArray(data)) {
+      // Legacy format - no project context
+      events = data;
+      projectId = null;
+    } else {
       return NextResponse.json({ 
         success: false,
-        error: 'Invalid data format - expected array' 
+        error: 'Invalid data format - expected array or object with events and projectId' 
       }, { status: 400 });
     }
 
-    if (data.length === 0) {
+    if (events.length === 0) {
       return NextResponse.json({ 
         success: false,
         error: 'No data provided for import' 
       }, { status: 400 });
     }
 
+    // Validate project access if projectId is provided
+    if (projectId) {
+      // Check if user has access to this project
+      const userProject = await prisma.userProject.findFirst({
+        where: {
+          user_id: user.id,
+          project_id: projectId
+        }
+      });
+
+      if (!userProject) {
+        return NextResponse.json({ 
+          success: false,
+          error: 'Keine Berechtigung für dieses Projekt' 
+        }, { status: 403 });
+      }
+
+      // Verify the project exists
+      const project = await prisma.project.findUnique({
+        where: { id: projectId }
+      });
+
+      if (!project) {
+        return NextResponse.json({ 
+          success: false,
+          error: 'Projekt nicht gefunden' 
+        }, { status: 404 });
+      }
+    }
+
     // Validate all events first
-    const validationResults = data.map((event, index) => {
+    const validationResults = events.map((event, index) => {
       const validation = validateEvent(event);
       return {
         index,
@@ -99,7 +141,10 @@ export async function POST(req: NextRequest) {
 
     // Get existing events for duplicate detection
     const existingEvents = await prisma.events.findMany({
-      where: { userId: localUser.id },
+      where: { 
+        userId: localUser.id,
+        project_id: projectId || null // Only check against events in the same project context
+      },
       select: {
         id: true,
         title: true,
@@ -170,6 +215,7 @@ export async function POST(req: NextRequest) {
 
         const eventData = {
           userId: localUser.id,
+          project_id: projectId, // Associate imported events with the project
           title: event.title.trim(),
           description: event.description?.trim() || null,
           date: startDate?.date || null,
@@ -209,7 +255,7 @@ export async function POST(req: NextRequest) {
           import_type: 'events',
           batch_id: `import_${Date.now()}`,
           file_name: 'CSV/Excel Import',
-          total_records: data.length,
+          total_records: events.length,
           imported_count: importResults.length,
           error_count: errors.length,
           skipped_count: skipped.length,
@@ -227,9 +273,10 @@ export async function POST(req: NextRequest) {
       imported_count: importResults.length,
       error_count: errors.length,
       skipped_count: skipped.length,
-      total_count: data.length,
+      total_count: events.length,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Successfully imported ${importResults.length} events`
+      message: `Successfully imported ${importResults.length} events${projectId ? ' to project' : ''}`,
+      projectId: projectId
     });
 
   } catch (error) {

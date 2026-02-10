@@ -131,6 +131,24 @@ logwatch --output stdout --detail high
 - **System-Logs:** Kernel, Systemd, Disk
 - **Docker-Logs:** (falls verlinkt)
 
+### Logwatch/Resend-Diagnose ausführen
+
+**Auf dem Server** (wenn das Repo dort liegt, z.B. `/opt/historian-app/production`):
+
+```bash
+cd /opt/historian-app/production
+git pull   # falls nötig, damit scripts/monitoring/ vorhanden ist
+sudo bash scripts/monitoring/check-logwatch-resend.sh
+```
+
+**Falls das Script nicht im Repo auf dem Server ist:** Die `scp`-Zeile muss **auf deinem Mac** in einem Terminal ausgeführt werden (nicht in der SSH-Session), damit der Pfad `/Users/.../check-logwatch-resend.sh` existiert:
+
+```bash
+# Auf dem Mac ausführen (neues Terminal, nicht per SSH eingeloggt):
+scp /Users/Lily/Documents/historian_app/scripts/monitoring/check-logwatch-resend.sh root@217.154.198.215:/tmp/
+ssh root@217.154.198.215 "sudo bash /tmp/check-logwatch-resend.sh"
+```
+
 ---
 
 ## 3. Telegram Alerts (Optional)
@@ -252,6 +270,39 @@ grep -A 5 "historian-app" /etc/monit/monitrc
 monit reload
 ```
 
+### Monit Web-Interface: Login funktioniert nicht
+
+**Diagnose auf dem Server** (wenn das Repo dort liegt):
+
+```bash
+cd /opt/historian-app/production
+git pull   # falls nötig
+sudo bash scripts/monitoring/check-monit-web-login.sh
+```
+
+**Falls das Script nicht auf dem Server ist:** Die folgende Zeile **auf deinem Mac** in einem Terminal ausführen (nicht in der SSH-Session), damit der Pfad existiert:
+
+```bash
+scp /Users/Lily/Documents/historian_app/scripts/monitoring/check-monit-web-login.sh root@217.154.198.215:/tmp/
+ssh root@217.154.198.215 "sudo bash /tmp/check-monit-web-login.sh"
+```
+
+**Typische Ursachen:**
+
+1. **SSH-Tunnel fehlt:** Das Interface ist nur unter `http://localhost:2812` auf dem Server erreichbar. Von deinem Rechner aus musst du einen Tunnel öffnen (auf dem **Mac** ausführen):  
+   `ssh -L 2812:localhost:2812 root@217.154.198.215`  
+   Session offen lassen, dann im Browser `http://localhost:2812` aufrufen.
+
+2. **Falsches Passwort:** Standard nach Setup ist User **admin**, Passwort **monit**. Wenn du beim Setup ein anderes gewählt hast, dieses verwenden. Passwort zurücksetzen:
+   ```bash
+   sudo sed -i 's/^[[:space:]]*allow admin:.*/  allow admin:NEUES_PASSWORT/' /etc/monit/monitrc
+   sudo monit reload
+   ```
+
+3. **User genau eingeben:** Login ist **admin** (kleingeschrieben).
+
+Ausführlich: [MONIT_WEB_INTERFACE_ACCESS.md](MONIT_WEB_INTERFACE_ACCESS.md).
+
 ### Keine Alerts erhalten
 
 ```bash
@@ -265,18 +316,38 @@ monit alert deine@email.com
 tail -f /var/log/mail.log
 ```
 
-### Logwatch sendet keine Reports
+### Logwatch sendet keine Reports / Nichts in Resend
+
+Wenn **keine E-Mails** ankommen und in **Resend unter Logs nichts** erscheint, liegt das meist an Postfix/From-Adresse oder Cron.
+
+**1. Diagnose-Script auf dem Server ausführen:**
 
 ```bash
-# Prüfe Cron-Job
-crontab -l
-
-# Manuell ausführen
-logwatch --output mail --mailto deine@email.com
-
-# Prüfe Logs
-grep logwatch /var/log/syslog
+cd /opt/historian-app/production
+sudo bash scripts/monitoring/check-logwatch-resend.sh
 ```
+
+**2. Typische Ursachen:**
+
+- **From-Adresse:** Resend akzeptiert nur verifizierte Absender. Standard `root@hostname` oder `logwatch@hostname` wird abgelehnt.
+  - **Lösung:** Postfix Generic Map einrichten (z.B. `root@$(hostname)` → `logwatch@evidoxa.com`) und in `/etc/logwatch/conf/logwatch.conf` **MailFrom = logwatch@evidoxa.com** setzen.
+  - Siehe [POSTFIX_RESEND_TROUBLESHOOTING.md](POSTFIX_RESEND_TROUBLESHOOTING.md) und [LOGWATCH_RESEND_TROUBLESHOOTING.md](LOGWATCH_RESEND_TROUBLESHOOTING.md).
+
+- **Postfix/SASL:** Relayhost oder Resend-API-Key falsch → Test: `echo "Test" | mail -s "Test" deine@email.com` und `tail -f /var/log/postfix.log` (bzw. `/var/log/mail.log`).
+
+- **Cron:** Kein Logwatch-Eintrag → `crontab -l` prüfen.
+
+**3. Manueller Test:**
+
+```bash
+# Test-Mail
+echo "Test" | mail -s "Logwatch Test" deine@email.com
+
+# Logwatch einmal von Hand
+logwatch --output mail --mailto deine@email.com --detail medium --range yesterday
+```
+
+Ausführliche Schritte und Checkliste: **[LOGWATCH_RESEND_TROUBLESHOOTING.md](LOGWATCH_RESEND_TROUBLESHOOTING.md)**.
 
 ---
 
@@ -321,7 +392,56 @@ Detail = High
 
 ---
 
-## 8. Zusammenfassung
+## 8. Logwatch-Report: Was tun bei Auffälligkeiten?
+
+Wenn im täglichen Logwatch-Report viele Einträge zu Fail2ban, SSHD und Kernel erscheinen:
+
+### Fail2ban: viele blockierte IPs
+
+**Einschätzung:** Das ist **erwartbar und positiv**. Fail2ban blockiert automatisch IPs nach fehlgeschlagenen Login-Versuchen und schützt so den Server.
+
+**Optional:**  
+- Bantime anpassen: in `/etc/fail2ban/jail.local` z.B. `bantime = 86400` (24h).  
+- Status prüfen: `fail2ban-client status sshd`
+
+### SSHD: Failed Logins, Illegal Users, Disconnects
+
+**Einschätzung:** Typische **automatisierte Scan-/Brute-Force-Versuche** von außen. Solange Fail2ban läuft und du nur mit SSH-Key einloggst, ist das Risiko begrenzt.
+
+**Optional (mehr Härte):**
+
+1. **Nur noch SSH-Key, keine Passwörter:**  
+   Erst SSH-Key einrichten und testen, dann auf dem Server:
+   ```bash
+   sudo sed -i 's/#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+   sudo systemctl reload sshd
+   ```
+2. **SSH auf anderen Port:** z.B. Port 2222, dann in Firewall nur 2222 öffnen und 22 schließen – reduziert Lärm in den Logs.
+3. **Volles Hardening:** `sudo bash scripts/server/complete-security-hardening.sh` (Backup/SSH-Test vorher beachten).
+
+### Kernel: „TCP: out of memory -- consider tuning tcp_mem“
+
+**Einschätzung:** Der Kernel meldet, dass die TCP-Puffer-Limits erreicht wurden (viele Verbindungen oder Lastspitzen). Kann Performance oder Stabilität beeinträchtigen.
+
+**Empfehlung:** Werte anheben (einmalig testen, bei Erfolg dauerhaft machen):
+
+```bash
+# Aktuelle Werte anzeigen
+sysctl net.ipv4.tcp_mem
+
+# Höhere Werte setzen (Beispiel für 1–2 GB RAM für TCP, Format: min pressure max)
+sudo sysctl -w net.ipv4.tcp_mem="65536 131072 262144"
+
+# Dauerhaft machen:
+echo 'net.ipv4.tcp_mem = 65536 131072 262144' | sudo tee -a /etc/sysctl.d/99-tcp-mem.conf
+sudo sysctl -p /etc/sysctl.d/99-tcp-mem.conf
+```
+
+Auf stark belasteten oder speicherarmen Servern die Werte eher vorsichtig wählen; bei 2–4 GB RAM können die obigen Werte ein guter Start sein. Nach Änderung: Logwatch/Logs beobachten, ob die Meldung seltener oder nicht mehr kommt.
+
+---
+
+## 9. Zusammenfassung
 
 **Was du jetzt hast:**
 
