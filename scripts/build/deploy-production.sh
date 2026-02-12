@@ -294,10 +294,11 @@ EOF
     
     print_status "Running certbot with dns-ionos plugin (this may take 1–2 minutes for DNS propagation)..."
     if ! docker run --rm \
+        --entrypoint sh \
         -v "$CERTBOT_VOL:/etc/letsencrypt" \
         -v "$(pwd)/$CRED_DIR:/.secrets:ro" \
         certbot/certbot \
-        sh -c "pip install -q certbot-dns-ionos && certbot certonly \
+        -c "pip install -q certbot-dns-ionos && certbot certonly \
             --authenticator dns-ionos \
             --dns-ionos-credentials /.secrets/ionos.ini \
             --dns-ionos-propagation-seconds 60 \
