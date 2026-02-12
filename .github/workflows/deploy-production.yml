@@ -206,7 +206,7 @@ jobs:
 
       - name: Verify Nginx is serving HTTPS (evidoxa.com)
         run: |
-          ssh root@217.154.198.215 "curl -k -s -o /dev/null -w '%{http_code}' --connect-timeout 5 https://127.0.0.1:443 -H 'Host: evidoxa.com' | grep -qE '^[23][0-9][0-9]$' || (echo 'Nginx may have failed to start (e.g. missing cert for a server_name). Check: docker logs historian-nginx --tail 20' && exit 1)"
+          ssh root@217.154.198.215 'sleep 5; for i in 1 2 3 4 5; do code=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 5 https://127.0.0.1:443 -H "Host: evidoxa.com"); if echo "$code" | grep -qE "^[23][0-9][0-9]$"; then echo "Nginx HTTPS OK ($code)"; exit 0; fi; echo "Attempt $i: got HTTP $code"; sleep 3; done; echo "Nginx may have failed to start (e.g. missing cert). Check: docker logs historian-nginx --tail 20"; exit 1'
 
       - name: Check deployment status
         run: |
