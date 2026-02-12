@@ -78,7 +78,7 @@ export default function CustomToolbar() {
             render={({ ref, ...controlProps }, state) => (
               <StyledTextField
                 {...controlProps}
-                
+                ownerState={{ expanded: state.expanded }}
                 inputRef={ref}
                 aria-label="Search"
                 placeholder="Search..."

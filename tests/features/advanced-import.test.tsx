@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import BulkEditModal from '../../app/components/BulkEditModal';
-import ImportHistory from '../../app/components/ImportHistory';
-import { parseFuzzyDate, normalizePlaceName, calculateNameSimilarity, detectPersonDuplicates } from '../../app/lib/fuzzyData';
+import BulkEditModal from '../../app/components/ui/BulkEditModal';
+import ImportHistory from '../../app/components/data/ImportHistory';
+import { parseFuzzyDate, normalizePlaceName, calculateNameSimilarity, detectPersonDuplicates } from '../../app/lib/utils/fuzzyData';
 
 // Mock fetch
 global.fetch = jest.fn();

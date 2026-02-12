@@ -23,8 +23,13 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Paths: script is in scripts/build/, run from repo root (e.g. /opt/historian-app/production)
+COMPOSE_FILE="docker/docker-compose.production.yml"
+NGINX_DIR="docker/nginx"
+
 # Ensure nginx.active.conf exists for initial deployment
-cp nginx/nginx.conf nginx/nginx.active.conf
+mkdir -p "$NGINX_DIR"
+cp "$NGINX_DIR/nginx.conf" "$NGINX_DIR/nginx.active.conf" 2>/dev/null || true
 
 # Check if .env exists
 if [ ! -f .env ]; then
@@ -38,7 +43,7 @@ export $(cat .env | grep -v '^#' | xargs)
 
 # Function to check if containers are running
 check_containers() {
-    if docker-compose -f docker-compose.production.yml ps | grep -q "Up"; then
+    if docker-compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
         return 0
     else
         return 1
@@ -73,10 +78,10 @@ start_services() {
     
     # Run Prisma migrations before starting services
     print_status "Running Prisma migrations (npx prisma migrate deploy)..."
-    docker-compose -f docker-compose.production.yml --env-file .env run --rm app npx prisma migrate deploy
+    docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm app npx prisma migrate deploy
     print_status "Prisma migrations completed."
     # Start services
-    docker-compose -f docker-compose.production.yml --env-file .env up -d
+    docker-compose -f "$COMPOSE_FILE" --env-file .env up -d
     
     print_status "Services started successfully!"
     print_status "Application will be available at: https://$DOMAIN"
@@ -86,21 +91,21 @@ start_services() {
 # Function to stop services
 stop_services() {
     print_status "Stopping Historian App services..."
-    docker-compose -f docker-compose.production.yml down
+    docker-compose -f "$COMPOSE_FILE" down
     print_status "Services stopped successfully!"
 }
 
 # Function to restart services
 restart_services() {
     print_status "Restarting Historian App services..."
-    docker-compose -f docker-compose.production.yml restart
+    docker-compose -f "$COMPOSE_FILE" restart
     print_status "Services restarted successfully!"
 }
 
 # Function to show status
 show_status() {
     print_status "Service Status:"
-    docker-compose -f docker-compose.production.yml ps
+    docker-compose -f "$COMPOSE_FILE" ps
     
     echo ""
     print_status "Resource Usage:"
@@ -111,10 +116,10 @@ show_status() {
 show_logs() {
     if [ -z "$1" ]; then
         print_status "Showing logs for all services..."
-        docker-compose -f docker-compose.production.yml logs -f
+        docker-compose -f "$COMPOSE_FILE" logs -f
     else
         print_status "Showing logs for $1..."
-        docker-compose -f docker-compose.production.yml logs -f "$1"
+        docker-compose -f "$COMPOSE_FILE" logs -f "$1"
     fi
 }
 
@@ -140,8 +145,8 @@ setup_ssl() {
 
     # Ensure nginx is using HTTP-only config for ACME challenge
     print_status "Ensuring nginx is running with HTTP-only config for ACME challenge..."
-    cp nginx/nginx.conf nginx/nginx.active.conf
-    docker-compose -f docker-compose.production.yml up -d nginx
+    cp "$NGINX_DIR/nginx.conf" "$NGINX_DIR/nginx.active.conf"
+    docker-compose -f "$COMPOSE_FILE" up -d nginx
 
     print_status "Waiting for nginx to be ready..."
     sleep 5
@@ -158,7 +163,7 @@ setup_ssl() {
 
     # Run certbot to get certificates for main domain
     print_status "Requesting SSL certificate for $DOMAIN..."
-    docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot certonly \
+    docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certonly \
         --webroot \
         --webroot-path=/var/www/certbot \
         --email "$SSL_EMAIL" \
@@ -168,10 +173,10 @@ setup_ssl() {
         -d "$DOMAIN"
 
     # Update Nginx config to use SSL if certificates exist
-    if docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
+    if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
         print_status "SSL certificates found. Switching to SSL-enabled Nginx configuration..."
-        cp nginx/nginx-ssl.conf nginx/nginx.active.conf
-        docker-compose -f docker-compose.production.yml up -d nginx
+        cp "$NGINX_DIR/nginx-ssl.conf" "$NGINX_DIR/nginx.active.conf"
+        docker-compose -f "$COMPOSE_FILE" up -d nginx
         print_status "Nginx SSL configuration updated and nginx reloaded!"
     else
         print_warning "SSL certificates not found. Using HTTP-only configuration."
@@ -186,13 +191,13 @@ renew_ssl() {
     print_status "Renewing SSL certificates..."
     
     # Stop nginx temporarily
-    docker-compose -f docker-compose.production.yml stop nginx
+    docker-compose -f "$COMPOSE_FILE" stop nginx
     
     # Run certbot renewal with non-interactive flag
-    docker-compose -f docker-compose.production.yml --env-file .env run --rm certbot renew --non-interactive --keep-until-expiring
+    docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot renew --non-interactive --keep-until-expiring
     
     # Start nginx again
-    docker-compose -f docker-compose.production.yml start nginx
+    docker-compose -f "$COMPOSE_FILE" start nginx
     
     print_status "SSL renewal completed!"
 }
@@ -249,7 +254,7 @@ monitor_system() {
     
     echo ""
     echo "Recent Logs:"
-    docker-compose -f docker-compose.production.yml logs --tail=20
+    docker-compose -f "$COMPOSE_FILE" logs --tail=20
 }
 
 # Function to update application
@@ -263,9 +268,9 @@ update_application() {
     git pull origin main
     
     # Rebuild and restart services
-    docker-compose -f docker-compose.production.yml down
-    docker-compose -f docker-compose.production.yml build --no-cache
-    docker-compose -f docker-compose.production.yml up -d
+    docker-compose -f "$COMPOSE_FILE" down
+    docker-compose -f "$COMPOSE_FILE" build --no-cache
+    docker-compose -f "$COMPOSE_FILE" up -d
     
     print_status "Application updated successfully!"
 }

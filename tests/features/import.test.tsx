@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ImportPersons from '../../app/components/ImportPersons';
-import ImportEvents from '../../app/components/ImportEvents';
+import ImportPersons from '../../app/components/data/ImportPersons';
+import ImportEvents from '../../app/components/data/ImportEvents';
 
 // Mock Next.js router
 const mockPush = jest.fn();

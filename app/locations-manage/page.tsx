@@ -608,7 +608,7 @@ export default function LocationsManagePage() {
                         label="Breitengrad"
                         type="number"
                         value={selectedLocation.latitude || ''}
-                        onChange={(e) => setSelectedLocation(prev => prev ? { ...prev, latitude: parseFloat(e.target.value) || null } : null)}
+                        onChange={(e) => setSelectedLocation(prev => prev ? { ...prev, latitude: Number.isFinite(parseFloat(e.target.value)) ? parseFloat(e.target.value) : undefined } : null)}
                         fullWidth
                         inputProps={{ step: "0.0001" }}
                       />
@@ -619,7 +619,7 @@ export default function LocationsManagePage() {
                         label="Längengrad"
                         type="number"
                         value={selectedLocation.longitude || ''}
-                        onChange={(e) => setSelectedLocation(prev => prev ? { ...prev, longitude: parseFloat(e.target.value) || null } : null)}
+                        onChange={(e) => setSelectedLocation(prev => prev ? { ...prev, longitude: Number.isFinite(parseFloat(e.target.value)) ? parseFloat(e.target.value) : undefined } : null)}
                         fullWidth
                         inputProps={{ step: "0.0001" }}
                       />

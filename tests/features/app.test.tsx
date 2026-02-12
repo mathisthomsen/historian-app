@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import PersonForm from '../../app/components/PersonForm';
+import PersonForm from '../../app/components/forms/PersonForm';
 
 // Mock fetch globally for all tests
 beforeAll(() => {

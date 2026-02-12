@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod'
-import { validatePassword, validateEmail, validateName } from '../../app/lib/validation'
+import { validatePassword, validateEmail, validateName } from '../../app/lib/utils/validation'
 
 // Validation schema
 const registerSchema = z.object({

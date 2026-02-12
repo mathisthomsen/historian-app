@@ -10,7 +10,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
-    "test": "jest",
+    "test": "jest --config config/jest.config.js",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "check": "npm run lint && npm run type-check && npm run test && npm run build",

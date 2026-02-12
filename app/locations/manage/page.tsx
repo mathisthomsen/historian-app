@@ -205,7 +205,7 @@ export default function LocationManagePage() {
         ) : (
           <Grid container spacing={2}>
             {locations.map((location) => (
-              <Grid item xs={12} sm={6} md={4} key={location.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={location.id}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>

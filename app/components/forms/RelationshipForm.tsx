@@ -60,10 +60,11 @@ type Statement = {
 };
 
 type Props = {
-  mode: 'create' | 'edit';
+  mode?: 'create' | 'edit';
   relationshipId?: number;
+  fromPersonId?: number;
   onClose?: () => void;
-  onResult?: (result: { success: boolean; message: string; relationship?: any }) => void;
+  onResult?: (result: { success: boolean; message: string; relationship?: unknown }) => void;
 };
 
 // Valid relationship types
@@ -94,11 +95,11 @@ const RELATIONSHIP_TYPES = [
   { value: 'rival', label: 'Rivale', description: 'War Rivale bei dem Ereignis' },
 ];
 
-export default function RelationshipForm({ mode, relationshipId, onClose, onResult }: Props) {
+export default function RelationshipForm({ mode = 'create', relationshipId, fromPersonId, onClose, onResult }: Props) {
   const router = useRouter();
   const { selectedProject } = useProject();
   const [formData, setFormData] = useState<RelationshipData>({
-    person_id: 0,
+    person_id: fromPersonId ?? 0,
     event_id: 0,
     relationship_type: '',
     statement_id: undefined,
