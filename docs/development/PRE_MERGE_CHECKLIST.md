@@ -91,8 +91,14 @@ Vor dem richtigen Betrieb von WordPress (bhgv.evidoxa.com) prüfen:
 
 ### 4.1 Server & Docker
 
-- [ ] Nach Deploy: `docker-compose -f docker/docker-compose.production.yml ps` auf dem Server – alle erwarteten Container „Up“
-- [ ] Historian App erreichbar: https://evidoxa.com
+- [ ] Nach Deploy: auf dem Server `./scripts/build/compose-production.sh ps` (oder `docker-compose -f docker/docker-compose.production.yml --env-file .env ps`) – alle erwarteten Container „Up“, keine Variablen-Warnungen
+- [ ] Historian App erreichbar: https://evidoxa.com  
+  **Hinweis:** Die „variable is not set“-Warnungen beim manuellen `docker-compose ps` erklären **nicht**, warum die Seite nicht erreichbar ist (die Container wurden vom Workflow mit `.env` gestartet). Wenn evidoxa.com nicht erreichbar ist, prüfen:
+  - **DNS:** `evidoxa.com` und ggf. `www.evidoxa.com` zeigen auf die Server-IP (z. B. 217.154.198.215).
+  - **Firewall:** Ports 80 und 443 vom Internet zum Server offen (Provider/Cloud Security Groups). Bei „Connection refused“ von außen (z. B. `curl -vI https://evidoxa.com`): auf dem Server `sudo ufw status` prüfen; falls 80/443 fehlen: `sudo ufw allow 80/tcp`, `sudo ufw allow 443/tcp`, `sudo ufw reload`. Zusätzlich beim VPS-Provider (Hetzner, AWS, etc.) Security Groups / Firewall-Regeln prüfen – eingehend TCP 80 und 443 von 0.0.0.0/0 (oder deinem Zugangsnetz) erlauben.
+  - **SSL-Schritt:** Wenn der Schritt „Setup SSL certificates“ im Deploy fehlgeschlagen ist, nutzt Nginx nur die HTTP-Config (Port 80 → Redirect auf HTTPS, aber **kein** `listen 443`). Dann ist **https://** evidoxa.com nicht erreichbar. Lösung: SSL-Step im Workflow erfolgreich durchlaufen lassen oder auf dem Server manuell `./scripts/build/deploy-production.sh ssl` ausführen; danach wechselt Nginx auf die SSL-Config.
+  - **Nginx-Config auf dem Server:** `cat docker/nginx/nginx.active.conf | grep -E 'listen|server_name'` – sollte `listen 443` und `server_name evidoxa.com` enthalten, wenn SSL aktiv ist.
+  - **Falls Nginx „cannot load certificate … fullchain.pem“ loggt:** Beim Start waren die Zertifikate im Container nicht auffindbar (Volume-Zeitpunkt, Symlinks). Prüfen: `docker exec historian-nginx ls -la /etc/letsencrypt/archive/evidoxa.com/`. Wenn die Dateien existieren: Nginx neu starten (`docker restart historian-nginx` oder per compose). Wenn die Dateien fehlen: SSL erneut einrichten (`./scripts/build/deploy-production.sh ssl`).
 - [ ] WordPress-Container (falls schon im gleichen Stack): erreichbar unter der vorgesehenen URL (z. B. bhgv.evidoxa.com), sobald DNS und Nginx dafür konfiguriert sind
 
 ### 4.2 SSL & Domain

@@ -1,5 +1,6 @@
-# When run with: cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml
-# Compose file dir is docker/, so use ../ for project root (.env, logs, build context).
+# When run with: cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml --env-file .env
+# (--env-file .env avoids "variable is not set" warnings; or use ./scripts/build/compose-production.sh)
+# Compose file dir is docker/, so use ../ for project root (logs, build context).
 services:
   # Next.js Application
   app:

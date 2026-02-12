@@ -24,6 +24,8 @@ print_error() {
 }
 
 # Paths: script is in scripts/build/, run from repo root (e.g. /opt/historian-app/production)
+# Note: Compose is always run with --env-file .env to avoid "variable is not set" warnings
+#       (with -f docker/... the project dir is docker/, so .env in repo root is not auto-loaded).
 COMPOSE_FILE="docker/docker-compose.production.yml"
 NGINX_DIR="docker/nginx"
 
@@ -181,7 +183,13 @@ setup_ssl() {
     # Update Nginx config to use SSL if certificates exist
     if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
         print_status "SSL certificates found. Switching to SSL-enabled Nginx configuration..."
-        cp "$NGINX_DIR/nginx-ssl.conf" "$NGINX_DIR/nginx.active.conf"
+        # Use full SSL config only if bhgv.evidoxa.com cert exists (otherwise Nginx would fail to start)
+        if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "bhgv.evidoxa.com"; then
+            cp "$NGINX_DIR/nginx-ssl.conf" "$NGINX_DIR/nginx.active.conf"
+        else
+            print_warning "bhgv.evidoxa.com cert not in this volume; using evidoxa.com-only SSL config."
+            cp "$NGINX_DIR/nginx-ssl-evidoxa-only.conf" "$NGINX_DIR/nginx.active.conf"
+        fi
         docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
         print_status "Nginx SSL configuration updated and nginx reloaded!"
     else
