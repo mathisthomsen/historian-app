@@ -185,7 +185,7 @@ jobs:
 
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml --env-file .env down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-nginx 2>/dev/null || true && docker-compose -f docker/docker-compose.production.yml --env-file .env build --build-arg DATABASE_URL='${{ secrets.DATABASE_URL }}' --build-arg DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' --build-arg RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' && docker-compose -f docker/docker-compose.production.yml --env-file .env up -d"
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml --env-file .env down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-nginx 2>/dev/null || true && docker-compose -f docker/docker-compose.production.yml --env-file .env build --build-arg DATABASE_URL='${{ secrets.DATABASE_URL }}' --build-arg DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' --build-arg RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' && docker-compose -f docker/docker-compose.production.yml --env-file .env up -d app redis nginx"
 
       - name: Wait for containers to be ready
         run: |

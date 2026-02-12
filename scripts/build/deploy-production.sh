@@ -161,6 +161,12 @@ setup_ssl() {
         fi
     done
 
+    # Avoid "Another instance of Certbot is already running": stop any certbot container and remove stale lock
+    print_status "Ensuring no other Certbot instance or stale lock..."
+    docker-compose -f "$COMPOSE_FILE" --env-file .env stop certbot 2>/dev/null || true
+    docker-compose -f "$COMPOSE_FILE" --env-file .env rm -f certbot 2>/dev/null || true
+    docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm --entrypoint sh certbot -c "rm -f /etc/letsencrypt/.certbot.lock /var/log/letsencrypt/.certbot.lock 2>/dev/null; true" 2>/dev/null || true
+
     # Run certbot to get certificates for main domain
     print_status "Requesting SSL certificate for $DOMAIN..."
     docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certonly \
