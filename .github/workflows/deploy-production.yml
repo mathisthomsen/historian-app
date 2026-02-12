@@ -159,6 +159,10 @@ jobs:
           ALLOWED_FILE_TYPES=".csv,.xlsx,.json"
           EOF"
 
+      - name: Ensure nginx.active.conf exists on server
+        run: |
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && test -f docker/nginx/nginx.active.conf || cp docker/nginx/nginx.conf docker/nginx/nginx.active.conf"
+
       - name: Ensure WordPress network and volume exist
         run: |
           ssh root@217.154.198.215 "
