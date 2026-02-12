@@ -169,7 +169,7 @@ setup_ssl() {
     docker-compose -f "$COMPOSE_FILE" --env-file .env rm -f certbot 2>/dev/null || true
     docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm --entrypoint sh certbot -c "rm -f /etc/letsencrypt/.certbot.lock /var/log/letsencrypt/.certbot.lock 2>/dev/null; true" 2>/dev/null || true
 
-    # Run certbot to get certificates for main domain
+    # Run certbot to get certificates for main domain (do not exit on failure so we still restore SSL config if cert exists)
     print_status "Requesting SSL certificate for $DOMAIN..."
     docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certonly \
         --webroot \
@@ -178,9 +178,9 @@ setup_ssl() {
         --agree-tos \
         --no-eff-email \
         --non-interactive \
-        -d "$DOMAIN"
+        -d "$DOMAIN" || true
 
-    # Update Nginx config to use SSL if certificates exist
+    # Update Nginx config to use SSL if certificates exist (always run so we restore SSL config even when certonly failed)
     if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
         print_status "SSL certificates found. Switching to SSL-enabled Nginx configuration..."
         # Use full SSL config only if bhgv.evidoxa.com cert exists (otherwise Nginx would fail to start)

@@ -204,9 +204,17 @@ jobs:
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/production && ./scripts/build/deploy-production.sh ssl"
 
-      - name: Verify Nginx is serving HTTPS (evidoxa.com)
+      - name: Verify Nginx is serving (evidoxa.com)
         run: |
-          ssh root@217.154.198.215 'sleep 5; for i in 1 2 3 4 5; do code=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 5 https://127.0.0.1:443 -H "Host: evidoxa.com"); if echo "$code" | grep -qE "^[23][0-9][0-9]$"; then echo "Nginx HTTPS OK ($code)"; exit 0; fi; echo "Attempt $i: got HTTP $code"; sleep 3; done; echo "Nginx may have failed to start (e.g. missing cert). Check: docker logs historian-nginx --tail 20"; exit 1'
+          ssh root@217.154.198.215 'sleep 5
+          for i in 1 2 3 4 5; do
+            code443=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 5 https://127.0.0.1:443 -H "Host: evidoxa.com")
+            if echo "$code443" | grep -qE "^[23][0-9][0-9]$"; then echo "Nginx HTTPS OK (443 -> $code443)"; exit 0; fi
+            code80=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 http://127.0.0.1:80 -H "Host: evidoxa.com")
+            if echo "$code80" | grep -qE "^[23][0-9][0-9]$"; then echo "Nginx HTTP OK (80 -> $code80) but HTTPS failed (443 -> $code443). SSL step may have left HTTP-only config; check certbot/deploy."; exit 0; fi
+            echo "Attempt $i: 443=$code443 80=$code80"; sleep 3
+          done
+          echo "Nginx not responding on 443 or 80. Check: docker logs historian-nginx --tail 20"; exit 1'
 
       - name: Check deployment status
         run: |
