@@ -43,7 +43,7 @@ export $(cat .env | grep -v '^#' | xargs)
 
 # Function to check if containers are running
 check_containers() {
-    if docker-compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
+    if docker-compose -f "$COMPOSE_FILE" --env-file .env ps | grep -q "Up"; then
         return 0
     else
         return 1
@@ -91,21 +91,21 @@ start_services() {
 # Function to stop services
 stop_services() {
     print_status "Stopping Historian App services..."
-    docker-compose -f "$COMPOSE_FILE" down
+    docker-compose -f "$COMPOSE_FILE" --env-file .env down
     print_status "Services stopped successfully!"
 }
 
 # Function to restart services
 restart_services() {
     print_status "Restarting Historian App services..."
-    docker-compose -f "$COMPOSE_FILE" restart
+    docker-compose -f "$COMPOSE_FILE" --env-file .env restart
     print_status "Services restarted successfully!"
 }
 
 # Function to show status
 show_status() {
     print_status "Service Status:"
-    docker-compose -f "$COMPOSE_FILE" ps
+    docker-compose -f "$COMPOSE_FILE" --env-file .env ps
     
     echo ""
     print_status "Resource Usage:"
@@ -116,10 +116,10 @@ show_status() {
 show_logs() {
     if [ -z "$1" ]; then
         print_status "Showing logs for all services..."
-        docker-compose -f "$COMPOSE_FILE" logs -f
+        docker-compose -f "$COMPOSE_FILE" --env-file .env logs -f
     else
         print_status "Showing logs for $1..."
-        docker-compose -f "$COMPOSE_FILE" logs -f "$1"
+        docker-compose -f "$COMPOSE_FILE" --env-file .env logs -f "$1"
     fi
 }
 
@@ -146,7 +146,7 @@ setup_ssl() {
     # Ensure nginx is using HTTP-only config for ACME challenge
     print_status "Ensuring nginx is running with HTTP-only config for ACME challenge..."
     cp "$NGINX_DIR/nginx.conf" "$NGINX_DIR/nginx.active.conf"
-    docker-compose -f "$COMPOSE_FILE" up -d nginx
+    docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
 
     print_status "Waiting for nginx to be ready..."
     sleep 5
@@ -176,7 +176,7 @@ setup_ssl() {
     if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
         print_status "SSL certificates found. Switching to SSL-enabled Nginx configuration..."
         cp "$NGINX_DIR/nginx-ssl.conf" "$NGINX_DIR/nginx.active.conf"
-        docker-compose -f "$COMPOSE_FILE" up -d nginx
+        docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
         print_status "Nginx SSL configuration updated and nginx reloaded!"
     else
         print_warning "SSL certificates not found. Using HTTP-only configuration."
@@ -191,13 +191,13 @@ renew_ssl() {
     print_status "Renewing SSL certificates..."
     
     # Stop nginx temporarily
-    docker-compose -f "$COMPOSE_FILE" stop nginx
+    docker-compose -f "$COMPOSE_FILE" --env-file .env stop nginx
     
     # Run certbot renewal with non-interactive flag
     docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot renew --non-interactive --keep-until-expiring
     
     # Start nginx again
-    docker-compose -f "$COMPOSE_FILE" start nginx
+    docker-compose -f "$COMPOSE_FILE" --env-file .env start nginx
     
     print_status "SSL renewal completed!"
 }
@@ -254,7 +254,7 @@ monitor_system() {
     
     echo ""
     echo "Recent Logs:"
-    docker-compose -f "$COMPOSE_FILE" logs --tail=20
+    docker-compose -f "$COMPOSE_FILE" --env-file .env logs --tail=20
 }
 
 # Function to update application
@@ -268,9 +268,9 @@ update_application() {
     git pull origin main
     
     # Rebuild and restart services
-    docker-compose -f "$COMPOSE_FILE" down
-    docker-compose -f "$COMPOSE_FILE" build --no-cache
-    docker-compose -f "$COMPOSE_FILE" up -d
+    docker-compose -f "$COMPOSE_FILE" --env-file .env down
+    docker-compose -f "$COMPOSE_FILE" --env-file .env build --no-cache
+    docker-compose -f "$COMPOSE_FILE" --env-file .env up -d
     
     print_status "Application updated successfully!"
 }

@@ -181,13 +181,12 @@ jobs:
 
       - name: Deploy on VPS
         run: |
-          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-nginx 2>/dev/null || true && DATABASE_URL='${{ secrets.DATABASE_URL }}' DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' docker-compose -f docker/docker-compose.production.yml build --build-arg DATABASE_URL='${{ secrets.DATABASE_URL }}' --build-arg DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' --build-arg RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' && docker-compose -f docker/docker-compose.production.yml up -d"
+          ssh root@217.154.198.215 "cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml --env-file .env down --remove-orphans && docker rm -f historian-redis historian-certbot historian-app historian-nginx 2>/dev/null || true && docker-compose -f docker/docker-compose.production.yml --env-file .env build --build-arg DATABASE_URL='${{ secrets.DATABASE_URL }}' --build-arg DATABASE_URL_UNPOOLED='${{ secrets.DATABASE_URL_UNPOOLED }}' --build-arg RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' && docker-compose -f docker/docker-compose.production.yml --env-file .env up -d"
 
       - name: Wait for containers to be ready
         run: |
-          ssh root@217.154.198.215 '
-            for i in {1..12}; do
-              if docker-compose -f /opt/historian-app/production/docker/docker-compose.production.yml ps | grep -q "Up"; then
+          ssh root@217.154.198.215 'cd /opt/historian-app/production && for i in {1..12}; do
+              if docker-compose -f docker/docker-compose.production.yml --env-file .env ps | grep -q "Up"; then
                 echo "All containers are up!"
                 break
               else
@@ -195,8 +194,7 @@ jobs:
                 sleep 5
               fi
             done
-            docker-compose -f /opt/historian-app/production/docker/docker-compose.production.yml ps
-          '
+            docker-compose -f docker/docker-compose.production.yml --env-file .env ps'
 
       - name: Setup SSL certificates
         run: |
@@ -204,7 +202,7 @@ jobs:
 
       - name: Check deployment status
         run: |
-          ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/production/docker/docker-compose.production.yml ps'
+          ssh root@217.154.198.215 'cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml --env-file .env ps'
 
       - name: Health check
         run: |
@@ -213,7 +211,7 @@ jobs:
       - name: Show container logs if health check fails
         if: failure()
         run: |
-          ssh root@217.154.198.215 'docker-compose -f /opt/historian-app/production/docker/docker-compose.production.yml logs --tail=50' 
+          ssh root@217.154.198.215 'cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml --env-file .env logs --tail=50' 
 
       - name: Close SSH master connection
         run: |
