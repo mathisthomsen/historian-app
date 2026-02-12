@@ -62,8 +62,9 @@ usage() {
     echo "  restart - Restart all services"
     echo "  status  - Show service status"
     echo "  logs    - Show logs (all services)"
-    echo "  ssl     - Set up SSL certificates"
-    echo "  renew   - Renew SSL certificates"
+    echo "  ssl       - Set up SSL certificates (main domain from .env)"
+    echo "  ssl-bhgv  - Request SSL cert for bhgv.evidoxa.com and enable full Nginx SSL config"
+    echo "  renew     - Renew SSL certificates"
     echo "  backup  - Create database backup"
     echo "  monitor - Show system resources"
     echo "  update  - Update application from git"
@@ -200,6 +201,48 @@ setup_ssl() {
     print_status "Certificate will auto-renew daily at 12:00 PM"
 }
 
+# Function to request SSL for bhgv.evidoxa.com and switch to full Nginx SSL config
+setup_ssl_bhgv() {
+    print_status "Requesting SSL certificate for bhgv.evidoxa.com and enabling full SSL config..."
+    BHGV_DOMAIN="bhgv.evidoxa.com"
+    
+    if [ -z "$SSL_EMAIL" ]; then
+        print_error "SSL_EMAIL not configured in .env"
+        exit 1
+    fi
+    
+    mkdir -p certbot/{conf,www}
+    mkdir -p certbot/www/.well-known/acme-challenge
+    
+    print_status "Ensuring nginx is on HTTP-only config for ACME challenge..."
+    cp "$NGINX_DIR/nginx.conf" "$NGINX_DIR/nginx.active.conf"
+    docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
+    sleep 5
+    
+    docker-compose -f "$COMPOSE_FILE" --env-file .env stop certbot 2>/dev/null || true
+    docker-compose -f "$COMPOSE_FILE" --env-file .env rm -f certbot 2>/dev/null || true
+    docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm --entrypoint sh certbot -c "rm -f /etc/letsencrypt/.certbot.lock /var/log/letsencrypt/.certbot.lock 2>/dev/null; true" 2>/dev/null || true
+    
+    print_status "Requesting SSL certificate for $BHGV_DOMAIN..."
+    docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certonly \
+        --webroot \
+        --webroot-path=/var/www/certbot \
+        --email "$SSL_EMAIL" \
+        --agree-tos \
+        --no-eff-email \
+        --non-interactive \
+        -d "$BHGV_DOMAIN" || true
+    
+    if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$BHGV_DOMAIN"; then
+        print_status "Certificate for $BHGV_DOMAIN found. Switching to full Nginx SSL config..."
+        cp "$NGINX_DIR/nginx-ssl.conf" "$NGINX_DIR/nginx.active.conf"
+        docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
+        print_status "Nginx updated; both evidoxa.com and bhgv.evidoxa.com should now use valid HTTPS."
+    else
+        print_warning "Certificate for $BHGV_DOMAIN not found. Check certbot logs. Keeping current Nginx config."
+    fi
+}
+
 # Function to renew SSL certificates
 renew_ssl() {
     print_status "Renewing SSL certificates..."
@@ -308,6 +351,9 @@ case "$1" in
         ;;
     ssl)
         setup_ssl
+        ;;
+    ssl-bhgv)
+        setup_ssl_bhgv
         ;;
     renew)
         renew_ssl
