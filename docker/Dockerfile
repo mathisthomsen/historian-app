@@ -1,3 +1,5 @@
+# Build context: project root (docker-compose uses context: ..).
+# Paths in COPY are relative to project root (e.g. config/next.config.mjs, app/, prisma/).
 # Use the official Node.js runtime as the base image
 FROM node:20-alpine AS base
 
@@ -47,7 +49,7 @@ COPY package.json package-lock.json* ./
 COPY prisma ./prisma
 COPY app ./app
 COPY public ./public
-COPY next.config.mjs ./
+COPY config/next.config.mjs ./
 COPY tsconfig.json ./
 
 # Build the application with memory optimizations
