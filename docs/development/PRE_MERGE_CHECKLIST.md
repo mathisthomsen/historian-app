@@ -141,3 +141,5 @@ Vor dem richtigen Betrieb von WordPress (bhgv.evidoxa.com) prüfen:
 - Doku: `docs/development/`
 
 Wenn du etwas davon verschiebst, bitte auch den GitHub-Workflow und ggf. Server-Scripts anpassen.
+
+**SSL/Deploy-Ablauf (evidoxa + bhgv):** [DEPLOY_SSL_FLOW.md](DEPLOY_SSL_FLOW.md) – Ablauf, Fallbacks, was bei „beide Seiten down“ zu tun ist.

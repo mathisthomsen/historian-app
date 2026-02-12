@@ -192,9 +192,17 @@ setup_ssl() {
             cp "$NGINX_DIR/nginx-ssl-evidoxa-only.conf" "$NGINX_DIR/nginx.active.conf"
         fi
         docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
+        sleep 3
+        # If Nginx failed to start (e.g. full config but missing bhgv cert), fallback to evidoxa-only
+        code=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 3 https://127.0.0.1:443 -H "Host: $DOMAIN" 2>/dev/null || echo "000")
+        if ! echo "$code" | grep -qE "^[23][0-9][0-9]$"; then
+            print_warning "Nginx not responding on 443 (got $code). Falling back to evidoxa.com-only SSL config."
+            cp "$NGINX_DIR/nginx-ssl-evidoxa-only.conf" "$NGINX_DIR/nginx.active.conf"
+            docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
+        fi
         print_status "Nginx SSL configuration updated and nginx reloaded!"
     else
-        print_warning "SSL certificates not found. Using HTTP-only configuration."
+        print_warning "SSL certificates not found. Leaving HTTP-only (or existing) Nginx config unchanged."
     fi
     
     print_status "SSL setup completed!"
@@ -237,9 +245,19 @@ setup_ssl_bhgv() {
         print_status "Certificate for $BHGV_DOMAIN found. Switching to full Nginx SSL config..."
         cp "$NGINX_DIR/nginx-ssl.conf" "$NGINX_DIR/nginx.active.conf"
         docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
-        print_status "Nginx updated; both evidoxa.com and bhgv.evidoxa.com should now use valid HTTPS."
+        sleep 3
+        code=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 3 https://127.0.0.1:443 -H "Host: evidoxa.com" 2>/dev/null || echo "000")
+        if ! echo "$code" | grep -qE "^[23][0-9][0-9]$"; then
+            print_warning "Nginx not responding on 443 after full config (got $code). Reverting to evidoxa.com-only."
+            cp "$NGINX_DIR/nginx-ssl-evidoxa-only.conf" "$NGINX_DIR/nginx.active.conf"
+            docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
+        else
+            print_status "Nginx updated; both evidoxa.com and bhgv.evidoxa.com should now use valid HTTPS."
+        fi
     else
-        print_warning "Certificate for $BHGV_DOMAIN not found. Check certbot logs. Keeping current Nginx config."
+        print_warning "Certificate for $BHGV_DOMAIN not found. Restoring evidoxa.com-only SSL so main site stays up."
+        cp "$NGINX_DIR/nginx-ssl-evidoxa-only.conf" "$NGINX_DIR/nginx.active.conf"
+        docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
     fi
 }
 
