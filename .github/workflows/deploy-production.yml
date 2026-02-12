@@ -204,6 +204,10 @@ jobs:
         run: |
           ssh root@217.154.198.215 "cd /opt/historian-app/production && ./scripts/build/deploy-production.sh ssl"
 
+      - name: Verify Nginx is serving HTTPS (evidoxa.com)
+        run: |
+          ssh root@217.154.198.215 "curl -k -s -o /dev/null -w '%{http_code}' --connect-timeout 5 https://127.0.0.1:443 -H 'Host: evidoxa.com' | grep -qE '^[23][0-9][0-9]$' || (echo 'Nginx may have failed to start (e.g. missing cert for a server_name). Check: docker logs historian-nginx --tail 20' && exit 1)"
+
       - name: Check deployment status
         run: |
           ssh root@217.154.198.215 'cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml --env-file .env ps'
