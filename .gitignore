@@ -32,6 +32,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Certbot Ionos API credentials (created on server for ssl-wildcard)
+certbot-secrets/
+
 # vercel
 .vercel
 

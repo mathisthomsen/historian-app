@@ -151,6 +151,9 @@ jobs:
           NODE_ENV=production
           DEBUG=false
           LOG_LEVEL=warn
+          # Ionos DNS Configuration
+          IONOS_DNS_PREFIX=${{ secrets.IONOS_DNS_PREFIX }}
+          IONOS_DNS_SECRET=${{ secrets.IONOS_DNS_SECRET }}
           # File Upload
           MAX_FILE_SIZE=10485760
           ALLOWED_FILE_TYPES=".csv,.xlsx,.json"

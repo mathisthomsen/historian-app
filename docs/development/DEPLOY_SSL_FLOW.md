@@ -51,11 +51,20 @@ cd /opt/historian-app/production
    docker restart historian-nginx
    ```
 
+## Wildcard-Zertifikat (evidoxa.com + *.evidoxa.com)
+
+Statt zwei getrennten Zertifikaten kannst du ein **Wildcard-Zertifikat** nutzen (ein Cert für evidoxa.com und alle Subdomains wie bhgv.evidoxa.com). Dann entfällt das Problem „bhgv zeigt evidoxa.com-Zertifikat / unsafe“.
+
+- **Anforderung:** Let's Encrypt Wildcard erfordert **DNS-01** (nicht HTTP-01). Dafür wird das Plugin **certbot-dns-ionos** und ein Ionos API-Zugang (Remote User) benötigt.
+- **Ablauf:** Siehe [SSL_WILDCARD_IONOS.md](SSL_WILDCARD_IONOS.md). Kurz: `IONOS_DNS_PREFIX` und `IONOS_DNS_SECRET` in `.env`, dann auf dem Server `./scripts/build/deploy-production.sh ssl-wildcard` ausführen.
+- **Nginx:** Danach wird `nginx-ssl-wildcard.conf` verwendet (ein Zertifikatspfad für beide Server-Blöcke).
+
 ## Config-Dateien (Überblick)
 
 | Datei | Verwendung |
 |-------|------------|
 | `nginx.conf` | Nur HTTP (Port 80), für ACME-Challenge; keine Zertifikate. |
 | `nginx-ssl-evidoxa-only.conf` | HTTPS nur für evidoxa.com. Wird genutzt, wenn kein bhgv-Zertifikat im Volume ist. |
-| `nginx-ssl.conf` | HTTPS für evidoxa.com und bhgv.evidoxa.com. Erfordert beide Zertifikate im Certbot-Volume. |
+| `nginx-ssl.conf` | HTTPS für evidoxa.com und bhgv.evidoxa.com. Erfordert **beide** Zertifikate im Certbot-Volume. |
+| `nginx-ssl-wildcard.conf` | HTTPS für evidoxa.com und bhgv.evidoxa.com mit **einem** Wildcard-Zertifikat (evidoxa.com + *.evidoxa.com). |
 | `nginx.active.conf` | Wird auf dem Server gesetzt; nicht im Repo mit rsync syncen. |

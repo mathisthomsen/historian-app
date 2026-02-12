@@ -54,7 +54,7 @@ check_containers() {
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 {up|down|restart|status|logs|ssl|renew|backup|monitor|update}"
+    echo "Usage: $0 {up|down|restart|status|logs|ssl|ssl-bhgv|ssl-wildcard|renew|backup|monitor|update}"
     echo ""
     echo "Commands:"
     echo "  up      - Start all services"
@@ -62,9 +62,10 @@ usage() {
     echo "  restart - Restart all services"
     echo "  status  - Show service status"
     echo "  logs    - Show logs (all services)"
-    echo "  ssl       - Set up SSL certificates (main domain from .env)"
-    echo "  ssl-bhgv  - Request SSL cert for bhgv.evidoxa.com and enable full Nginx SSL config"
-    echo "  renew     - Renew SSL certificates"
+    echo "  ssl         - Set up SSL certificates (main domain from .env, HTTP-01)"
+    echo "  ssl-bhgv    - Request SSL cert for bhgv.evidoxa.com and enable full Nginx SSL config"
+    echo "  ssl-wildcard - Request wildcard cert (evidoxa.com + *.evidoxa.com) via DNS-01 (Ionos); one cert for both sites"
+    echo "  renew       - Renew SSL certificates"
     echo "  backup  - Create database backup"
     echo "  monitor - Show system resources"
     echo "  update  - Update application from git"
@@ -261,6 +262,62 @@ setup_ssl_bhgv() {
     fi
 }
 
+# Function to request wildcard cert (evidoxa.com + *.evidoxa.com) via Ionos DNS-01 and switch to single-cert Nginx config
+setup_ssl_wildcard() {
+    print_status "Requesting wildcard certificate for evidoxa.com and *.evidoxa.com (DNS-01 via Ionos)..."
+    
+    if [ -z "$SSL_EMAIL" ]; then
+        print_error "SSL_EMAIL not configured in .env"
+        exit 1
+    fi
+    if [ -z "$IONOS_DNS_PREFIX" ] || [ -z "$IONOS_DNS_SECRET" ]; then
+        print_error "IONOS_DNS_PREFIX and IONOS_DNS_SECRET must be set in .env (Ionos Remote User API credentials). See docs/development/SSL_WILDCARD_IONOS.md"
+        exit 1
+    fi
+    
+    CRED_DIR="certbot-secrets"
+    CRED_FILE="$CRED_DIR/ionos.ini"
+    mkdir -p "$CRED_DIR"
+    chmod 700 "$CRED_DIR"
+    cat > "$CRED_FILE" << EOF
+dns_ionos_prefix = $IONOS_DNS_PREFIX
+dns_ionos_secret = $IONOS_DNS_SECRET
+dns_ionos_endpoint = ${IONOS_DNS_ENDPOINT:-https://api.hosting.ionos.com}
+EOF
+    chmod 600 "$CRED_FILE"
+    
+    CERTBOT_VOL=$(docker volume ls -q | grep certbot-etc | head -1)
+    if [ -z "$CERTBOT_VOL" ]; then
+        print_error "Could not find certbot-etc volume. Run 'docker-compose up -d' once to create it."
+        exit 1
+    fi
+    
+    print_status "Running certbot with dns-ionos plugin (this may take 1–2 minutes for DNS propagation)..."
+    if ! docker run --rm \
+        -v "$CERTBOT_VOL:/etc/letsencrypt" \
+        -v "$(pwd)/$CRED_DIR:/.secrets:ro" \
+        certbot/certbot \
+        sh -c "pip install -q certbot-dns-ionos && certbot certonly \
+            --authenticator dns-ionos \
+            --dns-ionos-credentials /.secrets/ionos.ini \
+            --dns-ionos-propagation-seconds 60 \
+            --agree-tos \
+            --no-eff-email \
+            --non-interactive \
+            --email $SSL_EMAIL \
+            -d evidoxa.com \
+            -d '*.evidoxa.com'"; then
+        print_error "Certbot wildcard request failed. Check DNS API credentials and that evidoxa.com DNS is at Ionos."
+        exit 1
+    fi
+    
+    print_status "Wildcard certificate obtained. Switching Nginx to wildcard config..."
+    cp "$NGINX_DIR/nginx-ssl-wildcard.conf" "$NGINX_DIR/nginx.active.conf"
+    docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
+    print_status "Done. evidoxa.com and bhgv.evidoxa.com now use the same wildcard certificate."
+    print_warning "Renewal: run 'certbot renew' with dns-ionos (e.g. same docker run with 'renew' instead of 'certonly'). Consider adding a renew-wildcard cron or script."
+}
+
 # Function to renew SSL certificates
 renew_ssl() {
     print_status "Renewing SSL certificates..."
@@ -372,6 +429,9 @@ case "$1" in
         ;;
     ssl-bhgv)
         setup_ssl_bhgv
+        ;;
+    ssl-wildcard)
+        setup_ssl_wildcard
         ;;
     renew)
         renew_ssl
