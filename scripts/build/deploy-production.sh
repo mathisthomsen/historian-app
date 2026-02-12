@@ -299,6 +299,7 @@ EOF
         -v "$(pwd)/$CRED_DIR:/.secrets:ro" \
         certbot/certbot \
         -c "pip install -q certbot-dns-ionos && certbot certonly \
+            --expand \
             --authenticator dns-ionos \
             --dns-ionos-credentials /.secrets/ionos.ini \
             --dns-ionos-propagation-seconds 60 \
