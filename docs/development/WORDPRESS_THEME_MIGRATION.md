@@ -81,28 +81,53 @@ ssh root@217.154.198.215
 docker restart wordpress-app
 ```
 
-**Option B: Direkt auf dem Server prüfen**
+**Option B: Wenn PHP im Container die uploads.ini nicht lädt (`php -i` zeigt „no value“)**
+
+Dann erzwingst du einen Temp-Ordner direkt in WordPress (funktioniert unabhängig von PHP):
 
 ```bash
 ssh root@217.154.198.215
 
-# Prüfen, ob /tmp im Container existiert und beschreibbar ist
-docker exec wordpress-app ls -la /tmp
-docker exec wordpress-app touch /tmp/test-wp && docker exec wordpress-app rm /tmp/test-wp
-
-# Falls nötig: Temp-Ordner unter wp-content anlegen und Berechtigungen setzen
+# 1. Temp-Ordner anlegen und für den Webserver schreibbar machen
 docker exec wordpress-app mkdir -p /var/www/html/wp-content/temp
 docker exec wordpress-app chown www-data:www-data /var/www/html/wp-content/temp
 docker exec wordpress-app chmod 775 /var/www/html/wp-content/temp
+
+# 2. WP_TEMP_DIR in wp-config.php eintragen (vor require_once wp-settings.php)
+# Hinweis: Wenn deine wp-config "require_once( ABSPATH ..." mit Klammern hat, ersetze die Zeile unten entsprechend.
+docker exec wordpress-app sed -i "/require_once ABSPATH . 'wp-settings.php';/i define( 'WP_TEMP_DIR', dirname(__FILE__) . '/wp-content/temp' );" /var/www/html/wp-config.php
 ```
 
-Wenn du einen eigenen Temp-Ordner nutzt, muss PHP ihn kennen: z. B. in `wp-config.php` (vor „That’s all, stop editing!“) einfügen:
+Danach Theme-Upload im Admin erneut testen.
 
-```php
-define('WP_TEMP_DIR', dirname(__FILE__) . '/wp-content/temp');
+**Debug: Was sieht WordPress im Web-Kontext? (wenn Upload weiterhin fehlschlägt)**
+
+Einmalig eine kleine PHP-Datei aufrufen (danach wieder löschen), um Temp-Pfad und Schreibrechte zu prüfen:
+
+```bash
+# Auf dem Server: Debug-Datei anlegen (als root, wird von www-data ausgeführt)
+docker exec wordpress-app sh -c 'echo "<?php require \"wp-load.php\"; header(\"Content-type: text/plain\"); \$t = get_temp_dir(); echo \"get_temp_dir: \" . \$t . \"\nwritable: \" . (is_writable(\$t) ? \"yes\" : \"no\") . \"\n\";" > /var/www/html/wp-content/temp-check.php'
+docker exec wordpress-app chown www-data:www-data /var/www/html/wp-content/temp-check.php
 ```
 
-**Option C: Theme ohne Admin-Upload einspielen (Methode 1)**
+Dann im Browser: `https://bhgv.evidoxa.com/wp-content/temp-check.php` aufrufen. Erwartung: `get_temp_dir: /var/www/html/wp-content/temp` und `writable: yes`. Anschließend löschen:
+
+```bash
+docker exec wordpress-app rm /var/www/html/wp-content/temp-check.php
+```
+
+**Option C: Nur prüfen (ohne Fix)**
+
+```bash
+# Prüfen, ob /tmp im Container existiert und beschreibbar ist
+docker exec wordpress-app ls -la /tmp
+docker exec wordpress-app touch /tmp/test-wp && docker exec wordpress-app rm /tmp/test-wp
+# Prüfen, ob uploads.ini im Container ankommt
+docker exec wordpress-app cat /usr/local/etc/php/conf.d/uploads.ini
+docker exec wordpress-app php -i | grep -E "upload_tmp_dir|sys_temp_dir"
+```
+
+**Option D: Theme ohne Admin-Upload einspielen (Methode 1)**
 
 Theme-ZIP per SCP auf den Server kopieren und im Container nach `wp-content/themes` entpacken (siehe Methode 1 oben) – dann wird der temporäre Ordner im WordPress-Admin nicht benötigt.
 

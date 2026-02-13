@@ -1,5 +1,9 @@
 FROM wordpress:php8.2-fpm
 
+# PHP Upload/Temp: fest im Image, damit upload_tmp_dir im Container immer gesetzt ist
+# (Volume-Mount von uploads.ini kann je nach Start-Pfad fehlen)
+COPY wordpress/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 # Install dependencies for wkhtmltopdf
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

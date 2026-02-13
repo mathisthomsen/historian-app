@@ -45,11 +45,15 @@ cd /opt/historian-app/production
 2. Aktive Config prüfen:  
    `grep -E 'listen|server_name' docker/nginx/nginx.active.conf`  
    – sollte `listen 443` und `server_name evidoxa.com` (und ggf. bhgv) enthalten.  
-3. Schnell wiederherstellen (nur evidoxa.com mit HTTPS):  
+3. **Schnell wiederherstellen** (einmal ausführen, dann prüfen ob evidoxa + bhgv wieder erreichbar):
    ```bash
-   cp docker/nginx/nginx-ssl-evidoxa-only.conf docker/nginx/nginx.active.conf
+   cd /opt/historian-app/production
+   # Wenn du Wildcard nutzt (empfohlen):
+   cp docker/nginx/nginx-ssl-wildcard.conf docker/nginx/nginx.active.conf
    docker restart historian-nginx
    ```
+   Ohne Wildcard (nur evidoxa.com mit HTTPS):  
+   `cp docker/nginx/nginx-ssl-evidoxa-only.conf docker/nginx/nginx.active.conf` dann `docker restart historian-nginx`.
 
 ## Wildcard-Zertifikat (evidoxa.com + *.evidoxa.com)
 

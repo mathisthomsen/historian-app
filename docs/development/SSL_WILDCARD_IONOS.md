@@ -63,23 +63,16 @@ Danach sollten **evidoxa.com** und **bhgv.evidoxa.com** mit demselben Zertifikat
 
 ## 5. Erneuerung (Renewal)
 
-Das Standard-`renew` im Deploy-Skript nutzt nur HTTP-01 (kein DNS-Plugin). Für das **Wildcard-Zertifikat** muss die Erneuerung mit demselben DNS-01-Setup laufen.
+Das Standard-`renew` im Deploy-Skript nutzt nur HTTP-01. Für das **Wildcard-Zertifikat** gibt es den Befehl **`renew-wildcard`** (nutzt DNS-01 wie bei ssl-wildcard).
 
-**Option A – manuell (z. B. per Cron auf dem Server):**
+**Manuell oder per Cron:**
 
 ```bash
 cd /opt/historian-app/production
-# Gleiche Umgebung wie bei ssl-wildcard (Volume + certbot-secrets)
-CERTBOT_VOL=$(docker volume ls -q | grep certbot-etc | head -1)
-docker run --rm \
-  -v "$CERTBOT_VOL:/etc/letsencrypt" \
-  -v "$(pwd)/certbot-secrets:/.secrets:ro" \
-  certbot/certbot sh -c "pip install -q certbot-dns-ionos && certbot renew --authenticator dns-ionos --dns-ionos-credentials /.secrets/ionos.ini --non-interactive"
-cp docker/nginx/nginx-ssl-wildcard.conf docker/nginx/nginx.active.conf
-docker restart historian-nginx
+./scripts/build/deploy-production.sh renew-wildcard
 ```
 
-**Option B – später:** Ein eigener Befehl `renew-wildcard` im Deploy-Skript kann die gleiche Logik kapseln und z. B. von einem Cron-Job aufgerufen werden.
+**Cron (z. B. monatlich):** `0 3 1 * * root cd /opt/historian-app/production && ./scripts/build/deploy-production.sh renew-wildcard`
 
 ## 6. Workflow (optional): Wildcard im automatischen Deploy
 

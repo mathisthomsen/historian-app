@@ -54,7 +54,7 @@ check_containers() {
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 {up|down|restart|status|logs|ssl|ssl-bhgv|ssl-wildcard|renew|backup|monitor|update}"
+    echo "Usage: $0 {up|down|restart|status|logs|ssl|ssl-bhgv|ssl-wildcard|renew|renew-wildcard|backup|monitor|update}"
     echo ""
     echo "Commands:"
     echo "  up      - Start all services"
@@ -64,8 +64,9 @@ usage() {
     echo "  logs    - Show logs (all services)"
     echo "  ssl         - Set up SSL certificates (main domain from .env, HTTP-01)"
     echo "  ssl-bhgv    - Request SSL cert for bhgv.evidoxa.com and enable full Nginx SSL config"
-    echo "  ssl-wildcard - Request wildcard cert (evidoxa.com + *.evidoxa.com) via DNS-01 (Ionos); one cert for both sites"
-    echo "  renew       - Renew SSL certificates"
+    echo "  ssl-wildcard    - Request wildcard cert (evidoxa.com + *.evidoxa.com) via DNS-01 (Ionos)"
+    echo "  renew-wildcard  - Renew wildcard cert (use with cron; needs IONOS_DNS_* in .env)"
+    echo "  renew           - Renew SSL certificates (HTTP-01 only)"
     echo "  backup  - Create database backup"
     echo "  monitor - Show system resources"
     echo "  update  - Update application from git"
@@ -183,18 +184,20 @@ setup_ssl() {
         -d "$DOMAIN" || true
 
     # Update Nginx config to use SSL if certificates exist (always run so we restore SSL config even when certonly failed)
-    if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
+    CERTS_OUTPUT=$(docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null || true)
+    if echo "$CERTS_OUTPUT" | grep -q "$DOMAIN"; then
         print_status "SSL certificates found. Switching to SSL-enabled Nginx configuration..."
-        # Use full SSL config only if bhgv.evidoxa.com cert exists (otherwise Nginx would fail to start)
-        if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "bhgv.evidoxa.com"; then
+        # Prefer wildcard config if we have *.evidoxa.com (one cert for evidoxa + bhgv)
+        if echo "$CERTS_OUTPUT" | grep -qF '*.evidoxa.com'; then
+            print_status "Wildcard cert detected; using nginx-ssl-wildcard.conf"
+            cp "$NGINX_DIR/nginx-ssl-wildcard.conf" "$NGINX_DIR/nginx.active.conf"
+        elif echo "$CERTS_OUTPUT" | grep -q "bhgv.evidoxa.com"; then
             cp "$NGINX_DIR/nginx-ssl.conf" "$NGINX_DIR/nginx.active.conf"
         else
-            print_warning "bhgv.evidoxa.com cert not in this volume; using evidoxa.com-only SSL config."
             cp "$NGINX_DIR/nginx-ssl-evidoxa-only.conf" "$NGINX_DIR/nginx.active.conf"
         fi
         docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
         sleep 3
-        # If Nginx failed to start (e.g. full config but missing bhgv cert), fallback to evidoxa-only
         code=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 3 https://127.0.0.1:443 -H "Host: $DOMAIN" 2>/dev/null || echo "000")
         if ! echo "$code" | grep -qE "^[23][0-9][0-9]$"; then
             print_warning "Nginx not responding on 443 (got $code). Falling back to evidoxa.com-only SSL config."
@@ -203,7 +206,18 @@ setup_ssl() {
         fi
         print_status "Nginx SSL configuration updated and nginx reloaded!"
     else
-        print_warning "SSL certificates not found. Leaving HTTP-only (or existing) Nginx config unchanged."
+        # Certbot failed or no cert – do NOT leave HTTP-only if we already have a cert from a previous run
+        if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -q "evidoxa.com"; then
+            print_warning "Certbot run had no new cert; restoring SSL config from existing certificate."
+            if docker-compose -f "$COMPOSE_FILE" --env-file .env run --rm certbot certificates 2>/dev/null | grep -qF '*.evidoxa.com'; then
+                cp "$NGINX_DIR/nginx-ssl-wildcard.conf" "$NGINX_DIR/nginx.active.conf"
+            else
+                cp "$NGINX_DIR/nginx-ssl-evidoxa-only.conf" "$NGINX_DIR/nginx.active.conf"
+            fi
+            docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
+        else
+            print_warning "SSL certificates not found. Using HTTP-only for this run."
+        fi
     fi
     
     print_status "SSL setup completed!"
@@ -317,7 +331,38 @@ EOF
     cp "$NGINX_DIR/nginx-ssl-wildcard.conf" "$NGINX_DIR/nginx.active.conf"
     docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
     print_status "Done. evidoxa.com and bhgv.evidoxa.com now use the same wildcard certificate."
-    print_warning "Renewal: run 'certbot renew' with dns-ionos (e.g. same docker run with 'renew' instead of 'certonly'). Consider adding a renew-wildcard cron or script."
+    print_warning "Renewal: run ./scripts/build/deploy-production.sh renew-wildcard (or set up a cron job)."
+}
+
+# Function to renew wildcard certificate (DNS-01, same as ssl-wildcard)
+renew_ssl_wildcard() {
+    if [ -z "$IONOS_DNS_PREFIX" ] || [ -z "$IONOS_DNS_SECRET" ]; then
+        print_error "IONOS_DNS_PREFIX and IONOS_DNS_SECRET must be set in .env"
+        exit 1
+    fi
+    CRED_DIR="certbot-secrets"
+    CRED_FILE="$CRED_DIR/ionos.ini"
+    if [ ! -f "$CRED_FILE" ]; then
+        print_error "Credentials not found at $CRED_FILE. Run ssl-wildcard first."
+        exit 1
+    fi
+    CERTBOT_VOL=$(docker volume ls -q | grep certbot-etc | head -1)
+    if [ -z "$CERTBOT_VOL" ]; then
+        print_error "Could not find certbot-etc volume."
+        exit 1
+    fi
+    print_status "Renewing wildcard certificate (dns-ionos)..."
+    if ! docker run --rm --entrypoint sh \
+        -v "$CERTBOT_VOL:/etc/letsencrypt" \
+        -v "$(pwd)/$CRED_DIR:/.secrets:ro" \
+        certbot/certbot \
+        -c "pip install -q certbot-dns-ionos && certbot renew --authenticator dns-ionos --dns-ionos-credentials /.secrets/ionos.ini --non-interactive --keep-until-expiring"; then
+        print_error "Renewal failed."
+        exit 1
+    fi
+    print_status "Reloading Nginx..."
+    docker-compose -f "$COMPOSE_FILE" --env-file .env exec nginx nginx -s reload 2>/dev/null || docker-compose -f "$COMPOSE_FILE" --env-file .env up -d nginx
+    print_status "Renewal done."
 }
 
 # Function to renew SSL certificates
@@ -434,6 +479,9 @@ case "$1" in
         ;;
     ssl-wildcard)
         setup_ssl_wildcard
+        ;;
+    renew-wildcard)
+        renew_ssl_wildcard
         ;;
     renew)
         renew_ssl
