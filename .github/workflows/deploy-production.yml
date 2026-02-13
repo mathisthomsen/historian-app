@@ -157,6 +157,12 @@ jobs:
           # File Upload
           MAX_FILE_SIZE=10485760
           ALLOWED_FILE_TYPES=".csv,.xlsx,.json"
+          # WordPress / MySQL (für bhgv.evidoxa.com; Secrets in GitHub setzen)
+          MYSQL_DATABASE=wordpress
+          MYSQL_USER=wp_user
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          WORDPRESS_TABLE_PREFIX=wp_
           EOF"
 
       - name: Ensure nginx.active.conf exists on server

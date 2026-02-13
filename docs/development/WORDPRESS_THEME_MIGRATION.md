@@ -11,6 +11,30 @@ Diese Anleitung beschreibt, wie du ein WordPress Theme und Content von einem lok
 - SSH-Zugriff auf Production Server
 - Zugriff auf lokale WordPress-Datenbank
 
+### WordPress-Container mit DB-Zugriff starten (Production)
+
+Der WordPress-Container braucht MySQL-Zugangsdaten aus der `.env`. Stehen sie nicht in der Production-.env, erscheint „Error establishing a database connection“.
+
+**Variablen prüfen, mit denen MySQL läuft:**
+```bash
+docker inspect wordpress-mysql --format '{{range .Config.Env}}{{println .}}{{end}}' | grep MYSQL
+```
+
+**Gleiche Werte in `/opt/historian-app/production/.env` eintragen** (z. B. `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, optional `MYSQL_USER`, `MYSQL_DATABASE`). Siehe `docker/wordpress/env.example`.
+
+**WordPress mit dieser .env starten:**
+```bash
+cd /opt/historian-app/production
+docker-compose -f docker/wordpress/docker-compose.yml --env-file .env up -d wordpress --no-deps
+```
+Nach Änderung an der .env: `--force-recreate` verwenden, damit der Container die neuen Variablen lädt.
+
+**GitHub Secrets (empfohlen):** Damit die Server-.env bei jedem Deploy die MySQL-Daten erhält, im Repository unter **Settings → Secrets and variables → Actions** anlegen:
+- `MYSQL_PASSWORD` – Passwort des MySQL-Benutzers (z. B. `wp_user`)
+- `MYSQL_ROOT_PASSWORD` – MySQL-Root-Passwort (darf gleich sein wie oben, muss aber dem laufenden MySQL-Container entsprechen)
+
+Danach schreibt der Deploy-Workflow diese Werte in die Production-.env; ein manuelles Eintragen auf dem Server ist nicht mehr nötig.
+
 ## Schritt 1: Theme exportieren
 
 ### Option A: Theme als ZIP (empfohlen für Custom Themes)
