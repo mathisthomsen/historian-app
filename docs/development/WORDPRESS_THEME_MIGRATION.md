@@ -92,20 +92,26 @@ docker exec wordpress-app chown -R www-data:www-data /var/www/html/wp-content/th
 3. Lade Theme-ZIP hoch
 4. Theme aktivieren
 
+#### Sprache auf Deutsch stellen
+
+Falls die Oberfläche auf Englisch ist: Im Admin **Einstellungen → Allgemein → Sprachversion der Website** auf „Deutsch“ stellen und speichern.
+
+Oder einmalig auf dem Server (nur wenn WPLANG noch nicht in wp-config.php steht):
+
+```bash
+docker exec wordpress-app grep -q WPLANG /var/www/html/wp-config.php || \
+  docker exec wordpress-app sed -i "/require_once ABSPATH . 'wp-settings.php';/i define( 'WPLANG', 'de_DE' );" /var/www/html/wp-config.php
+```
+
 #### Fehler: „Es fehlt ein temporärer Ordner“
 
 WordPress braucht einen beschreibbaren temporären Ordner für den Upload. So behebst du es:
 
-**Option A: PHP-Konfiguration (Projekt enthält bereits die Anpassung)**
+**Option A: PHP lädt uploads.ini zuverlässig (empfohlen)**
 
-Im Repo ist in `docker/wordpress/wordpress/uploads.ini` bereits `upload_tmp_dir = /tmp` gesetzt. Nach einem Deploy den Container neu starten:
+Die `uploads.ini` (mit `upload_tmp_dir = /tmp`) ist im WordPress-Image eingebaut. Der Compose-Mount dafür wurde entfernt, damit PHP die Datei immer lädt (ein Mount kann je nach Start-Pfad fehlschlagen). Nach Deploy: **Image neu bauen und Container neu starten** (siehe Schritt „WordPress-Container mit DB-Zugriff starten“).
 
-```bash
-ssh root@217.154.198.215
-docker restart wordpress-app
-```
-
-**Option B: Wenn PHP im Container die uploads.ini nicht lädt (`php -i` zeigt „no value“)**
+**Option B: Zusätzlich WordPress-Temp erzwingen (WP_TEMP_DIR)**
 
 Dann erzwingst du einen Temp-Ordner direkt in WordPress (funktioniert unabhängig von PHP):
 

@@ -45,7 +45,7 @@ services:
       WORDPRESS_TABLE_PREFIX: ${WORDPRESS_TABLE_PREFIX:-wp_}
     volumes:
       - wordpress_data:/var/www/html
-      - ./wordpress/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+      # uploads.ini (upload_tmp_dir) ist im Image eingebaut; kein Mount, damit PHP sie zuverlässig lädt
     networks:
       - wordpress-network
     deploy:
