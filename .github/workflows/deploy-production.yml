@@ -220,6 +220,10 @@ jobs:
         run: |
           ssh root@217.154.198.215 'cd /opt/historian-app/production && docker-compose -f docker/docker-compose.production.yml --env-file .env ps'
 
+      - name: Restart WordPress container (load new PHP upload_tmp_dir config)
+        run: |
+          ssh root@217.154.198.215 'docker restart wordpress-app 2>/dev/null || echo "WordPress container not running, skip."'
+
       - name: Health check
         run: |
           ssh root@217.154.198.215 'sleep 15 && curl -f https://evidoxa.com/api/health || curl -f http://localhost:3000/api/health || curl -f http://localhost/api/health || echo "Health check failed, but deployment may still be successful"'

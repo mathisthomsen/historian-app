@@ -68,6 +68,44 @@ docker exec wordpress-app chown -R www-data:www-data /var/www/html/wp-content/th
 3. Lade Theme-ZIP hoch
 4. Theme aktivieren
 
+#### Fehler: „Es fehlt ein temporärer Ordner“
+
+WordPress braucht einen beschreibbaren temporären Ordner für den Upload. So behebst du es:
+
+**Option A: PHP-Konfiguration (Projekt enthält bereits die Anpassung)**
+
+Im Repo ist in `docker/wordpress/wordpress/uploads.ini` bereits `upload_tmp_dir = /tmp` gesetzt. Nach einem Deploy den Container neu starten:
+
+```bash
+ssh root@217.154.198.215
+docker restart wordpress-app
+```
+
+**Option B: Direkt auf dem Server prüfen**
+
+```bash
+ssh root@217.154.198.215
+
+# Prüfen, ob /tmp im Container existiert und beschreibbar ist
+docker exec wordpress-app ls -la /tmp
+docker exec wordpress-app touch /tmp/test-wp && docker exec wordpress-app rm /tmp/test-wp
+
+# Falls nötig: Temp-Ordner unter wp-content anlegen und Berechtigungen setzen
+docker exec wordpress-app mkdir -p /var/www/html/wp-content/temp
+docker exec wordpress-app chown www-data:www-data /var/www/html/wp-content/temp
+docker exec wordpress-app chmod 775 /var/www/html/wp-content/temp
+```
+
+Wenn du einen eigenen Temp-Ordner nutzt, muss PHP ihn kennen: z. B. in `wp-config.php` (vor „That’s all, stop editing!“) einfügen:
+
+```php
+define('WP_TEMP_DIR', dirname(__FILE__) . '/wp-content/temp');
+```
+
+**Option C: Theme ohne Admin-Upload einspielen (Methode 1)**
+
+Theme-ZIP per SCP auf den Server kopieren und im Container nach `wp-content/themes` entpacken (siehe Methode 1 oben) – dann wird der temporäre Ordner im WordPress-Admin nicht benötigt.
+
 ## Schritt 3: Content exportieren
 
 ### WordPress Export Tool (empfohlen)
