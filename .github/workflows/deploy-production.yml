@@ -81,8 +81,20 @@ jobs:
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa || echo "Failed to write SSH key"
           chmod 600 ~/.ssh/id_rsa || echo "Failed to set SSH key permissions"
           
-          # Create SSH config
-          echo "Host *" > ~/.ssh/config
+          # Create SSH config - use only our deploy key to avoid "Too many authentication failures"
+          echo "Host 217.154.198.215" > ~/.ssh/config
+          echo "    HostName 217.154.198.215" >> ~/.ssh/config
+          echo "    User root" >> ~/.ssh/config
+          echo "    IdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+          echo "    IdentitiesOnly yes" >> ~/.ssh/config
+          echo "    ControlMaster auto" >> ~/.ssh/config
+          echo "    ControlPath ~/.ssh/cm-%r@%h:%p" >> ~/.ssh/config
+          echo "    ControlPersist 10m" >> ~/.ssh/config
+          echo "    StrictHostKeyChecking no" >> ~/.ssh/config
+          echo "    UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+          echo "    ServerAliveInterval=60" >> ~/.ssh/config
+          echo "    ServerAliveCountMax=3" >> ~/.ssh/config
+          echo "Host *" >> ~/.ssh/config
           echo "    StrictHostKeyChecking no" >> ~/.ssh/config
           echo "    UserKnownHostsFile=/dev/null" >> ~/.ssh/config
           echo "    ServerAliveInterval=60" >> ~/.ssh/config
@@ -95,14 +107,6 @@ jobs:
           # Test SSH connection
           echo "Testing SSH connection to root@217.154.198.215..."
           ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@217.154.198.215 'echo "SSH connection successful!"' || (echo "SSH connection failed!" && exit 1)
-
-      - name: Enable SSH multiplexing
-        run: |
-          echo "Host 217.154.198.215
-            ControlMaster auto
-            ControlPath ~/.ssh/cm-%r@%h:%p
-            ControlPersist 10m
-          " >> ~/.ssh/config
 
       - name: Start SSH master connection
         run: |
