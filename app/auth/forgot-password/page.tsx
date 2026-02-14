@@ -13,12 +13,19 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError('');
     try {
-      await fetch('/api/auth/reset-request', {
+      const res = await fetch('/api/auth/reset-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      setSubmitted(true);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSubmitted(true);
+      } else if (res.status === 429) {
+        setError(data.error || 'Too many requests. Please try again later.');
+      } else {
+        setError(data.error || 'Something went wrong. Please try again.');
+      }
     } catch (err) {
       setError('Something went wrong. Please try again.');
     } finally {

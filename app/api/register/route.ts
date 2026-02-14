@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/database/prisma';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { validateName, validateEmail, validatePassword } from '@/app/lib/utils/validation';
+import { validateName, validateEmail, validatePassword, RateLimiter } from '@/app/lib/utils/validation';
 import { sendVerificationEmail } from '@/app/lib/services/email';
+
+const rateLimiter = new RateLimiter(60000, 5); // 5 registrations per minute per IP
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    if (!rateLimiter.isAllowed(clientIP)) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+    }
     const body = await request.json();
     const { name, email, password } = body;
 

@@ -37,9 +37,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+      // Same response as success to avoid user enumeration
       return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+        { message: 'If an account exists with this email, a verification link has been sent.' },
+        { status: 200 }
       );
     }
 

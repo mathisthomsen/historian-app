@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/database/prisma';
 import crypto from 'crypto';
 import { sendPasswordResetEmail } from '@/app/lib/services/email';
+import { RateLimiter } from '@/app/lib/utils/validation';
+
+const rateLimiter = new RateLimiter(60000, 5); // 5 requests per minute per IP
 
 export async function POST(request: NextRequest) {
+  const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  if (!rateLimiter.isAllowed(clientIP)) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+  }
   const { email } = await request.json();
   if (!email) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 });

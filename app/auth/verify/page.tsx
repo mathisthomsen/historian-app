@@ -35,28 +35,8 @@ export default function VerifyEmailPage() {
 
         if (response.ok) {
           setStatus('success');
-          setMessage(data.message);
+          setMessage(data.message || (data.user?.emailVerified ? 'Email is already verified! You can now sign in.' : 'Email verified successfully.'));
         } else {
-          // Check if the error is because the user is already verified
-          if (data.error === 'Invalid verification token') {
-            // Check if the user is already verified
-            const userCheckResponse = await fetch('/api/auth/check-user', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ email }),
-            });
-            
-            if (userCheckResponse.ok) {
-              const userData = await userCheckResponse.json();
-              if (userData.emailVerified) {
-                setStatus('success');
-                setMessage('Email is already verified! You can now sign in.');
-                return;
-              }
-            }
-          }
           
           setStatus('error');
           setMessage(data.error || 'Verification failed');

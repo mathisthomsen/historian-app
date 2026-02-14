@@ -23,36 +23,17 @@ export default function LoginPage() {
     setShowResendSnackbar(false);
 
     try {
-      // First check if the user exists and if their email is verified
-      const userCheckResponse = await fetch('/api/auth/check-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-        }),
-      });
-
-      if (userCheckResponse.ok) {
-        const userData = await userCheckResponse.json();
-        
-        if (!userData.emailVerified) {
-          setUnverifiedEmail(data.email);
-          setShowResendSnackbar(true);
-          setError('Please verify your email address before signing in.');
-          setIsLoading(false);
-          return;
-        }
-      }
-
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
         redirect: false,
       });
 
-      if (result?.error) {
+      if (result?.error === 'EmailNotVerified') {
+        setUnverifiedEmail(data.email);
+        setShowResendSnackbar(true);
+        setError('Please verify your email address before signing in.');
+      } else if (result?.error) {
         setError('Invalid email or password');
       } else {
         setSuccess('Login successful! Redirecting...');

@@ -122,10 +122,12 @@ This link will expire in 1 hour. If you didn't request a password reset, you can
 
 export const sendEmail = async (to: string, template: EmailTemplate): Promise<boolean> => {
   try {
-    console.log('Attempting to send email to:', to);
-    console.log('Using API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
-    console.log('Using from address:', process.env.EMAIL_FROM);
-    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Attempting to send email to:', to);
+      console.log('Using API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
+      console.log('Using from address:', process.env.EMAIL_FROM);
+    }
+
     const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@historianapp.com',
       to: [to],
@@ -135,11 +137,11 @@ export const sendEmail = async (to: string, template: EmailTemplate): Promise<bo
     });
     
     if (error) {
-      console.error('Resend API error:', error);
+      if (process.env.NODE_ENV === 'development') console.error('Resend API error:', error);
       return false;
     }
-    
-    console.log('Email sent successfully:', data);
+
+    if (process.env.NODE_ENV === 'development') console.log('Email sent successfully:', data?.id);
     return true;
   } catch (error) {
     console.error('Failed to send email:', error);

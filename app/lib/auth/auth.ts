@@ -45,9 +45,8 @@ export const authOptions: any = {
           return null;
         }
 
-        // Check if email is verified
+        // Check if email is verified — throw so client can show resend UI without user enumeration
         if (!user.emailVerified) {
-          // Log failed login attempt due to unverified email
           await logAuthEvent({
             eventType: 'LOGIN_FAILED',
             userId: user.id.toString(),
@@ -56,7 +55,7 @@ export const authOptions: any = {
             userAgent: 'unknown',
             details: { reason: 'email_not_verified' }
           });
-          return null;
+          throw new Error('EmailNotVerified');
         }
 
         // Log successful login

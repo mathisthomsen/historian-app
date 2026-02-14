@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/app/lib/database/prisma';
+import { requireUser } from '@/app/lib/auth/requireUser';
 
-const prisma = new PrismaClient();
-
+/**
+ * Returns the current session user's verification status.
+ * Requires authentication; no user enumeration (no email in body).
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email } = body;
+    const user = await requireUser();
 
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      );
-    }
-
-    // Find the user
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
       select: {
         id: true,
         email: true,
@@ -26,7 +20,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!user) {
+    if (!dbUser) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -34,17 +28,15 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      emailVerified: user.emailVerified,
-      emailVerifiedAt: user.emailVerifiedAt,
+      id: dbUser.id,
+      email: dbUser.email,
+      emailVerified: dbUser.emailVerified,
+      emailVerifiedAt: dbUser.emailVerifiedAt,
     });
-
-  } catch (error) {
-    console.error('Check user error:', error);
+  } catch {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Unauthorized' },
+      { status: 401 }
     );
   }
-} 
+}
