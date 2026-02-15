@@ -95,12 +95,25 @@ Rotating the SSH key is recommended (e.g. with other keys or periodically). Do i
    ```
    This creates `vps_deploy_key` (private) and `vps_deploy_key.pub` (public).
 
-2. **Add the new public key on the VPS** (before changing the GitHub secret):
+2. **Add the new public key on the VPS** (before changing the GitHub secret). Use **one** of these methods:
+
+   **Option A – You still have the private key file** (e.g. `vps_deploy_key`):
    ```bash
-   # From your machine, copy the public key to the server (use your current access method)
+   # From your machine, copy the public key to the server (use your current SSH/password access)
    cat vps_deploy_key.pub | ssh root@217.154.198.215 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
    ```
-   Or paste the contents of `vps_deploy_key.pub` into `~/.ssh/authorized_keys` on the VPS.
+   Or paste the **contents of `vps_deploy_key.pub`** (one line starting with `ssh-ed25519` or `ssh-rsa`) into `~/.ssh/authorized_keys` on the VPS.
+
+   **Option B – You only have the private key in GitHub** (no local file):
+   - Generate a **new** key pair locally (step 1 again).
+   - Add the **new** `vps_deploy_key.pub` to the VPS (Option A).
+   - Set the **new** private key (`vps_deploy_key`) as the `VPS_SSH_KEY` secret in GitHub (overwrite the old value).
+
+   **Option C – Get public key from private key** (if you have the private key as a file):
+   ```bash
+   ssh-keygen -y -f vps_deploy_key
+   ```
+   Copy that single line of output and add it to `~/.ssh/authorized_keys` on the VPS (see below).
 
 3. **Update the GitHub secret:**  
    In **Settings → Secrets and variables → Actions**, set `VPS_SSH_KEY` to the **entire contents** of `vps_deploy_key` (private key), including the `-----BEGIN ... -----` and `-----END ... -----` lines.
@@ -108,6 +121,27 @@ Rotating the SSH key is recommended (e.g. with other keys or periodically). Do i
 4. **Test:** Re-run the “Deploy to Production” workflow or push to `main`. If SSH connection succeeds, the new key is in use.
 
 5. **Optional:** Remove the old public key from `~/.ssh/authorized_keys` on the VPS so only the new key can log in.
+
+---
+
+### If the key is missing on the VPS (deploy still fails with “Permission denied”)
+
+You need to add the **public** key to the VPS. Log in to the VPS as `root` (SSH with password, hosting console, or another key that still works), then:
+
+```bash
+# On the VPS as root:
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+# Append one line (your public key) – paste the line when the editor opens:
+nano ~/.ssh/authorized_keys
+# Or in one go (replace PASTE_ONE_LINE_OF_PUBLIC_KEY with the actual line):
+# echo "PASTE_ONE_LINE_OF_PUBLIC_KEY" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+**What to paste:** A single line starting with `ssh-ed25519 AAAA...` or `ssh-rsa AAAAB3...` (the contents of your `.pub` file, or the output of `ssh-keygen -y -f path/to/private_key`). One key = one line, no line breaks in the middle.
+
+Then re-run the deploy workflow.
 
 ---
 
