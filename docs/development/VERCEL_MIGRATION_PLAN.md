@@ -12,6 +12,15 @@ This document is the master plan to abandon the current VPS deployment, remove a
 
 ---
 
+## Branch strategy
+
+Two branches are in place:
+
+1. **`archive/vps-deployment`** – Snapshot of the repo **before** the migration (VPS, Docker, WordPress, all related scripts and docs). **Do not delete.** Use only as a read-only reference if you ever need the old setup again. No further commits on this branch unless you explicitly want to preserve more history.
+2. **`feat/vercel-migration`** – Branch to perform the migration. Do all removal and refactor work here. When ready, merge into `main`. You are on this branch when doing the migration.
+
+---
+
 ## Phase 1: Remove VPS and Docker
 
 ### 1.1 Delete Docker and production stack
@@ -21,15 +30,17 @@ This document is the master plan to abandon the current VPS deployment, remove a
 | `docker/` (entire directory) | Dockerfile, docker-compose.production.yml, nginx configs, wordpress compose/Dockerfile, certbot – no longer used |
 | `.github/workflows/deploy-production.yml` | VPS SSH/rsync/docker-compose deploy – replace with Vercel (and optional lightweight CI) |
 
+CHECK
+
 ### 1.2 Delete or archive VPS/DevOps scripts
 
 | Directory / Files | Action |
 |-------------------|--------|
-| `scripts/build/` | **Delete** – deploy-production.sh, compose-production.sh (Docker/VPS only) |
-| `scripts/server/` | **Delete** – health-check-vps.sh, SSL/nginx/504/server checks, security-incident, etc. |
-| `scripts/wordpress/` | **Delete** – setup, migrate-*, fix-*, generate-wordpress-env (WordPress managed externally) |
-| `scripts/monitoring/` | **Delete** – monit, logwatch, Docker checks (VPS-specific) |
-| `scripts/dev/server-setup.sh`, `scripts/dev/ssl-renewal.sh` | **Delete** – server/SSL on VPS |
+| `scripts/build/` | **Delete** – deploy-production.sh, compose-production.sh (Docker/VPS only) | CHECK
+| `scripts/server/` | **Delete** – health-check-vps.sh, SSL/nginx/504/server checks, security-incident, etc. | CHECK
+| `scripts/wordpress/` | **Delete** – setup, migrate-*, fix-*, generate-wordpress-env (WordPress managed externally) | CHECK
+| `scripts/monitoring/` | **Delete** – monit, logwatch, Docker checks (VPS-specific) | CHECK
+| `scripts/dev/server-setup.sh`, `scripts/dev/ssl-renewal.sh` | **Delete** – server/SSL on VPS | CHECK
 
 Keep: `scripts/utils/`, `scripts/db/`, `scripts/migrate-*.js`, other app-related scripts that don’t reference Docker/VPS/WordPress.
 
@@ -39,8 +50,8 @@ Keep: `scripts/utils/`, `scripts/db/`, `scripts/migrate-*.js`, other app-related
 
 ### 2.1 Code and config
 
-- **`app/lib/database/db.js`** – **Delete.** MySQL pool; unused (no imports in app). Used for WordPress/legacy only.
-- **`package.json`** – Remove dependency: **`mysql2`** (only used by db.js).
+- **`app/lib/database/db.js`** – **Delete.** MySQL pool; unused (no imports in app). Used for WordPress/legacy only. CHECK
+- **`package.json`** – Remove dependency: **`mysql2`** (only used by db.js). CHECK
 - No other app code references WordPress, bhgv.evidoxa.com, or MySQL; Prisma uses PostgreSQL (Neon) only.
 
 ### 2.2 Docs to remove or archive (WordPress / VPS)
@@ -155,7 +166,7 @@ Example name: `.github/workflows/ci.yml`. You can delete or rename the old `depl
 
 ## Phase 6: Order of Execution (recommended)
 
-1. **Create branch** (e.g. `feat/vercel-migration`).
+1. **Use the migration branch** `feat/vercel-migration` (already created; you’re on it).
 2. **Phase 1:** Delete `docker/`, replace/remove `.github/workflows/deploy-production.yml` (add `ci.yml` if desired).
 3. **Phase 2:** Delete `app/lib/database/db.js`, remove `mysql2` from package.json, delete or archive WordPress/VPS docs, update KEY_ROTATION.md.
 4. **Phase 3:** Add or move `vercel.json` to root, remove `output: 'standalone'` from next.config, decide vercel-build (migrate deploy vs. external migrations), document env vars for Vercel.
