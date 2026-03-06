@@ -1,0 +1,47 @@
+{
+  "common": {
+    "loading": "Wird geladen...",
+    "error": "Fehler",
+    "tryAgain": "Erneut versuchen",
+    "backToHome": "Zur Startseite",
+    "notFound": "Seite nicht gefunden",
+    "notFoundDescription": "Die angeforderte Seite existiert nicht."
+  },
+  "shell": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "persons": "Personen",
+      "events": "Ereignisse",
+      "sources": "Quellen",
+      "relations": "Beziehungen",
+      "locations": "Orte",
+      "literature": "Literatur",
+      "settings": "Einstellungen"
+    },
+    "topbar": {
+      "toggleSidebar": "Seitenleiste umschalten",
+      "toggleTheme": "Design wechseln",
+      "selectProject": "Projekt auswählen",
+      "userMenu": "Benutzermenü"
+    },
+    "localeSwitcher": {
+      "de": "DE",
+      "en": "EN",
+      "switchTo": "Zu {locale} wechseln"
+    }
+  },
+  "showcase": {
+    "title": "Komponentenübersicht",
+    "buttons": "Schaltflächen",
+    "inputs": "Eingabefelder",
+    "badges": "Abzeichen",
+    "cards": "Karten",
+    "dialogs": "Dialoge",
+    "tabs": "Registerkarten",
+    "tables": "Tabellen",
+    "toasts": "Benachrichtigungen",
+    "skeletons": "Skelette",
+    "theme": "Design",
+    "locale": "Sprache"
+  }
+}

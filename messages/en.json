@@ -1,0 +1,47 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "tryAgain": "Try again",
+    "backToHome": "Back to home",
+    "notFound": "Page not found",
+    "notFoundDescription": "The requested page does not exist."
+  },
+  "shell": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "persons": "Persons",
+      "events": "Events",
+      "sources": "Sources",
+      "relations": "Relations",
+      "locations": "Locations",
+      "literature": "Literature",
+      "settings": "Settings"
+    },
+    "topbar": {
+      "toggleSidebar": "Toggle sidebar",
+      "toggleTheme": "Toggle theme",
+      "selectProject": "Select project",
+      "userMenu": "User menu"
+    },
+    "localeSwitcher": {
+      "de": "DE",
+      "en": "EN",
+      "switchTo": "Switch to {locale}"
+    }
+  },
+  "showcase": {
+    "title": "Component Showcase",
+    "buttons": "Buttons",
+    "inputs": "Inputs",
+    "badges": "Badges",
+    "cards": "Cards",
+    "dialogs": "Dialogs",
+    "tabs": "Tabs",
+    "tables": "Tables",
+    "toasts": "Toasts",
+    "skeletons": "Skeletons",
+    "theme": "Theme",
+    "locale": "Locale"
+  }
+}

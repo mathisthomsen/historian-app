@@ -374,6 +374,7 @@
 - UI polish pass: consistent spacing, typography scale, empty states, loading skeletons, error states on all pages
 - Accessibility pass: ARIA labels, keyboard navigation, focus management
 - All Zod validation messages externalized (no hardcoded German strings in code)
+- Language/Locale Persistence in Account
 
 **Verifiable:** Switch locale to English, verify all UI text changes. Switch back to German. Date "15. März 1848" in DE, "March 15, 1848" in EN.
 
@@ -396,6 +397,7 @@
 - **Monitoring:** Sentry (error tracking), Vercel Analytics (performance), custom `activity_log` as audit trail
 - **Performance:** Bundle analysis, image optimization, lazy loading for graph visualization and maps
 - **Documentation:** README with setup instructions, `.env.example` complete and documented
+- **UI Library** Add Storybook
 
 **Verifiable:** `npm run test:coverage` reports 80%+. Lighthouse score >85. Security headers grade A on securityheaders.com. Sentry catches and reports a test error.
 
