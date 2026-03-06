@@ -2,7 +2,8 @@ import { useTranslations } from "next-intl";
 
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ToastDemo } from "@/components/shell/toast-demo";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -174,6 +175,12 @@ export default function ShowcasePage() {
         </Tabs>
       </section>
 
+      {/* Toast */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">{t("toasts")}</h2>
+        <ToastDemo />
+      </section>
+
       {/* Table */}
       <section>
         <h2 className="mb-4 text-xl font-semibold">{t("tables")}</h2>
@@ -206,7 +213,6 @@ export default function ShowcasePage() {
         <h2 className="mb-4 text-xl font-semibold">Avatars</h2>
         <div className="flex gap-3">
           <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" alt="shadcn" />
             <AvatarFallback>SC</AvatarFallback>
           </Avatar>
           <Avatar>

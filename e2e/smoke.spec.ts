@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+// Clear cookies and localStorage before each test to ensure clean state
+test.beforeEach(async ({ context, page }) => {
+  await context.clearCookies();
+  // Clear localStorage to prevent theme or other persisted state from leaking
+  await page.addInitScript(() => {
+    window.localStorage.clear();
+  });
+});
+
 test.describe("TC-01: Root redirect", () => {
   test("/ redirects to /de", async ({ page }) => {
     await page.goto("/");
@@ -11,10 +20,10 @@ test.describe("TC-02: German locale shell", () => {
   test("/de renders app shell with DE content", async ({ page }) => {
     await page.goto("/de");
     await expect(page.locator("header")).toBeVisible();
-    await expect(page.getByText("Evidoxa")).toBeVisible();
+    await expect(page.getByText("Evidoxa", { exact: true })).toBeVisible();
     await expect(page.getByRole("navigation")).toBeVisible();
-    await expect(page.getByText("Dashboard")).toBeVisible();
-    await expect(page.getByText("Personen")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Personen" })).toBeVisible();
   });
 });
 
@@ -64,15 +73,15 @@ test.describe("TC-07: Component showcase", () => {
     await page.goto("/de/dev/showcase");
     await expect(page.getByText("Komponentenübersicht")).toBeVisible();
 
-    // Check all sections exist
-    await expect(page.getByText("Schaltflächen")).toBeVisible();
-    await expect(page.getByText("Eingabefelder")).toBeVisible();
-    await expect(page.getByText("Abzeichen")).toBeVisible();
-    await expect(page.getByText("Karten")).toBeVisible();
-    await expect(page.getByText("Dialoge")).toBeVisible();
-    await expect(page.getByText("Registerkarten")).toBeVisible();
-    await expect(page.getByText("Tabellen")).toBeVisible();
-    await expect(page.getByText("Skelette")).toBeVisible();
+    // Check all sections exist — use exact heading matches
+    await expect(page.getByRole("heading", { name: "Schaltflächen" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Eingabefelder" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Abzeichen" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Karten", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dialoge" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Registerkarten" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tabellen" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Skelette" })).toBeVisible();
 
     // Table with 5 rows
     const rows = page.locator("table tbody tr");
@@ -102,7 +111,7 @@ test.describe("TC-09: Dark mode toggle", () => {
     const initialClass = await html.getAttribute("class");
 
     await page.getByTestId("theme-toggle").click();
-    await page.waitForTimeout(100); // allow transition
+    await page.waitForTimeout(100);
 
     const afterClass = await html.getAttribute("class");
     expect(afterClass).not.toBe(initialClass);
@@ -116,13 +125,11 @@ test.describe("TC-11: Sidebar collapse", () => {
     const sidebar = page.locator("aside");
     await expect(sidebar).toBeVisible();
 
-    // Sidebar should be expanded (w-56)
     const initialWidth = await sidebar.evaluate((el) => el.getBoundingClientRect().width);
     expect(initialWidth).toBeGreaterThan(100);
 
-    // Click hamburger
     await page.getByTestId("sidebar-toggle").click();
-    await page.waitForTimeout(300); // wait for transition
+    await page.waitForTimeout(300);
 
     const collapsedWidth = await sidebar.evaluate((el) => el.getBoundingClientRect().width);
     expect(collapsedWidth).toBeLessThan(initialWidth);
@@ -133,7 +140,7 @@ test.describe("TC-13: 404 page", () => {
   test("non-existent route shows 404 page", async ({ page }) => {
     await page.goto("/de/this-route-does-not-exist-xyz");
     await expect(page.getByText("404")).toBeVisible();
-    await expect(page.getByText(/Seite nicht gefunden|nicht gefunden/i)).toBeVisible();
+    await expect(page.getByText("Seite nicht gefunden")).toBeVisible();
   });
 });
 

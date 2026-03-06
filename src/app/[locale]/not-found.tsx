@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function NotFound() {
-  const t = useTranslations("common");
+export default async function NotFound() {
+  const t = await getTranslations("common");
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
