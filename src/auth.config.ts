@@ -54,7 +54,8 @@ export const authConfig: NextAuthConfig = {
         PUBLIC_PATHS.has(pathnameWithoutLocale) ||
         pathnameWithoutLocale === "/" ||
         pathnameWithoutLocale.startsWith("/api/auth") ||
-        pathnameWithoutLocale === "/api/health";
+        pathnameWithoutLocale === "/api/health" ||
+        pathnameWithoutLocale.startsWith("/dev/");
       if (isPublic) return true;
       return isLoggedIn;
     },

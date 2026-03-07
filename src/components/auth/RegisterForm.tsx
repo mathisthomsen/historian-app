@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -13,31 +13,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const registerSchema = z
-  .object({
-    name: z.string().min(1).max(100).trim(),
-    email: z.string().email().max(254),
-    password: z
-      .string()
-      .min(8, "auth.errors.passwordTooShort")
-      .regex(/[A-Z]/, "auth.errors.passwordNeedsUpper")
-      .regex(/[a-z]/, "auth.errors.passwordNeedsLower")
-      .regex(/[0-9]/, "auth.errors.passwordNeedsNumber")
-      .regex(/[^A-Za-z0-9]/, "auth.errors.passwordNeedsSpecial"),
-    passwordConfirm: z.string(),
-  })
-  .refine((d) => d.password === d.passwordConfirm, {
-    message: "auth.errors.passwordMismatch",
-    path: ["passwordConfirm"],
-  });
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
+// Schema keys used as placeholders — translated inside the component.
+type RegisterFormValues = {
+  name: string;
+  email: string;
+  password: string;
+  passwordConfirm: string;
+};
 
 export function RegisterForm() {
   const t = useTranslations("auth");
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Build schema with translated messages so field errors render correctly.
+  const registerSchema = z
+    .object({
+      name: z.string().min(1).max(100).trim(),
+      email: z.string().email().max(254),
+      password: z
+        .string()
+        .min(8, t("errors.passwordTooShort"))
+        .regex(/[A-Z]/, t("errors.passwordNeedsUpper"))
+        .regex(/[a-z]/, t("errors.passwordNeedsLower"))
+        .regex(/[0-9]/, t("errors.passwordNeedsNumber"))
+        .regex(/[^A-Za-z0-9]/, t("errors.passwordNeedsSpecial")),
+      passwordConfirm: z.string(),
+    })
+    .refine((d) => d.password === d.passwordConfirm, {
+      message: t("errors.passwordMismatch"),
+      path: ["passwordConfirm"],
+    });
 
   const {
     register,
@@ -138,9 +145,7 @@ export function RegisterForm() {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        {errors.password && (
-          <p className="text-xs text-destructive">{errors.password.message}</p>
-        )}
+        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
         <PasswordStrengthIndicator password={password} />
       </div>
       <div className="space-y-1">

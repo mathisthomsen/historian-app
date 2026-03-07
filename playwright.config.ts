@@ -1,4 +1,14 @@
+import { existsSync } from "fs";
+import { resolve } from "path";
+
 import { defineConfig, devices } from "@playwright/test";
+
+// Load .env.local into the test runner process so E2E helpers (db.ts) can
+// access DATABASE_URL_UNPOOLED without requiring a separate .env file.
+const envLocalPath = resolve(process.cwd(), ".env.local");
+if (existsSync(envLocalPath)) {
+  process.loadEnvFile(envLocalPath);
+}
 
 export default defineConfig({
   testDir: "./e2e",

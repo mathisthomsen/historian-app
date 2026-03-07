@@ -16,35 +16,38 @@ test.describe("TC-01: Root redirect", () => {
   });
 });
 
-test.describe("TC-02: German locale shell", () => {
-  test("/de renders app shell with DE content", async ({ page }) => {
-    await page.goto("/de");
-    await expect(page.locator("header")).toBeVisible();
+// NOTE (Epic 1.3): /de now redirects to /de/auth/login.
+// Auth layout renders LocaleSwitcher + ThemeToggle — shell tests now target /de/auth/login.
+
+test.describe("TC-02: German locale auth page", () => {
+  test("/de/auth/login renders in German with Evidoxa branding", async ({ page }) => {
+    await page.goto("/de/auth/login");
     await expect(page.getByText("Evidoxa", { exact: true })).toBeVisible();
-    await expect(page.getByRole("navigation")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Personen" })).toBeVisible();
+    // Login form fields confirm German locale
+    await expect(page.getByLabel("E-Mail")).toBeVisible();
+    await expect(page.getByLabel("Passwort", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Anmelden" })).toBeVisible();
   });
 });
 
-test.describe("TC-03: English locale shell", () => {
-  test("/en renders app shell with EN content", async ({ page }) => {
-    await page.goto("/en");
-    await expect(page.getByText("Persons")).toBeVisible();
-    await expect(page.getByText("Events")).toBeVisible();
+test.describe("TC-03: English locale auth page", () => {
+  test("/en/auth/login renders in English", async ({ page }) => {
+    await page.goto("/en/auth/login");
+    await expect(page.getByLabel("Email")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 });
 
 test.describe("TC-04: Language switcher DE → EN", () => {
-  test("clicking EN navigates to /en and changes text", async ({ page }) => {
-    await page.goto("/de");
+  test("clicking EN on auth page navigates to /en and changes text", async ({ page }) => {
+    await page.goto("/de/auth/login");
     await page.getByRole("button", { name: /^EN$/i }).first().click();
     await expect(page).toHaveURL(/\/en/);
-    await expect(page.getByText("Persons")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 
   test("switching to EN sets NEXT_LOCALE cookie", async ({ page, context }) => {
-    await page.goto("/de");
+    await page.goto("/de/auth/login");
     await page.getByRole("button", { name: /^EN$/i }).first().click();
     await page.waitForURL(/\/en/);
 
@@ -55,11 +58,11 @@ test.describe("TC-04: Language switcher DE → EN", () => {
 });
 
 test.describe("TC-05: Language switcher EN → DE", () => {
-  test("clicking DE from EN navigates back to /de", async ({ page }) => {
-    await page.goto("/en");
+  test("clicking DE from EN auth page navigates back to /de", async ({ page }) => {
+    await page.goto("/en/auth/login");
     await page.getByRole("button", { name: /^DE$/i }).first().click();
     await expect(page).toHaveURL(/\/de/);
-    await expect(page.getByText("Personen")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Anmelden" })).toBeVisible();
   });
 });
 
@@ -109,7 +112,7 @@ test.describe("TC-08: Dialog", () => {
 
 test.describe("TC-09: Dark mode toggle", () => {
   test("theme toggle applies/removes dark class on html", async ({ page }) => {
-    await page.goto("/de");
+    await page.goto("/de/auth/login");
 
     const html = page.locator("html");
     const initialClass = await html.getAttribute("class");
@@ -123,8 +126,13 @@ test.describe("TC-09: Dark mode toggle", () => {
 });
 
 test.describe("TC-11: Sidebar collapse", () => {
-  test("sidebar collapses on toggle button click", async ({ page }) => {
-    await page.goto("/de");
+  test("sidebar is visible on dashboard after login", async ({ page }) => {
+    // Login with seeded demo account
+    await page.goto("/de/auth/login");
+    await page.getByLabel("E-Mail").fill("admin@evidoxa.dev");
+    await page.getByLabel("Passwort", { exact: true }).fill("Demo1234!");
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await page.waitForURL(/\/de\/dashboard/, { timeout: 15_000 });
 
     const sidebar = page.locator("aside");
     await expect(sidebar).toBeVisible();

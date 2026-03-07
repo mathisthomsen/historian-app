@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createLruRateLimiter } from "@/lib/rate-limit";
+
+// Force production mode so the LRU logic (not the dev no-op) is exercised.
+beforeEach(() => {
+  vi.stubEnv("NODE_ENV", "production");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("createLruRateLimiter", () => {
   it("allows up to the limit", async () => {

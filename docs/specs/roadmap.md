@@ -90,7 +90,8 @@
 
 **Deliverable:** Production-grade security primitives and automated deployment pipeline.
 
-- **Upstash Redis** (Vercel KV compatible): sliding-window rate limiter middleware (configurable per-route limits), durable across all serverless instances
+- **Upstash Redis** (Vercel KV compatible): sliding-window rate limiter middleware (configurable per-route limits), durable across all serverless instances.
+  **Note (from Epic 1.3):** The `RateLimiter` abstraction is defined in Epic 1.3 at `src/lib/rate-limit.ts` with an in-process `lru-cache` shim. Epic 1.4 must replace `createLruRateLimiter()` with `createRedisRateLimiter()` (Upstash sliding-window), keeping the same `RateLimiter` interface (`check(key, limit, windowMs): Promise<RateLimitResult>`). Auth route code must not change. Rate limit values per auth route are locked in Epic 1.3 and remain unchanged.
 - **Durable caching**: Redis-backed cache with TTL for API responses (persons list, events list, dashboard stats)
 - Security headers via `next.config.ts`: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `Referrer-Policy`, `Content-Security-Policy`
 - `poweredByHeader: false`
@@ -122,6 +123,7 @@
 - API: `GET/POST /api/persons`, `GET/PUT/DELETE /api/persons/[id]`, `POST /api/persons/bulk`
 - Redis cache for list queries; cache invalidated on write
 - Uncertainty UI: four-state selector component (Certain / Probable / Possible / Unknown) reusable across entities
+- **Output sanitization:** Replace the `sanitize()` stub from Epic 1.4 with `sanitize-html` library. Apply at all DB write boundaries for text fields. (Epic 1.4 ships a thin strip-tags stub; this epic upgrades it.)
 
 **Verifiable:** Create a person with uncertain birth date, view profile, edit, search by name, bulk delete.
 
