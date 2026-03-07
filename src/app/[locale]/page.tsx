@@ -1,12 +1,11 @@
-import { AppShell } from "@/components/shell/app-shell";
+import { redirect } from "next/navigation";
 
-export default function LocalePage() {
-  return (
-    <AppShell>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="mt-2 text-muted-foreground">Welcome to Evidoxa</p>
-      </div>
-    </AppShell>
-  );
+import { auth } from "@/auth";
+
+export default async function LocalePage() {
+  const session = await auth();
+  if (session?.user) {
+    redirect("/dashboard");
+  }
+  redirect("/auth/login");
 }

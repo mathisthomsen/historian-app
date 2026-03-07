@@ -1,4 +1,6 @@
 import { Certainty, PrismaClient, ProjectRole, SourceReliability, UserRole } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
 
 const prisma = new PrismaClient();
 
@@ -64,14 +66,18 @@ async function main() {
   console.log("Seeding database…");
 
   // ---- User ----------------------------------------------------------------
+  const demoPasswordHash = await bcrypt.hash("Demo1234!", 10);
+
   const admin = await prisma.user.upsert({
     where: { email: "admin@evidoxa.dev" },
-    update: {},
+    update: { password_hash: demoPasswordHash, email_verified_at: new Date() },
     create: {
       id: IDS.user.admin,
       email: "admin@evidoxa.dev",
       name: "Evidoxa Admin",
       role: UserRole.ADMIN,
+      password_hash: demoPasswordHash,
+      email_verified_at: new Date(),
     },
   });
 

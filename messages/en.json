@@ -30,6 +30,83 @@
       "switchTo": "Switch to {locale}"
     }
   },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "submit": "Sign in",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "register": "Register",
+      "resetSuccess": "Password has been reset. Please sign in."
+    },
+    "register": {
+      "title": "Create account",
+      "submit": "Create account",
+      "namePlaceholder": "Full name",
+      "alreadyHaveAccount": "Already have an account?",
+      "login": "Sign in",
+      "verificationSent": "Verification email sent. Please check your inbox."
+    },
+    "verify": {
+      "title": "Confirm email",
+      "verifying": "Verifying...",
+      "success": "Email confirmed",
+      "successMessage": "Your account is active.",
+      "loginNow": "Sign in now",
+      "requestNew": "Request new link"
+    },
+    "forgot": {
+      "title": "Forgot password?",
+      "description": "Enter your email address and we will send you a link.",
+      "submit": "Request link",
+      "backToLogin": "Back to sign in",
+      "emailSent": "Email sent",
+      "emailSentMessage": "If an account exists with that address, you will receive a link."
+    },
+    "reset": {
+      "title": "New password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "submit": "Save password",
+      "success": "Password changed successfully."
+    },
+    "dashboard": {
+      "welcome": "Welcome, {name}!",
+      "loggedIn": "You are signed in.",
+      "logout": "Sign out"
+    },
+    "strength": {
+      "label": "Password strength",
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong",
+      "veryStrong": "Very strong"
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "name": "Name",
+      "confirmPassword": "Confirm password"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password.",
+      "emailNotVerified": "Please confirm your email address first.",
+      "emailTaken": "This email address is already registered.",
+      "tokenExpired": "The link has expired. Please request a new one.",
+      "tokenInvalid": "Invalid link.",
+      "rateLimited": "Too many attempts. Please wait {minutes} minutes.",
+      "passwordTooShort": "At least 8 characters.",
+      "passwordNeedsUpper": "At least one uppercase letter.",
+      "passwordNeedsLower": "At least one lowercase letter.",
+      "passwordNeedsNumber": "At least one number.",
+      "passwordNeedsSpecial": "At least one special character.",
+      "passwordMismatch": "Passwords do not match.",
+      "serverError": "An error occurred. Please try again."
+    },
+    "invalidLink": "Invalid link",
+    "invalidLinkMessage": "No verification token found."
+  },
   "showcase": {
     "title": "Component Showcase",
     "buttons": "Buttons",

@@ -19,6 +19,18 @@ enum UserRole {
   ADMIN
 }
 
+enum AuditAction {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  REGISTER
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET
+  EMAIL_VERIFIED
+  LOGOUT
+  INVALID_TOKEN
+  ACCOUNT_LOCKED
+}
+
 enum ProjectRole {
   OWNER
   EDITOR
@@ -51,8 +63,6 @@ enum SourceReliability {
 // Users & Projects
 // ---------------------------------------------------------------------------
 
-/// Minimal user record. Auth-specific fields (password_hash, email_verified,
-/// etc.) are added by Epic 1.3 via a separate migration.
 model User {
   id         String   @id @default(cuid())
   email      String   @unique
@@ -61,13 +71,72 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  user_projects UserProject[]
-  persons       Person[]      @relation("PersonCreatedBy")
-  events        Event[]       @relation("EventCreatedBy")
-  sources       Source[]      @relation("SourceCreatedBy")
-  relations     Relation[]    @relation("RelationCreatedBy")
+  // Epic 1.3 additions:
+  password_hash      String?   // null = no password (future OAuth support)
+  email_verified_at  DateTime? // null = not yet verified
+  last_login_at      DateTime? // updated on every successful login
+  failed_login_count Int       @default(0) // consecutive failures; reset on success
+  locked_until       DateTime? // non-null = account temporarily locked
+
+  user_projects       UserProject[]
+  persons             Person[]      @relation("PersonCreatedBy")
+  events              Event[]       @relation("EventCreatedBy")
+  sources             Source[]      @relation("SourceCreatedBy")
+  relations           Relation[]    @relation("RelationCreatedBy")
+  email_confirmations EmailConfirmation[]
+  password_resets     PasswordReset[]
+  auth_audit_logs     AuthAuditLog[]
 
   @@map("users")
+}
+
+/// Stores hashed email verification tokens.
+/// Raw token is only ever in the email link — never persisted.
+model EmailConfirmation {
+  id         String    @id @default(cuid())
+  user_id    String
+  token_hash String    @unique // SHA-256(rawToken)
+  expires_at DateTime          // created_at + 24 hours
+  used_at    DateTime?         // null = still valid; set on redemption
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("email_confirmations")
+}
+
+/// Stores hashed password reset tokens.
+/// 1-hour TTL, single-use, hard-deleted on new request.
+model PasswordReset {
+  id         String    @id @default(cuid())
+  user_id    String
+  token_hash String    @unique // SHA-256(rawToken)
+  expires_at DateTime          // created_at + 1 hour
+  used_at    DateTime?         // null = still valid; set on redemption
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("password_resets")
+}
+
+/// Append-only auth event log. user_id nullable for pre-auth failures.
+model AuthAuditLog {
+  id         String      @id @default(cuid())
+  user_id    String?     // null for unknown-email login attempts
+  action     AuditAction
+  ip_address String?     // GDPR-anonymized: last IPv4 octet zeroed
+  user_agent String?     // truncated to 512 chars
+  metadata   Json?       // event-specific: { reason, token_type, email, ... }
+  created_at DateTime    @default(now())
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([created_at])
+  @@map("auth_audit_logs")
 }
 
 model Project {
