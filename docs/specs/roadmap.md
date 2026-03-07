@@ -6,20 +6,20 @@
 
 ## Strategic Decisions (locked)
 
-| Decision | Choice |
-|---|---|
-| UI framework | shadcn/ui + Tailwind CSS (replacing MUI entirely) |
-| Auth | Auth.js v5 (replacing NextAuth v4) |
-| Relation model | Universal graph — any entity to any entity, user-defined relation types |
-| Life events | Events are events; birth/death stay as Person attributes for display but are first-class events |
-| Source vs. Literature | Explicit split: Source = primary source evidence; Literature = secondary scholarly reference |
-| Uncertainty UX | Categorical: `certain / probable / possible / unknown` (replacing Decimal confidence scores) |
-| Caching & rate limiting | Upstash Redis (Vercel KV) — no in-memory state |
-| i18n | next-intl from day one; German first, English second |
-| Build command | `prisma migrate deploy && next build` (replacing `prisma db push`) |
-| Test coverage target | 80% |
-| Real-time collab | Architecture must not preclude it; defer WebSocket implementation to v2 |
-| Export | First-class feature, designed in from Phase 1 API contracts |
+| Decision                | Choice                                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| UI framework            | shadcn/ui + Tailwind CSS (replacing MUI entirely)                                               |
+| Auth                    | Auth.js v5 (replacing NextAuth v4)                                                              |
+| Relation model          | Universal graph — any entity to any entity, user-defined relation types                         |
+| Life events             | Events are events; birth/death stay as Person attributes for display but are first-class events |
+| Source vs. Literature   | Explicit split: Source = primary source evidence; Literature = secondary scholarly reference    |
+| Uncertainty UX          | Categorical: `certain / probable / possible / unknown` (replacing Decimal confidence scores)    |
+| Caching & rate limiting | Upstash Redis (Vercel KV) — no in-memory state                                                  |
+| i18n                    | next-intl from day one; German first, English second                                            |
+| Build command           | `prisma migrate deploy && next build` (replacing `prisma db push`)                              |
+| Test coverage target    | 80%                                                                                             |
+| Real-time collab        | Architecture must not preclude it; defer WebSocket implementation to v2                         |
+| Export                  | First-class feature, designed in from Phase 1 API contracts                                     |
 
 ---
 
@@ -50,6 +50,7 @@
 **Deliverable:** A clean, migration-tracked Prisma schema implementing the universal graph model, with seed data.
 
 **Core schema decisions:**
+
 - All entities: `User`, `Project`, `UserProject`, `Person`, `Event`, `Source`, `Location`, `Literature`
 - Universal relation model:
   - `Relation` table: `id`, `project_id`, `user_id`, `from_type` (enum), `from_id`, `to_type` (enum), `to_id`, `relation_type_id`, `notes`, `certainty` (enum: CERTAIN/PROBABLE/POSSIBLE/UNKNOWN), `created_at`, `updated_at`
@@ -138,6 +139,10 @@
 - Date uncertainty: same four-state selector; display hints in list ("c. 1850", "before 1900")
 - API: `GET/POST /api/events`, `GET/PUT/DELETE /api/events/[id]`, `POST /api/events/bulk`
 
+**Soft delete note**
+Prisma does not auto-filter deleted_at. A middleware extension is deferred to Epic 2.1 to
+avoid boilerplate — the spec calls this out explicitly so it doesn't get forgotten.
+
 **Verifiable:** Create a parent event (WWI), add sub-events, assign event type with color, view hierarchy, search by date range.
 
 ---
@@ -159,6 +164,11 @@
 ---
 
 ### Epic 2.4 — Universal Relationship Engine
+
+**One critical gotcha from previous implementations**
+Relation.from_id / to_id have no DB-level FK — they're polymorphic. Referential integrity is
+enforced at the application layer (Epic 2.4). Every Phase 2 epic that touches relations must
+account for this.
 
 **Deliverable:** The architectural centerpiece. Create typed, evidenced relations between any two entities. User-defined relation type taxonomies per project.
 
@@ -405,13 +415,13 @@
 
 ## Summary
 
-| Phase | Theme | Epics | Outcome |
-|---|---|---|---|
-| 1 | Foundation & Auth | 1.1–1.4 | Secure, authenticated shell with infrastructure |
-| 2 | Core Research Loop | 2.1–2.4 | MVP: persons, events, sources, universal relations |
-| 3 | Research Context | 3.1–3.4 | Projects, locations, literature, bulk import |
-| 4 | Discovery | 4.1–4.4 | Search, timeline, network graph, analytics |
-| 5 | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage |
+| Phase | Theme               | Epics   | Outcome                                            |
+| ----- | ------------------- | ------- | -------------------------------------------------- |
+| 1     | Foundation & Auth   | 1.1–1.4 | Secure, authenticated shell with infrastructure    |
+| 2     | Core Research Loop  | 2.1–2.4 | MVP: persons, events, sources, universal relations |
+| 3     | Research Context    | 3.1–3.4 | Projects, locations, literature, bulk import       |
+| 4     | Discovery           | 4.1–4.4 | Search, timeline, network graph, analytics         |
+| 5     | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage      |
 
 **MVP for university validation = Phase 1 + Phase 2 complete.**
 Phase 3 adds collaborative workspace and import, making it suitable for a research group.
