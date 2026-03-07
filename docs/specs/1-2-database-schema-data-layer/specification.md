@@ -3,8 +3,8 @@
 ## Specification
 
 **Phase:** 1 — Foundation & Auth
-**Deliverable:** A clean, migration-tracked Prisma schema implementing the universal graph model, with seed data and a health check endpoint.
-**Verifiable:** `prisma studio` shows all 11 tables with seed data; `GET /api/health` returns DB connection status and latest migration version.
+**Deliverable:** A clean, migration-tracked Prisma schema implementing the universal graph model with temporal validity and evidence attribution, with seed data and a health check endpoint.
+**Verifiable:** `prisma studio` shows all 13 tables with seed data; `GET /api/health` returns DB connection status and latest migration version.
 
 ---
 
@@ -198,14 +198,22 @@ model Person {
   death_date_certainty  Certainty @default(UNKNOWN)
   death_place           String?
 
-  notes      String?
+  notes String?
+
+  // Structured location references for birthplace and death place.
+  // Free-text birth_place / death_place retained as fallback display strings.
+  birth_location_id String?
+  death_location_id String?
+
   deleted_at DateTime?
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  project    Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  created_by User?        @relation("PersonCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
-  names      PersonName[]
+  project        Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by     User?        @relation("PersonCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  names          PersonName[]
+  birth_location Location?    @relation("PersonBirthLocation", fields: [birth_location_id], references: [id], onDelete: SetNull)
+  death_location Location?    @relation("PersonDeathLocation", fields: [death_location_id], references: [id], onDelete: SetNull)
 
   @@index([project_id])
   @@map("persons")
@@ -247,18 +255,20 @@ model Event {
   end_day               Int?
   end_date_certainty    Certainty @default(UNKNOWN)
 
-  // Free-text location; Epic 3.2 adds location_id FK for geocoded locations.
-  location String?
+  // Structured location reference. Free-text fallback kept for display when location_id is null.
+  location_id  String?
+  location     String?   // free-text fallback; populated by UI until location_id is set
 
   notes      String?
   deleted_at DateTime?
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  project    Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  created_by User?   @relation("EventCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
-  parent     Event?  @relation("SubEvents", fields: [parent_id], references: [id])
-  sub_events Event[] @relation("SubEvents")
+  project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by   User?     @relation("EventCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  parent       Event?    @relation("SubEvents", fields: [parent_id], references: [id])
+  sub_events   Event[]   @relation("SubEvents")
+  location_ref Location? @relation("EventLocation", fields: [location_id], references: [id], onDelete: SetNull)
 
   @@index([project_id])
   @@map("events")
@@ -285,9 +295,10 @@ model Source {
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  project           Project            @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  created_by        User?              @relation("SourceCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  project           Project             @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by        User?               @relation("SourceCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
   relation_evidence RelationEvidence[]
+  property_evidence PropertyEvidence[]  @relation("PropertyEvidenceSource")
 
   @@index([project_id])
   @@map("sources")
@@ -309,7 +320,10 @@ model Location {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  project       Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  persons_birth Person[] @relation("PersonBirthLocation")
+  persons_death Person[] @relation("PersonDeathLocation")
+  events        Event[]  @relation("EventLocation")
 
   @@index([project_id])
   @@map("locations")
@@ -386,6 +400,16 @@ model Relation {
   notes     String?
   certainty Certainty @default(UNKNOWN)
 
+  // Temporal validity — when was this relation true historically?
+  // Uses the same year/month/certainty triple as Person and Event dates.
+  // Month is nullable: year-only ("c. 1870") is a valid historical date.
+  valid_from_year  Int?
+  valid_from_month Int?
+  valid_from_cert  Certainty @default(UNKNOWN)
+  valid_to_year    Int?
+  valid_to_month   Int?
+  valid_to_cert    Certainty @default(UNKNOWN)
+
   deleted_at DateTime?
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
@@ -402,14 +426,18 @@ model Relation {
   @@map("relations")
 }
 
-/// Attaches a primary Source as evidence for a Relation.
-/// Notes explain what specifically in the source supports this relation.
+/// Attaches a Source as evidence for a Relation.
+/// page_reference and quote allow precise archival citation (folio, column, transcript excerpt).
+/// confidence is per-evidence: one source may strongly support a relation while another only hints.
 model RelationEvidence {
-  id          String   @id @default(cuid())
-  relation_id String
-  source_id   String
-  notes       String?
-  created_at  DateTime @default(now())
+  id             String    @id @default(cuid())
+  relation_id    String
+  source_id      String
+  notes          String?
+  page_reference String?   // e.g. "S. 47", "fol. 12r", "col. 3"
+  quote          String?   // direct transcript excerpt from the source
+  confidence     Certainty @default(UNKNOWN)
+  created_at     DateTime  @default(now())
 
   relation Relation @relation(fields: [relation_id], references: [id], onDelete: Cascade)
   source   Source   @relation(fields: [source_id], references: [id], onDelete: Cascade)
@@ -417,26 +445,57 @@ model RelationEvidence {
   @@unique([relation_id, source_id])
   @@map("relation_evidence")
 }
+
+/// Attaches a Source as evidence for a specific property value on any entity.
+/// Supplements (does not replace) the fact stored on the entity itself.
+/// The entity holds the researcher's current "best estimate" value; PropertyEvidence
+/// records what each source says about that property — enabling conflict warnings in the UI.
+///
+/// property: free-text field name validated at app layer ("birth_year", "description", etc.)
+///           Using a String rather than a DB enum preserves flexibility for future entity types
+///           without requiring ALTER TYPE migrations.
+///
+/// IMPORTANT: entity_id has NO DB-level FK (polymorphic, same pattern as Relation.from_id).
+///            App layer must verify entity existence before insert.
+model PropertyEvidence {
+  id             String     @id @default(cuid())
+  project_id     String
+  entity_type    EntityType
+  entity_id      String     // no DB FK — polymorphic; app-layer integrity
+  property       String     // field name this evidence supports
+  source_id      String
+  notes          String?
+  page_reference String?
+  created_at     DateTime   @default(now())
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  source  Source  @relation("PropertyEvidenceSource", fields: [source_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@index([entity_type, entity_id])
+  @@map("property_evidence")
+}
 ```
 
 ---
 
 ### 2.3 Table Summary
 
-| Table               | Soft Delete  | created_by_id | Notes                                |
-| ------------------- | ------------ | ------------- | ------------------------------------ |
-| `users`             | —            | —             | Auth fields added Epic 1.3           |
-| `projects`          | `deleted_at` | —             | Recovery UI in Epic 3.1              |
-| `user_projects`     | —            | —             | Junction table                       |
-| `persons`           | `deleted_at` | `user_id?`    | Core research entity                 |
-| `person_names`      | —            | —             | Child of Person                      |
-| `events`            | `deleted_at` | `user_id?`    | Self-referential for sub-events      |
-| `sources`           | `deleted_at` | `user_id?`    | Primary evidence                     |
-| `locations`         | —            | —             | Reference data                       |
-| `literature`        | —            | —             | Stub; expanded Epic 3.3              |
-| `relation_types`    | —            | —             | Per-project taxonomy                 |
-| `relations`         | `deleted_at` | `user_id?`    | Polymorphic — no FK on from_id/to_id |
-| `relation_evidence` | —            | —             | Links Source to Relation             |
+| Table               | Soft Delete  | created_by_id | Notes                                                          |
+| ------------------- | ------------ | ------------- | -------------------------------------------------------------- |
+| `users`             | —            | —             | Auth fields added Epic 1.3                                     |
+| `projects`          | `deleted_at` | —             | Recovery UI in Epic 3.1                                        |
+| `user_projects`     | —            | —             | Junction table                                                 |
+| `persons`           | `deleted_at` | `user_id?`    | Core research entity; nullable birth/death location FKs        |
+| `person_names`      | —            | —             | Child of Person; multilingual name variants                    |
+| `events`            | `deleted_at` | `user_id?`    | Self-referential sub-events; nullable location_id FK           |
+| `sources`           | `deleted_at` | `user_id?`    | Primary evidence                                               |
+| `locations`         | —            | —             | Reference data; back-refs from Person (×2) and Event           |
+| `literature`        | —            | —             | Stub; expanded Epic 3.3                                        |
+| `relation_types`    | —            | —             | Per-project taxonomy                                           |
+| `relations`         | `deleted_at` | `user_id?`    | Polymorphic FK; temporal validity (valid_from/to year+month+cert) |
+| `relation_evidence` | —            | —             | Links Source to Relation; page_reference, quote, confidence    |
+| `property_evidence` | —            | —             | Links Source to a specific entity property value (polymorphic) |
 
 ---
 
@@ -659,6 +718,23 @@ Seed uses `upsert` throughout keyed on deterministic unique fields (email for Us
 | Relation         | 5     | Links between the above persons and events                                    |
 | RelationEvidence | 3     | Source evidence attached to 3 relations                                       |
 
+### Architecture Decisions (from evaluation 2026-03-07)
+
+The following open questions were resolved before implementation. See `architecture-evaluation.md` for full analysis.
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Temporal validity precision on Relation | Year + Month + Certainty triple | Consistency with Person/Event date model; "c. 1870" must be expressible on relations too |
+| `PropertyEvidence.property` type | `String` (app-layer validation) | DB enums are costly to extend in Prisma/Postgres; String allows future entity types without ALTER TYPE |
+| Location FK on Person and Event | Added now (nullable) | Prevents free-text→structured migration on 5,000+ records; nullable = zero migration risk now |
+| ClaimVersion stub table | Deferred entirely | PropertyEvidence covers 90% of attribution use cases; full versioning is Phase 4+ work |
+| Conflicting property values | "Primary fact" model | Entity column holds researcher's best estimate; PropertyEvidence surfaces conflicts in UI as warnings |
+| Inverse relations | Derived at query time | Explicit `inverse_id` creates write-sync bugs; Postgres is fast enough for derived traversal |
+| Event hierarchy | `parent_id` self-referential (current) | Sufficient for Phase 1; EventGroup can be layered on top later without breaking this |
+| Soft-delete cascade | Prisma middleware (Epic 2.1) | DB triggers are invisible; middleware keeps logic in the codebase where developers see it |
+
+---
+
 ### Polymorphic Relation Integrity
 
 `Relation.from_id` and `Relation.to_id` are plain `String` columns with **no DB-level foreign key**. There is no way to declare a FK that conditionally references `persons`, `events`, or `sources` depending on `from_type`.
@@ -688,7 +764,7 @@ In CI (Epic 1.4): `prisma migrate deploy` (not `dev`) is used, per the roadmap s
 ## 11. Acceptance Criteria
 
 1. `pnpm prisma migrate dev` completes without errors and creates the initial migration file.
-2. `pnpm prisma studio` opens and shows all 12 tables: `users`, `projects`, `user_projects`, `persons`, `person_names`, `events`, `sources`, `locations`, `literature`, `relation_types`, `relations`, `relation_evidence`.
+2. `pnpm prisma studio` opens and shows all 13 tables: `users`, `projects`, `user_projects`, `persons`, `person_names`, `events`, `sources`, `locations`, `literature`, `relation_types`, `relations`, `relation_evidence`, `property_evidence`.
 3. `pnpm prisma db seed` completes without errors.
 4. Running `pnpm prisma db seed` a second time produces no duplicate records (counts are identical).
 5. `GET /api/health` returns HTTP 200 with `{ status: "ok", db: { status: "ok" } }` when the database is reachable.
@@ -698,7 +774,7 @@ In CI (Epic 1.4): `prisma migrate deploy` (not `dev`) is used, per the roadmap s
 9. When `DATABASE_URL` is removed from `.env`, the app fails to start with a Zod validation error (not a Prisma connection error).
 10. `pnpm typecheck` passes with zero TypeScript errors (Prisma-generated types included).
 11. `pnpm test` passes all unit tests for the health route handler.
-12. `prisma studio` shows seed data: at least 4 Persons (each with 2 PersonName entries), 4 Events, 5 Relations, and 3 RelationEvidence records in the demo project.
+12. `prisma studio` shows seed data: at least 4 Persons (each with 2 PersonName entries), 4 Events, 5 Relations (at least 2 with `valid_from_year` set), and 3 RelationEvidence records (at least 1 with `page_reference` set) in the demo project.
 
 ---
 
@@ -709,7 +785,7 @@ In CI (Epic 1.4): `prisma migrate deploy` (not `dev`) is used, per the roadmap s
 - `EmailConfirmation`, `PasswordReset`, `AuthAuditLog` tables (Epic 1.3)
 - Rate limiting and Redis caching (Epic 1.4)
 - API routes for Person, Event, Source, Relation CRUD (Phase 2)
-- Location geocoding and `geocoded_at` field (Epic 3.2)
+- Location geocoding, `geocoded_at` field, and geocoding UI (Epic 3.2) — Location FKs exist from Epic 1.2 but are unpopulated until geocoding is built
 - Full Literature bibliographic fields (Epic 3.3)
 - Full-text search indexes on `tsvector` (Epic 4.1)
 - Activity log table (Epic 4.4)

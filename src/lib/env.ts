@@ -4,7 +4,8 @@ const server = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]),
 
   // Epic 1.2 — DB
-  DATABASE_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().url(),
+  DATABASE_URL_UNPOOLED: z.string().url(),
 
   // Epic 1.3 — Auth
   NEXTAUTH_SECRET: z.string().min(32).optional(),
