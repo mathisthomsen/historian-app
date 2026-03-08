@@ -1,0 +1,107 @@
+name: CI / CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: "pnpm" }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: "pnpm" }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: "pnpm" }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+        env:
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+
+  build-test-deploy:
+    name: Build → E2E → Deploy
+    needs: [lint, typecheck, unit-tests]
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      AUTH_URL: "http://localhost:3000"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: "pnpm" }
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+        env:
+          # prisma generate never connects — placeholders satisfy the schema validator
+          DATABASE_URL: "postgresql://placeholder:placeholder@localhost/placeholder"
+          DATABASE_URL_UNPOOLED: "postgresql://placeholder:placeholder@localhost/placeholder"
+
+      - name: Run DB migrations
+        run: pnpm prisma migrate deploy
+        env:
+          # Migrations require a direct (non-pooled) connection for both vars
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+
+      - name: Build
+        run: pnpm build
+
+      - name: Seed database
+        run: pnpm prisma db seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox
+
+      - name: Start server
+        run: pnpm start &
+
+      - name: Wait for server
+        run: pnpm exec wait-on http://localhost:3000 --timeout 30000
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+
+      - name: Deploy to Vercel
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: pnpm dlx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

@@ -117,6 +117,9 @@ temp/
 __todo.txt
 app/__todo.txt
 
+# Claude Code — installed skill packages (cloned git repos, not tracked)
+.claude/skills/resend/
+
 # Editor directories and files
 .vscode/
 .idea/

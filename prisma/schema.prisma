@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,556 +10,470 @@ datasource db {
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AuditAction {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  REGISTER
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET
+  EMAIL_VERIFIED
+  LOGOUT
+  INVALID_TOKEN
+  ACCOUNT_LOCKED
+}
+
+enum ProjectRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum EntityType {
+  PERSON
+  EVENT
+  SOURCE
+  LOCATION
+  LITERATURE
+}
+
+enum Certainty {
+  CERTAIN
+  PROBABLE
+  POSSIBLE
+  UNKNOWN
+}
+
+enum SourceReliability {
+  HIGH
+  MEDIUM
+  LOW
+  UNKNOWN
+}
+
+// ---------------------------------------------------------------------------
+// Users & Projects
+// ---------------------------------------------------------------------------
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  role       UserRole @default(USER)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Epic 1.3 additions:
+  password_hash      String?   // null = no password (future OAuth support)
+  email_verified_at  DateTime? // null = not yet verified
+  last_login_at      DateTime? // updated on every successful login
+  failed_login_count Int       @default(0) // consecutive failures; reset on success
+  locked_until       DateTime? // non-null = account temporarily locked
+
+  user_projects       UserProject[]
+  persons             Person[]      @relation("PersonCreatedBy")
+  events              Event[]       @relation("EventCreatedBy")
+  sources             Source[]      @relation("SourceCreatedBy")
+  relations           Relation[]    @relation("RelationCreatedBy")
+  email_confirmations EmailConfirmation[]
+  password_resets     PasswordReset[]
+  auth_audit_logs     AuthAuditLog[]
+
+  @@map("users")
+}
+
+/// Stores hashed email verification tokens.
+/// Raw token is only ever in the email link — never persisted.
+model EmailConfirmation {
+  id         String    @id @default(cuid())
+  user_id    String
+  token_hash String    @unique // SHA-256(rawToken)
+  expires_at DateTime          // created_at + 24 hours
+  used_at    DateTime?         // null = still valid; set on redemption
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("email_confirmations")
+}
+
+/// Stores hashed password reset tokens.
+/// 1-hour TTL, single-use, hard-deleted on new request.
+model PasswordReset {
+  id         String    @id @default(cuid())
+  user_id    String
+  token_hash String    @unique // SHA-256(rawToken)
+  expires_at DateTime          // created_at + 1 hour
+  used_at    DateTime?         // null = still valid; set on redemption
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("password_resets")
+}
+
+/// Append-only auth event log. user_id nullable for pre-auth failures.
+model AuthAuditLog {
+  id         String      @id @default(cuid())
+  user_id    String?     // null for unknown-email login attempts
+  action     AuditAction
+  ip_address String?     // GDPR-anonymized: last IPv4 octet zeroed
+  user_agent String?     // truncated to 512 chars
+  metadata   Json?       // event-specific: { reason, token_type, email, ... }
+  created_at DateTime    @default(now())
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([created_at])
+  @@map("auth_audit_logs")
+}
+
 model Project {
-  id          String        @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
-  owner_id    String
-  events      events[]
-  literature  literature[]
-  persons     persons[]
-  owner       User          @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  members     UserProject[]
-  // New relations for restructured system
-  sources     sources[]
-  statements  statements[]
-  personEventRelations personEventRelations[]
-  sourceOnRelations sourceOnRelations[]
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime? // soft-delete; Epic 3.1 adds recovery UI
+
+  user_projects  UserProject[]
+  persons        Person[]
+  events         Event[]
+  sources        Source[]
+  locations      Location[]
+  literature     Literature[]
+  relations      Relation[]
+  relation_types RelationType[]
+  property_evidence PropertyEvidence[]
 
   @@map("projects")
 }
 
 model UserProject {
-  id         Int     @id @default(autoincrement())
+  id         String      @id @default(cuid())
   user_id    String
   project_id String
-  role       String  @default("member") // editor, viewer, owner
-  project    Project @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  role       ProjectRole @default(VIEWER)
+  created_at DateTime    @default(now())
+
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, project_id])
   @@map("user_projects")
 }
 
-model User {
-  id                 String               @id @default(cuid())
-  email              String               @unique
-  name               String
-  password           String?
-  role               UserRole             @default(USER)
-  emailVerified      Boolean              @default(false)
-  emailVerifiedAt    DateTime?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  lastLoginAt        DateTime?
-  workosUserId       String?              @unique
-  accounts           Account[]
-  authAuditLogs      AuthAuditLog[]
-  bibliography_syncs bibliography_syncs[]
-  dataUncertainty    data_uncertainty[]
-  duplicateMatches   duplicate_matches[]
-  emailConfirmations EmailConfirmation[]
-  event_types        event_types[]
-  events             events[]
-  importHistory      import_history[]
-  literature         literature[]
-  passwordResets     PasswordReset[]
-  persons            persons[]
-  projects           Project[]
-  refreshTokens      RefreshToken[]
-  sessions           Session[]
-  userProjects       UserProject[]
-  // New relations for restructured system
-  sources            sources[]
-  statements         statements[]
-  personEventRelations personEventRelations[]
-  sourceOnRelations  sourceOnRelations[]
+// ---------------------------------------------------------------------------
+// Research Entities
+// ---------------------------------------------------------------------------
 
-  @@index([email])
-  @@index([role])
-  @@index([emailVerified])
-  @@map("users")
-}
+model Person {
+  id            String    @id @default(cuid())
+  project_id    String
+  created_by_id String?
 
-model EmailConfirmation {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  first_name String?
+  last_name  String?
 
-  @@index([token])
-  @@index([userId])
-  @@index([expiresAt])
-  @@map("email_confirmations")
-}
+  // Partial date support: store year/month/day separately.
+  // All three nullable; year-only is valid (month/day null).
+  birth_year           Int?
+  birth_month          Int?
+  birth_day            Int?
+  birth_date_certainty Certainty @default(UNKNOWN)
+  birth_place          String?
 
-model PasswordReset {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  death_year           Int?
+  death_month          Int?
+  death_day            Int?
+  death_date_certainty Certainty @default(UNKNOWN)
+  death_place          String?
 
-  @@index([token])
-  @@index([userId])
-  @@index([expiresAt])
-  @@map("password_resets")
-}
+  notes String?
 
-model RefreshToken {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Structured location references for birthplace and death place.
+  // Free-text birth_place / death_place retained as fallback display strings.
+  birth_location_id String?
+  death_location_id String?
 
-  @@index([token])
-  @@index([userId])
-  @@index([expiresAt])
-  @@map("refresh_tokens")
-}
+  deleted_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project        Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by     User?        @relation("PersonCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  names          PersonName[]
+  birth_location Location?    @relation("PersonBirthLocation", fields: [birth_location_id], references: [id], onDelete: SetNull)
+  death_location Location?    @relation("PersonDeathLocation", fields: [death_location_id], references: [id], onDelete: SetNull)
 
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-model AuthAuditLog {
-  id        Int      @id @default(autoincrement())
-  userId    String?
-  eventType String
-  ipAddress String?
-  userAgent String?
-  details   Json?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([eventType])
-  @@index([createdAt])
-  @@map("auth_audit_logs")
-}
-
-model events {
-  id                   Int           @id @default(autoincrement())
-  userId               String
-  title                String
-  description          String?
-  date                 DateTime?
-  end_date             DateTime?
-  location             String?
-  location_id          Int?          // Reference to locations table
-  parentId             Int?
-  created_via_import   Boolean       @default(false)
-  date_original        String?       @db.VarChar(100)
-  date_uncertainty     String?       @db.VarChar(20)
-  end_date_original    String?       @db.VarChar(100)
-  end_date_uncertainty String?       @db.VarChar(20)
-  import_batch_id      String?       @db.VarChar(100)
-  location_confidence  Decimal?      @db.Decimal(3, 2)
-  location_normalized  String?       @db.VarChar(255)
-  title_confidence     Decimal?      @db.Decimal(3, 2)
-  project_id           String?
-  // Location validation fields
-  latitude             Decimal?      @db.Decimal(10, 8)
-  longitude            Decimal?      @db.Decimal(11, 8)
-  country              String?       @db.VarChar(255)
-  region               String?       @db.VarChar(255)
-  city                 String?       @db.VarChar(255)
-  parent               events?       @relation("SubEvents", fields: [parentId], references: [id])
-  subEvents            events[]      @relation("SubEvents")
-  project              Project?      @relation(fields: [project_id], references: [id], onUpdate: NoAction)
-  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location_ref         locations?    @relation("location_ref", fields: [location_id], references: [id])
-  // New relations for restructured system
-  personEventRelations personEventRelations[]
-
-  @@index([date])
-  @@index([title])
-  @@index([location])
-  @@index([userId])
-  @@index([parentId])
-  @@index([import_batch_id])
-  @@index([location_normalized])
-  @@index([location_id])
-}
-
-model event_types {
-  id          Int           @id @default(autoincrement())
-  userId      String
-  name        String?
-  icon        String?
-  color       String?
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // Removed life_events relation since we're replacing that system
-
-  @@index([name])
-  @@index([userId])
-}
-
-model persons {
-  id                     Int                @id @default(autoincrement())
-  userId                 String
-  first_name             String?            @db.VarChar(100)
-  last_name              String?            @db.VarChar(100)
-  birth_date             DateTime?          @db.Date
-  birth_place            String?            @db.VarChar(255)
-  birth_location_id      Int?               // Reference to locations table for birth place
-  death_date             DateTime?          @db.Date
-  death_place            String?            @db.VarChar(255)
-  death_location_id      Int?               // Reference to locations table for death place
-  notes                  String?
-  birth_date_original    String?            @db.VarChar(100)
-  birth_date_uncertainty String?            @db.VarChar(20)
-  birth_place_confidence Decimal?           @db.Decimal(3, 2)
-  birth_place_normalized String?            @db.VarChar(255)
-  created_via_import     Boolean            @default(false)
-  death_date_original    String?            @db.VarChar(100)
-  death_date_uncertainty String?            @db.VarChar(20)
-  death_place_confidence Decimal?           @db.Decimal(3, 2)
-  death_place_normalized String?            @db.VarChar(255)
-  import_batch_id        String?            @db.VarChar(100)
-  name_confidence        Decimal?           @db.Decimal(3, 2)
-  project_id             String?
-  relations_from         person_relations[] @relation("from_person")
-  relations_to           person_relations[] @relation("to_person")
-  project                Project?           @relation(fields: [project_id], references: [id], onUpdate: NoAction)
-  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  birth_location_ref     locations?         @relation("birth_location", fields: [birth_location_id], references: [id])
-  death_location_ref     locations?         @relation("death_location", fields: [death_location_id], references: [id])
-  // New relations for restructured system
-  personEventRelations   personEventRelations[]
-
-  @@index([first_name])
-  @@index([last_name])
-  @@index([birth_date])
-  @@index([death_date])
-  @@index([birth_place])
-  @@index([death_place])
-  @@index([first_name, last_name])
-  @@index([userId])
-  @@index([import_batch_id])
-  @@index([birth_place_normalized])
-  @@index([death_place_normalized])
-  @@index([birth_location_id])
-  @@index([death_location_id])
-}
-
-model person_relations {
-  id             Int     @id @default(autoincrement())
-  from_person_id Int
-  to_person_id   Int
-  relation_type  String  @db.VarChar(100)
-  notes          String?
-  from_person    persons @relation("from_person", fields: [from_person_id], references: [id])
-  to_person      persons @relation("to_person", fields: [to_person_id], references: [id])
-
-  @@index([from_person_id])
-  @@index([to_person_id])
-  @@index([relation_type])
-  @@index([from_person_id, relation_type])
-  @@map("person_relations")
-}
-
-model literature {
-  id               Int       @id @default(autoincrement())
-  userId           String
-  title            String    @db.VarChar(255)
-  author           String    @db.VarChar(255)
-  publication_year Int?
-  type             String    @db.VarChar(100)
-  description      String?
-  url              String?   @db.VarChar(500)
-  publisher        String?   @db.VarChar(255)
-  journal          String?   @db.VarChar(255)
-  volume           String?   @db.VarChar(50)
-  issue            String?   @db.VarChar(50)
-  pages            String?   @db.VarChar(100)
-  doi              String?   @db.VarChar(255)
-  isbn             String?   @db.VarChar(50)
-  issn             String?   @db.VarChar(50)
-  language         String?   @db.VarChar(50)
-  keywords         String?
-  abstract         String?
-  externalId       String?   @db.VarChar(255)
-  syncSource       String?   @db.VarChar(50)
-  lastSyncedAt     DateTime?
-  syncMetadata     Json?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  project_id       String?
-  project          Project?  @relation(fields: [project_id], references: [id], onUpdate: NoAction)
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([title])
-  @@index([author])
-  @@index([type])
-  @@index([publication_year])
-  @@index([externalId])
-  @@index([syncSource])
-  @@index([externalId, syncSource])
-}
-
-model import_history {
-  id              String   @id @default(cuid())
-  userId          String
-  import_type     String
-  batch_id        String   @unique
-  file_name       String
-  total_records   Int
-  imported_count  Int
-  error_count     Int
-  skipped_count   Int
-  processing_time Int
-  status          String
-  error_details   Json?
-  created_at      DateTime @default(now())
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([import_type])
-  @@index([status])
-  @@index([created_at])
-}
-
-model data_uncertainty {
-  id               Int      @id @default(autoincrement())
-  userId           String
-  table_name       String   @db.VarChar(50)
-  record_id        Int
-  field_name       String   @db.VarChar(50)
-  original_value   String?
-  normalized_value String?
-  confidence       Decimal  @db.Decimal(3, 2)
-  uncertainty_type String   @db.VarChar(20)
-  created_at       DateTime @default(now())
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([table_name, record_id])
-  @@index([field_name])
-  @@index([uncertainty_type])
-  @@index([confidence])
-}
-
-model duplicate_matches {
-  id              Int       @id @default(autoincrement())
-  userId          String
-  table_name      String    @db.VarChar(50)
-  record_id       Int
-  duplicate_id    Int
-  confidence      Decimal   @db.Decimal(3, 2)
-  match_reason    String    @db.VarChar(100)
-  status          String    @db.VarChar(20)
-  resolved_action String?   @db.VarChar(50)
-  created_at      DateTime  @default(now())
-  resolved_at     DateTime?
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([table_name, record_id])
-  @@index([duplicate_id])
-  @@index([status])
-  @@index([confidence])
-}
-
-model bibliography_syncs {
-  id             Int       @id @default(autoincrement())
-  userId         String
-  service        String    @db.VarChar(50)
-  name           String    @db.VarChar(255)
-  isActive       Boolean   @default(false)
-  apiKey         String?   @db.VarChar(500)
-  apiSecret      String?   @db.VarChar(500)
-  accessToken    String?   @db.VarChar(500)
-  refreshToken   String?   @db.VarChar(500)
-  tokenExpiresAt DateTime?
-  collectionId   String?   @db.VarChar(255)
-  collectionName String?   @db.VarChar(255)
-  autoSync       Boolean   @default(false)
-  syncInterval   Int?
-  lastSyncAt     DateTime?
-  syncMetadata   Json?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime
-  users          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, service])
-  @@index([isActive])
-  @@index([service])
-  @@index([userId])
-  @@index([userId, service])
-}
-
-model locations {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  normalized  String?
-  country     String?
-  region      String?
-  city        String?
-  latitude    Decimal?  @db.Decimal(10, 8)
-  longitude   Decimal?  @db.Decimal(11, 8)
-  geocoded_at DateTime?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-
-  // Relations
-  events          events[]          @relation("location_ref")
-  birth_persons   persons[]         @relation("birth_location")
-  death_persons   persons[]         @relation("death_location")
-
-  @@index([country, region, city])
-  @@index([latitude, longitude])
-  @@index([name])
-  @@index([normalized])
-  @@map("locations")
-}
-
-// New core tables for the restructured system
-model sources {
-  id          Int      @id @default(autoincrement())
-  userId      String
-  project_id  String?
-  title       String
-  url         String?
-  author      String?
-  publication String?
-  year        Int?
-  reliability Decimal? @db.Decimal(3, 2) // 0.00 to 1.00
-  notes       String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project     Project? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
-  statements  statements[]
-  sourceOnRelations sourceOnRelations[]
-
-  @@index([userId])
   @@index([project_id])
-  @@index([title])
-  @@index([reliability])
+  @@map("persons")
+}
+
+/// Stores all name variants for a person, including the primary display name.
+/// language: ISO 639-1 code ("de", "en", "la", etc.) — nullable when unknown.
+model PersonName {
+  id         String   @id @default(cuid())
+  person_id  String
+  name       String
+  language   String?
+  is_primary Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  person Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@map("person_names")
+}
+
+model Event {
+  id            String    @id @default(cuid())
+  project_id    String
+  created_by_id String?
+  parent_id     String? // self-referential for sub-events
+
+  title       String
+  description String?
+  event_type  String? // user-defined string; Epic 2.2 adds EventType table
+
+  start_year           Int?
+  start_month          Int?
+  start_day            Int?
+  start_date_certainty Certainty @default(UNKNOWN)
+
+  end_year           Int?
+  end_month          Int?
+  end_day            Int?
+  end_date_certainty Certainty @default(UNKNOWN)
+
+  // Structured location reference. Free-text fallback kept for display when location_id is null.
+  location_id String?
+  location    String? // free-text fallback; populated by UI until location_id is set
+
+  notes      String?
+  deleted_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by   User?     @relation("EventCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  parent       Event?    @relation("SubEvents", fields: [parent_id], references: [id])
+  sub_events   Event[]   @relation("SubEvents")
+  location_ref Location? @relation("EventLocation", fields: [location_id], references: [id], onDelete: SetNull)
+
+  @@index([project_id])
+  @@map("events")
+}
+
+model Source {
+  id            String @id @default(cuid())
+  project_id    String
+  created_by_id String?
+
+  title       String
+  // user-extendable string: archival_document | letter | newspaper |
+  // official_record | photograph | other
+  type        String
+  author      String?
+  date        String? // free-text source date ("c. March 1848")
+  repository  String?
+  call_number String?
+  url         String?
+  reliability SourceReliability @default(UNKNOWN)
+  notes       String?
+
+  deleted_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  project           Project            @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by        User?              @relation("SourceCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  relation_evidence RelationEvidence[]
+  property_evidence PropertyEvidence[] @relation("PropertyEvidenceSource")
+
+  @@index([project_id])
   @@map("sources")
 }
 
-model statements {
-  id          Int      @id @default(autoincrement())
-  userId      String
-  project_id  String?
-  content     String
-  confidence  Decimal? @db.Decimal(3, 2) // 0.00 to 1.00
-  source_id   Int?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+/// Reference-data entity. No soft-delete (not a research record).
+model Location {
+  id         String @id @default(cuid())
+  project_id String
 
-  // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project     Project? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
-  source      sources? @relation(fields: [source_id], references: [id], onDelete: SetNull)
-  personEventRelations personEventRelations[]
+  name    String
+  country String?
+  region  String?
+  city    String?
+  lat     Float?
+  lng     Float?
+  // geocoded_at and geocoding metadata added in Epic 3.2
 
-  @@index([userId])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  project       Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  persons_birth Person[] @relation("PersonBirthLocation")
+  persons_death Person[] @relation("PersonDeathLocation")
+  events        Event[]  @relation("EventLocation")
+
   @@index([project_id])
-  @@index([source_id])
-  @@index([confidence])
-  @@map("statements")
+  @@map("locations")
 }
 
-model personEventRelations {
-  id                Int      @id @default(autoincrement())
-  userId            String
-  project_id        String?
-  person_id         Int
-  event_id          Int
-  relationship_type String   // participant, witness, affected, organizer, etc.
-  statement_id      Int?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+/// Secondary scholarly references. Full bibliographic fields added in Epic 3.3.
+/// Stub table created now to satisfy the EntityType enum membership.
+model Literature {
+  id         String @id @default(cuid())
+  project_id String
 
-  // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project     Project? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
-  person      persons  @relation(fields: [person_id], references: [id], onDelete: Cascade)
-  event       events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  statement   statements? @relation(fields: [statement_id], references: [id], onDelete: SetNull)
-  sourceOnRelations sourceOnRelations[]
+  title  String
+  author String?
+  year   Int?
+  // type, publisher, doi, isbn etc. added in Epic 3.3
+  notes  String?
 
-  @@unique([person_id, event_id, relationship_type])
-  @@index([userId])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
   @@index([project_id])
-  @@index([person_id])
-  @@index([event_id])
-  @@index([relationship_type])
-  @@index([statement_id])
-  @@map("person_event_relations")
+  @@map("literature")
 }
 
-model sourceOnRelations {
-  id                Int      @id @default(autoincrement())
-  userId            String
-  project_id        String?
-  source_id         Int
-  relation_id       Int
-  created_at        DateTime @default(now())
+// ---------------------------------------------------------------------------
+// Universal Relation Model
+// ---------------------------------------------------------------------------
 
-  // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project     Project? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
-  source      sources  @relation(fields: [source_id], references: [id], onDelete: Cascade)
-  relation    personEventRelations @relation(fields: [relation_id], references: [id], onDelete: Cascade)
+/// User-defined relation type taxonomy, scoped per project.
+model RelationType {
+  id         String @id @default(cuid())
+  project_id String
 
-  @@unique([source_id, relation_id])
-  @@index([userId])
+  name         String
+  inverse_name String?
+  description  String?
+  color        String? // hex color, e.g. "#4f46e5"
+  icon         String? // icon identifier (Lucide icon name)
+
+  // Which entity types are valid on each side of this relation.
+  // Stored as native PostgreSQL enum arrays.
+  valid_from_types EntityType[]
+  valid_to_types   EntityType[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  project   Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  relations Relation[]
+
   @@index([project_id])
-  @@index([source_id])
-  @@index([relation_id])
-  @@map("source_on_relations")
+  @@map("relation_types")
 }
 
-enum UserRole {
-  USER
-  ADMIN
+/// A directed, typed, evidenced relation between any two entities.
+///
+/// IMPORTANT: from_id and to_id are NOT foreign keys at the DB level.
+/// Because they can reference different tables (Person, Event, Source, …),
+/// a conventional FK constraint cannot be declared. Referential integrity
+/// for these fields must be enforced at the application layer.
+model Relation {
+  id            String  @id @default(cuid())
+  project_id    String
+  created_by_id String?
+
+  from_type        EntityType
+  from_id          String
+  to_type          EntityType
+  to_id            String
+  relation_type_id String
+
+  notes     String?
+  certainty Certainty @default(UNKNOWN)
+
+  // Temporal validity — when was this relation true historically?
+  // Uses the same year/month/certainty triple as Person and Event dates.
+  // Month is nullable: year-only ("c. 1870") is a valid historical date.
+  valid_from_year  Int?
+  valid_from_month Int?
+  valid_from_cert  Certainty @default(UNKNOWN)
+  valid_to_year    Int?
+  valid_to_month   Int?
+  valid_to_cert    Certainty @default(UNKNOWN)
+
+  deleted_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  project       Project            @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by    User?              @relation("RelationCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  relation_type RelationType       @relation(fields: [relation_type_id], references: [id], onDelete: Restrict)
+  evidence      RelationEvidence[]
+
+  // Composite indexes required for efficient graph traversal queries.
+  @@index([project_id])
+  @@index([from_type, from_id])
+  @@index([to_type, to_id])
+  @@map("relations")
+}
+
+/// Attaches a Source as evidence for a Relation.
+/// page_reference and quote allow precise archival citation (folio, column, transcript excerpt).
+/// confidence is per-evidence: one source may strongly support a relation while another only hints.
+model RelationEvidence {
+  id             String    @id @default(cuid())
+  relation_id    String
+  source_id      String
+  notes          String?
+  page_reference String? // e.g. "S. 47", "fol. 12r", "col. 3"
+  quote          String? // direct transcript excerpt from the source
+  confidence     Certainty @default(UNKNOWN)
+  created_at     DateTime  @default(now())
+
+  relation Relation @relation(fields: [relation_id], references: [id], onDelete: Cascade)
+  source   Source   @relation(fields: [source_id], references: [id], onDelete: Cascade)
+
+  @@unique([relation_id, source_id])
+  @@map("relation_evidence")
+}
+
+/// Attaches a Source as evidence for a specific property value on any entity.
+/// Supplements (does not replace) the fact stored on the entity itself.
+/// The entity holds the researcher's current "best estimate" value; PropertyEvidence
+/// records what each source says about that property — enabling conflict warnings in the UI.
+///
+/// property: free-text field name validated at app layer ("birth_year", "description", etc.)
+///           Using a String rather than a DB enum preserves flexibility for future entity types
+///           without requiring ALTER TYPE migrations.
+///
+/// IMPORTANT: entity_id has NO DB-level FK (polymorphic, same pattern as Relation.from_id).
+///            App layer must verify entity existence before insert.
+model PropertyEvidence {
+  id             String     @id @default(cuid())
+  project_id     String
+  entity_type    EntityType
+  entity_id      String // no DB FK — polymorphic; app-layer integrity
+  property       String // field name this evidence supports
+  source_id      String
+  notes          String?
+  page_reference String?
+  created_at     DateTime   @default(now())
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  source  Source  @relation("PropertyEvidenceSource", fields: [source_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@index([entity_type, entity_id])
+  @@map("property_evidence")
 }

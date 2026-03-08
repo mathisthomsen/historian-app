@@ -1,0 +1,124 @@
+{
+  "common": {
+    "loading": "Wird geladen...",
+    "error": "Fehler",
+    "tryAgain": "Erneut versuchen",
+    "backToHome": "Zur Startseite",
+    "notFound": "Seite nicht gefunden",
+    "notFoundDescription": "Die angeforderte Seite existiert nicht."
+  },
+  "shell": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "persons": "Personen",
+      "events": "Ereignisse",
+      "sources": "Quellen",
+      "relations": "Beziehungen",
+      "locations": "Orte",
+      "literature": "Literatur",
+      "settings": "Einstellungen"
+    },
+    "topbar": {
+      "toggleSidebar": "Seitenleiste umschalten",
+      "toggleTheme": "Design wechseln",
+      "selectProject": "Projekt auswählen",
+      "userMenu": "Benutzermenü"
+    },
+    "localeSwitcher": {
+      "de": "DE",
+      "en": "EN",
+      "switchTo": "Zu {locale} wechseln"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Anmelden",
+      "submit": "Anmelden",
+      "forgotPassword": "Passwort vergessen?",
+      "noAccount": "Noch kein Konto?",
+      "register": "Registrieren",
+      "resetSuccess": "Passwort wurde zurückgesetzt. Bitte melde dich an."
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "submit": "Konto erstellen",
+      "namePlaceholder": "Vollständiger Name",
+      "alreadyHaveAccount": "Bereits registriert?",
+      "login": "Anmelden",
+      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfe dein Postfach."
+    },
+    "verify": {
+      "title": "E-Mail bestätigen",
+      "verifying": "Wird überprüft...",
+      "success": "E-Mail bestätigt",
+      "successMessage": "Dein Konto ist aktiv.",
+      "loginNow": "Jetzt anmelden",
+      "requestNew": "Neuen Link anfordern"
+    },
+    "forgot": {
+      "title": "Passwort vergessen?",
+      "description": "Gib deine E-Mail-Adresse ein und wir senden dir einen Link.",
+      "submit": "Link anfordern",
+      "backToLogin": "Zurück zur Anmeldung",
+      "emailSent": "E-Mail gesendet",
+      "emailSentMessage": "Falls ein Konto mit dieser Adresse existiert, erhältst du einen Link."
+    },
+    "reset": {
+      "title": "Neues Passwort",
+      "newPassword": "Neues Passwort",
+      "confirmPassword": "Passwort bestätigen",
+      "submit": "Passwort speichern",
+      "success": "Passwort erfolgreich geändert."
+    },
+    "dashboard": {
+      "welcome": "Willkommen, {name}!",
+      "loggedIn": "Du bist angemeldet.",
+      "logout": "Abmelden"
+    },
+    "strength": {
+      "label": "Passwortstärke",
+      "weak": "Schwach",
+      "fair": "Ausreichend",
+      "good": "Gut",
+      "strong": "Stark",
+      "veryStrong": "Sehr stark"
+    },
+    "fields": {
+      "email": "E-Mail",
+      "password": "Passwort",
+      "name": "Name",
+      "confirmPassword": "Passwort bestätigen"
+    },
+    "errors": {
+      "invalidCredentials": "E-Mail oder Passwort ungültig.",
+      "emailNotVerified": "Bitte bestätige zuerst deine E-Mail-Adresse.",
+      "emailTaken": "Diese E-Mail-Adresse ist bereits registriert.",
+      "tokenExpired": "Der Link ist abgelaufen. Bitte fordere einen neuen an.",
+      "tokenInvalid": "Ungültiger Link.",
+      "rateLimited": "Zu viele Versuche. Bitte warte {minutes} Minuten.",
+      "passwordTooShort": "Mindestens 8 Zeichen.",
+      "passwordNeedsUpper": "Mindestens ein Großbuchstabe.",
+      "passwordNeedsLower": "Mindestens ein Kleinbuchstabe.",
+      "passwordNeedsNumber": "Mindestens eine Zahl.",
+      "passwordNeedsSpecial": "Mindestens ein Sonderzeichen.",
+      "passwordMismatch": "Passwörter stimmen nicht überein.",
+      "serverError": "Ein Fehler ist aufgetreten. Bitte versuche es erneut."
+    },
+    "invalidLink": "Ungültiger Link",
+    "invalidLinkMessage": "Kein Verifizierungstoken gefunden."
+  },
+  "showcase": {
+    "title": "Komponentenübersicht",
+    "buttons": "Schaltflächen",
+    "inputs": "Eingabefelder",
+    "badges": "Abzeichen",
+    "cards": "Karten",
+    "dialogs": "Dialoge",
+    "tabs": "Registerkarten",
+    "tables": "Tabellen",
+    "toasts": "Benachrichtigungen",
+    "skeletons": "Skelette",
+    "theme": "Design",
+    "locale": "Sprache"
+  }
+}
