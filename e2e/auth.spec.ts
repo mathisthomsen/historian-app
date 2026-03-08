@@ -130,9 +130,14 @@ test.describe("TC-AUTH-06: Valid email verification token", () => {
   test.beforeEach(async ({ request }) => {
     unverifiedEmail = `e2e-unverified-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
     // Create user via register API (creates unverified user)
-    await request.post("/api/auth/register", {
+    const res = await request.post("/api/auth/register", {
       data: { email: unverifiedEmail, name: "Unverified User", password: "ValidP@ss1" },
     });
+    if (!res.ok()) {
+      throw new Error(
+        `TC-AUTH-06 setup: registration failed ${res.status()} — ${await res.text()}`,
+      );
+    }
   });
 
   test.afterEach(async () => {
