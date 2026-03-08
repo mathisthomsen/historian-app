@@ -8,13 +8,13 @@ export function hashToken(rawToken: string): string {
   return crypto.createHash("sha256").update(rawToken).digest("hex");
 }
 
+/**
+ * Produces a one-way HMAC-SHA256 hash of an IP address using AUTH_SECRET as
+ * the key. The result is deterministic (same IP + same secret = same hash) but
+ * cannot be reversed to the original IP, satisfying GDPR/DSGVO pseudonymisation
+ * requirements for data stored in Redis rate-limit keys.
+ */
 export function anonymizeIp(ip: string): string {
-  if (ip.includes(":")) {
-    const parts = ip.split(":");
-    if (parts.length === 8) {
-      return [...parts.slice(0, 4), "0", "0", "0", "0"].join(":");
-    }
-    return "::";
-  }
-  return ip.replace(/\.\d+$/, ".0");
+  const secret = process.env.AUTH_SECRET ?? "dev-anonymization-secret";
+  return crypto.createHmac("sha256", secret).update(ip).digest("hex");
 }

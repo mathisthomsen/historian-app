@@ -30,19 +30,33 @@ describe("hashToken", () => {
 });
 
 describe("anonymizeIp", () => {
-  it("zeroes the last IPv4 octet", () => {
-    expect(anonymizeIp("1.2.3.4")).toBe("1.2.3.0");
-    expect(anonymizeIp("192.168.1.99")).toBe("192.168.1.0");
+  it("returns a 64-character hex string (HMAC-SHA256)", () => {
+    const result = anonymizeIp("192.168.1.42");
+    expect(result).toHaveLength(64);
+    expect(result).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("handles full IPv6 (8 groups — last 4 zeroed)", () => {
-    const input = "2001:0db8:85a3:0000:0000:8a2e:0370:7334";
-    const expected = "2001:0db8:85a3:0000:0:0:0:0";
-    expect(anonymizeIp(input)).toBe(expected);
+  it("is deterministic (same IP → same hash)", () => {
+    expect(anonymizeIp("10.0.0.1")).toBe(anonymizeIp("10.0.0.1"));
   });
 
-  it("handles compressed IPv6 (has ':' but not 8 parts — returns '::')", () => {
-    expect(anonymizeIp("::1")).toBe("::");
-    expect(anonymizeIp("fe80::1")).toBe("::");
+  it("different IPs produce different hashes", () => {
+    expect(anonymizeIp("1.2.3.4")).not.toBe(anonymizeIp("5.6.7.8"));
+  });
+
+  it("does not include the raw IP in the output", () => {
+    const ip = "203.0.113.99";
+    const result = anonymizeIp(ip);
+    // The full IP string must not appear in the hash
+    expect(result).not.toContain(ip);
+    // The result must be purely hex characters (not an IP address format)
+    expect(result).not.toContain(".");
+    expect(result).not.toContain(":");
+  });
+
+  it("handles IPv6 addresses", () => {
+    const result = anonymizeIp("2001:0db8:85a3::8a2e:0370:7334");
+    expect(result).toHaveLength(64);
+    expect(result).toMatch(/^[0-9a-f]{64}$/);
   });
 });

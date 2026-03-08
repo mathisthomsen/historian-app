@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { sendVerificationEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { sanitize } from "@/lib/sanitize";
 import { anonymizeIp, generateToken, hashToken } from "@/lib/security";
 
 const registerSchema = z.object({
@@ -48,7 +49,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Validation failed", fields }, { status: 400 });
   }
 
-  const { email, name, password } = parsed.data;
+  const { email, password } = parsed.data;
+  const name = sanitize(parsed.data.name);
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {

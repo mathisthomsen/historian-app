@@ -1,5 +1,7 @@
-import { LRUCache } from "lru-cache";
-import { NextResponse } from "next/server";
+import { Ratelimit } from "@upstash/ratelimit";
+import type { NextResponse } from "next/server";
+
+import { redis } from "./redis";
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -11,52 +13,65 @@ export interface RateLimiter {
   check(key: string, limit: number, windowMs: number): Promise<RateLimitResult>;
 }
 
-export function createLruRateLimiter(): RateLimiter {
-  // In non-production environments the in-process LRU shim is disabled so
-  // that E2E test suites (which reuse the dev server) don't exhaust limits.
-  // Production uses this shim only until Redis is added in Epic 1.4.
-  if (process.env.NODE_ENV !== "production") {
-    return {
-      async check(_key: string, limit: number, _windowMs: number): Promise<RateLimitResult> {
-        return { allowed: true, remaining: limit, resetAt: new Date(Date.now() + _windowMs) };
-      },
-    };
-  }
+/** Converts milliseconds to the Upstash Duration string format. */
+function msToDuration(
+  ms: number,
+): `${number} ms` | `${number} s` | `${number} m` | `${number} h` | `${number} d` {
+  if (ms % 86_400_000 === 0) return `${ms / 86_400_000} d`;
+  if (ms % 3_600_000 === 0) return `${ms / 3_600_000} h`;
+  if (ms % 60_000 === 0) return `${ms / 60_000} m`;
+  if (ms % 1_000 === 0) return `${ms / 1_000} s`;
+  return `${ms} ms`;
+}
 
-  // LRU cache keyed by "key:windowStart", values are hit counts
-  const cache = new LRUCache<string, number>({ max: 10_000 });
-
+/**
+ * Redis-backed sliding-window rate limiter via Upstash.
+ * Fails open: if Redis is unavailable the request is allowed through.
+ */
+export function createRedisRateLimiter(): RateLimiter {
   return {
-    async check(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
-      const windowStart = Math.floor(Date.now() / windowMs) * windowMs;
-      const cacheKey = `${key}:${windowStart}`;
-      const current = (cache.get(cacheKey) ?? 0) + 1;
-      cache.set(cacheKey, current, { ttl: windowMs });
-      const resetAt = new Date(windowStart + windowMs);
-      return {
-        allowed: current <= limit,
-        remaining: Math.max(0, limit - current),
-        resetAt,
-      };
+    async check(key, limit, windowMs): Promise<RateLimitResult> {
+      try {
+        const limiter = new Ratelimit({
+          redis,
+          limiter: Ratelimit.slidingWindow(limit, msToDuration(windowMs)),
+          prefix: "@upstash/ratelimit",
+        });
+        const { success, remaining, reset } = await limiter.limit(key);
+        return { allowed: success, remaining, resetAt: new Date(reset) };
+      } catch {
+        // Fail open: Redis unavailability is monitored via /api/health
+        return { allowed: true, remaining: -1, resetAt: new Date() };
+      }
     },
   };
 }
 
-export const rateLimiter: RateLimiter = createLruRateLimiter();
+export const rateLimiter: RateLimiter = createRedisRateLimiter();
 
+/**
+ * Drop-in helper for API routes. Returns a 429 NextResponse if rate limited,
+ * or null if the request is allowed. Identical signature to Epic 1.3 shim.
+ */
 export async function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number,
 ): Promise<NextResponse | null> {
+  const { NextResponse } = await import("next/server");
   const result = await rateLimiter.check(key, limit, windowMs);
   if (!result.allowed) {
+    const retryAfter = Math.ceil((result.resetAt.getTime() - Date.now()) / 1000);
     return NextResponse.json(
+      { error: "auth.errors.rateLimited", retryAfter },
       {
-        error: "auth.errors.rateLimited",
-        retryAfter: Math.ceil((result.resetAt.getTime() - Date.now()) / 1000),
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfter),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": result.resetAt.toISOString(),
+        },
       },
-      { status: 429 },
     );
   }
   return null;

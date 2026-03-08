@@ -399,6 +399,8 @@ account for this.
 - **Unit tests:** All utility functions, validation schemas, data transformation logic — target 90%+ on lib/utils
 - **Integration tests:** All API routes with MSW mocking; auth flows; relation engine; import parser
 - **E2E tests (Playwright):** Critical paths: register→verify→login, create person, create event, link relation, import CSV, export CSV, project invite flow
+- **Advice from previous implementation:** Du hast style-src 'unsafe-inline' wegen Tailwind v4 erlaubt. Hinweis: Das ist für die Entwicklung notwendig. Sobald die App stabil läuft (Phase 5), solltest du auf Nonces umstellen, um CSS-Injections komplett zu unterbinden.
+
 - **Security review:**
   - Remove any remaining test/debug routes
   - Verify rate limiting works under load
