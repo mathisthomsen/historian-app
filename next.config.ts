@@ -48,7 +48,10 @@ const securityHeaders = [
         ].join("; ")
       : [
           "default-src 'self'",
-          "script-src 'self'",
+          // 'unsafe-inline' required: Next.js App Router injects inline RSC
+          // streaming scripts (self.__next_f.push). Proper nonce-based CSP
+          // is deferred to Epic 5.4.
+          "script-src 'self' 'unsafe-inline'",
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: blob:",
           "font-src 'self'",
