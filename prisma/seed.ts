@@ -1,7 +1,6 @@
 import { Certainty, PrismaClient, ProjectRole, SourceReliability, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-
 const prisma = new PrismaClient();
 
 // ---------------------------------------------------------------------------
@@ -70,7 +69,12 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@evidoxa.dev" },
-    update: { password_hash: demoPasswordHash, email_verified_at: new Date() },
+    update: {
+      password_hash: demoPasswordHash,
+      email_verified_at: new Date(),
+      locked_until: null,
+      failed_login_count: 0,
+    },
     create: {
       id: IDS.user.admin,
       email: "admin@evidoxa.dev",
@@ -627,8 +631,18 @@ async function main() {
     prisma.relationEvidence.count(),
   ]);
 
-  const [users, projects, userProjects, relationTypes, persons, personNames, events, sources, relations, relationEvidence] =
-    counts;
+  const [
+    users,
+    projects,
+    userProjects,
+    relationTypes,
+    persons,
+    personNames,
+    events,
+    sources,
+    relations,
+    relationEvidence,
+  ] = counts;
 
   console.log("Seed complete:");
   console.log(`  users: ${users}`);

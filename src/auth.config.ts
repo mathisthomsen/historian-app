@@ -22,16 +22,6 @@ export const authConfig: NextAuthConfig = {
     maxAge: 30 * 24 * 60 * 60,
     updateAge: 24 * 60 * 60,
   },
-  cookies: {
-    sessionToken: {
-      options: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-      },
-    },
-  },
   callbacks: {
     jwt({ token, user }) {
       if (user) {

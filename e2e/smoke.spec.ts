@@ -1,7 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-// Clear cookies and localStorage before each test to ensure clean state
+import { resetRateLimits } from "./helpers/db";
+
+// Clear cookies, localStorage, and rate-limit counters before each test.
 test.beforeEach(async ({ context, page }) => {
+  await resetRateLimits();
   await context.clearCookies();
   // Clear localStorage to prevent theme or other persisted state from leaking
   await page.addInitScript(() => {
