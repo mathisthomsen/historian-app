@@ -105,6 +105,39 @@ export async function insertTestResetToken(email: string): Promise<string> {
   }
 }
 
+/**
+ * Clears all Upstash rate-limit keys so each auth test starts with a clean slate.
+ * Uses the Upstash REST API directly from the test process (no server involvement).
+ * No-ops silently when UPSTASH_REDIS_REST_URL / TOKEN are not configured.
+ */
+export async function resetRateLimits(): Promise<void> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  let cursor = "0";
+
+  do {
+    const scanUrl = new URL(`${url}/scan/${cursor}`);
+    scanUrl.searchParams.set("match", "@upstash/ratelimit:*");
+    scanUrl.searchParams.set("count", "200");
+
+    const scanRes = await fetch(scanUrl, { headers });
+    const { result } = (await scanRes.json()) as { result: [string, string[]] };
+    [cursor] = result;
+    const keys = result[1];
+
+    if (keys.length > 0) {
+      await fetch(`${url}/pipeline`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(keys.map((k) => ["DEL", k])),
+      });
+    }
+  } while (cursor !== "0");
+}
+
 /** Deletes a test user by email (for cleanup after registration tests). */
 export async function deleteTestUser(email: string): Promise<void> {
   const client = getClient();

@@ -1,6 +1,11 @@
 import { type Page, expect, test } from "@playwright/test";
 
-import { deleteTestUser, insertTestResetToken, insertTestVerificationToken } from "./helpers/db";
+import {
+  deleteTestUser,
+  insertTestResetToken,
+  insertTestVerificationToken,
+  resetRateLimits,
+} from "./helpers/db";
 
 // Auth tests share the seeded admin user and password_resets table — run serially
 // to prevent TC-AUTH-14 (forgot-password) and TC-AUTH-15 (reset) from racing.
@@ -18,8 +23,10 @@ async function loginAsAdmin(page: Page) {
   await page.waitForURL(/\/de\/dashboard/, { timeout: 15_000 });
 }
 
-// Clear cookies and localStorage before each test
+// Clear cookies, localStorage, and rate-limit counters before each test so
+// sequential login attempts never exhaust the sliding-window budget.
 test.beforeEach(async ({ context, page }) => {
+  await resetRateLimits();
   await context.clearCookies();
   await page.addInitScript(() => {
     window.localStorage.clear();
