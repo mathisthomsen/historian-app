@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash, createHmac } from "crypto";
 
 import { Client } from "pg";
 
@@ -106,22 +106,30 @@ export async function insertTestResetToken(email: string): Promise<string> {
 }
 
 /**
- * Clears all Upstash rate-limit keys so each auth test starts with a clean slate.
- * Uses the Upstash REST API directly from the test process (no server involvement).
- * No-ops silently when UPSTASH_REDIS_REST_URL / TOKEN are not configured.
+ * Clears Upstash rate-limit counters for the loopback address (127.0.0.1) only.
+ *
+ * Auth E2E tests all hit localhost:3000 from the same IP, so sequential tests
+ * can exhaust the sliding-window budget. This resets only those counters, leaving
+ * keys for other IPs (e.g. SEC-05's custom X-Forwarded-For) completely untouched.
+ *
+ * No-ops silently when UPSTASH_REDIS_REST_URL / TOKEN / AUTH_SECRET are absent.
  */
 export async function resetRateLimits(): Promise<void> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return;
+  const authSecret = process.env.AUTH_SECRET;
+  if (!url || !token || !authSecret) return;
+
+  // Reproduce the same HMAC the server applies to raw IPs before storing them
+  const anonIp = createHmac("sha256", authSecret).update("127.0.0.1").digest("hex");
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  // Match any rate-limit key that contains the anonymised loopback hash
   let cursor = "0";
-
   do {
     const scanUrl = new URL(`${url}/scan/${cursor}`);
-    scanUrl.searchParams.set("match", "@upstash/ratelimit:*");
-    scanUrl.searchParams.set("count", "200");
+    scanUrl.searchParams.set("match", `@upstash/ratelimit:*${anonIp}*`);
+    scanUrl.searchParams.set("count", "100");
 
     const scanRes = await fetch(scanUrl, { headers });
     const { result } = (await scanRes.json()) as { result: [string, string[]] };
