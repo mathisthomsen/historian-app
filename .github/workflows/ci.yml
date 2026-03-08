@@ -69,9 +69,11 @@ jobs:
           DATABASE_URL_UNPOOLED: "postgresql://placeholder:placeholder@localhost/placeholder"
 
       - name: Run DB migrations
-        run: pnpm prisma migrate deploy
+        run: |
+          # DATABASE_URL is already the direct URL; use it as fallback for directUrl
+          DIRECT="${DATABASE_URL_UNPOOLED:-$DATABASE_URL}"
+          DATABASE_URL="$DIRECT" DATABASE_URL_UNPOOLED="$DIRECT" pnpm prisma migrate deploy
         env:
-          # Both vars must be non-empty: Prisma validates directUrl at startup
           DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
           DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
 
