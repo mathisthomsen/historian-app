@@ -6,6 +6,8 @@ import "./src/lib/env";
 
 const withNextIntl = createNextIntlPlugin();
 
+const isDev = process.env.NODE_ENV === "development";
+
 const securityHeaders = [
   {
     key: "X-Content-Type-Options",
@@ -27,27 +29,47 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=()",
   },
+  // CSP: relaxed in dev (Next.js/Turbopack need inline scripts + WebSocket HMR);
+  // strict in production.
   {
     key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "script-src 'self'",
-      "style-src 'self' 'unsafe-inline'", // required: Tailwind CSS inline styles
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "connect-src 'self'",
-      "frame-ancestors 'none'",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "upgrade-insecure-requests",
-    ].join("; "),
+    value: isDev
+      ? [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob:",
+          "font-src 'self'",
+          "connect-src 'self' ws: wss:",
+          "frame-ancestors 'none'",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join("; ")
+      : [
+          "default-src 'self'",
+          "script-src 'self'",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob:",
+          "font-src 'self'",
+          "connect-src 'self'",
+          "frame-ancestors 'none'",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+          "upgrade-insecure-requests",
+        ].join("; "),
   },
 ];
 
 const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+
+  turbopack: {
+    // Explicitly set workspace root to silence the lockfile-detection warning
+    root: __dirname,
+  },
 
   async headers() {
     return [
