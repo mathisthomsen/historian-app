@@ -51,9 +51,12 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      AUTH_URL: "http://localhost:3000"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
       UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
