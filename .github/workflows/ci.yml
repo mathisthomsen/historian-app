@@ -67,8 +67,9 @@ jobs:
       - name: Run DB migrations
         run: pnpm prisma migrate deploy
         env:
-          # Migrations require a direct (non-pooled) connection
+          # Both vars must be non-empty: Prisma validates directUrl at startup
           DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
 
       - name: Build
         run: pnpm build
