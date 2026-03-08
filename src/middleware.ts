@@ -1,7 +1,7 @@
-import NextAuth from "next-auth";
-import createIntlMiddleware from "next-intl/middleware";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import NextAuth from "next-auth";
+import createIntlMiddleware from "next-intl/middleware";
 
 import { authConfig } from "./auth.config";
 import { routing } from "./i18n/routing";
