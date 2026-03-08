@@ -63,6 +63,10 @@ jobs:
 
       - name: Generate Prisma Client
         run: pnpm prisma generate
+        env:
+          # prisma generate never connects — placeholders satisfy the schema validator
+          DATABASE_URL: "postgresql://placeholder:placeholder@localhost/placeholder"
+          DATABASE_URL_UNPOOLED: "postgresql://placeholder:placeholder@localhost/placeholder"
 
       - name: Run DB migrations
         run: pnpm prisma migrate deploy
