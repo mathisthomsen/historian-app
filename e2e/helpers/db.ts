@@ -106,9 +106,9 @@ export async function insertTestResetToken(email: string): Promise<string> {
 }
 
 /**
- * Clears all Upstash rate-limit counters for auth endpoints (login, register,
- * forgot-password). Matches keys by action prefix rather than by IP HMAC, so
- * entries created with any AUTH_SECRET (local dev or CI) are always cleared.
+ * Clears all Upstash rate-limit counters for auth endpoints.
+ * Uses a single SCAN pass for all keys created by our rate limiters
+ * (@upstash/ratelimit prefix), regardless of which AUTH_SECRET created them.
  *
  * No-ops silently when UPSTASH_REDIS_REST_URL / TOKEN are absent.
  */
@@ -119,33 +119,27 @@ export async function resetRateLimits(): Promise<void> {
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-  // Clear all sliding-window keys for each auth rate-limit action.
+  // Single SCAN pass — clears all sliding-window keys for every auth action/IP.
   // Keys are stored as: @upstash/ratelimit:{action}:{anonIp}[:{email}]:{windowBucket}
-  for (const pattern of [
-    "@upstash/ratelimit:login:*",
-    "@upstash/ratelimit:register:*",
-    "@upstash/ratelimit:forgot-password:*",
-  ]) {
-    let cursor = "0";
-    do {
-      const scanUrl = new URL(`${url}/scan/${cursor}`);
-      scanUrl.searchParams.set("match", pattern);
-      scanUrl.searchParams.set("count", "100");
+  let cursor = "0";
+  do {
+    const scanUrl = new URL(`${url}/scan/${cursor}`);
+    scanUrl.searchParams.set("match", "@upstash/ratelimit:*");
+    scanUrl.searchParams.set("count", "100");
 
-      const scanRes = await fetch(scanUrl, { headers });
-      const { result } = (await scanRes.json()) as { result: [string, string[]] };
-      [cursor] = result;
-      const keys = result[1];
+    const scanRes = await fetch(scanUrl, { headers });
+    const { result } = (await scanRes.json()) as { result: [string, string[]] };
+    [cursor] = result;
+    const keys = result[1];
 
-      if (keys.length > 0) {
-        await fetch(`${url}/pipeline`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(keys.map((k) => ["DEL", k])),
-        });
-      }
-    } while (cursor !== "0");
-  }
+    if (keys.length > 0) {
+      await fetch(`${url}/pipeline`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(keys.map((k) => ["DEL", k])),
+      });
+    }
+  } while (cursor !== "0");
 }
 
 /** Deletes a test user by email (for cleanup after registration tests). */

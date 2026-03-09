@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+import { resetRateLimits } from "./helpers/db";
+
 const BASE_URL = "http://localhost:3000";
 
 test.beforeEach(async ({ context, page }) => {
+  await resetRateLimits();
   await context.clearCookies();
   await page.addInitScript(() => {
     window.localStorage.clear();
