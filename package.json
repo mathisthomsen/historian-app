@@ -42,6 +42,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7",
     "resend": "^4",
+    "sanitize-html": "^2.17.1",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.24.2"
@@ -59,6 +60,7 @@
     "@types/pg": "^8.18.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@types/sanitize-html": "^2.16.1",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "@vitejs/plugin-react": "^4.3.4",

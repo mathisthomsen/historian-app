@@ -27,6 +27,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.id = user.id as string;
         token.role = user.role;
+        if (user.projectId) token.projectId = user.projectId;
       }
       return token;
     },
@@ -34,6 +35,7 @@ export const authConfig: NextAuthConfig = {
       const jwt = token as JWT;
       session.user.id = jwt.id as string;
       session.user.role = jwt.role as UserRole;
+      if (jwt.projectId) session.user.projectId = jwt.projectId;
       return session;
     },
     authorized({ auth: session, request }) {

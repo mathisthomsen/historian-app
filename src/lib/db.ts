@@ -10,6 +10,59 @@ export const prisma =
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
+/**
+ * Extended Prisma client with soft-delete filters.
+ * findMany and findFirst on person, event, source, relation automatically
+ * exclude records where deleted_at IS NOT NULL.
+ *
+ * findUnique, count, aggregate remain unfiltered by design
+ * (admin restore must still see soft-deleted records).
+ */
+export const db = prisma.$extends({
+  query: {
+    person: {
+      findMany({ args, query }) {
+        args.where = { deleted_at: null, ...args.where };
+        return query(args);
+      },
+      findFirst({ args, query }) {
+        args.where = { deleted_at: null, ...args.where };
+        return query(args);
+      },
+    },
+    event: {
+      findMany({ args, query }) {
+        args.where = { deleted_at: null, ...args.where };
+        return query(args);
+      },
+      findFirst({ args, query }) {
+        args.where = { deleted_at: null, ...args.where };
+        return query(args);
+      },
+    },
+    source: {
+      findMany({ args, query }) {
+        args.where = { deleted_at: null, ...args.where };
+        return query(args);
+      },
+      findFirst({ args, query }) {
+        args.where = { deleted_at: null, ...args.where };
+        return query(args);
+      },
+    },
+    relation: {
+      findMany({ args, query }) {
+        args.where = { deleted_at: null, ...args.where };
+        return query(args);
+      },
+      findFirst({ args, query }) {
+        args.where = { deleted_at: null, ...args.where };
+        return query(args);
+      },
+    },
+  },
+});
+
 /** Measures DB round-trip latency. Returns latency_ms or throws on failure. */
 export async function ping(): Promise<number> {
   const start = Date.now();

@@ -107,7 +107,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         await writeAuditLog({ action: "LOGIN_SUCCESS", userId: user.id, request });
 
-        return { id: user.id, email: user.email, name: user.name, role: user.role };
+        // TODO: Epic 3.1 — replace with project switcher
+        const userProject = await prisma.userProject.findFirst({
+          where: {
+            user_id: user.id,
+            role: { in: ["OWNER", "EDITOR"] },
+          },
+          orderBy: { created_at: "asc" },
+        });
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          ...(userProject?.project_id ? { projectId: userProject.project_id } : {}),
+        };
       },
     }),
   ],

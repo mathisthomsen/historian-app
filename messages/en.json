@@ -120,5 +120,93 @@
     "skeletons": "Skeletons",
     "theme": "Theme",
     "locale": "Locale"
+  },
+  "persons": {
+    "title": "Persons",
+    "create": "New Person",
+    "edit_title": "Edit Person",
+    "create_title": "Create New Person",
+    "save": "Save Person",
+    "delete": "Delete Person",
+    "delete_confirm_title": "Delete person?",
+    "delete_confirm_body": "This person will be marked as deleted.",
+    "saved_toast": "Person saved.",
+    "deleted_toast": "Person deleted.",
+    "fields": {
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "birth_date": "Birth Date",
+      "birth_date_certainty": "Birth Date Certainty",
+      "birth_place": "Birth Place",
+      "death_date": "Death Date",
+      "death_date_certainty": "Death Date Certainty",
+      "death_place": "Death Place",
+      "notes": "Notes",
+      "created_at": "Created at",
+      "created_by": "Created by"
+    },
+    "date": {
+      "year": "Year",
+      "month": "Month",
+      "day": "Day",
+      "no_month": "No Month",
+      "months": {
+        "1": "January", "2": "February", "3": "March", "4": "April",
+        "5": "May", "6": "June", "7": "July", "8": "August",
+        "9": "September", "10": "October", "11": "November", "12": "December"
+      }
+    },
+    "names": {
+      "section_title": "Name Variants",
+      "add": "Add Name",
+      "remove": "Remove",
+      "name_placeholder": "Alternate Name",
+      "language": "Language",
+      "language_placeholder": "de, la, en…",
+      "is_primary": "Primary"
+    },
+    "certainty": {
+      "CERTAIN": "Certain",
+      "PROBABLE": "Probable",
+      "POSSIBLE": "Possible",
+      "UNKNOWN": "Unknown"
+    },
+    "list": {
+      "search_placeholder": "Search by name…",
+      "empty": "No persons yet.",
+      "empty_action": "Create first person",
+      "columns": {
+        "last_name": "Last Name",
+        "first_name": "First Name",
+        "birth_date": "Birth Date",
+        "death_date": "Death Date"
+      }
+    },
+    "bulk": {
+      "selected": "{count} selected",
+      "delete_button": "Delete",
+      "confirm_title": "Delete {count} persons?",
+      "confirm_body": "This will delete {count} persons. Contact an administrator to restore them.",
+      "deleted_toast": "{count} persons deleted."
+    },
+    "detail": {
+      "tabs": {
+        "attributes": "Attributes",
+        "names": "Name Variants",
+        "events": "Events",
+        "persons": "Persons",
+        "sources": "Sources"
+      },
+      "relations_placeholder": "Relations will be available in a future update."
+    },
+    "errors": {
+      "name_required": "Please enter a first or last name.",
+      "month_requires_year": "Month requires a year.",
+      "day_requires_month": "Day requires a month.",
+      "invalid_month": "Invalid month (1–12).",
+      "invalid_day": "Invalid day (1–31).",
+      "not_found": "Person not found.",
+      "save_failed": "Failed to save. Please try again."
+    }
   }
 }

@@ -120,5 +120,93 @@
     "skeletons": "Skelette",
     "theme": "Design",
     "locale": "Sprache"
+  },
+  "persons": {
+    "title": "Personen",
+    "create": "Neue Person",
+    "edit_title": "Person bearbeiten",
+    "create_title": "Neue Person anlegen",
+    "save": "Person speichern",
+    "delete": "Person löschen",
+    "delete_confirm_title": "Person löschen?",
+    "delete_confirm_body": "Diese Person wird als gelöscht markiert.",
+    "saved_toast": "Person gespeichert.",
+    "deleted_toast": "Person gelöscht.",
+    "fields": {
+      "first_name": "Vorname",
+      "last_name": "Nachname",
+      "birth_date": "Geburtsdatum",
+      "birth_date_certainty": "Sicherheit Geburtsdatum",
+      "birth_place": "Geburtsort",
+      "death_date": "Sterbedatum",
+      "death_date_certainty": "Sicherheit Sterbedatum",
+      "death_place": "Sterbeort",
+      "notes": "Notizen",
+      "created_at": "Erstellt am",
+      "created_by": "Erstellt von"
+    },
+    "date": {
+      "year": "Jahr",
+      "month": "Monat",
+      "day": "Tag",
+      "no_month": "Kein Monat",
+      "months": {
+        "1": "Januar", "2": "Februar", "3": "März", "4": "April",
+        "5": "Mai", "6": "Juni", "7": "Juli", "8": "August",
+        "9": "September", "10": "Oktober", "11": "November", "12": "Dezember"
+      }
+    },
+    "names": {
+      "section_title": "Weitere Namen",
+      "add": "Name hinzufügen",
+      "remove": "Entfernen",
+      "name_placeholder": "Alternativer Name",
+      "language": "Sprache",
+      "language_placeholder": "de, la, en…",
+      "is_primary": "Primär"
+    },
+    "certainty": {
+      "CERTAIN": "Sicher",
+      "PROBABLE": "Wahrscheinlich",
+      "POSSIBLE": "Möglich",
+      "UNKNOWN": "Unbekannt"
+    },
+    "list": {
+      "search_placeholder": "Nach Name suchen…",
+      "empty": "Noch keine Personen.",
+      "empty_action": "Erste Person anlegen",
+      "columns": {
+        "last_name": "Nachname",
+        "first_name": "Vorname",
+        "birth_date": "Geburtsdatum",
+        "death_date": "Sterbedatum"
+      }
+    },
+    "bulk": {
+      "selected": "{count} ausgewählt",
+      "delete_button": "Löschen",
+      "confirm_title": "{count} Personen löschen?",
+      "confirm_body": "Diese Aktion löscht {count} Personen. Kontaktieren Sie den Administrator zur Wiederherstellung.",
+      "deleted_toast": "{count} Personen gelöscht."
+    },
+    "detail": {
+      "tabs": {
+        "attributes": "Attribute",
+        "names": "Weitere Namen",
+        "events": "Ereignisse",
+        "persons": "Personen",
+        "sources": "Quellen"
+      },
+      "relations_placeholder": "Beziehungen werden in einem späteren Update verfügbar."
+    },
+    "errors": {
+      "name_required": "Bitte Vor- oder Nachname eingeben.",
+      "month_requires_year": "Monat erfordert ein Jahr.",
+      "day_requires_month": "Tag erfordert einen Monat.",
+      "invalid_month": "Ungültiger Monat (1–12).",
+      "invalid_day": "Ungültiger Tag (1–31).",
+      "not_found": "Person nicht gefunden.",
+      "save_failed": "Speichern fehlgeschlagen. Bitte erneut versuchen."
+    }
   }
 }
