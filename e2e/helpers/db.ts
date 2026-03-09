@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "crypto";
+import { createHash } from "crypto";
 
 import { Client } from "pg";
 
@@ -106,44 +106,46 @@ export async function insertTestResetToken(email: string): Promise<string> {
 }
 
 /**
- * Clears Upstash rate-limit counters for the loopback address (127.0.0.1) only.
+ * Clears all Upstash rate-limit counters for auth endpoints (login, register,
+ * forgot-password). Matches keys by action prefix rather than by IP HMAC, so
+ * entries created with any AUTH_SECRET (local dev or CI) are always cleared.
  *
- * Auth E2E tests all hit localhost:3000 from the same IP, so sequential tests
- * can exhaust the sliding-window budget. This resets only those counters, leaving
- * keys for other IPs (e.g. SEC-05's custom X-Forwarded-For) completely untouched.
- *
- * No-ops silently when UPSTASH_REDIS_REST_URL / TOKEN / AUTH_SECRET are absent.
+ * No-ops silently when UPSTASH_REDIS_REST_URL / TOKEN are absent.
  */
 export async function resetRateLimits(): Promise<void> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  const authSecret = process.env.AUTH_SECRET;
-  if (!url || !token || !authSecret) return;
-
-  // Reproduce the same HMAC the server applies to raw IPs before storing them
-  const anonIp = createHmac("sha256", authSecret).update("127.0.0.1").digest("hex");
+  if (!url || !token) return;
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-  // Match any rate-limit key that contains the anonymised loopback hash
-  let cursor = "0";
-  do {
-    const scanUrl = new URL(`${url}/scan/${cursor}`);
-    scanUrl.searchParams.set("match", `@upstash/ratelimit:*${anonIp}*`);
-    scanUrl.searchParams.set("count", "100");
 
-    const scanRes = await fetch(scanUrl, { headers });
-    const { result } = (await scanRes.json()) as { result: [string, string[]] };
-    [cursor] = result;
-    const keys = result[1];
+  // Clear all sliding-window keys for each auth rate-limit action.
+  // Keys are stored as: @upstash/ratelimit:{action}:{anonIp}[:{email}]:{windowBucket}
+  for (const pattern of [
+    "@upstash/ratelimit:login:*",
+    "@upstash/ratelimit:register:*",
+    "@upstash/ratelimit:forgot-password:*",
+  ]) {
+    let cursor = "0";
+    do {
+      const scanUrl = new URL(`${url}/scan/${cursor}`);
+      scanUrl.searchParams.set("match", pattern);
+      scanUrl.searchParams.set("count", "100");
 
-    if (keys.length > 0) {
-      await fetch(`${url}/pipeline`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(keys.map((k) => ["DEL", k])),
-      });
-    }
-  } while (cursor !== "0");
+      const scanRes = await fetch(scanUrl, { headers });
+      const { result } = (await scanRes.json()) as { result: [string, string[]] };
+      [cursor] = result;
+      const keys = result[1];
+
+      if (keys.length > 0) {
+        await fetch(`${url}/pipeline`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(keys.map((k) => ["DEL", k])),
+        });
+      }
+    } while (cursor !== "0");
+  }
 }
 
 /** Deletes a test user by email (for cleanup after registration tests). */
