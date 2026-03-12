@@ -147,14 +147,15 @@ model Project {
   updated_at  DateTime  @updatedAt
   deleted_at  DateTime? // soft-delete; Epic 3.1 adds recovery UI
 
-  user_projects  UserProject[]
-  persons        Person[]
-  events         Event[]
-  sources        Source[]
-  locations      Location[]
-  literature     Literature[]
-  relations      Relation[]
-  relation_types RelationType[]
+  user_projects     UserProject[]
+  persons           Person[]
+  events            Event[]
+  event_types       EventType[]
+  sources           Source[]
+  locations         Location[]
+  literature        Literature[]
+  relations         Relation[]
+  relation_types    RelationType[]
   property_evidence PropertyEvidence[]
 
   @@map("projects")
@@ -237,15 +238,32 @@ model PersonName {
   @@map("person_names")
 }
 
+model EventType {
+  id         String   @id @default(cuid())
+  project_id String
+  name       String
+  color      String? // one of the 12 predefined palette hex values
+  icon       String? // Lucide icon name (optional)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  project Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  events  Event[]
+
+  @@unique([project_id, name]) // no duplicate names within a project
+  @@index([project_id])
+  @@map("event_types")
+}
+
 model Event {
   id            String    @id @default(cuid())
   project_id    String
   created_by_id String?
   parent_id     String? // self-referential for sub-events
+  event_type_id String? // FK to EventType (replaces event_type String?)
 
   title       String
   description String?
-  event_type  String? // user-defined string; Epic 2.2 adds EventType table
 
   start_year           Int?
   start_month          Int?
@@ -266,11 +284,12 @@ model Event {
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  created_by   User?     @relation("EventCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
-  parent       Event?    @relation("SubEvents", fields: [parent_id], references: [id])
-  sub_events   Event[]   @relation("SubEvents")
-  location_ref Location? @relation("EventLocation", fields: [location_id], references: [id], onDelete: SetNull)
+  project      Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by   User?      @relation("EventCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  parent       Event?     @relation("SubEvents", fields: [parent_id], references: [id])
+  sub_events   Event[]    @relation("SubEvents")
+  location_ref Location?  @relation("EventLocation", fields: [location_id], references: [id], onDelete: SetNull)
+  event_type   EventType? @relation(fields: [event_type_id], references: [id], onDelete: Restrict)
 
   @@index([project_id])
   @@map("events")

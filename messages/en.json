@@ -16,7 +16,8 @@
       "relations": "Relations",
       "locations": "Locations",
       "literature": "Literature",
-      "settings": "Settings"
+      "settings": "Settings",
+      "event_types": "Event Types"
     },
     "topbar": {
       "toggleSidebar": "Toggle sidebar",
@@ -120,6 +121,118 @@
     "skeletons": "Skeletons",
     "theme": "Theme",
     "locale": "Locale"
+  },
+  "events": {
+    "title": "Events",
+    "create": "New Event",
+    "edit_title": "Edit Event",
+    "create_title": "Create New Event",
+    "save": "Save Event",
+    "delete": "Delete Event",
+    "delete_confirm_title": "Delete event?",
+    "delete_confirm_body": "This event will be marked as deleted.",
+    "delete_has_sub_events": "This event has {count} sub-events. Please delete or reassign them first.",
+    "cancel": "Cancel",
+    "saved_toast": "Event saved.",
+    "deleted_toast": "Event deleted.",
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "event_type": "Type",
+      "start_date": "Start",
+      "start_date_certainty": "Start Certainty",
+      "end_date": "End",
+      "end_date_certainty": "End Certainty",
+      "location": "Location",
+      "parent": "Parent Event",
+      "notes": "Notes",
+      "created_at": "Created at",
+      "created_by": "Created by"
+    },
+    "date": {
+      "year": "Year",
+      "month": "Month",
+      "day": "Day",
+      "no_month": "No Month",
+      "months": {
+        "1": "January", "2": "February", "3": "March", "4": "April",
+        "5": "May", "6": "June", "7": "July", "8": "August",
+        "9": "September", "10": "October", "11": "November", "12": "December"
+      }
+    },
+    "certainty": {
+      "CERTAIN": "Certain",
+      "PROBABLE": "Probable",
+      "POSSIBLE": "Possible",
+      "UNKNOWN": "Unknown"
+    },
+    "list": {
+      "search_placeholder": "Search by title…",
+      "empty": "No events yet.",
+      "empty_action": "Create first event",
+      "top_level_only": "Top-level events only",
+      "date_range_from": "From Year",
+      "date_range_to": "To Year",
+      "date_range_tooltip": "Shows events that overlap with the selected date range. Events without an end date are treated as point-in-time events.",
+      "type_filter_label": "Type",
+      "columns": {
+        "title": "Title",
+        "event_type": "Type",
+        "start_date": "Start",
+        "end_date": "End",
+        "parent": "Parent"
+      }
+    },
+    "bulk": {
+      "selected": "{count} selected",
+      "delete_button": "Delete",
+      "confirm_title": "Delete {count} events?",
+      "confirm_body": "This will delete {count} events. Contact an administrator to restore them.",
+      "deleted_toast": "{count} events deleted.",
+      "skipped_toast": "{deleted} events deleted. {skipped} skipped (has sub-events)."
+    },
+    "detail": {
+      "tabs": {
+        "attributes": "Attributes",
+        "sub_events": "Sub-events ({count})",
+        "persons": "Persons",
+        "sources": "Sources"
+      },
+      "add_sub_event": "Add sub-event",
+      "sub_events_empty": "No sub-events.",
+      "relations_placeholder": "Relations will be available in a future update."
+    },
+    "errors": {
+      "title_required": "Please enter a title.",
+      "month_requires_year": "Month requires a year.",
+      "day_requires_month": "Day requires a month.",
+      "invalid_month": "Invalid month (1–12).",
+      "invalid_day": "Invalid day (1–31).",
+      "depth_limit": "Event '{parent_title}' is itself a sub-event and cannot have its own sub-events. Please choose a different event.",
+      "not_found": "Event not found.",
+      "save_failed": "Failed to save. Please try again.",
+      "delete_has_sub_events": "Has {count} sub-events"
+    }
+  },
+  "event_types": {
+    "title": "Event Types",
+    "create": "New Event Type",
+    "inline_create": "Create new: \"{name}\"",
+    "assign_color": "Assign color",
+    "save": "Save",
+    "delete_action": "Delete",
+    "delete_confirm_title": "Delete event type \"{name}\"?",
+    "delete_confirm_body": "This action cannot be undone.",
+    "in_use_toast": "This type is used by {count} events.",
+    "view_events": "View events",
+    "deleted_toast": "Event type deleted.",
+    "saved_toast": "Event type saved.",
+    "duplicate_error": "A type with this name already exists.",
+    "fields": {
+      "name": "Name",
+      "color": "Color",
+      "event_count": "Events"
+    }
   },
   "persons": {
     "title": "Persons",

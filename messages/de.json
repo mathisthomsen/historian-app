@@ -16,7 +16,8 @@
       "relations": "Beziehungen",
       "locations": "Orte",
       "literature": "Literatur",
-      "settings": "Einstellungen"
+      "settings": "Einstellungen",
+      "event_types": "Ereignistypen"
     },
     "topbar": {
       "toggleSidebar": "Seitenleiste umschalten",
@@ -120,6 +121,118 @@
     "skeletons": "Skelette",
     "theme": "Design",
     "locale": "Sprache"
+  },
+  "events": {
+    "title": "Ereignisse",
+    "create": "Neues Ereignis",
+    "edit_title": "Ereignis bearbeiten",
+    "create_title": "Neues Ereignis anlegen",
+    "save": "Ereignis speichern",
+    "delete": "Ereignis löschen",
+    "delete_confirm_title": "Ereignis löschen?",
+    "delete_confirm_body": "Dieses Ereignis wird als gelöscht markiert.",
+    "delete_has_sub_events": "Dieses Ereignis hat {count} Unterereignisse. Bitte diese zuerst löschen oder einem anderen Ereignis zuordnen.",
+    "cancel": "Abbrechen",
+    "saved_toast": "Ereignis gespeichert.",
+    "deleted_toast": "Ereignis gelöscht.",
+    "fields": {
+      "title": "Titel",
+      "description": "Beschreibung",
+      "event_type": "Typ",
+      "start_date": "Beginn",
+      "start_date_certainty": "Sicherheit Beginn",
+      "end_date": "Ende",
+      "end_date_certainty": "Sicherheit Ende",
+      "location": "Ort",
+      "parent": "Übergeordnetes Ereignis",
+      "notes": "Notizen",
+      "created_at": "Erstellt am",
+      "created_by": "Erstellt von"
+    },
+    "date": {
+      "year": "Jahr",
+      "month": "Monat",
+      "day": "Tag",
+      "no_month": "Kein Monat",
+      "months": {
+        "1": "Januar", "2": "Februar", "3": "März", "4": "April",
+        "5": "Mai", "6": "Juni", "7": "Juli", "8": "August",
+        "9": "September", "10": "Oktober", "11": "November", "12": "Dezember"
+      }
+    },
+    "certainty": {
+      "CERTAIN": "Sicher",
+      "PROBABLE": "Wahrscheinlich",
+      "POSSIBLE": "Möglich",
+      "UNKNOWN": "Unbekannt"
+    },
+    "list": {
+      "search_placeholder": "Nach Titel suchen…",
+      "empty": "Noch keine Ereignisse.",
+      "empty_action": "Erstes Ereignis anlegen",
+      "top_level_only": "Nur Hauptereignisse",
+      "date_range_from": "Von Jahr",
+      "date_range_to": "Bis Jahr",
+      "date_range_tooltip": "Zeigt Ereignisse, die sich zeitlich mit dem gewählten Bereich überschneiden. Ereignisse ohne Enddatum gelten als Einzelereignisse.",
+      "type_filter_label": "Typ",
+      "columns": {
+        "title": "Titel",
+        "event_type": "Typ",
+        "start_date": "Beginn",
+        "end_date": "Ende",
+        "parent": "Übergeordnet"
+      }
+    },
+    "bulk": {
+      "selected": "{count} ausgewählt",
+      "delete_button": "Löschen",
+      "confirm_title": "{count} Ereignisse löschen?",
+      "confirm_body": "Diese Aktion löscht {count} Ereignisse. Kontaktieren Sie den Administrator zur Wiederherstellung.",
+      "deleted_toast": "{count} Ereignisse gelöscht.",
+      "skipped_toast": "{deleted} Ereignisse gelöscht. {skipped} übersprungen (hat Unterereignisse)."
+    },
+    "detail": {
+      "tabs": {
+        "attributes": "Attribute",
+        "sub_events": "Unterereignisse ({count})",
+        "persons": "Personen",
+        "sources": "Quellen"
+      },
+      "add_sub_event": "Unterereignis hinzufügen",
+      "sub_events_empty": "Keine Unterereignisse.",
+      "relations_placeholder": "Beziehungen werden in einem späteren Update verfügbar."
+    },
+    "errors": {
+      "title_required": "Bitte einen Titel eingeben.",
+      "month_requires_year": "Monat erfordert ein Jahr.",
+      "day_requires_month": "Tag erfordert einen Monat.",
+      "invalid_month": "Ungültiger Monat (1–12).",
+      "invalid_day": "Ungültiger Tag (1–31).",
+      "depth_limit": "Ereignis '{parent_title}' ist selbst ein Unterereignis und kann keine eigenen Unterereignisse haben. Bitte ein anderes Ereignis wählen.",
+      "not_found": "Ereignis nicht gefunden.",
+      "save_failed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+      "delete_has_sub_events": "Hat {count} Unterereignisse"
+    }
+  },
+  "event_types": {
+    "title": "Ereignistypen",
+    "create": "Neuer Ereignistyp",
+    "inline_create": "Neu erstellen: \"{name}\"",
+    "assign_color": "Farbe zuweisen",
+    "save": "Speichern",
+    "delete_action": "Löschen",
+    "delete_confirm_title": "Ereignistyp \"{name}\" löschen?",
+    "delete_confirm_body": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "in_use_toast": "Dieser Typ wird von {count} Ereignissen verwendet.",
+    "view_events": "Ereignisse anzeigen",
+    "deleted_toast": "Ereignistyp gelöscht.",
+    "saved_toast": "Ereignistyp gespeichert.",
+    "duplicate_error": "Ein Typ mit diesem Namen existiert bereits.",
+    "fields": {
+      "name": "Name",
+      "color": "Farbe",
+      "event_count": "Ereignisse"
+    }
   },
   "persons": {
     "title": "Personen",
