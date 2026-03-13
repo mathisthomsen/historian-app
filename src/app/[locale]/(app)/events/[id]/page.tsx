@@ -33,9 +33,6 @@ export default async function EventDetailPage({ params }: PageProps) {
         },
         orderBy: { title: "asc" },
       },
-      _count: {
-        select: { sub_events: true },
-      },
     },
   });
 
@@ -89,7 +86,7 @@ export default async function EventDetailPage({ params }: PageProps) {
       }),
     ),
     _count: {
-      sub_events: raw._count.sub_events,
+      sub_events: raw.sub_events.length,
       relations_from: 0,
       relations_to: 0,
     },

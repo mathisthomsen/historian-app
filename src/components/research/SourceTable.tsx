@@ -1,9 +1,9 @@
 "use client";
 
 import { Pencil } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ interface SourceTableProps {
   page: number;
   totalPages: number;
   locale: string;
+  projectId: string;
   search: string;
   sort: string;
   order: string;
@@ -38,6 +39,7 @@ export function SourceTable({
   page,
   totalPages,
   locale,
+  projectId,
   search,
   sort,
   order,
@@ -95,7 +97,7 @@ export function SourceTable({
     const res = await fetch("/api/sources/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: selectedIds }),
+      body: JSON.stringify({ ids: selectedIds, project_id: projectId }),
     });
     if (res.ok) {
       toast.success(t("bulk.deleted_toast", { count: selectedIds.length }));
@@ -270,6 +272,7 @@ export function SourceTable({
         open={bulkDeleteOpen}
         onConfirm={handleBulkDelete}
         onCancel={() => setBulkDeleteOpen(false)}
+        title={t("bulk_delete_confirm", { count: selectedIds.length })}
       />
     </div>
   );

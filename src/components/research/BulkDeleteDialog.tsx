@@ -19,9 +19,18 @@ interface BulkDeleteDialogProps {
   open: boolean;
   onConfirm: () => Promise<void>;
   onCancel: () => void;
+  title?: string;
+  description?: string;
 }
 
-export function BulkDeleteDialog({ count, open, onConfirm, onCancel }: BulkDeleteDialogProps) {
+export function BulkDeleteDialog({
+  count,
+  open,
+  onConfirm,
+  onCancel,
+  title,
+  description,
+}: BulkDeleteDialogProps) {
   const t = useTranslations("persons.bulk");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -43,8 +52,8 @@ export function BulkDeleteDialog({ count, open, onConfirm, onCancel }: BulkDelet
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("confirm_title", { count })}</DialogTitle>
-          <DialogDescription>{t("confirm_body", { count })}</DialogDescription>
+          <DialogTitle>{title ?? t("confirm_title", { count })}</DialogTitle>
+          <DialogDescription>{description ?? t("confirm_body", { count })}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onCancel} disabled={isLoading}>

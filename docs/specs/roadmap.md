@@ -191,7 +191,7 @@ account for this.
   - Notes field
   - Evidence attachment: attach one or more Sources to this relation with optional notes
 - **Relation list view:** Tabular list, filterable by entity type pair, relation type, certainty. Shows both ends of the relation with links.
-- **Entity relation tabs:** Each entity detail page (Person, Event, Source) has a "Relations" tab listing all relations where that entity is a participant. (Epic 2.1 renders these tabs as placeholders; this epic populates them.)
+- **Entity relation tabs:** Each entity detail page (Person, Event, Source) has a "Relations" tab listing all relations where that entity is a participant. (Epics 2.1, 2.2, and 2.3 render these tabs as placeholders; this epic populates them for all three entity types.)
 - **PropertyEvidence UI:** Attach a Source as evidence for a specific property value on any entity (e.g., "Source X supports birth_year=1848 for Person Y"). UI surfaces on entity detail pages as a secondary annotation alongside each field. Uses the `PropertyEvidence` table (already in schema). Exposes: add evidence for a property, view all evidence for a property, remove evidence.
 - **Relation detail/edit/delete:** Inline in list or modal.
 - API: `GET/POST /api/relations`, `GET/PUT/DELETE /api/relations/[id]`, `GET/POST/DELETE /api/relations/[id]/evidence`, `GET/POST/DELETE /api/property-evidence`
@@ -214,6 +214,7 @@ account for this.
 - **Page transitions:** Subtle fade or slide transition between routes using Next.js App Router layout animations (or a lightweight wrapper).
 - **Component consistency pass:** Verify spacing, border-radius, and shadow tokens are applied uniformly across all Phase 2 pages.
 - **Empty states & loading skeletons:** Ensure every list/detail page has a designed empty state and skeleton — no raw spinners.
+- **DataTable column visibility:** Add show/hide column toggle to the DataTable component (all list views: Persons, Events, Sources, Relations). Each user's visible-column preference persisted in `localStorage` per table key.
 
 **Note:** This epic does _not_ include marketing/public-facing pages (see Epic 2.6). It focuses exclusively on the authenticated app shell and its components.
 

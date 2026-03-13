@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { SourceTable } from "@/components/research/SourceTable";
@@ -112,6 +112,7 @@ export default async function SourcesPage({ params, searchParams }: PageProps) {
         page={page}
         totalPages={totalPages}
         locale={locale}
+        projectId={projectId ?? ""}
         search={search}
         sort={validSort}
         order={validOrder}
