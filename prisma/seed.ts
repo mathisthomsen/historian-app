@@ -39,6 +39,7 @@ const IDS = {
     participated: "seed-rt-participated",
     bornIn: "seed-rt-born-in",
     colleague: "seed-rt-colleague",
+    elternteil: "seed-rt-elternteil",
   },
   person: {
     goethe: "seed-person-goethe",
@@ -193,6 +194,22 @@ async function main() {
       description: "Professional or intellectual colleague",
       color: "#be185d",
       icon: "handshake",
+      valid_from_types: ["PERSON"],
+      valid_to_types: ["PERSON"],
+    },
+  });
+
+  await prisma.relationType.upsert({
+    where: { id: IDS.relationType.elternteil },
+    update: {},
+    create: {
+      id: IDS.relationType.elternteil,
+      project_id: project.id,
+      name: "Elternteil von",
+      inverse_name: "Kind von",
+      description: "Eltern-Kind-Beziehung",
+      color: "#0369a1",
+      icon: "heart",
       valid_from_types: ["PERSON"],
       valid_to_types: ["PERSON"],
     },

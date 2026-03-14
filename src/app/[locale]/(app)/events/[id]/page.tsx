@@ -1,6 +1,6 @@
-import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { DeleteEventButton } from "@/components/research/DeleteEventButton";
@@ -111,7 +111,7 @@ export default async function EventDetailPage({ params }: PageProps) {
           />
         </div>
       </div>
-      <EventDetailTabs event={event} locale={locale} />
+      <EventDetailTabs event={event} locale={locale} projectId={raw.project_id} />
     </div>
   );
 }

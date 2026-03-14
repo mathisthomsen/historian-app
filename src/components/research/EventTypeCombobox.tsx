@@ -1,9 +1,9 @@
 "use client";
 
 import { Check, ChevronsUpDown } from "lucide-react";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";

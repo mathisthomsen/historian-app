@@ -17,7 +17,8 @@
       "locations": "Locations",
       "literature": "Literature",
       "settings": "Settings",
-      "event_types": "Event Types"
+      "event_types": "Event Types",
+      "relation_types": "Relation Types"
     },
     "topbar": {
       "toggleSidebar": "Toggle sidebar",
@@ -196,7 +197,9 @@
         "attributes": "Attributes",
         "sub_events": "Sub-events ({count})",
         "persons": "Persons",
-        "sources": "Sources"
+        "sources": "Sources",
+        "relations": "Relations",
+        "activity": "Activity"
       },
       "add_sub_event": "Add sub-event",
       "sub_events_empty": "No sub-events.",
@@ -308,7 +311,10 @@
         "names": "Name Variants",
         "events": "Events",
         "persons": "Persons",
-        "sources": "Sources"
+        "sources": "Sources",
+        "relations": "Relations",
+        "evidence": "Evidence",
+        "activity": "Activity"
       },
       "relations_placeholder": "Relations will be available in a future update."
     },
@@ -365,6 +371,7 @@
     "all_reliabilities": "All",
     "tab_details": "Details",
     "tab_relations": "Relations",
+    "tab_activity": "Activity",
     "relations_placeholder": "Relations will be populated in Epic 2.4.",
     "sidebar_link": "Sources",
     "created_by": "Created by",
@@ -390,5 +397,104 @@
       "created_at": "Created at",
       "actions": "Actions"
     }
+  },
+  "relations": {
+    "title": "Relations",
+    "add": "Add Relation",
+    "edit": "Edit Relation",
+    "delete": "Delete Relation",
+    "deleteConfirm": "Really delete this relation?",
+    "outgoing": "Outgoing",
+    "incoming": "Incoming",
+    "noRelations": "No relations yet.",
+    "evidenceCount_one": "{count} source",
+    "evidenceCount_other": "{count} sources",
+    "fields": {
+      "fromEntity": "From",
+      "toEntity": "To",
+      "relationType": "Relation type",
+      "certainty": "Certainty",
+      "notes": "Notes",
+      "temporalValidity": "Temporal validity",
+      "validFrom": "Valid from",
+      "validTo": "Valid to"
+    },
+    "noTypeForCombination": "No relation type found for this combination.",
+    "manageTypes": "Manage types",
+    "cancel": "Cancel",
+    "create": "Create Relation",
+    "save": "Save Relation",
+    "saved_toast": "Relation saved.",
+    "deleted_toast": "Relation deleted.",
+    "columns": {
+      "from": "From",
+      "type": "Type",
+      "to": "To",
+      "certainty": "Certainty",
+      "evidence": "Evidence",
+      "actions": "Actions"
+    },
+    "filter": {
+      "all_types": "All types",
+      "all_certainties": "All certainties",
+      "all_entity_types": "All entity types"
+    }
+  },
+  "relationTypes": {
+    "title": "Relation types",
+    "add": "New type",
+    "edit": "Edit type",
+    "delete": "Delete type",
+    "deleteBlocked": "This type is used by {count} relations and cannot be deleted.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved_toast": "Relation type saved.",
+    "deleted_toast": "Relation type deleted.",
+    "delete_confirm_title": "Delete relation type?",
+    "delete_confirm_body": "This action cannot be undone.",
+    "fields": {
+      "name": "Name",
+      "inverseName": "Inverse name",
+      "description": "Description",
+      "color": "Color",
+      "icon": "Icon",
+      "validFromTypes": "Valid from (entity type)",
+      "validToTypes": "Valid to (entity type)",
+      "relationCount": "Relations"
+    },
+    "entityTypes": {
+      "PERSON": "Person",
+      "EVENT": "Event",
+      "SOURCE": "Source",
+      "LOCATION": "Location",
+      "LITERATURE": "Literature"
+    }
+  },
+  "propertyEvidence": {
+    "title": "Evidence",
+    "add": "Add evidence",
+    "delete": "Delete evidence",
+    "badgeLabel_one": "{count} source",
+    "badgeLabel_other": "{count} sources",
+    "fields": {
+      "source": "Source",
+      "pageReference": "Page / Folio",
+      "quote": "Quote (normalized)",
+      "rawTranscription": "Diplomatic transcription",
+      "confidence": "Confidence",
+      "notes": "Notes"
+    },
+    "noEvidence": "No evidence for this field.",
+    "saved_toast": "Evidence saved.",
+    "deleted_toast": "Evidence deleted."
+  },
+  "entityActivity": {
+    "title": "Activity",
+    "actions": {
+      "CREATE": "created",
+      "UPDATE": "updated",
+      "DELETE": "deleted"
+    },
+    "noActivity": "No activity yet."
   }
 }

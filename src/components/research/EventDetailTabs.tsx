@@ -1,8 +1,10 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
+import { ActivityLog } from "@/components/relations/ActivityLog";
+import { RelationsTab } from "@/components/relations/RelationsTab";
 import { EventDetailCard } from "@/components/research/EventDetailCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPartialDate } from "@/lib/date";
@@ -11,9 +13,10 @@ import type { EventDetail, EventSummary } from "@/types/event";
 interface EventDetailTabsProps {
   event: EventDetail;
   locale: string;
+  projectId: string;
 }
 
-export function EventDetailTabs({ event, locale }: EventDetailTabsProps) {
+export function EventDetailTabs({ event, locale, projectId }: EventDetailTabsProps) {
   const t = useTranslations("events.detail");
 
   const subEventCount = event._count?.sub_events ?? event.sub_events?.length ?? 0;
@@ -61,6 +64,8 @@ export function EventDetailTabs({ event, locale }: EventDetailTabsProps) {
         </TabsTrigger>
         <TabsTrigger value="persons">{t("tabs.persons")}</TabsTrigger>
         <TabsTrigger value="sources">{t("tabs.sources")}</TabsTrigger>
+        <TabsTrigger value="relations">{t("tabs.relations")}</TabsTrigger>
+        <TabsTrigger value="activity">{t("tabs.activity")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="attributes" className="mt-4">
@@ -95,6 +100,19 @@ export function EventDetailTabs({ event, locale }: EventDetailTabsProps) {
 
       <TabsContent value="sources" className="mt-4">
         <p className="text-sm text-muted-foreground">{t("relations_placeholder")}</p>
+      </TabsContent>
+
+      <TabsContent value="relations" className="mt-4">
+        <RelationsTab
+          projectId={projectId}
+          entityType="EVENT"
+          entityId={event.id}
+          entityLabel={event.title}
+        />
+      </TabsContent>
+
+      <TabsContent value="activity" className="mt-4">
+        <ActivityLog projectId={projectId} entityType="EVENT" entityId={event.id} />
       </TabsContent>
     </Tabs>
   );

@@ -1,5 +1,5 @@
-import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { EditPersonClient } from "@/components/research/EditPersonClient";

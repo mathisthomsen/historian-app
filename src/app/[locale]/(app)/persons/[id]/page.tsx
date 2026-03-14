@@ -1,6 +1,6 @@
-import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { DeletePersonButton } from "@/components/research/DeletePersonButton";
@@ -103,8 +103,11 @@ export default async function PersonDetailPage({ params }: PageProps) {
         </div>
       </div>
       <PersonDetailTabs
-        attributesContent={<PersonDetailCard person={person} locale={locale} />}
+        attributesContent={<PersonDetailCard person={person} projectId={raw.project_id} locale={locale} />}
         namesContent={namesContent}
+        personId={id}
+        personLabel={displayName}
+        projectId={raw.project_id}
       />
     </div>
   );

@@ -80,7 +80,7 @@ export default async function SourceDetailPage({ params }: PageProps) {
           <DeleteSourceButton id={id} locale={locale} label={t("delete")} />
         </div>
       </div>
-      <SourceDetailTabs source={source} locale={locale} />
+      <SourceDetailTabs source={source} locale={locale} projectId={raw.project_id} />
     </div>
   );
 }

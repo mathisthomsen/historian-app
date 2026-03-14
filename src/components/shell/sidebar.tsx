@@ -11,9 +11,9 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 
   const settingsNavItems = [
     { key: "settings/event-types", icon: ListFilter, label: t("event_types") },
+    { key: "settings/relation-types", icon: Link2, label: t("relation_types") },
   ] as const;
 
   function navLink(key: string, icon: React.ElementType, label: string) {

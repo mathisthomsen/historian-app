@@ -1,8 +1,8 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { formatPartialDate } from "@/lib/date";
 import type { EventDetail } from "@/types/event";

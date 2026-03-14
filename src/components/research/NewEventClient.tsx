@@ -1,7 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { EventForm } from "@/components/research/EventForm";
 import type { EventDetail } from "@/types/event";

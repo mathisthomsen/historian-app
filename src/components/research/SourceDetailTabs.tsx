@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { ActivityLog } from "@/components/relations/ActivityLog";
+import { RelationsTab } from "@/components/relations/RelationsTab";
 import { ReliabilityBadge } from "@/components/research/ReliabilityBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SourceDetail } from "@/types/source";
@@ -9,9 +11,10 @@ import type { SourceDetail } from "@/types/source";
 interface SourceDetailTabsProps {
   source: SourceDetail;
   locale: string;
+  projectId: string;
 }
 
-export function SourceDetailTabs({ source, locale }: SourceDetailTabsProps) {
+export function SourceDetailTabs({ source, locale, projectId }: SourceDetailTabsProps) {
   const t = useTranslations("sources");
 
   const totalLinks = source._count.relation_evidence + source._count.property_evidence;
@@ -21,6 +24,7 @@ export function SourceDetailTabs({ source, locale }: SourceDetailTabsProps) {
       <TabsList>
         <TabsTrigger value="details">{t("tab_details")}</TabsTrigger>
         <TabsTrigger value="relations">{t("tab_relations")}</TabsTrigger>
+        <TabsTrigger value="activity">{t("tab_activity")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="details" className="mt-4">
@@ -110,13 +114,22 @@ export function SourceDetailTabs({ source, locale }: SourceDetailTabsProps) {
       </TabsContent>
 
       <TabsContent value="relations" className="mt-4">
-        <p className="text-sm text-muted-foreground">{t("relations_placeholder")}</p>
+        <RelationsTab
+          projectId={projectId}
+          entityType="SOURCE"
+          entityId={source.id}
+          entityLabel={source.title}
+        />
         {totalLinks > 0 && (
           <p className="mt-2 text-sm text-muted-foreground">
             ({source._count.relation_evidence} Verknüpfungen •{" "}
             {source._count.property_evidence} Quellenbelege)
           </p>
         )}
+      </TabsContent>
+
+      <TabsContent value="activity" className="mt-4">
+        <ActivityLog projectId={projectId} entityType="SOURCE" entityId={source.id} />
       </TabsContent>
     </Tabs>
   );

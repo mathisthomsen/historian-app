@@ -1,14 +1,16 @@
 import { getTranslations } from "next-intl/server";
 
+import { PropertyEvidenceBadge } from "@/components/relations/PropertyEvidenceBadge";
 import { formatPartialDate } from "@/lib/date";
 import type { PersonDetail } from "@/types/person";
 
 interface PersonDetailCardProps {
   person: PersonDetail;
+  projectId: string;
   locale: string;
 }
 
-export async function PersonDetailCard({ person, locale }: PersonDetailCardProps) {
+export async function PersonDetailCard({ person, projectId, locale }: PersonDetailCardProps) {
   const t = await getTranslations("persons.fields");
   const tCertainty = await getTranslations("persons.certainty");
 
@@ -33,13 +35,22 @@ export async function PersonDetailCard({ person, locale }: PersonDetailCardProps
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="space-y-1">
         <dt className="text-xs font-medium text-muted-foreground">{t("birth_date")}</dt>
-        <dd className="text-sm">
-          {birthDate}
-          {birthDate !== "—" && (
-            <span className="ml-1 text-xs text-muted-foreground">
-              ({tCertainty(person.birth_date_certainty)})
-            </span>
-          )}
+        <dd className="flex items-center gap-2 text-sm">
+          <span>
+            {birthDate}
+            {birthDate !== "—" && (
+              <span className="ml-1 text-xs text-muted-foreground">
+                ({tCertainty(person.birth_date_certainty)})
+              </span>
+            )}
+          </span>
+          <PropertyEvidenceBadge
+            projectId={projectId}
+            entityType="PERSON"
+            entityId={person.id}
+            property="birth_year"
+            fieldLabel={t("birth_date")}
+          />
         </dd>
       </div>
 

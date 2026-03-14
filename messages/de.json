@@ -17,7 +17,8 @@
       "locations": "Orte",
       "literature": "Literatur",
       "settings": "Einstellungen",
-      "event_types": "Ereignistypen"
+      "event_types": "Ereignistypen",
+      "relation_types": "Relationstypen"
     },
     "topbar": {
       "toggleSidebar": "Seitenleiste umschalten",
@@ -196,7 +197,9 @@
         "attributes": "Attribute",
         "sub_events": "Unterereignisse ({count})",
         "persons": "Personen",
-        "sources": "Quellen"
+        "sources": "Quellen",
+        "relations": "Relationen",
+        "activity": "Verlauf"
       },
       "add_sub_event": "Unterereignis hinzufügen",
       "sub_events_empty": "Keine Unterereignisse.",
@@ -308,7 +311,10 @@
         "names": "Weitere Namen",
         "events": "Ereignisse",
         "persons": "Personen",
-        "sources": "Quellen"
+        "sources": "Quellen",
+        "relations": "Relationen",
+        "evidence": "Nachweise",
+        "activity": "Verlauf"
       },
       "relations_placeholder": "Beziehungen werden in einem späteren Update verfügbar."
     },
@@ -365,6 +371,7 @@
     "all_reliabilities": "Alle",
     "tab_details": "Details",
     "tab_relations": "Verknüpfungen",
+    "tab_activity": "Verlauf",
     "relations_placeholder": "Verknüpfungen werden nach Abschluss von Epic 2.4 angezeigt.",
     "sidebar_link": "Quellen",
     "created_by": "Erstellt von",
@@ -390,5 +397,104 @@
       "created_at": "Erstellt am",
       "actions": "Aktionen"
     }
+  },
+  "relations": {
+    "title": "Relationen",
+    "add": "Relation hinzufügen",
+    "edit": "Relation bearbeiten",
+    "delete": "Relation löschen",
+    "deleteConfirm": "Diese Relation wirklich löschen?",
+    "outgoing": "Ausgehend",
+    "incoming": "Eingehend",
+    "noRelations": "Noch keine Relationen.",
+    "evidenceCount_one": "{count} Beleg",
+    "evidenceCount_other": "{count} Belege",
+    "fields": {
+      "fromEntity": "Von",
+      "toEntity": "Zu",
+      "relationType": "Relationstyp",
+      "certainty": "Gewissheit",
+      "notes": "Notizen",
+      "temporalValidity": "Zeitliche Gültigkeit",
+      "validFrom": "Gültig von",
+      "validTo": "Gültig bis"
+    },
+    "noTypeForCombination": "Kein Relationstyp für diese Kombination gefunden.",
+    "manageTypes": "Typen verwalten",
+    "cancel": "Abbrechen",
+    "create": "Relation erstellen",
+    "save": "Relation speichern",
+    "saved_toast": "Relation gespeichert.",
+    "deleted_toast": "Relation gelöscht.",
+    "columns": {
+      "from": "Von",
+      "type": "Typ",
+      "to": "Zu",
+      "certainty": "Gewissheit",
+      "evidence": "Belege",
+      "actions": "Aktionen"
+    },
+    "filter": {
+      "all_types": "Alle Typen",
+      "all_certainties": "Alle Gewissheiten",
+      "all_entity_types": "Alle Entitätstypen"
+    }
+  },
+  "relationTypes": {
+    "title": "Relationstypen",
+    "add": "Neuer Typ",
+    "edit": "Typ bearbeiten",
+    "delete": "Typ löschen",
+    "deleteBlocked": "Dieser Typ wird von {count} Relationen verwendet und kann nicht gelöscht werden.",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "saved_toast": "Relationstyp gespeichert.",
+    "deleted_toast": "Relationstyp gelöscht.",
+    "delete_confirm_title": "Relationstyp löschen?",
+    "delete_confirm_body": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "fields": {
+      "name": "Name",
+      "inverseName": "Umkehrung",
+      "description": "Beschreibung",
+      "color": "Farbe",
+      "icon": "Icon",
+      "validFromTypes": "Gültig von (Entitätstyp)",
+      "validToTypes": "Gültig zu (Entitätstyp)",
+      "relationCount": "Relationen"
+    },
+    "entityTypes": {
+      "PERSON": "Person",
+      "EVENT": "Ereignis",
+      "SOURCE": "Quelle",
+      "LOCATION": "Ort",
+      "LITERATURE": "Literatur"
+    }
+  },
+  "propertyEvidence": {
+    "title": "Nachweise",
+    "add": "Beleg hinzufügen",
+    "delete": "Beleg löschen",
+    "badgeLabel_one": "{count} Quelle",
+    "badgeLabel_other": "{count} Quellen",
+    "fields": {
+      "source": "Quelle",
+      "pageReference": "Seite / Folio",
+      "quote": "Zitat (normalisiert)",
+      "rawTranscription": "Diplomatische Transkription",
+      "confidence": "Gewissheit",
+      "notes": "Notizen"
+    },
+    "noEvidence": "Keine Belege für dieses Feld.",
+    "saved_toast": "Beleg gespeichert.",
+    "deleted_toast": "Beleg gelöscht."
+  },
+  "entityActivity": {
+    "title": "Verlauf",
+    "actions": {
+      "CREATE": "erstellt",
+      "UPDATE": "aktualisiert",
+      "DELETE": "gelöscht"
+    },
+    "noActivity": "Kein Verlauf vorhanden."
   }
 }
