@@ -89,6 +89,12 @@ const IDS = {
 async function main() {
   console.log("Seeding database…");
 
+  // Restore any seeded entities that were soft-deleted during testing
+  await prisma.$executeRawUnsafe(`UPDATE persons SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
+  await prisma.$executeRawUnsafe(`UPDATE events SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
+  await prisma.$executeRawUnsafe(`UPDATE sources SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
+  await prisma.$executeRawUnsafe(`UPDATE relations SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
+
   // ---- User ----------------------------------------------------------------
   const demoPasswordHash = await bcrypt.hash("Demo1234!", 10);
 

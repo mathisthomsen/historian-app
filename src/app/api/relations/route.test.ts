@@ -180,9 +180,7 @@ describe("GET /api/relations", () => {
     mockRelationFindMany.mockResolvedValue([]);
     mockRelationCount.mockResolvedValue(0);
 
-    const res = await GET(
-      makeGetRequest("?projectId=proj-1&entityType=PERSON&entityId=person-1"),
-    );
+    const res = await GET(makeGetRequest("?projectId=proj-1&entityType=PERSON&entityId=person-1"));
 
     expect(res.status).toBe(200);
     const callArg = mockRelationFindMany.mock.calls[0]?.[0] as {
@@ -225,6 +223,25 @@ describe("POST /api/relations", () => {
     const body = (await res.json()) as { id: string };
     expect(body.id).toBe("rel-1");
     expect(mockCacheInvalidate).toHaveBeenCalledWith("relation-list:proj-1:");
+  });
+
+  it("returns 404 when from_id entity does not exist (AC-02)", async () => {
+    mockValidateEntityExists.mockResolvedValueOnce(false);
+
+    const res = await POST(
+      makePostRequest({
+        project_id: "proj-1",
+        from_type: "PERSON",
+        from_id: "nonexistent",
+        to_type: "PERSON",
+        to_id: "person-2",
+        relation_type_id: "rt-1",
+      }),
+    );
+
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("ENTITY_NOT_FOUND");
   });
 
   it("returns 422 when from_type is not in valid_from_types", async () => {

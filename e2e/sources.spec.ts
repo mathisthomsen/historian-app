@@ -185,10 +185,12 @@ test.describe("TC-SRC-08: Source detail page shows all attributes", () => {
 });
 
 // ---------------------------------------------------------------------------
-// TC-SRC-09: Relations tab renders placeholder without error
+// TC-SRC-09: Relations tab renders (Epic 2.4 implemented)
 // ---------------------------------------------------------------------------
-test.describe("TC-SRC-09: Relations tab renders placeholder", () => {
-  test("clicking Relations tab shows placeholder and no console errors", async ({ page }) => {
+test.describe("TC-SRC-09: Relations tab renders", () => {
+  test("clicking Relations tab shows RelationsTab content and no console errors", async ({
+    page,
+  }) => {
     await loginAsAdmin(page);
 
     if (!sourceId) {
@@ -210,9 +212,10 @@ test.describe("TC-SRC-09: Relations tab renders placeholder", () => {
     await page.goto(`/de/sources/${sourceId}`);
     await page.getByRole("tab", { name: "Verknüpfungen" }).click();
 
-    await expect(
-      page.getByText("Verknüpfungen werden nach Abschluss von Epic 2.4 angezeigt."),
-    ).toBeVisible();
+    // RelationsTab renders outgoing/incoming sections and add button
+    await expect(page.getByText("Ausgehend")).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText("Eingehend")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Relation hinzufügen" })).toBeVisible();
     expect(errors).toHaveLength(0);
   });
 });

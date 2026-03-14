@@ -47,9 +47,7 @@ export function RelationTypeFormDialog({
   const [validFromTypes, setValidFromTypes] = useState<EntityType[]>(
     editType?.valid_from_types ?? [],
   );
-  const [validToTypes, setValidToTypes] = useState<EntityType[]>(
-    editType?.valid_to_types ?? [],
-  );
+  const [validToTypes, setValidToTypes] = useState<EntityType[]>(editType?.valid_to_types ?? []);
   const [saving, setSaving] = useState(false);
 
   // Reset when editType changes
@@ -121,12 +119,8 @@ export function RelationTypeFormDialog({
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
           {/* Name */}
           <div className="space-y-1">
-            <Label>{t("fields.name")}</Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+            <Label htmlFor="rt-name">{t("fields.name")}</Label>
+            <Input id="rt-name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
           {/* Inverse name */}

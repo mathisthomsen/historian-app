@@ -1,4 +1,4 @@
-import { type Prisma, type EntityType } from "@prisma/client";
+import { type EntityType, type Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -59,9 +59,15 @@ async function resolveLabels(
 
   switch (type) {
     case "PERSON": {
+      // No deleted_at filter: labels must resolve even for soft-deleted entities
       const rows = await prisma.person.findMany({
-        where: { id: { in: ids }, project_id: projectId, deleted_at: null },
-        select: { id: true, first_name: true, last_name: true, names: { select: { name: true, is_primary: true } } },
+        where: { id: { in: ids }, project_id: projectId },
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          names: { select: { name: true, is_primary: true } },
+        },
       });
       for (const row of rows) {
         const primary = row.names.find((n) => n.is_primary);
@@ -73,7 +79,7 @@ async function resolveLabels(
     }
     case "EVENT": {
       const rows = await prisma.event.findMany({
-        where: { id: { in: ids }, project_id: projectId, deleted_at: null },
+        where: { id: { in: ids }, project_id: projectId },
         select: { id: true, title: true },
       });
       for (const row of rows) map.set(row.id, row.title);
@@ -81,7 +87,7 @@ async function resolveLabels(
     }
     case "SOURCE": {
       const rows = await prisma.source.findMany({
-        where: { id: { in: ids }, project_id: projectId, deleted_at: null },
+        where: { id: { in: ids }, project_id: projectId },
         select: { id: true, title: true },
       });
       for (const row of rows) map.set(row.id, row.title);
@@ -212,7 +218,9 @@ export async function GET(request: NextRequest) {
     db.relation.findMany({
       where,
       include: {
-        relation_type: { select: { id: true, name: true, inverse_name: true, color: true, icon: true } },
+        relation_type: {
+          select: { id: true, name: true, inverse_name: true, color: true, icon: true },
+        },
         _count: { select: { evidence: true } },
       },
       orderBy: { created_at: "desc" },
@@ -303,7 +311,7 @@ export async function POST(request: NextRequest) {
   const fromExists = await validateEntityExists(data.from_type, data.from_id, data.project_id);
   if (!fromExists) {
     return NextResponse.json(
-      { error: "from_id not found", field: "from_id" },
+      { error: "ENTITY_NOT_FOUND", field: "from_id" },
       { status: 404, headers: { "Cache-Control": "no-store" } },
     );
   }
@@ -312,7 +320,7 @@ export async function POST(request: NextRequest) {
   const toExists = await validateEntityExists(data.to_type, data.to_id, data.project_id);
   if (!toExists) {
     return NextResponse.json(
-      { error: "to_id not found", field: "to_id" },
+      { error: "ENTITY_NOT_FOUND", field: "to_id" },
       { status: 404, headers: { "Cache-Control": "no-store" } },
     );
   }
@@ -369,7 +377,9 @@ export async function POST(request: NextRequest) {
       valid_to_cert: data.valid_to_cert ?? "UNKNOWN",
     },
     include: {
-      relation_type: { select: { id: true, name: true, inverse_name: true, color: true, icon: true } },
+      relation_type: {
+        select: { id: true, name: true, inverse_name: true, color: true, icon: true },
+      },
       _count: { select: { evidence: true } },
     },
   });

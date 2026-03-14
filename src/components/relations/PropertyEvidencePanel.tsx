@@ -32,14 +32,16 @@ export function PropertyEvidencePanel({
         `/api/property-evidence?projectId=${encodeURIComponent(projectId)}&entityType=${entityType}&entityId=${encodeURIComponent(entityId)}&property=${encodeURIComponent(property)}`,
       );
       if (res.ok) {
-        const data = (await res.json()) as
-          | PropertyEvidenceItem[]
-          | { data?: PropertyEvidenceItem[] };
-        if (Array.isArray(data)) {
-          setItems(data);
-        } else if (data && Array.isArray((data as { data?: PropertyEvidenceItem[] }).data)) {
-          setItems((data as { data: PropertyEvidenceItem[] }).data);
-        }
+        const data = (await res.json()) as {
+          data?: (PropertyEvidenceItem & { source?: { title?: string } })[];
+        };
+        const raw = data.data ?? [];
+        setItems(
+          raw.map((r) => {
+            const title = r.source?.title ?? r.source_title;
+            return title !== undefined ? { ...r, source_title: title } : { ...r };
+          }),
+        );
       }
     } finally {
       setLoading(false);

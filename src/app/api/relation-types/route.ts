@@ -10,13 +10,13 @@ const entityTypeSchema = z.enum(["PERSON", "EVENT", "SOURCE", "LOCATION", "LITER
 const createRelationTypeSchema = z.object({
   project_id: z.string().min(1),
   name: z.string().min(1).max(100),
-  inverse_name: z.string().max(100).optional(),
-  description: z.string().max(500).optional(),
+  inverse_name: z.string().max(100).nullish(),
+  description: z.string().max(500).nullish(),
   color: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
-    .optional(),
-  icon: z.string().max(50).optional(),
+    .nullish(),
+  icon: z.string().max(50).nullish(),
   valid_from_types: z.array(entityTypeSchema).min(1),
   valid_to_types: z.array(entityTypeSchema).min(1),
 });

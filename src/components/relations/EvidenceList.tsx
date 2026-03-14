@@ -59,36 +59,40 @@ export function EvidenceList({ items, projectId, onAdd, onDelete, loading }: Evi
         <p className="text-sm text-muted-foreground">{t("noEvidence")}</p>
       )}
 
-      {items.map((item) => (
-        <div
-          key={item.id}
-          className="flex items-start justify-between gap-2 rounded-md border p-3 text-sm"
-        >
-          <div className="space-y-0.5">
-            <p className="font-medium">{item.source_title ?? item.source_id}</p>
-            {item.page_reference && (
-              <p className="text-muted-foreground">{item.page_reference}</p>
-            )}
-            {item.quote && <p className="italic text-muted-foreground">&ldquo;{item.quote}&rdquo;</p>}
-            <p className="text-xs text-muted-foreground">{item.confidence}</p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0"
-            disabled={deletingId === item.id}
-            onClick={() => void handleDelete(item.id)}
-            aria-label={t("delete")}
+      <div className="max-h-48 space-y-2 overflow-y-auto">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-start justify-between gap-2 rounded-md border p-3 text-sm"
           >
-            {deletingId === item.id ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Trash2 className="h-3 w-3" />
-            )}
-          </Button>
-        </div>
-      ))}
+            <div className="space-y-0.5">
+              <p className="font-medium">{item.source_title ?? item.source_id}</p>
+              {item.page_reference && (
+                <p className="text-muted-foreground">{item.page_reference}</p>
+              )}
+              {item.quote && (
+                <p className="italic text-muted-foreground">&ldquo;{item.quote}&rdquo;</p>
+              )}
+              <p className="text-xs text-muted-foreground">{item.confidence}</p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              disabled={deletingId === item.id}
+              onClick={() => void handleDelete(item.id)}
+              aria-label={t("delete")}
+            >
+              {deletingId === item.id ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Trash2 className="h-3 w-3" />
+              )}
+            </Button>
+          </div>
+        ))}
+      </div>
 
       {showForm ? (
         <EvidenceForm
@@ -97,12 +101,7 @@ export function EvidenceList({ items, projectId, onAdd, onDelete, loading }: Evi
           onCancel={() => setShowForm(false)}
         />
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowForm(true)}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(true)}>
           {t("add")}
         </Button>
       )}
