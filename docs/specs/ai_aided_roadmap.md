@@ -42,10 +42,12 @@
 
 **AX Addition — PropertyEvidence Schema Upgrade:**
 
-- `PropertyEvidence` erhält `confidence Certainty @default(UNKNOWN)` (bisher fehlend)
+- `PropertyEvidence` erhält `confidence Certainty @default(UNKNOWN)` — ✅ in Epic 2.4 umgesetzt
+- `PropertyEvidence` erhält `quote String?` (normalisiertes Zitat) — ✅ in Epic 2.4 umgesetzt
+- `PropertyEvidence` erhält `raw_transcription String?` (diplomatische Transkription, verbatim) — ✅ in Epic 2.4 umgesetzt
 - `PropertyEvidence` erhält `source_scan_region String?` (JSON: `{page, x, y, w, h}`)
   — Grundlage für das Source-First-Pixel-Anchoring-Prinzip
-- Diese Felder sind in der Migration für Epic 2.4 hinzuzufügen
+  — ⏳ **auf Epic 6.3 verschoben** (hat keine Konsumenten bis der PDF-Viewer gebaut wird)
 
 **AX Addition — EntityActivity Log (vorgezogen aus Epic 4.4):**
 
@@ -206,26 +208,33 @@ enum SuggestionType {
 enum SuggestionStatus { PENDING ACCEPTED REJECTED SUPERSEDED }
 
 model AgentSuggestion {
-  id               String           @id @default(cuid())
-  project_id       String
-  entity_type      EntityType
-  entity_id        String
-  agent_name       String           // z.B. "GapFillerAgent v1.0"
-  suggestion_type  SuggestionType
-  field_path       String?          // betroffenes Feld, z.B. "birth_year"
-  suggested_value  Json?            // vorgeschlagener Wert
-  confidence       Float            // 0.0–0.95 (API-seitig gecappt)
-  reasoning        String           // NICHT NULL, mind. 50 Zeichen
-  source_ids       String[]         // PFLICHT: ≥1 Source.id — Grounding-Zwang
-  status           SuggestionStatus @default(PENDING)
-  reviewed_by_id   String?
-  reviewed_at      DateTime?
-  review_note      String?
-  created_at       DateTime         @default(now())
+  id                 String           @id @default(cuid())
+  project_id         String
+  entity_type        EntityType
+  entity_id          String
+  agent_name         String           // z.B. "GapFillerAgent v1.0"
+  agent_version      String?          // z.B. "1.2.3" — für wissenschaftliche Reproduzierbarkeit
+  system_prompt_hash String?          // SHA-256 des verwendeten System-Prompts — Reproduzierbarkeit
+  suggestion_type    SuggestionType
+  field_path         String?          // betroffenes Feld, z.B. "birth_year"
+  suggested_value    Json?            // vorgeschlagener Wert
+  confidence         Float            // 0.0–0.95 (API-seitig gecappt)
+  reasoning          String           // NICHT NULL, mind. 50 Zeichen
+  source_ids         String[]         // PFLICHT: ≥1 Source.id — Grounding-Zwang
+  status             SuggestionStatus @default(PENDING)
+  reviewed_by_id     String?
+  reviewed_at        DateTime?
+  review_note        String?
+  created_at         DateTime         @default(now())
 
-  project          Project          @relation(fields: [project_id], references: [id])
-  reviewer         User?            @relation(fields: [reviewed_by_id], references: [id])
+  project            Project          @relation(fields: [project_id], references: [id])
+  reviewer           User?            @relation(fields: [reviewed_by_id], references: [id])
 }
+
+// Hinweis: agent_version und system_prompt_hash wurden in Epic 2.4-Brainstorming
+// identifiziert und gehören auf AgentSuggestion (nicht EntityActivity), da sie
+// nur bei Agenten-Aktionen sinnvoll sind. EntityActivity-Einträge aus Epic 2.4
+// sind ausschließlich menschliche Aktionen (user_id gesetzt, agent_name null).
 
 // 3. DataConflict — automatisch erkannte Widersprüche zwischen Quellen
 model DataConflict {
@@ -313,8 +322,16 @@ Kein neues Feature-Set — Ergänzung der bestehenden Detail- und Formular-Seite
 
 - Angehängt an jedes `<dt>/<dd>`-Paar in PersonDetailCard, EventDetailCard
 - Zeigt: `[Quelltitel] S.42 · PROBABLE` (kompakt, aufklappbar)
-- Aufgeklappt: Zitat-Text aus PropertyEvidence.quote, Link zur Source-Detailseite
-- Datenbasis: PropertyEvidence (mit neuem .confidence-Feld aus Epic 2.4-Augmentation)
+- Aufgeklappt: Zitat-Text aus `PropertyEvidence.quote`, diplomatische Transkription aus
+  `PropertyEvidence.raw_transcription` (falls vorhanden), Link zur Source-Detailseite
+- Datenbasis: PropertyEvidence mit `.confidence`, `.quote`, `.raw_transcription` (alle in Epic 2.4 eingeführt)
+- **Beweistyp-Kategorisierung (aus Epic 2.4-Brainstorming):** In diesem Epic wird ein strukturiertes
+  JSON-Schema für die Kategorisierung von Beweistypen (Lexikalisch / Kontextuell / Statistisch)
+  entworfen und in der `<EvidenceStrip>`-Darstellung umgesetzt. Das Schema wird als
+  `PropertyEvidence.evidence_category Json?` in einer eigenen Migration hinzugefügt.
+  Beispiel: `{ "type": "LEXICAL", "subtype": "DIRECT_MENTION" }` vs.
+  `{ "type": "CONTEXTUAL", "subtype": "INFERENCE" }`.
+  Dies wurde in Epic 2.4 zurückgestellt, da die UI-Anforderungen erst hier bekannt sind.
 - i18n: de + en Labels
 
 **2. `<ReasoningBox>`**
