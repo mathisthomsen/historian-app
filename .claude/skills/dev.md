@@ -121,6 +121,7 @@ Skip a wave if the spec has no work for that domain (e.g. no DB changes → skip
 - **Task:** `testplan.md`, Playwright E2E specs, unit test gaps.
 - **Goal:** Every acceptance criterion covered; tests match the patterns in `e2e/` and `src/**/*.test.ts`.
 - **Prompt must include:** The full spec, existing E2E helpers and patterns, and instruction: _"E2E work is High Effort: cover all ACs, error states, i18n switching, and edge cases. Unit test gaps are Medium Effort: fill missing coverage, don't duplicate what already passes."_
+- **Mandatory coverage:** For every feature with persisted data, include all four assertion categories: write flow, read-back flow, edit-mode pre-population, and activity log entry (for any route that calls `logActivity`). Absence of any category is a QA gap.
 
 ### Two-stage review after each wave
 
@@ -285,6 +286,40 @@ Fix all failures. Common pitfalls from this project:
 - `NEXT_LOCALE` cookie: clear in beforeEach to avoid locale bleed between tests
 - Firefox is stricter on cross-origin cookies — avoid external image URLs in components
 
+### Mandatory E2E assertion categories
+
+Every feature touching persisted data **must** cover all applicable categories:
+
+**1. Write flow** — create/update/delete and assert the immediate success state (toast, redirect, list update).
+
+**2. Read-back flow** — navigate away, return, and assert the UI reflects the persisted state. This is what catches display bugs that only appear after a round-trip. Example:
+
+```typescript
+// After creating a relation:
+await page.goto(`/de/persons/${id}`);
+await page.getByRole("tab", { name: "Relationen" }).click();
+await expect(page.getByText("Kind von")).toBeVisible();
+```
+
+**3. Edit-mode assertions** — open an existing record in its edit/form state and assert all fields are pre-populated with the current values. Empty selectors or blank fields in edit mode are a common regression:
+
+```typescript
+await page.getByRole("button", { name: "Bearbeiten" }).click();
+await expect(page.getByText("Anna Müller")).toBeVisible(); // from-entity shown
+await expect(page.getByText("Kind von")).toBeVisible(); // relation type shown
+```
+
+**4. Activity log assertion** — after any mutation, navigate to the Verlauf tab and assert the new entry appears with the correct action label and field path. Required for every API route that calls `logActivity`:
+
+```typescript
+await page.getByRole("tab", { name: "Verlauf" }).click();
+await expect(page.getByText("Geburtsjahr geändert")).toBeVisible();
+```
+
+### Playwright reliability
+
+If `pnpm test:e2e` exits before the first `test()` body runs (Chromium failed to launch), treat this as a **hard failure** — not infrastructure flakiness. Do not retry without diagnosing. Run `pnpm playwright install chromium` and verify the browser binary exists before re-running.
+
 ---
 
 ## Step 6 — Live browser verification with Playwright MCP
@@ -350,6 +385,8 @@ Mark all steps ✅, update the AC table to all ✅, set Status to ✅ Complete.
 - **Never over-engineer** — implement exactly what the spec requires, no more
 - **Always run the test suite before committing**
 - **Always verify in the browser before declaring done**
+- **Always type API response mappings explicitly** — `Response.json()` has no enforced return type. Any function that maps a Prisma record to an API response shape must have an explicit return type annotation (e.g. `function mapRelation(r: ...): RelationWithDetails`). This is the only way TypeScript can catch producer/consumer shape mismatches.
+- **Never leave placeholder text as a shipped feature** — text like "wird in einem späteren Update verfügbar" is scaffolding, not a deliverable. If an AC says a tab shows related data, the tab must show related data. Scaffolding that survives into a commit counts as a missing feature.
 
 ## Project-specific conventions
 

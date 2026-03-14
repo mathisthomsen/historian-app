@@ -52,6 +52,53 @@ Start with Option A; revisit Option B if users still find it laborious.
 
 ---
 
+## Process & quality gaps
+
+### 7. Epic scope too broad — Epic 2.4 as case study
+
+**What happened:** Epic 2.4 ("Universal Relationship Engine") covered RelationType CRUD, Relation CRUD, PropertyEvidence per-field annotation, ActivityLog, a global `/relations` page, and RelationsTab on all entity detail pages — six distinct subsystems in one epic. Result: the developer finished backend for one subsystem while mentally logging it as done, forgetting to wire the frontend. Three tabs were left as placeholders and a backend API existed for 8 months without a UI.
+
+**Recommendation:** Cap epics at 2–3 cohesive subsystems. "Relation engine" and "Evidence annotation" and "Activity logging" each warranted a separate epic with a separate spec, test plan, and AC table. When an epic exceeds this, split before writing the spec.
+
+---
+
+### 8. TypeScript does not catch API response shape mismatches
+
+**What happened:** `evidence_count` vs `_count: { evidence: n }` — the producer (API route) and consumer (component type) both compiled cleanly in isolation. `Response.json({...})` has no enforced return type, so TypeScript cannot flag the mismatch.
+
+**Recommendation:** Establish a convention that all API routes mapping Prisma records to response shapes must go through an explicitly typed helper function (e.g. `mapRelation(r): RelationWithDetails`). The return type annotation on the helper is where TypeScript catches shape drift. This is also the `mapRelation()` extraction noted in item 1 above.
+
+---
+
+### 9. E2E tests cover creation flows but not display/read-back states
+
+**What happened:** E2E tests validated "create a relation → it appears in the list." They did not assert "open an existing relation for editing → the current entity names appear in the selectors" or "after adding evidence, the badge count reflects the addition." These second-order display assertions were never written.
+
+**Recommendation:** Every feature involving persisted data needs two categories of E2E assertion:
+
+1. **Write flow:** create/update/delete and verify the success state
+2. **Read-back flow:** navigate away, return, and verify the display reflects the persisted state
+
+Edit-mode assertions are a third mandatory category: open an existing record for editing and verify all fields are pre-populated.
+
+---
+
+### 10. Playwright Chromium launch failures silently treated as flakiness
+
+**What happened:** If Chromium fails to launch, the E2E test runner exits before any assertions run. If this failure was treated as "infrastructure flakiness" and retried until it passed, the assertion that would have caught a bug never actually executed.
+
+**Recommendation:** In CI, Chromium launch failures must be treated as hard failures — not retried silently. Configure the pipeline to surface them as a distinct failure type. Locally, if `pnpm test:e2e` exits before the first `test()` body runs, investigate the browser setup rather than retrying.
+
+---
+
+### 11. `logActivity` calls not verified by any test
+
+**What happened:** `PUT /api/persons/[id]` was implemented without any `logActivity` call. No unit test or E2E test asserted that the Activity tab showed a new entry after a field was edited, so the omission was invisible.
+
+**Recommendation:** Any API route that mutates data should have a corresponding test assertion that the activity log receives a new entry. For E2E, this means: perform an action → navigate to the Activity tab → assert the entry appears with the correct action type and field path.
+
+---
+
 ## Low priority / Nice to have
 
 ### 5. ActivityLog has no real-time updates
