@@ -98,17 +98,14 @@ describe("GET /api/relations/[id]", () => {
     );
 
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { id: string; _count: { evidence: number } };
+    const body = (await res.json()) as { id: string; evidence_count: number };
     expect(body.id).toBe("rel-1");
-    expect(body._count.evidence).toBe(2);
+    expect(body.evidence_count).toBe(2);
   });
 
   it("returns 404 when not found", async () => {
     mockRelationFindFirstDb.mockResolvedValue(null);
-    const res = await GET(
-      new NextRequest("http://localhost/api/relations/bad"),
-      makeCtx("bad"),
-    );
+    const res = await GET(new NextRequest("http://localhost/api/relations/bad"), makeCtx("bad"));
     expect(res.status).toBe(404);
   });
 });

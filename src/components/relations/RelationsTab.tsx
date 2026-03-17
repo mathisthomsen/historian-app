@@ -16,6 +16,8 @@ interface RelationsTabProps {
   entityType: EntityType;
   entityId: string;
   entityLabel: string;
+  filterToEntityType?: EntityType;
+  onRefresh?: () => void;
 }
 
 export function RelationsTab({
@@ -23,6 +25,8 @@ export function RelationsTab({
   entityType,
   entityId,
   entityLabel,
+  filterToEntityType,
+  onRefresh,
 }: RelationsTabProps) {
   const t = useTranslations("relations");
   const [relations, setRelations] = useState<RelationWithDetails[]>([]);
@@ -39,9 +43,7 @@ export function RelationsTab({
         `/api/relations?entityType=${entityType}&entityId=${encodeURIComponent(entityId)}&projectId=${encodeURIComponent(projectId)}`,
       );
       if (res.ok) {
-        const data = (await res.json()) as
-          | RelationWithDetails[]
-          | { data?: RelationWithDetails[] };
+        const data = (await res.json()) as RelationWithDetails[] | { data?: RelationWithDetails[] };
         if (Array.isArray(data)) {
           setRelations(data);
         } else if (data && Array.isArray((data as { data?: RelationWithDetails[] }).data)) {
@@ -57,8 +59,12 @@ export function RelationsTab({
     void load();
   }, [load]);
 
-  const outgoing = relations.filter((r) => r.from_id === entityId);
-  const incoming = relations.filter((r) => r.to_id === entityId && r.from_id !== entityId);
+  const outgoing = relations
+    .filter((r) => r.from_id === entityId)
+    .filter((r) => !filterToEntityType || r.to_type === filterToEntityType);
+  const incoming = relations
+    .filter((r) => r.to_id === entityId && r.from_id !== entityId)
+    .filter((r) => !filterToEntityType || r.from_type === filterToEntityType);
 
   function handleEdit(relation: RelationWithDetails) {
     setEditingRelation(relation);
@@ -100,7 +106,11 @@ export function RelationsTab({
               key={r.id}
               relation={r}
               onEdit={handleEdit}
-              onDeleted={() => void load()}
+              onDeleted={() => {
+                void load();
+                onRefresh?.();
+              }}
+              {...(onRefresh ? { onEvidenceChange: onRefresh } : {})}
             />
           ))
         )}
@@ -121,13 +131,18 @@ export function RelationsTab({
               key={r.id}
               relation={r}
               onEdit={handleEdit}
-              onDeleted={() => void load()}
+              onDeleted={() => {
+                void load();
+                onRefresh?.();
+              }}
+              {...(onRefresh ? { onEvidenceChange: onRefresh } : {})}
             />
           ))
         )}
       </div>
 
       <RelationFormDialog
+        key={editingRelation?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={(o) => {
           setDialogOpen(o);
@@ -135,12 +150,14 @@ export function RelationsTab({
         }}
         projectId={projectId}
         prefillFrom={
-          editingRelation
-            ? undefined
-            : { type: entityType, id: entityId, label: entityLabel }
+          editingRelation ? undefined : { type: entityType, id: entityId, label: entityLabel }
         }
+        prefillToEntityType={editingRelation ? undefined : filterToEntityType}
         editRelation={editingRelation}
-        onSuccess={() => void load()}
+        onSuccess={() => {
+          void load();
+          onRefresh?.();
+        }}
       />
     </div>
   );

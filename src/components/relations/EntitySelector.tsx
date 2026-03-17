@@ -29,6 +29,7 @@ interface EntitySelectorProps {
   allowedTypes?: EntityType[];
   placeholder?: string;
   disabled?: boolean;
+  displayLabel?: string;
 }
 
 const ALL_TYPES: EntityType[] = ["PERSON", "EVENT", "SOURCE"];
@@ -63,6 +64,7 @@ export function EntitySelector({
   allowedTypes,
   placeholder,
   disabled,
+  displayLabel,
 }: EntitySelectorProps) {
   const t = useTranslations("relationTypes");
   const availableTypes = allowedTypes ?? ALL_TYPES;
@@ -75,9 +77,13 @@ export function EntitySelector({
   const abortRef = useRef<AbortController | null>(null);
 
   // Resolve label for selected value
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(displayLabel ?? null);
 
   useEffect(() => {
+    if (displayLabel) {
+      setSelectedLabel(displayLabel);
+      return;
+    }
     if (!value) {
       setSelectedLabel(null);
       return;
@@ -87,7 +93,7 @@ export function EntitySelector({
     if (found) {
       setSelectedLabel(found.label);
     }
-  }, [value, results]);
+  }, [value, results, displayLabel]);
 
   useEffect(() => {
     if (!open) return;
@@ -159,9 +165,7 @@ export function EntitySelector({
     return (
       <div className="flex items-center gap-2">
         <Badge variant="secondary" className="flex items-center gap-1 text-sm">
-          <span className="text-xs text-muted-foreground">
-            {ENTITY_TYPE_LABELS[value.type]}
-          </span>
+          <span className="text-xs text-muted-foreground">{ENTITY_TYPE_LABELS[value.type]}</span>
           <span>{selectedLabel}</span>
         </Badge>
         {!disabled && (
@@ -213,11 +217,7 @@ export function EntitySelector({
         </PopoverTrigger>
         <PopoverContent className="w-64 p-0" align="start">
           <Command>
-            <CommandInput
-              placeholder="Suchen…"
-              value={query}
-              onValueChange={setQuery}
-            />
+            <CommandInput placeholder="Suchen…" value={query} onValueChange={setQuery} />
             <CommandList>
               {searching && (
                 <div className="py-2 text-center text-sm text-muted-foreground">Suche…</div>

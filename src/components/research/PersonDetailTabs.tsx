@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import React from "react";
+import React, { useState } from "react";
 
 import { ActivityLog } from "@/components/relations/ActivityLog";
 import { RelationsTab } from "@/components/relations/RelationsTab";
+import { EntityEvidenceTab } from "@/components/research/EntityEvidenceTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface PersonDetailTabsProps {
@@ -23,6 +24,11 @@ export function PersonDetailTabs({
   projectId,
 }: PersonDetailTabsProps) {
   const t = useTranslations("persons.detail");
+  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
+
+  function handleRefresh() {
+    setActivityRefreshKey((k) => k + 1);
+  }
 
   return (
     <Tabs defaultValue="attributes">
@@ -43,13 +49,34 @@ export function PersonDetailTabs({
         {namesContent}
       </TabsContent>
       <TabsContent value="events" className="mt-4">
-        <p className="text-sm text-muted-foreground">{t("relations_placeholder")}</p>
+        <RelationsTab
+          projectId={projectId}
+          entityType="PERSON"
+          entityId={personId}
+          entityLabel={personLabel}
+          filterToEntityType="EVENT"
+          onRefresh={handleRefresh}
+        />
       </TabsContent>
       <TabsContent value="persons" className="mt-4">
-        <p className="text-sm text-muted-foreground">{t("relations_placeholder")}</p>
+        <RelationsTab
+          projectId={projectId}
+          entityType="PERSON"
+          entityId={personId}
+          entityLabel={personLabel}
+          filterToEntityType="PERSON"
+          onRefresh={handleRefresh}
+        />
       </TabsContent>
       <TabsContent value="sources" className="mt-4">
-        <p className="text-sm text-muted-foreground">{t("relations_placeholder")}</p>
+        <RelationsTab
+          projectId={projectId}
+          entityType="PERSON"
+          entityId={personId}
+          entityLabel={personLabel}
+          filterToEntityType="SOURCE"
+          onRefresh={handleRefresh}
+        />
       </TabsContent>
       <TabsContent value="relations" className="mt-4">
         <RelationsTab
@@ -57,13 +84,19 @@ export function PersonDetailTabs({
           entityType="PERSON"
           entityId={personId}
           entityLabel={personLabel}
+          onRefresh={handleRefresh}
         />
       </TabsContent>
       <TabsContent value="evidence" className="mt-4">
-        <p className="text-sm text-muted-foreground">{t("tabs.evidence")}</p>
+        <EntityEvidenceTab projectId={projectId} entityType="PERSON" entityId={personId} />
       </TabsContent>
       <TabsContent value="activity" className="mt-4">
-        <ActivityLog projectId={projectId} entityType="PERSON" entityId={personId} />
+        <ActivityLog
+          projectId={projectId}
+          entityType="PERSON"
+          entityId={personId}
+          refreshKey={activityRefreshKey}
+        />
       </TabsContent>
     </Tabs>
   );

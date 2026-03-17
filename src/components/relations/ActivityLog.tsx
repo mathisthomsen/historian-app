@@ -13,6 +13,7 @@ interface ActivityLogProps {
   projectId: string;
   entityType: EntityType;
   entityId: string;
+  refreshKey?: number;
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -41,7 +42,7 @@ function getInitials(name: string | null): string {
 
 const PAGE_SIZE = 20;
 
-export function ActivityLog({ projectId, entityType, entityId }: ActivityLogProps) {
+export function ActivityLog({ projectId, entityType, entityId, refreshKey }: ActivityLogProps) {
   const t = useTranslations("entityActivity");
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +79,7 @@ export function ActivityLog({ projectId, entityType, entityId }: ActivityLogProp
   useEffect(() => {
     setPage(1);
     void load(1);
-  }, [load]);
+  }, [load, refreshKey]);
 
   function loadMore() {
     const next = page + 1;
@@ -118,20 +119,16 @@ export function ActivityLog({ projectId, entityType, entityId }: ActivityLogProp
                   <span className="text-muted-foreground"> · {entry.field_path}</span>
                 )}
               </p>
-              <p className="text-xs text-muted-foreground">{formatRelativeTime(entry.created_at)}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatRelativeTime(entry.created_at)}
+              </p>
             </div>
           </div>
         );
       })}
 
       {hasMore && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={loadMore}
-          disabled={loading}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={loadMore} disabled={loading}>
           {loading && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
           Mehr laden
         </Button>

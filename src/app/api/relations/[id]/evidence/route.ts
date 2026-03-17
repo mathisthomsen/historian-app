@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { logActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth-guard";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   // Use db (soft-delete filtered) for relation lookup
   const relation = await db.relation.findFirst({
     where: { id },
-    select: { id: true, project_id: true },
+    select: { id: true, project_id: true, from_type: true, from_id: true },
   });
   if (!relation) {
     return NextResponse.json(
@@ -175,6 +176,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
     throw err;
   }
+
+  await logActivity({
+    project_id: relation.project_id,
+    entity_type: relation.from_type,
+    entity_id: relation.from_id,
+    user_id: user.id,
+    action: "CREATE",
+    field_path: "evidence",
+    new_value: { evidence_id: evidence.id, relation_id: id },
+  }).catch(console.error);
 
   return NextResponse.json(
     {

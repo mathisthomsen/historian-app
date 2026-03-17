@@ -56,30 +56,66 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
 
       <div className="space-y-1">
         <dt className="text-xs font-medium text-muted-foreground">{t("birth_place")}</dt>
-        <dd className="text-sm">{person.birth_place ?? "—"}</dd>
+        <dd className="flex items-center gap-2 text-sm">
+          <span>{person.birth_place ?? "—"}</span>
+          <PropertyEvidenceBadge
+            projectId={projectId}
+            entityType="PERSON"
+            entityId={person.id}
+            property="birth_place"
+            fieldLabel={t("birth_place")}
+          />
+        </dd>
       </div>
 
       <div className="space-y-1">
         <dt className="text-xs font-medium text-muted-foreground">{t("death_date")}</dt>
-        <dd className="text-sm">
-          {deathDate}
-          {deathDate !== "—" && (
-            <span className="ml-1 text-xs text-muted-foreground">
-              ({tCertainty(person.death_date_certainty)})
-            </span>
-          )}
+        <dd className="flex items-center gap-2 text-sm">
+          <span>
+            {deathDate}
+            {deathDate !== "—" && (
+              <span className="ml-1 text-xs text-muted-foreground">
+                ({tCertainty(person.death_date_certainty)})
+              </span>
+            )}
+          </span>
+          <PropertyEvidenceBadge
+            projectId={projectId}
+            entityType="PERSON"
+            entityId={person.id}
+            property="death_year"
+            fieldLabel={t("death_date")}
+          />
         </dd>
       </div>
 
       <div className="space-y-1">
         <dt className="text-xs font-medium text-muted-foreground">{t("death_place")}</dt>
-        <dd className="text-sm">{person.death_place ?? "—"}</dd>
+        <dd className="flex items-center gap-2 text-sm">
+          <span>{person.death_place ?? "—"}</span>
+          <PropertyEvidenceBadge
+            projectId={projectId}
+            entityType="PERSON"
+            entityId={person.id}
+            property="death_place"
+            fieldLabel={t("death_place")}
+          />
+        </dd>
       </div>
 
       {person.notes && (
         <div className="col-span-full space-y-1">
           <dt className="text-xs font-medium text-muted-foreground">{t("notes")}</dt>
-          <dd className="whitespace-pre-wrap text-sm">{person.notes}</dd>
+          <dd className="flex items-start gap-2 text-sm">
+            <span className="whitespace-pre-wrap">{person.notes}</span>
+            <PropertyEvidenceBadge
+              projectId={projectId}
+              entityType="PERSON"
+              entityId={person.id}
+              property="notes"
+              fieldLabel={t("notes")}
+            />
+          </dd>
         </div>
       )}
 

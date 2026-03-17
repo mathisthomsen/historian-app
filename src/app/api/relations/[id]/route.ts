@@ -36,7 +36,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   const relation = await db.relation.findFirst({
     where: { id },
     include: {
-      relation_type: { select: { id: true, name: true, inverse_name: true, color: true, icon: true } },
+      relation_type: {
+        select: { id: true, name: true, inverse_name: true, color: true, icon: true },
+      },
       _count: { select: { evidence: true } },
     },
   });
@@ -78,7 +80,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       valid_to_cert: relation.valid_to_cert,
       created_at: relation.created_at.toISOString(),
       updated_at: relation.updated_at.toISOString(),
-      _count: { evidence: relation._count.evidence },
+      evidence_count: relation._count.evidence,
     },
     { status: 200, headers: { "Cache-Control": "no-store" } },
   );
@@ -149,7 +151,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     where: { id },
     data: updateData,
     include: {
-      relation_type: { select: { id: true, name: true, inverse_name: true, color: true, icon: true } },
+      relation_type: {
+        select: { id: true, name: true, inverse_name: true, color: true, icon: true },
+      },
       _count: { select: { evidence: true } },
     },
   });
@@ -184,7 +188,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       valid_to_cert: updated.valid_to_cert,
       created_at: updated.created_at.toISOString(),
       updated_at: updated.updated_at.toISOString(),
-      _count: { evidence: updated._count.evidence },
+      evidence_count: updated._count.evidence,
     },
     { status: 200, headers: { "Cache-Control": "no-store" } },
   );

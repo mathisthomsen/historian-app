@@ -26,6 +26,7 @@ export function PropertyEvidenceBadge({
   const t = useTranslations("propertyEvidence");
   const [count, setCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const loadCount = useCallback(async () => {
     const res = await fetch(
@@ -39,21 +40,15 @@ export function PropertyEvidenceBadge({
 
   useEffect(() => {
     void loadCount();
-  }, [loadCount]);
+  }, [loadCount, refreshKey]);
 
-  const label =
-    count === 1
-      ? t("badgeLabel_one", { count })
-      : t("badgeLabel_other", { count });
+  const label = count === 1 ? t("badgeLabel_one", { count }) : t("badgeLabel_other", { count });
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button type="button" aria-label={`${fieldLabel}: ${label}`}>
-          <Badge
-            variant={count > 0 ? "default" : "outline"}
-            className="cursor-pointer text-xs"
-          >
+          <Badge variant={count > 0 ? "default" : "outline"} className="cursor-pointer text-xs">
             {label}
           </Badge>
         </button>
@@ -64,6 +59,7 @@ export function PropertyEvidenceBadge({
           entityType={entityType}
           entityId={entityId}
           property={property}
+          onEvidenceChange={() => setRefreshKey((k) => k + 1)}
         />
       </PopoverContent>
     </Popover>

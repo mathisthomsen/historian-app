@@ -13,6 +13,7 @@ interface PropertyEvidencePanelProps {
   entityType: EntityType;
   entityId: string;
   property: string;
+  onEvidenceChange?: () => void;
 }
 
 export function PropertyEvidencePanel({
@@ -20,6 +21,7 @@ export function PropertyEvidencePanel({
   entityType,
   entityId,
   property,
+  onEvidenceChange,
 }: PropertyEvidencePanelProps) {
   const t = useTranslations("propertyEvidence");
   const [items, setItems] = useState<PropertyEvidenceItem[]>([]);
@@ -76,6 +78,7 @@ export function PropertyEvidencePanel({
     if (res.ok) {
       toast.success(t("saved_toast"));
       await load();
+      onEvidenceChange?.();
     } else {
       throw new Error("Failed to add evidence");
     }
@@ -85,6 +88,7 @@ export function PropertyEvidencePanel({
     const res = await fetch(`/api/property-evidence/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete evidence");
     await load();
+    onEvidenceChange?.();
   }
 
   return (

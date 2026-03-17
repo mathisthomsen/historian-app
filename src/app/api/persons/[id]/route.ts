@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { logActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -248,6 +249,41 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const updated = await prisma.person.update({ where: { id }, data: updateData });
     const names = await prisma.personName.findMany({ where: { person_id: id } });
     updatedPerson = { ...updated, names, _count: { relations_from: 0, relations_to: 0 } };
+  }
+
+  // Log per-field changes
+  const loggableFields = [
+    "first_name",
+    "last_name",
+    "birth_year",
+    "birth_month",
+    "birth_day",
+    "birth_place",
+    "birth_date_certainty",
+    "death_year",
+    "death_month",
+    "death_day",
+    "death_place",
+    "death_date_certainty",
+    "notes",
+  ] as const;
+
+  for (const field of loggableFields) {
+    if (!(field in data)) continue;
+    const oldVal = existing[field];
+    const newVal = updatedPerson[field];
+    if (oldVal !== newVal) {
+      await logActivity({
+        project_id: existing.project_id,
+        entity_type: "PERSON",
+        entity_id: id,
+        user_id: user.id,
+        action: "UPDATE",
+        field_path: field,
+        old_value: oldVal,
+        new_value: newVal,
+      }).catch(console.error);
+    }
   }
 
   await cache.invalidateByPrefix(`person-list:${existing.project_id}:`);

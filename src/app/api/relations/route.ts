@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
     valid_to_cert: r.valid_to_cert,
     created_at: r.created_at.toISOString(),
     updated_at: r.updated_at.toISOString(),
-    _count: { evidence: r._count.evidence },
+    evidence_count: r._count.evidence,
   }));
 
   const body = { data, total, page, pageSize };
@@ -414,7 +414,7 @@ export async function POST(request: NextRequest) {
       valid_to_cert: relation.valid_to_cert,
       created_at: relation.created_at.toISOString(),
       updated_at: relation.updated_at.toISOString(),
-      _count: { evidence: relation._count.evidence },
+      evidence_count: relation._count.evidence,
     },
     { status: 201, headers: { "Cache-Control": "no-store" } },
   );

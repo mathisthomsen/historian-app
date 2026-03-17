@@ -28,6 +28,7 @@ interface RelationFormDialogProps {
   projectId: string;
   prefillFrom?: { type: EntityType; id: string; label: string } | undefined;
   prefillTo?: { type: EntityType; id: string; label: string } | undefined;
+  prefillToEntityType?: EntityType | undefined;
   editRelation?: RelationWithDetails | undefined;
   onSuccess: () => void;
 }
@@ -38,6 +39,7 @@ export function RelationFormDialog({
   projectId,
   prefillFrom,
   prefillTo,
+  prefillToEntityType,
   editRelation,
   onSuccess,
 }: RelationFormDialogProps) {
@@ -48,12 +50,20 @@ export function RelationFormDialog({
     type: EntityType;
     id: string;
     label: string;
-  } | null>(prefillFrom ?? null);
+  } | null>(
+    editRelation
+      ? { type: editRelation.from_type, id: editRelation.from_id, label: editRelation.from_label }
+      : (prefillFrom ?? null),
+  );
   const [toEntity, setToEntity] = useState<{
     type: EntityType;
     id: string;
     label: string;
-  } | null>(prefillTo ?? null);
+  } | null>(
+    editRelation
+      ? { type: editRelation.to_type, id: editRelation.to_id, label: editRelation.to_label }
+      : (prefillTo ?? null),
+  );
   const [relationTypeId, setRelationTypeId] = useState<string | null>(
     editRelation?.relation_type.id ?? null,
   );
@@ -70,9 +80,7 @@ export function RelationFormDialog({
     editRelation?.valid_from_cert ?? "UNKNOWN",
   );
   const [validToYear, setValidToYear] = useState(editRelation?.valid_to_year?.toString() ?? "");
-  const [validToMonth, setValidToMonth] = useState(
-    editRelation?.valid_to_month?.toString() ?? "",
-  );
+  const [validToMonth, setValidToMonth] = useState(editRelation?.valid_to_month?.toString() ?? "");
   const [validToCert, setValidToCert] = useState<Certainty>(
     editRelation?.valid_to_cert ?? "UNKNOWN",
   );
@@ -136,11 +144,10 @@ export function RelationFormDialog({
             <Label>{t("fields.fromEntity")}</Label>
             <EntitySelector
               value={fromEntity ? { type: fromEntity.type, id: fromEntity.id } : null}
-              onChange={(v) =>
-                setFromEntity(v ? { type: v.type, id: v.id, label: v.label } : null)
-              }
+              onChange={(v) => setFromEntity(v ? { type: v.type, id: v.id, label: v.label } : null)}
               projectId={projectId}
-              disabled={!!prefillFrom}
+              disabled={isEdit || !!prefillFrom}
+              {...(fromEntity?.label ? { displayLabel: fromEntity.label } : {})}
             />
           </div>
 
@@ -161,11 +168,11 @@ export function RelationFormDialog({
             <Label>{t("fields.toEntity")}</Label>
             <EntitySelector
               value={toEntity ? { type: toEntity.type, id: toEntity.id } : null}
-              onChange={(v) =>
-                setToEntity(v ? { type: v.type, id: v.id, label: v.label } : null)
-              }
+              onChange={(v) => setToEntity(v ? { type: v.type, id: v.id, label: v.label } : null)}
               projectId={projectId}
-              disabled={!!prefillTo}
+              disabled={isEdit || !!prefillTo}
+              {...(toEntity?.label ? { displayLabel: toEntity.label } : {})}
+              {...(prefillToEntityType ? { allowedTypes: [prefillToEntityType] } : {})}
             />
           </div>
 
@@ -205,7 +212,9 @@ export function RelationFormDialog({
               <div className="space-y-3 border-t px-3 py-3">
                 {/* Valid from */}
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">{t("fields.validFrom")}</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("fields.validFrom")}
+                  </p>
                   <div className="flex gap-2">
                     <Input
                       type="number"
@@ -262,10 +271,7 @@ export function RelationFormDialog({
             >
               {t("cancel")}
             </Button>
-            <Button
-              type="submit"
-              disabled={saving || !fromEntity || !toEntity || !relationTypeId}
-            >
+            <Button type="submit" disabled={saving || !fromEntity || !toEntity || !relationTypeId}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEdit ? t("save") : t("create")}
             </Button>
