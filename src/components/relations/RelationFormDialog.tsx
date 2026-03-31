@@ -85,6 +85,11 @@ export function RelationFormDialog({
     editRelation?.valid_to_cert ?? "UNKNOWN",
   );
   const [saving, setSaving] = useState(false);
+  const [evidenceSourceId, setEvidenceSourceId] = useState<string | null>(null);
+  const [evidenceSourceLabel, setEvidenceSourceLabel] = useState<string>("");
+  const [evidenceQuote, setEvidenceQuote] = useState("");
+  const [evidenceConfidence, setEvidenceConfidence] = useState<Certainty>("UNKNOWN");
+  const [showEvidence, setShowEvidence] = useState(false);
 
   const isEdit = !!editRelation;
 
@@ -120,6 +125,20 @@ export function RelationFormDialog({
       });
 
       if (res.ok) {
+        if (!isEdit && evidenceSourceId) {
+          const created = (await res.json()) as { id: string };
+          await fetch(`/api/relations/${created.id}/evidence`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              source_id: evidenceSourceId,
+              quote: evidenceQuote || null,
+              notes: null,
+              confidence: evidenceConfidence,
+              page_reference: null,
+            }),
+          });
+        }
         toast.success(t("saved_toast"));
         onSuccess();
         onOpenChange(false);
@@ -261,6 +280,59 @@ export function RelationFormDialog({
               </div>
             )}
           </div>
+
+          {!isEdit && (
+            <div className="rounded-md border">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted"
+                onClick={() => setShowEvidence((prev) => !prev)}
+              >
+                <span>{t("fields.addEvidence")}</span>
+                {showEvidence ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </button>
+              {showEvidence && (
+                <div className="space-y-3 border-t px-3 py-3">
+                  <div className="space-y-1">
+                    <Label>{t("fields.evidenceSource")}</Label>
+                    <EntitySelector
+                      value={
+                        evidenceSourceId
+                          ? { type: "SOURCE", id: evidenceSourceId }
+                          : null
+                      }
+                      onChange={(v) => {
+                        setEvidenceSourceId(v?.id ?? null);
+                        setEvidenceSourceLabel(v?.label ?? "");
+                      }}
+                      projectId={projectId}
+                      allowedTypes={["SOURCE"]}
+                      {...(evidenceSourceLabel ? { displayLabel: evidenceSourceLabel } : {})}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>{t("fields.evidenceQuote")}</Label>
+                    <textarea
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      rows={2}
+                      value={evidenceQuote}
+                      onChange={(e) => setEvidenceQuote(e.target.value)}
+                      placeholder={t("fields.evidenceQuotePlaceholder")}
+                    />
+                  </div>
+                  <CertaintySelector
+                    value={evidenceConfidence}
+                    onChange={setEvidenceConfidence}
+                    label={t("fields.evidenceConfidence")}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           <DialogFooter>
             <Button

@@ -33,9 +33,39 @@ export default async function SourceDetailPage({ params }: PageProps) {
 
   if (!raw) notFound();
 
-  const membership = await prisma.userProject.findFirst({
-    where: { user_id: session.user.id, project_id: raw.project_id },
-  });
+  const [membership, relationCounts] = await Promise.all([
+    prisma.userProject.findFirst({
+      where: { user_id: session.user.id, project_id: raw.project_id },
+    }),
+    Promise.all([
+      prisma.relation.groupBy({
+        by: ["to_type"],
+        where: { from_type: "SOURCE", from_id: id, deleted_at: null },
+        _count: { _all: true },
+      }),
+      prisma.relation.groupBy({
+        by: ["from_type"],
+        where: { to_type: "SOURCE", to_id: id, deleted_at: null },
+        _count: { _all: true },
+      }),
+    ]).then(([fromRows, toRows]) => {
+      const counts: Record<string, number> = {};
+      for (const row of fromRows) {
+        const key = row.to_type as string;
+        counts[key] = (counts[key] ?? 0) + row._count._all;
+      }
+      for (const row of toRows) {
+        const key = row.from_type as string;
+        counts[key] = (counts[key] ?? 0) + row._count._all;
+      }
+      return {
+        total: Object.values(counts).reduce((a, b) => a + b, 0),
+        events: counts["EVENT"] ?? 0,
+        persons: counts["PERSON"] ?? 0,
+        sources: counts["SOURCE"] ?? 0,
+      };
+    }),
+  ]);
   if (!membership) notFound();
 
   const source: SourceDetail = {
@@ -80,7 +110,7 @@ export default async function SourceDetailPage({ params }: PageProps) {
           <DeleteSourceButton id={id} locale={locale} label={t("delete")} />
         </div>
       </div>
-      <SourceDetailTabs source={source} locale={locale} projectId={raw.project_id} />
+      <SourceDetailTabs source={source} locale={locale} projectId={raw.project_id} tabCounts={relationCounts} />
     </div>
   );
 }

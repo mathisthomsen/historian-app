@@ -421,7 +421,12 @@
       "notes": "Notizen",
       "temporalValidity": "Zeitliche Gültigkeit",
       "validFrom": "Gültig von",
-      "validTo": "Gültig bis"
+      "validTo": "Gültig bis",
+      "addEvidence": "Beleg hinzufügen",
+      "evidenceSource": "Quelle",
+      "evidenceQuote": "Zitat",
+      "evidenceQuotePlaceholder": "Relevante Textstelle…",
+      "evidenceConfidence": "Zuverlässigkeit"
     },
     "noTypeForCombination": "Kein Relationstyp für diese Kombination gefunden.",
     "manageTypes": "Typen verwalten",
@@ -442,6 +447,28 @@
       "all_types": "Alle Typen",
       "all_certainties": "Alle Gewissheiten",
       "all_entity_types": "Alle Entitätstypen"
+    },
+    "list": {
+      "total": "{count} gesamt",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "search_placeholder": "Suchen…"
+    },
+    "entityTypes": {
+      "PERSON": "Person",
+      "EVENT": "Ereignis",
+      "SOURCE": "Quelle"
+    },
+    "certainties": {
+      "CERTAIN": "Sicher",
+      "PROBABLE": "Wahrscheinlich",
+      "POSSIBLE": "Möglich",
+      "UNKNOWN": "Unbekannt"
+    },
+    "validity": {
+      "from_only": "ab {year}",
+      "to_only": "bis {year}",
+      "range": "{from} – {to}"
     }
   },
   "relationTypes": {

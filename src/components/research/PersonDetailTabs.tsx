@@ -14,6 +14,21 @@ interface PersonDetailTabsProps {
   personId: string;
   personLabel: string;
   projectId: string;
+  tabCounts?: {
+    total: number;
+    events: number;
+    persons: number;
+    sources: number;
+  };
+}
+
+function CountBadge({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs font-normal tabular-nums">
+      {count}
+    </span>
+  );
 }
 
 export function PersonDetailTabs({
@@ -22,6 +37,7 @@ export function PersonDetailTabs({
   personId,
   personLabel,
   projectId,
+  tabCounts,
 }: PersonDetailTabsProps) {
   const t = useTranslations("persons.detail");
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
@@ -35,10 +51,22 @@ export function PersonDetailTabs({
       <TabsList>
         <TabsTrigger value="attributes">{t("tabs.attributes")}</TabsTrigger>
         <TabsTrigger value="names">{t("tabs.names")}</TabsTrigger>
-        <TabsTrigger value="events">{t("tabs.events")}</TabsTrigger>
-        <TabsTrigger value="persons">{t("tabs.persons")}</TabsTrigger>
-        <TabsTrigger value="sources">{t("tabs.sources")}</TabsTrigger>
-        <TabsTrigger value="relations">{t("tabs.relations")}</TabsTrigger>
+        <TabsTrigger value="events">
+          {t("tabs.events")}
+          <CountBadge count={tabCounts?.events ?? 0} />
+        </TabsTrigger>
+        <TabsTrigger value="persons">
+          {t("tabs.persons")}
+          <CountBadge count={tabCounts?.persons ?? 0} />
+        </TabsTrigger>
+        <TabsTrigger value="sources">
+          {t("tabs.sources")}
+          <CountBadge count={tabCounts?.sources ?? 0} />
+        </TabsTrigger>
+        <TabsTrigger value="relations">
+          {t("tabs.relations")}
+          <CountBadge count={tabCounts?.total ?? 0} />
+        </TabsTrigger>
         <TabsTrigger value="evidence">{t("tabs.evidence")}</TabsTrigger>
         <TabsTrigger value="activity">{t("tabs.activity")}</TabsTrigger>
       </TabsList>

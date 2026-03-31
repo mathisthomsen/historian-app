@@ -20,17 +20,49 @@ export default async function PersonDetailPage({ params }: PageProps) {
   const { locale, id } = await params;
   const t = await getTranslations("persons");
 
-  const raw = await prisma.person.findFirst({
+  const rawPerson = await prisma.person.findFirst({
     where: { id, deleted_at: null },
     include: { names: true },
   });
 
-  if (!raw) notFound();
+  if (!rawPerson) notFound();
 
-  const membership = await prisma.userProject.findFirst({
-    where: { user_id: session.user.id, project_id: raw.project_id },
-  });
+  const [membership, relationCounts] = await Promise.all([
+    prisma.userProject.findFirst({
+      where: { user_id: session.user.id, project_id: rawPerson.project_id },
+    }),
+    Promise.all([
+      prisma.relation.groupBy({
+        by: ["to_type"],
+        where: { from_type: "PERSON", from_id: id, deleted_at: null },
+        _count: { _all: true },
+      }),
+      prisma.relation.groupBy({
+        by: ["from_type"],
+        where: { to_type: "PERSON", to_id: id, deleted_at: null },
+        _count: { _all: true },
+      }),
+    ]).then(([fromRows, toRows]) => {
+      const counts: Record<string, number> = {};
+      for (const row of fromRows) {
+        const key = row.to_type as string;
+        counts[key] = (counts[key] ?? 0) + row._count._all;
+      }
+      for (const row of toRows) {
+        const key = row.from_type as string;
+        counts[key] = (counts[key] ?? 0) + row._count._all;
+      }
+      return {
+        total: Object.values(counts).reduce((a, b) => a + b, 0),
+        events: counts["EVENT"] ?? 0,
+        persons: counts["PERSON"] ?? 0,
+        sources: counts["SOURCE"] ?? 0,
+      };
+    }),
+  ]);
   if (!membership) notFound();
+
+  const raw = rawPerson;
 
   const person: PersonDetail = {
     id: raw.id,
@@ -55,7 +87,7 @@ export default async function PersonDetailPage({ params }: PageProps) {
       language: n.language,
       is_primary: n.is_primary,
     })),
-    _count: { relations_from: 0, relations_to: 0 },
+    _count: { relations_from: relationCounts.total, relations_to: 0 },
   };
 
   const displayName =
@@ -108,6 +140,7 @@ export default async function PersonDetailPage({ params }: PageProps) {
         personId={id}
         personLabel={displayName}
         projectId={raw.project_id}
+        tabCounts={relationCounts}
       />
     </div>
   );

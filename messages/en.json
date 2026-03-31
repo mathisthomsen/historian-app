@@ -421,7 +421,12 @@
       "notes": "Notes",
       "temporalValidity": "Temporal validity",
       "validFrom": "Valid from",
-      "validTo": "Valid to"
+      "validTo": "Valid to",
+      "addEvidence": "Add evidence",
+      "evidenceSource": "Source",
+      "evidenceQuote": "Quote",
+      "evidenceQuotePlaceholder": "Relevant passage…",
+      "evidenceConfidence": "Confidence"
     },
     "noTypeForCombination": "No relation type found for this combination.",
     "manageTypes": "Manage types",
@@ -442,6 +447,28 @@
       "all_types": "All types",
       "all_certainties": "All certainties",
       "all_entity_types": "All entity types"
+    },
+    "list": {
+      "total": "{count} total",
+      "previous": "Previous",
+      "next": "Next",
+      "search_placeholder": "Search…"
+    },
+    "entityTypes": {
+      "PERSON": "Person",
+      "EVENT": "Event",
+      "SOURCE": "Source"
+    },
+    "certainties": {
+      "CERTAIN": "Certain",
+      "PROBABLE": "Probable",
+      "POSSIBLE": "Possible",
+      "UNKNOWN": "Unknown"
+    },
+    "validity": {
+      "from_only": "from {year}",
+      "to_only": "until {year}",
+      "range": "{from} – {to}"
     }
   },
   "relationTypes": {
