@@ -28,14 +28,14 @@ export function Sidebar({ isOpen }: SidebarProps) {
   const locale = params?.locale ?? "de";
 
   const primaryNavItems = [
-    { key: "dashboard", icon: LayoutDashboard, label: t("dashboard") },
-    { key: "persons", icon: Users, label: t("persons") },
-    { key: "events", icon: Zap, label: t("events") },
-    { key: "sources", icon: FileText, label: t("sources") },
-    { key: "relations", icon: Link2, label: t("relations") },
-    { key: "locations", icon: MapPin, label: t("locations") },
-    { key: "literature", icon: BookOpen, label: t("literature") },
-    { key: "settings", icon: Settings, label: t("settings") },
+    { key: "dashboard", icon: LayoutDashboard, label: t("dashboard"), disabled: false },
+    { key: "persons", icon: Users, label: t("persons"), disabled: false },
+    { key: "events", icon: Zap, label: t("events"), disabled: false },
+    { key: "sources", icon: FileText, label: t("sources"), disabled: false },
+    { key: "relations", icon: Link2, label: t("relations"), disabled: false },
+    { key: "locations", icon: MapPin, label: t("locations"), disabled: true },
+    { key: "literature", icon: BookOpen, label: t("literature"), disabled: true },
+    { key: "settings", icon: Settings, label: t("settings"), disabled: true },
   ] as const;
 
   const settingsNavItems = [
@@ -43,9 +43,28 @@ export function Sidebar({ isOpen }: SidebarProps) {
     { key: "settings/relation-types", icon: Link2, label: t("relation_types") },
   ] as const;
 
-  function navLink(key: string, icon: React.ElementType, label: string) {
+  function navLink(key: string, icon: React.ElementType, label: string, disabled = false) {
     const href = `/${locale}/${key === "dashboard" ? "" : key}`;
     const Icon = icon;
+
+    if (disabled) {
+      return (
+        <span
+          key={key}
+          className={cn(
+            "flex cursor-not-allowed items-center gap-3 rounded-md px-2 py-2 text-sm text-muted-foreground opacity-50 pointer-events-none",
+            !isOpen && "justify-center",
+          )}
+          title={!isOpen ? label : undefined}
+          aria-label={label}
+          aria-disabled="true"
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          {isOpen && <span className="truncate">{label}</span>}
+        </span>
+      );
+    }
+
     return (
       <Link
         key={key}
@@ -73,7 +92,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
     >
       <nav className="flex h-full flex-col p-2" role="navigation">
         <div className="flex-1 space-y-1">
-          {primaryNavItems.map(({ key, icon, label }) => navLink(key, icon, label))}
+          {primaryNavItems.map(({ key, icon, label, disabled }) => navLink(key, icon, label, disabled))}
         </div>
         <div className="mt-auto">
           <Separator className="mb-2" />

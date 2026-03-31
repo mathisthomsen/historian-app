@@ -127,7 +127,9 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
       {person.created_by_id && (
         <div className="space-y-1">
           <dt className="text-xs font-medium text-muted-foreground">{t("created_by")}</dt>
-          <dd className="text-sm font-mono text-xs">{person.created_by_id}</dd>
+          <dd className="text-sm text-muted-foreground" title={person.created_by_id}>
+            {`${person.created_by_id.slice(0, 8)}…`}
+          </dd>
         </div>
       )}
     </dl>

@@ -8,6 +8,7 @@ import { RelationFormDialog } from "@/components/relations/RelationFormDialog";
 import { RelationRow } from "@/components/relations/RelationRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRelationTypes } from "@/hooks/use-relation-types";
 import type { RelationWithDetails } from "@/types/relations";
 
 interface RelationsDataTableProps {
@@ -27,6 +28,11 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
   const [editingRelation, setEditingRelation] = useState<RelationWithDetails | undefined>(
     undefined,
   );
+  const [entityTypeFilter, setEntityTypeFilter] = useState<string>("");
+  const [relationTypeFilter, setRelationTypeFilter] = useState<string>("");
+  const [certaintyFilter, setCertaintyFilter] = useState<string>("");
+
+  const { data: allRelationTypes } = useRelationTypes(projectId);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,6 +43,9 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
         limit: String(PAGE_SIZE),
       });
       if (search) params.set("q", search);
+      if (entityTypeFilter) params.set("fromType", entityTypeFilter);
+      if (relationTypeFilter) params.set("relationTypeId", relationTypeFilter);
+      if (certaintyFilter) params.set("certainty", certaintyFilter);
       const res = await fetch(`/api/relations?${params.toString()}`);
       if (res.ok) {
         const data = (await res.json()) as {
@@ -49,7 +58,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
     } finally {
       setLoading(false);
     }
-  }, [projectId, page, search]);
+  }, [projectId, page, search, entityTypeFilter, relationTypeFilter, certaintyFilter]);
 
   useEffect(() => {
     void load();
@@ -64,9 +73,56 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <select
+          value={entityTypeFilter}
+          onChange={(e) => {
+            setEntityTypeFilter(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <option value="">{t("filter.all_entity_types")}</option>
+          <option value="PERSON">{t("entityTypes.PERSON")}</option>
+          <option value="EVENT">{t("entityTypes.EVENT")}</option>
+          <option value="SOURCE">{t("entityTypes.SOURCE")}</option>
+        </select>
+
+        <select
+          value={relationTypeFilter}
+          onChange={(e) => {
+            setRelationTypeFilter(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <option value="">{t("filter.all_types")}</option>
+          {allRelationTypes.map((rt) => (
+            <option key={rt.id} value={rt.id}>
+              {rt.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={certaintyFilter}
+          onChange={(e) => {
+            setCertaintyFilter(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <option value="">{t("filter.all_certainties")}</option>
+          <option value="CERTAIN">{t("certainties.CERTAIN")}</option>
+          <option value="PROBABLE">{t("certainties.PROBABLE")}</option>
+          <option value="POSSIBLE">{t("certainties.POSSIBLE")}</option>
+          <option value="UNKNOWN">{t("certainties.UNKNOWN")}</option>
+        </select>
+      </div>
+
       <div className="flex items-center justify-between gap-2">
         <Input
-          placeholder="Suchen…"
+          placeholder={t("list.search_placeholder")}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -110,7 +166,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {total} gesamt
+            {t("list.total", { count: total })}
           </p>
           <div className="flex gap-2">
             <Button
@@ -120,7 +176,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
             >
-              Zurück
+              {t("list.previous")}
             </Button>
             <Button
               type="button"
@@ -129,7 +185,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Weiter
+              {t("list.next")}
             </Button>
           </div>
         </div>

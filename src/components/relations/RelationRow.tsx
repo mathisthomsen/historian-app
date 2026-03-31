@@ -32,6 +32,17 @@ interface RelationEvidenceItem {
 
 export function RelationRow({ relation, onEdit, onDeleted, onEvidenceChange }: RelationRowProps) {
   const t = useTranslations("relations");
+
+  const fromYear = relation.valid_from_year;
+  const toYear = relation.valid_to_year;
+  let validityString: string | null = null;
+  if (fromYear && toYear) {
+    validityString = t("validity.range", { from: fromYear, to: toYear });
+  } else if (fromYear) {
+    validityString = t("validity.from_only", { year: fromYear });
+  } else if (toYear) {
+    validityString = t("validity.to_only", { year: toYear });
+  }
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [evidenceItems, setEvidenceItems] = useState<PropertyEvidenceItem[]>([]);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
@@ -132,6 +143,11 @@ export function RelationRow({ relation, onEdit, onDeleted, onEvidenceChange }: R
           <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
             {relation.certainty}
           </span>
+          {validityString && (
+            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+              {validityString}
+            </span>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button

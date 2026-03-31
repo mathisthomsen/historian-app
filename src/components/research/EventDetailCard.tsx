@@ -1,8 +1,8 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { PropertyEvidenceBadge } from "@/components/relations/PropertyEvidenceBadge";
 import { formatPartialDate } from "@/lib/date";
@@ -161,7 +161,9 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
       {event.created_by_id && (
         <div className="space-y-1">
           <dt className="text-xs font-medium text-muted-foreground">{t("created_by")}</dt>
-          <dd className="font-mono text-xs text-sm">{event.created_by_id}</dd>
+          <dd className="text-sm text-muted-foreground" title={event.created_by_id}>
+            {`${event.created_by_id.slice(0, 8)}…`}
+          </dd>
         </div>
       )}
     </dl>
