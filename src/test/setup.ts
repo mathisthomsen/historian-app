@@ -1,5 +1,12 @@
 import "@testing-library/jest-dom";
 
+// Mock ResizeObserver for cmdk and other components that use it
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // Mock window.matchMedia for next-themes and other components that use it
 Object.defineProperty(window, "matchMedia", {
   writable: true,

@@ -59,6 +59,16 @@ enum SourceReliability {
   UNKNOWN
 }
 
+enum ActivityAction {
+  CREATE
+  UPDATE
+  DELETE
+  MERGE   // reserved: future duplicate-merge workflow
+  SUGGEST // reserved: Epic 6.0 agent suggestions
+  ACCEPT  // reserved: Epic 6.0 suggestion accept
+  REJECT  // reserved: Epic 6.0 suggestion reject
+}
+
 // ---------------------------------------------------------------------------
 // Users & Projects
 // ---------------------------------------------------------------------------
@@ -79,13 +89,14 @@ model User {
   locked_until       DateTime? // non-null = account temporarily locked
 
   user_projects       UserProject[]
-  persons             Person[]      @relation("PersonCreatedBy")
-  events              Event[]       @relation("EventCreatedBy")
-  sources             Source[]      @relation("SourceCreatedBy")
-  relations           Relation[]    @relation("RelationCreatedBy")
+  persons             Person[]          @relation("PersonCreatedBy")
+  events              Event[]           @relation("EventCreatedBy")
+  sources             Source[]          @relation("SourceCreatedBy")
+  relations           Relation[]        @relation("RelationCreatedBy")
   email_confirmations EmailConfirmation[]
   password_resets     PasswordReset[]
   auth_audit_logs     AuthAuditLog[]
+  entity_activity     EntityActivity[]  @relation("EntityActivityUser")
 
   @@map("users")
 }
@@ -147,15 +158,17 @@ model Project {
   updated_at  DateTime  @updatedAt
   deleted_at  DateTime? // soft-delete; Epic 3.1 adds recovery UI
 
-  user_projects  UserProject[]
-  persons        Person[]
-  events         Event[]
-  sources        Source[]
-  locations      Location[]
-  literature     Literature[]
-  relations      Relation[]
-  relation_types RelationType[]
+  user_projects     UserProject[]
+  persons           Person[]
+  events            Event[]
+  event_types       EventType[]
+  sources           Source[]
+  locations         Location[]
+  literature        Literature[]
+  relations         Relation[]
+  relation_types    RelationType[]
   property_evidence PropertyEvidence[]
+  entity_activity   EntityActivity[]
 
   @@map("projects")
 }
@@ -237,15 +250,32 @@ model PersonName {
   @@map("person_names")
 }
 
+model EventType {
+  id         String   @id @default(cuid())
+  project_id String
+  name       String
+  color      String? // one of the 12 predefined palette hex values
+  icon       String? // Lucide icon name (optional)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  project Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  events  Event[]
+
+  @@unique([project_id, name]) // no duplicate names within a project
+  @@index([project_id])
+  @@map("event_types")
+}
+
 model Event {
   id            String    @id @default(cuid())
   project_id    String
   created_by_id String?
   parent_id     String? // self-referential for sub-events
+  event_type_id String? // FK to EventType (replaces event_type String?)
 
   title       String
   description String?
-  event_type  String? // user-defined string; Epic 2.2 adds EventType table
 
   start_year           Int?
   start_month          Int?
@@ -266,11 +296,12 @@ model Event {
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  created_by   User?     @relation("EventCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
-  parent       Event?    @relation("SubEvents", fields: [parent_id], references: [id])
-  sub_events   Event[]   @relation("SubEvents")
-  location_ref Location? @relation("EventLocation", fields: [location_id], references: [id], onDelete: SetNull)
+  project      Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by   User?      @relation("EventCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  parent       Event?     @relation("SubEvents", fields: [parent_id], references: [id])
+  sub_events   Event[]    @relation("SubEvents")
+  location_ref Location?  @relation("EventLocation", fields: [location_id], references: [id], onDelete: SetNull)
+  event_type   EventType? @relation(fields: [event_type_id], references: [id], onDelete: Restrict)
 
   @@index([project_id])
   @@map("events")
@@ -460,15 +491,18 @@ model RelationEvidence {
 /// IMPORTANT: entity_id has NO DB-level FK (polymorphic, same pattern as Relation.from_id).
 ///            App layer must verify entity existence before insert.
 model PropertyEvidence {
-  id             String     @id @default(cuid())
-  project_id     String
-  entity_type    EntityType
-  entity_id      String // no DB FK — polymorphic; app-layer integrity
-  property       String // field name this evidence supports
-  source_id      String
-  notes          String?
-  page_reference String?
-  created_at     DateTime   @default(now())
+  id                String     @id @default(cuid())
+  project_id        String
+  entity_type       EntityType
+  entity_id         String     // no DB FK — polymorphic; app-layer integrity
+  property          String     // field name this evidence supports
+  source_id         String
+  notes             String?
+  page_reference    String?
+  quote             String?    // normalized/interpreted excerpt (Epic 2.4)
+  raw_transcription String?    // verbatim diplomatic transcription (Epic 2.4)
+  confidence        Certainty  @default(UNKNOWN) // per-evidence confidence (Epic 2.4)
+  created_at        DateTime   @default(now())
 
   project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
   source  Source  @relation("PropertyEvidenceSource", fields: [source_id], references: [id], onDelete: Cascade)
@@ -476,4 +510,40 @@ model PropertyEvidence {
   @@index([project_id])
   @@index([entity_type, entity_id])
   @@map("property_evidence")
+}
+
+// ---------------------------------------------------------------------------
+// Entity Activity Log (AX foundation — Epic 2.4)
+// ---------------------------------------------------------------------------
+
+/// Append-only audit log of all create/update/delete actions on research entities.
+///
+/// CONSTRAINT: No DELETE endpoint will ever be created for this table (AX roadmap §7).
+/// Records are immutable once written. Retention policy managed at infrastructure level only.
+///
+/// user_id is nullable to support future agent-initiated actions (Epic 6.0).
+/// agent_name is nullable for human-initiated actions.
+/// entity_id has NO DB-level FK — polymorphic reference, same pattern as Relation.from_id.
+model EntityActivity {
+  id          String         @id @default(cuid())
+  project_id  String
+  entity_type EntityType
+  entity_id   String         // no DB FK — polymorphic; app-layer integrity
+  user_id     String?        // null when action is from agent (future)
+  agent_name  String?        // null when action is from human
+  action      ActivityAction
+  field_path  String?        // e.g. "birth_year"; null for CREATE/DELETE
+  old_value   Json?          // previous value snapshot; null for CREATE
+  new_value   Json?          // new value snapshot; null for DELETE
+  reason      String?        // optional human-entered note on why
+  source_id   String?        // grounding reference (reserved for agents)
+  created_at  DateTime       @default(now())
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User?   @relation("EntityActivityUser", fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([project_id])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+  @@map("entity_activity")
 }

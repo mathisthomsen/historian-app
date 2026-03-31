@@ -21,7 +21,9 @@ Implement the full specification for the requested epic. Follow this exact workf
 
 ---
 
-## Step 0 — Bootstrap
+## Step 0 — Bootstrap _(execute yourself, High Effort)_
+
+Run this step yourself as the orchestrating agent. Be thorough — a correct roadmap here prevents wasted work downstream.
 
 ### Find the spec
 
@@ -35,6 +37,14 @@ Read:
 - `docs/specs/{slug}/specification.md` — the full spec
 - `docs/specs/{slug}/progress.md` — existing progress (if any)
 - `MEMORY.md` from your memory store — project-wide conventions
+
+### Identify dependencies
+
+Before creating the progress file, answer:
+
+- Does the spec require DB schema changes? If yes, the Database Architect **must complete first** before any other agent starts.
+- Are there shared types or utilities that Backend produces and Frontend consumes? Note these as hand-off points.
+- Can Frontend and Backend work in parallel once the DB layer is done?
 
 ### Create progress.md
 
@@ -60,6 +70,89 @@ Before any code:
 4. Check for any types, utilities, or components the epic depends on
 
 Only start coding once you understand the full context.
+
+---
+
+## Step 1.5 — Multi-Agent Orchestration
+
+Dispatch specialised sub-agents **before writing any code yourself**. Use the `Agent` tool for each. Assign effort levels via the agent prompt — they determine how deeply the agent analyses, how exhaustively it handles edge cases, and how many iterations it performs.
+
+### Effort levels
+
+| Level      | Meaning                                                                 |
+| ---------- | ----------------------------------------------------------------------- |
+| **High**   | Thorough analysis, all edge cases, multiple review passes, no shortcuts |
+| **Medium** | Standard quality, focused scope, reasonable coverage                    |
+
+### Execution order
+
+Respect the dependency graph — do **not** start the next wave until the previous one is complete:
+
+```
+Wave 1 (sequential):   Database Architect  →  (all other agents depend on DB types)
+Wave 2 (parallel):     Backend Agent  ‖  Frontend Agent
+Wave 3 (after wave 2): QA Agent
+```
+
+Skip a wave if the spec has no work for that domain (e.g. no DB changes → skip Wave 1).
+
+### Agent 1 — Database Architect (`database-architect`) · **High Effort**
+
+- **Task:** Prisma schema updates, migrations, seed data.
+- **Goal:** Provide the data layer and generated types that Backend and Frontend will import.
+- **Prompt must include:** The full spec, the existing `prisma/schema.prisma`, current Neon project details from MEMORY.md, and instruction: _"Work at High Effort: validate every constraint, foreign key, soft-delete pattern, and index against the existing schema conventions before writing any migration."_
+- **Hand-off:** Confirm migration has been applied and `@prisma/client` types are available before starting Wave 2.
+
+### Agent 2 — Backend Agent (general-purpose) · **High Effort**
+
+- **Task:** API routes, server actions, business logic, middleware.
+- **Goal:** Robust logic with proper error handling, input validation (Zod), and auth guards.
+- **Prompt must include:** The full spec, relevant existing API routes to establish patterns, DB types from Wave 1, and instruction: _"Work at High Effort: cover all error branches, validate at every system boundary, follow existing import order and ESLint rules exactly."_
+
+### Agent 3 — Frontend Agent (general-purpose) · **Medium Effort**
+
+- **Task:** UI components, Tailwind/shadcn styling, client hooks, i18n strings (`de.json` + `en.json`).
+- **Goal:** Visual fidelity to the spec with clean props and correct locale handling.
+- **Prompt must include:** The full spec, existing shell/UI component patterns, server action signatures from Wave 2 (if available), and instruction: _"Work at Medium Effort: match existing design system exactly, ensure all user-facing strings are in both locale files, use `useTranslations` in client and `getTranslations` in server components."_
+- **Note:** If Frontend depends on types or actions from the Backend Agent, wait for Wave 2 to finish; otherwise run in parallel.
+
+### Agent 4 — QA Agent (general-purpose) · **High Effort (E2E) / Medium Effort (unit)**
+
+- **Task:** `testplan.md`, Playwright E2E specs, unit test gaps.
+- **Goal:** Every acceptance criterion covered; tests match the patterns in `e2e/` and `src/**/*.test.ts`.
+- **Prompt must include:** The full spec, existing E2E helpers and patterns, and instruction: _"E2E work is High Effort: cover all ACs, error states, i18n switching, and edge cases. Unit test gaps are Medium Effort: fill missing coverage, don't duplicate what already passes."_
+- **Mandatory coverage:** For every feature with persisted data, include all four assertion categories: write flow, read-back flow, edit-mode pre-population, and activity log entry (for any route that calls `logActivity`). Absence of any category is a QA gap.
+
+### Two-stage review after each wave
+
+After every wave completes, run this review loop **before starting the next wave**. You are the reviewer — do not dispatch a separate agent for this.
+
+**Stage 1 — Spec compliance review**
+
+Read the spec ACs and compare against what the agent produced. Ask:
+
+- Did the agent implement everything the spec required for its domain? (no gaps)
+- Did the agent add anything not in the spec? (no extras)
+- Do all edge cases and error states from the spec have coverage?
+
+If issues found: fix them (or re-prompt the agent) and re-review until ✅.
+
+**Stage 2 — Code quality review**
+
+Only start this after Stage 1 passes. Ask:
+
+- Are there unnecessary abstractions or premature generalisations?
+- Are there obvious bugs, unchecked error paths, or TypeScript shortcuts (`as any`, `!`)?
+- Does the code follow the project conventions from MEMORY.md?
+
+If issues found: fix them and re-review until ✅.
+
+**Both stages must pass before the next wave starts.** Catching spec drift here is far cheaper than debugging it after Wave 3.
+
+### After all agents complete
+
+1. Run `pnpm typecheck` to surface any cross-agent integration issues (type name mismatches, missing exports, etc.).
+2. Fix any conflicts yourself before proceeding to Step 2.
 
 ---
 
@@ -193,6 +286,40 @@ Fix all failures. Common pitfalls from this project:
 - `NEXT_LOCALE` cookie: clear in beforeEach to avoid locale bleed between tests
 - Firefox is stricter on cross-origin cookies — avoid external image URLs in components
 
+### Mandatory E2E assertion categories
+
+Every feature touching persisted data **must** cover all applicable categories:
+
+**1. Write flow** — create/update/delete and assert the immediate success state (toast, redirect, list update).
+
+**2. Read-back flow** — navigate away, return, and assert the UI reflects the persisted state. This is what catches display bugs that only appear after a round-trip. Example:
+
+```typescript
+// After creating a relation:
+await page.goto(`/de/persons/${id}`);
+await page.getByRole("tab", { name: "Relationen" }).click();
+await expect(page.getByText("Kind von")).toBeVisible();
+```
+
+**3. Edit-mode assertions** — open an existing record in its edit/form state and assert all fields are pre-populated with the current values. Empty selectors or blank fields in edit mode are a common regression:
+
+```typescript
+await page.getByRole("button", { name: "Bearbeiten" }).click();
+await expect(page.getByText("Anna Müller")).toBeVisible(); // from-entity shown
+await expect(page.getByText("Kind von")).toBeVisible(); // relation type shown
+```
+
+**4. Activity log assertion** — after any mutation, navigate to the Verlauf tab and assert the new entry appears with the correct action label and field path. Required for every API route that calls `logActivity`:
+
+```typescript
+await page.getByRole("tab", { name: "Verlauf" }).click();
+await expect(page.getByText("Geburtsjahr geändert")).toBeVisible();
+```
+
+### Playwright reliability
+
+If `pnpm test:e2e` exits before the first `test()` body runs (Chromium failed to launch), treat this as a **hard failure** — not infrastructure flakiness. Do not retry without diagnosing. Run `pnpm playwright install chromium` and verify the browser binary exists before re-running.
+
 ---
 
 ## Step 6 — Live browser verification with Playwright MCP
@@ -258,6 +385,8 @@ Mark all steps ✅, update the AC table to all ✅, set Status to ✅ Complete.
 - **Never over-engineer** — implement exactly what the spec requires, no more
 - **Always run the test suite before committing**
 - **Always verify in the browser before declaring done**
+- **Always type API response mappings explicitly** — `Response.json()` has no enforced return type. Any function that maps a Prisma record to an API response shape must have an explicit return type annotation (e.g. `function mapRelation(r: ...): RelationWithDetails`). This is the only way TypeScript can catch producer/consumer shape mismatches.
+- **Never leave placeholder text as a shipped feature** — text like "wird in einem späteren Update verfügbar" is scaffolding, not a deliverable. If an AC says a tab shows related data, the tab must show related data. Scaffolding that survives into a commit counts as a missing feature.
 
 ## Project-specific conventions
 

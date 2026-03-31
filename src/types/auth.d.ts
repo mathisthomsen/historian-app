@@ -7,11 +7,13 @@ declare module "next-auth" {
       email: string;
       name: string | null;
       role: UserRole;
+      projectId?: string;
     };
   }
   interface User {
     id: string;
     role: UserRole;
+    projectId?: string;
   }
 }
 
@@ -19,6 +21,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: UserRole;
+    projectId?: string;
   }
 }
 
@@ -27,4 +30,5 @@ export interface SessionUser {
   email: string;
   name: string | null;
   role: UserRole;
+  projectId?: string;
 }

@@ -1,6 +1,30 @@
 import { Certainty, PrismaClient, ProjectRole, SourceReliability, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+// ---------------------------------------------------------------------------
+// Default EventType seed
+// ---------------------------------------------------------------------------
+
+async function seedDefaultEventTypes(projectId: string) {
+  const defaults = [
+    { name: "Schlacht", color: "#dc2626" },
+    { name: "Vertrag", color: "#2563eb" },
+    { name: "Geburt", color: "#16a34a" },
+    { name: "Tod", color: "#4b5563" },
+    { name: "Herrschaft", color: "#7c3aed" },
+    { name: "Krieg", color: "#ea580c" },
+    { name: "Krönung", color: "#ca8a04" },
+    { name: "Versammlung", color: "#0891b2" },
+  ];
+  for (const d of defaults) {
+    await prisma.eventType.upsert({
+      where: { project_id_name: { project_id: projectId, name: d.name } },
+      update: {},
+      create: { project_id: projectId, ...d },
+    });
+  }
+}
+
 const prisma = new PrismaClient();
 
 // ---------------------------------------------------------------------------
@@ -15,6 +39,7 @@ const IDS = {
     participated: "seed-rt-participated",
     bornIn: "seed-rt-born-in",
     colleague: "seed-rt-colleague",
+    elternteil: "seed-rt-elternteil",
   },
   person: {
     goethe: "seed-person-goethe",
@@ -63,6 +88,12 @@ const IDS = {
 
 async function main() {
   console.log("Seeding database…");
+
+  // Restore any seeded entities that were soft-deleted during testing
+  await prisma.$executeRawUnsafe(`UPDATE persons SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
+  await prisma.$executeRawUnsafe(`UPDATE events SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
+  await prisma.$executeRawUnsafe(`UPDATE sources SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
+  await prisma.$executeRawUnsafe(`UPDATE relations SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
 
   // ---- User ----------------------------------------------------------------
   const demoPasswordHash = await bcrypt.hash("Demo1234!", 10);
@@ -169,6 +200,22 @@ async function main() {
       description: "Professional or intellectual colleague",
       color: "#be185d",
       icon: "handshake",
+      valid_from_types: ["PERSON"],
+      valid_to_types: ["PERSON"],
+    },
+  });
+
+  await prisma.relationType.upsert({
+    where: { id: IDS.relationType.elternteil },
+    update: {},
+    create: {
+      id: IDS.relationType.elternteil,
+      project_id: project.id,
+      name: "Elternteil von",
+      inverse_name: "Kind von",
+      description: "Eltern-Kind-Beziehung",
+      color: "#0369a1",
+      icon: "heart",
       valid_from_types: ["PERSON"],
       valid_to_types: ["PERSON"],
     },
@@ -348,6 +395,9 @@ async function main() {
     },
   });
 
+  // ---- EventTypes ----------------------------------------------------------
+  await seedDefaultEventTypes(project.id);
+
   // ---- Events --------------------------------------------------------------
   const weimar = await prisma.event.upsert({
     where: { id: IDS.event.weimar },
@@ -358,7 +408,6 @@ async function main() {
       created_by_id: admin.id,
       title: "Goethes Ankunft in Weimar",
       description: "Goethe zieht auf Einladung Herzog Carl Augusts nach Weimar",
-      event_type: "Umzug",
       start_year: 1775,
       start_date_certainty: Certainty.CERTAIN,
       location: "Weimar",
@@ -374,7 +423,6 @@ async function main() {
       created_by_id: admin.id,
       title: "Weimarer Klassik",
       description: "Blütezeit der deutschen Klassik in Weimar",
-      event_type: "Epoche",
       start_year: 1786,
       start_date_certainty: Certainty.CERTAIN,
       end_year: 1832,
@@ -392,7 +440,6 @@ async function main() {
       created_by_id: admin.id,
       title: "Freundschaft Goethe–Schiller",
       description: "Beginn der engen Freundschaft und Zusammenarbeit zwischen Goethe und Schiller",
-      event_type: "Beziehung",
       start_year: 1794,
       start_month: 7,
       start_date_certainty: Certainty.CERTAIN,
@@ -411,7 +458,6 @@ async function main() {
       created_by_id: admin.id,
       title: "Amerikanische Forschungsreise",
       description: "Humboldts Forschungsreise durch Lateinamerika und die USA",
-      event_type: "Expedition",
       start_year: 1799,
       start_date_certainty: Certainty.CERTAIN,
       end_year: 1804,
@@ -625,6 +671,7 @@ async function main() {
     prisma.relationType.count(),
     prisma.person.count(),
     prisma.personName.count(),
+    prisma.eventType.count(),
     prisma.event.count(),
     prisma.source.count(),
     prisma.relation.count(),
@@ -638,6 +685,7 @@ async function main() {
     relationTypes,
     persons,
     personNames,
+    eventTypes,
     events,
     sources,
     relations,
@@ -651,6 +699,7 @@ async function main() {
   console.log(`  relation_types: ${relationTypes}`);
   console.log(`  persons: ${persons}`);
   console.log(`  person_names: ${personNames}`);
+  console.log(`  event_types: ${eventTypes}`);
   console.log(`  events: ${events}`);
   console.log(`  sources: ${sources}`);
   console.log(`  relations: ${relations}`);

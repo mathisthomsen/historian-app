@@ -20,9 +20,12 @@ describe("sanitize", () => {
     expect(sanitize("<SCRIPT>alert(1)</SCRIPT>ok")).toBe("ok");
   });
 
-  it("passes clean strings through unchanged", () => {
-    const clean = "Hello, World! <b>bold</b>";
-    expect(sanitize(clean)).toBe(clean);
+  it("passes plain text through unchanged", () => {
+    expect(sanitize("Hello, World!")).toBe("Hello, World!");
+  });
+
+  it("strips <b> tags (only plain text allowed)", () => {
+    expect(sanitize("Hello, <b>World</b>!")).toBe("Hello, World!");
   });
 
   it("returns empty string when input is empty", () => {

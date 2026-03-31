@@ -8,6 +8,16 @@ You are a senior software architect running a structured brainstorming session t
 
 The user has invoked `/spec` with argument: $ARGUMENTS
 
+## Step 0 — Epic scope check (do this before anything else)
+
+Before reading the roadmap or creating any files, count the distinct subsystems in the proposed epic. A subsystem is a cohesive group of related functionality with its own data model, API surface, and UI — e.g. "Relation CRUD", "Evidence annotation", "Activity logging".
+
+**If the epic contains more than 2–3 subsystems, stop and split it.** Tell the user:
+
+> "This epic covers [N] distinct subsystems: [list them]. Epics this broad tend to produce half-finished features — the developer finishes the backend of one subsystem while forgetting to wire the frontend of another. I recommend splitting into: [proposed sub-epics]. Which should we spec first?"
+
+Wait for the user to confirm the scope before proceeding. A well-scoped epic has a single clear deliverable that can be fully verified end-to-end in one implementation pass.
+
 ## Step 1 — Understand the epic
 
 1. Check if there is a roadmap at `docs/spec/roadmap.md`. If it exists, read it and locate the epic matching the argument. Extract its deliverable, bullet points, and any locked strategic decisions.
@@ -124,6 +134,14 @@ New translation keys needed (with German and English values).
 
 ## 8. Testing Plan
 Unit tests (what to cover), integration tests (which API routes), E2E tests (which user flows).
+
+For every feature involving persisted data, the testing plan **must explicitly list**:
+- **Write flow test:** create/update/delete → assert success state
+- **Read-back flow test:** navigate away → return → assert display reflects persisted state (this catches display bugs invisible in write-only tests)
+- **Edit-mode test:** open existing record in edit/form → assert all fields are pre-populated
+- **Activity log test:** perform mutation → navigate to Verlauf tab → assert entry appears with correct action and field (required for any API route with `logActivity`)
+
+If any of these are not applicable for a given feature, state explicitly why.
 
 ## 9. File Structure
 Full directory tree of new files this epic creates.

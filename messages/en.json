@@ -16,7 +16,9 @@
       "relations": "Relations",
       "locations": "Locations",
       "literature": "Literature",
-      "settings": "Settings"
+      "settings": "Settings",
+      "event_types": "Event Types",
+      "relation_types": "Relation Types"
     },
     "topbar": {
       "toggleSidebar": "Toggle sidebar",
@@ -120,5 +122,410 @@
     "skeletons": "Skeletons",
     "theme": "Theme",
     "locale": "Locale"
+  },
+  "events": {
+    "title": "Events",
+    "create": "New Event",
+    "edit_title": "Edit Event",
+    "create_title": "Create New Event",
+    "save": "Save Event",
+    "delete": "Delete Event",
+    "delete_confirm_title": "Delete event?",
+    "delete_confirm_body": "This event will be marked as deleted.",
+    "delete_has_sub_events": "This event has {count} sub-events. Please delete or reassign them first.",
+    "cancel": "Cancel",
+    "saved_toast": "Event saved.",
+    "deleted_toast": "Event deleted.",
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "event_type": "Type",
+      "start_date": "Start",
+      "start_date_certainty": "Start Certainty",
+      "end_date": "End",
+      "end_date_certainty": "End Certainty",
+      "location": "Location",
+      "parent": "Parent Event",
+      "notes": "Notes",
+      "created_at": "Created at",
+      "created_by": "Created by"
+    },
+    "date": {
+      "year": "Year",
+      "month": "Month",
+      "day": "Day",
+      "no_month": "No Month",
+      "months": {
+        "1": "January", "2": "February", "3": "March", "4": "April",
+        "5": "May", "6": "June", "7": "July", "8": "August",
+        "9": "September", "10": "October", "11": "November", "12": "December"
+      }
+    },
+    "certainty": {
+      "CERTAIN": "Certain",
+      "PROBABLE": "Probable",
+      "POSSIBLE": "Possible",
+      "UNKNOWN": "Unknown"
+    },
+    "list": {
+      "search_placeholder": "Search by title…",
+      "empty": "No events yet.",
+      "empty_action": "Create first event",
+      "top_level_only": "Top-level events only",
+      "date_range_from": "From Year",
+      "date_range_to": "To Year",
+      "date_range_tooltip": "Shows events that overlap with the selected date range. Events without an end date are treated as point-in-time events.",
+      "type_filter_label": "Type",
+      "columns": {
+        "title": "Title",
+        "event_type": "Type",
+        "start_date": "Start",
+        "end_date": "End",
+        "parent": "Parent"
+      }
+    },
+    "bulk": {
+      "selected": "{count} selected",
+      "delete_button": "Delete",
+      "confirm_title": "Delete {count} events?",
+      "confirm_body": "This will delete {count} events. Contact an administrator to restore them.",
+      "deleted_toast": "{count} events deleted.",
+      "skipped_toast": "{deleted} events deleted. {skipped} skipped (has sub-events)."
+    },
+    "detail": {
+      "tabs": {
+        "attributes": "Attributes",
+        "sub_events": "Sub-events ({count})",
+        "persons": "Persons",
+        "sources": "Sources",
+        "relations": "Relations",
+        "evidence": "Evidence",
+        "activity": "Activity"
+      },
+      "add_sub_event": "Add sub-event",
+      "sub_events_empty": "No sub-events.",
+      "relations_placeholder": "Relations will be available in a future update."
+    },
+    "errors": {
+      "title_required": "Please enter a title.",
+      "month_requires_year": "Month requires a year.",
+      "day_requires_month": "Day requires a month.",
+      "invalid_month": "Invalid month (1–12).",
+      "invalid_day": "Invalid day (1–31).",
+      "depth_limit": "Event '{parent_title}' is itself a sub-event and cannot have its own sub-events. Please choose a different event.",
+      "not_found": "Event not found.",
+      "save_failed": "Failed to save. Please try again.",
+      "delete_has_sub_events": "Has {count} sub-events"
+    }
+  },
+  "event_types": {
+    "title": "Event Types",
+    "create": "New Event Type",
+    "inline_create": "Create new: \"{name}\"",
+    "assign_color": "Assign color",
+    "save": "Save",
+    "delete_action": "Delete",
+    "delete_confirm_title": "Delete event type \"{name}\"?",
+    "delete_confirm_body": "This action cannot be undone.",
+    "in_use_toast": "This type is used by {count} events.",
+    "view_events": "View events",
+    "deleted_toast": "Event type deleted.",
+    "saved_toast": "Event type saved.",
+    "duplicate_error": "A type with this name already exists.",
+    "fields": {
+      "name": "Name",
+      "color": "Color",
+      "event_count": "Events"
+    }
+  },
+  "persons": {
+    "title": "Persons",
+    "create": "New Person",
+    "edit_title": "Edit Person",
+    "create_title": "Create New Person",
+    "save": "Save Person",
+    "delete": "Delete Person",
+    "delete_confirm_title": "Delete person?",
+    "delete_confirm_body": "This person will be marked as deleted.",
+    "saved_toast": "Person saved.",
+    "deleted_toast": "Person deleted.",
+    "fields": {
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "birth_date": "Birth Date",
+      "birth_date_certainty": "Birth Date Certainty",
+      "birth_place": "Birth Place",
+      "death_date": "Death Date",
+      "death_date_certainty": "Death Date Certainty",
+      "death_place": "Death Place",
+      "notes": "Notes",
+      "created_at": "Created at",
+      "created_by": "Created by"
+    },
+    "date": {
+      "year": "Year",
+      "month": "Month",
+      "day": "Day",
+      "no_month": "No Month",
+      "months": {
+        "1": "January", "2": "February", "3": "March", "4": "April",
+        "5": "May", "6": "June", "7": "July", "8": "August",
+        "9": "September", "10": "October", "11": "November", "12": "December"
+      }
+    },
+    "names": {
+      "section_title": "Name Variants",
+      "add": "Add Name",
+      "remove": "Remove",
+      "name_placeholder": "Alternate Name",
+      "language": "Language",
+      "language_placeholder": "de, la, en…",
+      "is_primary": "Primary"
+    },
+    "certainty": {
+      "CERTAIN": "Certain",
+      "PROBABLE": "Probable",
+      "POSSIBLE": "Possible",
+      "UNKNOWN": "Unknown"
+    },
+    "list": {
+      "search_placeholder": "Search by name…",
+      "empty": "No persons yet.",
+      "empty_action": "Create first person",
+      "columns": {
+        "last_name": "Last Name",
+        "first_name": "First Name",
+        "birth_date": "Birth Date",
+        "death_date": "Death Date"
+      }
+    },
+    "bulk": {
+      "selected": "{count} selected",
+      "delete_button": "Delete",
+      "confirm_title": "Delete {count} persons?",
+      "confirm_body": "This will delete {count} persons. Contact an administrator to restore them.",
+      "deleted_toast": "{count} persons deleted."
+    },
+    "detail": {
+      "tabs": {
+        "attributes": "Attributes",
+        "names": "Name Variants",
+        "events": "Events",
+        "persons": "Persons",
+        "sources": "Sources",
+        "relations": "Relations",
+        "evidence": "Evidence",
+        "activity": "Activity"
+      },
+      "relations_placeholder": "Relations will be available in a future update."
+    },
+    "errors": {
+      "name_required": "Please enter a first or last name.",
+      "month_requires_year": "Month requires a year.",
+      "day_requires_month": "Day requires a month.",
+      "invalid_month": "Invalid month (1–12).",
+      "invalid_day": "Invalid day (1–31).",
+      "not_found": "Person not found.",
+      "save_failed": "Failed to save. Please try again."
+    }
+  },
+  "sources": {
+    "title": "Sources",
+    "list_title": "All Sources",
+    "new_title": "New Source",
+    "edit_title": "Edit Source",
+    "delete": "Delete Source",
+    "delete_confirm": "Really delete this source?",
+    "bulk_delete_confirm": "Delete {count} source(s)?",
+    "search_placeholder": "Search by title or author…",
+    "empty_state": "No sources yet.",
+    "empty_action": "Create first source",
+    "create": "New Source",
+    "save": "Create Source",
+    "save_changes": "Save changes",
+    "cancel": "Cancel",
+    "saved_toast": "Source saved.",
+    "deleted_toast": "Source deleted.",
+    "back_to_list": "Back to Sources",
+    "field_title": "Title",
+    "field_type": "Type",
+    "field_author": "Author",
+    "field_date": "Date",
+    "field_date_hint": "e.g. c. March 1848",
+    "field_repository": "Repository / Archive",
+    "field_call_number": "Call Number",
+    "field_url": "URL",
+    "field_reliability": "Reliability",
+    "field_notes": "Notes",
+    "reliability_high": "High",
+    "reliability_medium": "Medium",
+    "reliability_low": "Low",
+    "reliability_unknown": "Unknown",
+    "type_archival_document": "Archival Document",
+    "type_letter": "Letter",
+    "type_newspaper": "Newspaper",
+    "type_official_record": "Official Record",
+    "type_photograph": "Photograph",
+    "type_other": "Other",
+    "type_placeholder": "Select or type a source type…",
+    "all_types": "All Types",
+    "all_reliabilities": "All",
+    "tab_details": "Details",
+    "tab_persons": "Persons",
+    "tab_events": "Events",
+    "tab_relations": "Relations",
+    "tab_evidence": "Evidence",
+    "tab_activity": "Activity",
+    "relations_placeholder": "Relations will be populated in Epic 2.4.",
+    "sidebar_link": "Sources",
+    "created_by": "Created by",
+    "created_at": "Created at",
+    "updated_at": "Last modified",
+    "bulk": {
+      "selected": "{count} selected",
+      "delete_button": "Delete",
+      "deleted_toast": "{count} source(s) deleted."
+    },
+    "errors": {
+      "title_required": "Title is required.",
+      "type_required": "Type is required.",
+      "invalid_url": "Invalid URL.",
+      "save_failed": "Save failed. Please try again.",
+      "not_found": "Source not found."
+    },
+    "columns": {
+      "title": "Title",
+      "type": "Type",
+      "author": "Author",
+      "reliability": "Reliability",
+      "created_at": "Created at",
+      "actions": "Actions"
+    }
+  },
+  "relations": {
+    "title": "Relations",
+    "add": "Add Relation",
+    "edit": "Edit Relation",
+    "delete": "Delete Relation",
+    "deleteConfirm": "Really delete this relation?",
+    "outgoing": "Outgoing",
+    "incoming": "Incoming",
+    "noRelations": "No relations yet.",
+    "evidenceCount_one": "{count} source",
+    "evidenceCount_other": "{count} sources",
+    "fields": {
+      "fromEntity": "From",
+      "toEntity": "To",
+      "relationType": "Relation type",
+      "certainty": "Certainty",
+      "notes": "Notes",
+      "temporalValidity": "Temporal validity",
+      "validFrom": "Valid from",
+      "validTo": "Valid to",
+      "addEvidence": "Add evidence",
+      "evidenceSource": "Source",
+      "evidenceQuote": "Quote",
+      "evidenceQuotePlaceholder": "Relevant passage…",
+      "evidenceConfidence": "Confidence"
+    },
+    "noTypeForCombination": "No relation type found for this combination.",
+    "manageTypes": "Manage types",
+    "cancel": "Cancel",
+    "create": "Create Relation",
+    "save": "Save Relation",
+    "saved_toast": "Relation saved.",
+    "deleted_toast": "Relation deleted.",
+    "columns": {
+      "from": "From",
+      "type": "Type",
+      "to": "To",
+      "certainty": "Certainty",
+      "evidence": "Evidence",
+      "actions": "Actions"
+    },
+    "filter": {
+      "all_types": "All types",
+      "all_certainties": "All certainties",
+      "all_entity_types": "All entity types"
+    },
+    "list": {
+      "total": "{count} total",
+      "previous": "Previous",
+      "next": "Next",
+      "search_placeholder": "Search…"
+    },
+    "entityTypes": {
+      "PERSON": "Person",
+      "EVENT": "Event",
+      "SOURCE": "Source"
+    },
+    "certainties": {
+      "CERTAIN": "Certain",
+      "PROBABLE": "Probable",
+      "POSSIBLE": "Possible",
+      "UNKNOWN": "Unknown"
+    },
+    "validity": {
+      "from_only": "from {year}",
+      "to_only": "until {year}",
+      "range": "{from} – {to}"
+    }
+  },
+  "relationTypes": {
+    "title": "Relation types",
+    "add": "New type",
+    "edit": "Edit type",
+    "delete": "Delete type",
+    "deleteBlocked": "This type is used by {count} relations and cannot be deleted.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved_toast": "Relation type saved.",
+    "deleted_toast": "Relation type deleted.",
+    "delete_confirm_title": "Delete relation type?",
+    "delete_confirm_body": "This action cannot be undone.",
+    "fields": {
+      "name": "Name",
+      "inverseName": "Inverse name",
+      "description": "Description",
+      "color": "Color",
+      "icon": "Icon",
+      "validFromTypes": "Valid from (entity type)",
+      "validToTypes": "Valid to (entity type)",
+      "relationCount": "Relations"
+    },
+    "entityTypes": {
+      "PERSON": "Person",
+      "EVENT": "Event",
+      "SOURCE": "Source",
+      "LOCATION": "Location",
+      "LITERATURE": "Literature"
+    }
+  },
+  "propertyEvidence": {
+    "title": "Evidence",
+    "add": "Add evidence",
+    "delete": "Delete evidence",
+    "badgeLabel_one": "{count} source",
+    "badgeLabel_other": "{count} sources",
+    "fields": {
+      "source": "Source",
+      "pageReference": "Page / Folio",
+      "quote": "Quote (normalized)",
+      "rawTranscription": "Diplomatic transcription",
+      "confidence": "Confidence",
+      "notes": "Notes"
+    },
+    "noEvidence": "No evidence for this field.",
+    "saved_toast": "Evidence saved.",
+    "deleted_toast": "Evidence deleted."
+  },
+  "entityActivity": {
+    "title": "Activity",
+    "actions": {
+      "CREATE": "created",
+      "UPDATE": "updated",
+      "DELETE": "deleted"
+    },
+    "noActivity": "No activity yet."
   }
 }

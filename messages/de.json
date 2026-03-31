@@ -16,7 +16,9 @@
       "relations": "Beziehungen",
       "locations": "Orte",
       "literature": "Literatur",
-      "settings": "Einstellungen"
+      "settings": "Einstellungen",
+      "event_types": "Ereignistypen",
+      "relation_types": "Relationstypen"
     },
     "topbar": {
       "toggleSidebar": "Seitenleiste umschalten",
@@ -120,5 +122,410 @@
     "skeletons": "Skelette",
     "theme": "Design",
     "locale": "Sprache"
+  },
+  "events": {
+    "title": "Ereignisse",
+    "create": "Neues Ereignis",
+    "edit_title": "Ereignis bearbeiten",
+    "create_title": "Neues Ereignis anlegen",
+    "save": "Ereignis speichern",
+    "delete": "Ereignis löschen",
+    "delete_confirm_title": "Ereignis löschen?",
+    "delete_confirm_body": "Dieses Ereignis wird als gelöscht markiert.",
+    "delete_has_sub_events": "Dieses Ereignis hat {count} Unterereignisse. Bitte diese zuerst löschen oder einem anderen Ereignis zuordnen.",
+    "cancel": "Abbrechen",
+    "saved_toast": "Ereignis gespeichert.",
+    "deleted_toast": "Ereignis gelöscht.",
+    "fields": {
+      "title": "Titel",
+      "description": "Beschreibung",
+      "event_type": "Typ",
+      "start_date": "Beginn",
+      "start_date_certainty": "Sicherheit Beginn",
+      "end_date": "Ende",
+      "end_date_certainty": "Sicherheit Ende",
+      "location": "Ort",
+      "parent": "Übergeordnetes Ereignis",
+      "notes": "Notizen",
+      "created_at": "Erstellt am",
+      "created_by": "Erstellt von"
+    },
+    "date": {
+      "year": "Jahr",
+      "month": "Monat",
+      "day": "Tag",
+      "no_month": "Kein Monat",
+      "months": {
+        "1": "Januar", "2": "Februar", "3": "März", "4": "April",
+        "5": "Mai", "6": "Juni", "7": "Juli", "8": "August",
+        "9": "September", "10": "Oktober", "11": "November", "12": "Dezember"
+      }
+    },
+    "certainty": {
+      "CERTAIN": "Sicher",
+      "PROBABLE": "Wahrscheinlich",
+      "POSSIBLE": "Möglich",
+      "UNKNOWN": "Unbekannt"
+    },
+    "list": {
+      "search_placeholder": "Nach Titel suchen…",
+      "empty": "Noch keine Ereignisse.",
+      "empty_action": "Erstes Ereignis anlegen",
+      "top_level_only": "Nur Hauptereignisse",
+      "date_range_from": "Von Jahr",
+      "date_range_to": "Bis Jahr",
+      "date_range_tooltip": "Zeigt Ereignisse, die sich zeitlich mit dem gewählten Bereich überschneiden. Ereignisse ohne Enddatum gelten als Einzelereignisse.",
+      "type_filter_label": "Typ",
+      "columns": {
+        "title": "Titel",
+        "event_type": "Typ",
+        "start_date": "Beginn",
+        "end_date": "Ende",
+        "parent": "Übergeordnet"
+      }
+    },
+    "bulk": {
+      "selected": "{count} ausgewählt",
+      "delete_button": "Löschen",
+      "confirm_title": "{count} Ereignisse löschen?",
+      "confirm_body": "Diese Aktion löscht {count} Ereignisse. Kontaktieren Sie den Administrator zur Wiederherstellung.",
+      "deleted_toast": "{count} Ereignisse gelöscht.",
+      "skipped_toast": "{deleted} Ereignisse gelöscht. {skipped} übersprungen (hat Unterereignisse)."
+    },
+    "detail": {
+      "tabs": {
+        "attributes": "Attribute",
+        "sub_events": "Unterereignisse ({count})",
+        "persons": "Personen",
+        "sources": "Quellen",
+        "relations": "Relationen",
+        "evidence": "Nachweise",
+        "activity": "Verlauf"
+      },
+      "add_sub_event": "Unterereignis hinzufügen",
+      "sub_events_empty": "Keine Unterereignisse.",
+      "relations_placeholder": "Beziehungen werden in einem späteren Update verfügbar."
+    },
+    "errors": {
+      "title_required": "Bitte einen Titel eingeben.",
+      "month_requires_year": "Monat erfordert ein Jahr.",
+      "day_requires_month": "Tag erfordert einen Monat.",
+      "invalid_month": "Ungültiger Monat (1–12).",
+      "invalid_day": "Ungültiger Tag (1–31).",
+      "depth_limit": "Ereignis '{parent_title}' ist selbst ein Unterereignis und kann keine eigenen Unterereignisse haben. Bitte ein anderes Ereignis wählen.",
+      "not_found": "Ereignis nicht gefunden.",
+      "save_failed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+      "delete_has_sub_events": "Hat {count} Unterereignisse"
+    }
+  },
+  "event_types": {
+    "title": "Ereignistypen",
+    "create": "Neuer Ereignistyp",
+    "inline_create": "Neu erstellen: \"{name}\"",
+    "assign_color": "Farbe zuweisen",
+    "save": "Speichern",
+    "delete_action": "Löschen",
+    "delete_confirm_title": "Ereignistyp \"{name}\" löschen?",
+    "delete_confirm_body": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "in_use_toast": "Dieser Typ wird von {count} Ereignissen verwendet.",
+    "view_events": "Ereignisse anzeigen",
+    "deleted_toast": "Ereignistyp gelöscht.",
+    "saved_toast": "Ereignistyp gespeichert.",
+    "duplicate_error": "Ein Typ mit diesem Namen existiert bereits.",
+    "fields": {
+      "name": "Name",
+      "color": "Farbe",
+      "event_count": "Ereignisse"
+    }
+  },
+  "persons": {
+    "title": "Personen",
+    "create": "Neue Person",
+    "edit_title": "Person bearbeiten",
+    "create_title": "Neue Person anlegen",
+    "save": "Person speichern",
+    "delete": "Person löschen",
+    "delete_confirm_title": "Person löschen?",
+    "delete_confirm_body": "Diese Person wird als gelöscht markiert.",
+    "saved_toast": "Person gespeichert.",
+    "deleted_toast": "Person gelöscht.",
+    "fields": {
+      "first_name": "Vorname",
+      "last_name": "Nachname",
+      "birth_date": "Geburtsdatum",
+      "birth_date_certainty": "Sicherheit Geburtsdatum",
+      "birth_place": "Geburtsort",
+      "death_date": "Sterbedatum",
+      "death_date_certainty": "Sicherheit Sterbedatum",
+      "death_place": "Sterbeort",
+      "notes": "Notizen",
+      "created_at": "Erstellt am",
+      "created_by": "Erstellt von"
+    },
+    "date": {
+      "year": "Jahr",
+      "month": "Monat",
+      "day": "Tag",
+      "no_month": "Kein Monat",
+      "months": {
+        "1": "Januar", "2": "Februar", "3": "März", "4": "April",
+        "5": "Mai", "6": "Juni", "7": "Juli", "8": "August",
+        "9": "September", "10": "Oktober", "11": "November", "12": "Dezember"
+      }
+    },
+    "names": {
+      "section_title": "Weitere Namen",
+      "add": "Name hinzufügen",
+      "remove": "Entfernen",
+      "name_placeholder": "Alternativer Name",
+      "language": "Sprache",
+      "language_placeholder": "de, la, en…",
+      "is_primary": "Primär"
+    },
+    "certainty": {
+      "CERTAIN": "Sicher",
+      "PROBABLE": "Wahrscheinlich",
+      "POSSIBLE": "Möglich",
+      "UNKNOWN": "Unbekannt"
+    },
+    "list": {
+      "search_placeholder": "Nach Name suchen…",
+      "empty": "Noch keine Personen.",
+      "empty_action": "Erste Person anlegen",
+      "columns": {
+        "last_name": "Nachname",
+        "first_name": "Vorname",
+        "birth_date": "Geburtsdatum",
+        "death_date": "Sterbedatum"
+      }
+    },
+    "bulk": {
+      "selected": "{count} ausgewählt",
+      "delete_button": "Löschen",
+      "confirm_title": "{count} Personen löschen?",
+      "confirm_body": "Diese Aktion löscht {count} Personen. Kontaktieren Sie den Administrator zur Wiederherstellung.",
+      "deleted_toast": "{count} Personen gelöscht."
+    },
+    "detail": {
+      "tabs": {
+        "attributes": "Attribute",
+        "names": "Weitere Namen",
+        "events": "Ereignisse",
+        "persons": "Personen",
+        "sources": "Quellen",
+        "relations": "Relationen",
+        "evidence": "Nachweise",
+        "activity": "Verlauf"
+      },
+      "relations_placeholder": "Beziehungen werden in einem späteren Update verfügbar."
+    },
+    "errors": {
+      "name_required": "Bitte Vor- oder Nachname eingeben.",
+      "month_requires_year": "Monat erfordert ein Jahr.",
+      "day_requires_month": "Tag erfordert einen Monat.",
+      "invalid_month": "Ungültiger Monat (1–12).",
+      "invalid_day": "Ungültiger Tag (1–31).",
+      "not_found": "Person nicht gefunden.",
+      "save_failed": "Speichern fehlgeschlagen. Bitte erneut versuchen."
+    }
+  },
+  "sources": {
+    "title": "Quellen",
+    "list_title": "Alle Quellen",
+    "new_title": "Neue Quelle",
+    "edit_title": "Quelle bearbeiten",
+    "delete": "Quelle löschen",
+    "delete_confirm": "Diese Quelle wirklich löschen?",
+    "bulk_delete_confirm": "{count} Quelle(n) löschen?",
+    "search_placeholder": "Titel oder Autor suchen…",
+    "empty_state": "Noch keine Quellen angelegt.",
+    "empty_action": "Erste Quelle erstellen",
+    "create": "Neue Quelle",
+    "save": "Quelle erstellen",
+    "save_changes": "Änderungen speichern",
+    "cancel": "Abbrechen",
+    "saved_toast": "Quelle gespeichert.",
+    "deleted_toast": "Quelle gelöscht.",
+    "back_to_list": "Zurück zu Quellen",
+    "field_title": "Titel",
+    "field_type": "Typ",
+    "field_author": "Autor",
+    "field_date": "Datum",
+    "field_date_hint": "z. B. ca. März 1848",
+    "field_repository": "Archiv / Repository",
+    "field_call_number": "Signatur",
+    "field_url": "URL",
+    "field_reliability": "Zuverlässigkeit",
+    "field_notes": "Notizen",
+    "reliability_high": "Hoch",
+    "reliability_medium": "Mittel",
+    "reliability_low": "Niedrig",
+    "reliability_unknown": "Unbekannt",
+    "type_archival_document": "Archivdokument",
+    "type_letter": "Brief",
+    "type_newspaper": "Zeitung",
+    "type_official_record": "Amtliche Urkunde",
+    "type_photograph": "Fotografie",
+    "type_other": "Sonstiges",
+    "type_placeholder": "Typ auswählen oder eingeben…",
+    "all_types": "Alle Typen",
+    "all_reliabilities": "Alle",
+    "tab_details": "Details",
+    "tab_persons": "Personen",
+    "tab_events": "Ereignisse",
+    "tab_relations": "Verknüpfungen",
+    "tab_evidence": "Nachweise",
+    "tab_activity": "Verlauf",
+    "relations_placeholder": "Verknüpfungen werden nach Abschluss von Epic 2.4 angezeigt.",
+    "sidebar_link": "Quellen",
+    "created_by": "Erstellt von",
+    "created_at": "Erstellt am",
+    "updated_at": "Zuletzt geändert",
+    "bulk": {
+      "selected": "{count} ausgewählt",
+      "delete_button": "Löschen",
+      "deleted_toast": "{count} Quelle(n) gelöscht."
+    },
+    "errors": {
+      "title_required": "Titel ist erforderlich.",
+      "type_required": "Typ ist erforderlich.",
+      "invalid_url": "Ungültige URL.",
+      "save_failed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+      "not_found": "Quelle nicht gefunden."
+    },
+    "columns": {
+      "title": "Titel",
+      "type": "Typ",
+      "author": "Autor",
+      "reliability": "Zuverlässigkeit",
+      "created_at": "Erstellt am",
+      "actions": "Aktionen"
+    }
+  },
+  "relations": {
+    "title": "Relationen",
+    "add": "Relation hinzufügen",
+    "edit": "Relation bearbeiten",
+    "delete": "Relation löschen",
+    "deleteConfirm": "Diese Relation wirklich löschen?",
+    "outgoing": "Ausgehend",
+    "incoming": "Eingehend",
+    "noRelations": "Noch keine Relationen.",
+    "evidenceCount_one": "{count} Beleg",
+    "evidenceCount_other": "{count} Belege",
+    "fields": {
+      "fromEntity": "Von",
+      "toEntity": "Zu",
+      "relationType": "Relationstyp",
+      "certainty": "Gewissheit",
+      "notes": "Notizen",
+      "temporalValidity": "Zeitliche Gültigkeit",
+      "validFrom": "Gültig von",
+      "validTo": "Gültig bis",
+      "addEvidence": "Beleg hinzufügen",
+      "evidenceSource": "Quelle",
+      "evidenceQuote": "Zitat",
+      "evidenceQuotePlaceholder": "Relevante Textstelle…",
+      "evidenceConfidence": "Zuverlässigkeit"
+    },
+    "noTypeForCombination": "Kein Relationstyp für diese Kombination gefunden.",
+    "manageTypes": "Typen verwalten",
+    "cancel": "Abbrechen",
+    "create": "Relation erstellen",
+    "save": "Relation speichern",
+    "saved_toast": "Relation gespeichert.",
+    "deleted_toast": "Relation gelöscht.",
+    "columns": {
+      "from": "Von",
+      "type": "Typ",
+      "to": "Zu",
+      "certainty": "Gewissheit",
+      "evidence": "Belege",
+      "actions": "Aktionen"
+    },
+    "filter": {
+      "all_types": "Alle Typen",
+      "all_certainties": "Alle Gewissheiten",
+      "all_entity_types": "Alle Entitätstypen"
+    },
+    "list": {
+      "total": "{count} gesamt",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "search_placeholder": "Suchen…"
+    },
+    "entityTypes": {
+      "PERSON": "Person",
+      "EVENT": "Ereignis",
+      "SOURCE": "Quelle"
+    },
+    "certainties": {
+      "CERTAIN": "Sicher",
+      "PROBABLE": "Wahrscheinlich",
+      "POSSIBLE": "Möglich",
+      "UNKNOWN": "Unbekannt"
+    },
+    "validity": {
+      "from_only": "ab {year}",
+      "to_only": "bis {year}",
+      "range": "{from} – {to}"
+    }
+  },
+  "relationTypes": {
+    "title": "Relationstypen",
+    "add": "Neuer Typ",
+    "edit": "Typ bearbeiten",
+    "delete": "Typ löschen",
+    "deleteBlocked": "Dieser Typ wird von {count} Relationen verwendet und kann nicht gelöscht werden.",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "saved_toast": "Relationstyp gespeichert.",
+    "deleted_toast": "Relationstyp gelöscht.",
+    "delete_confirm_title": "Relationstyp löschen?",
+    "delete_confirm_body": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "fields": {
+      "name": "Name",
+      "inverseName": "Umkehrung",
+      "description": "Beschreibung",
+      "color": "Farbe",
+      "icon": "Icon",
+      "validFromTypes": "Gültig von (Entitätstyp)",
+      "validToTypes": "Gültig zu (Entitätstyp)",
+      "relationCount": "Relationen"
+    },
+    "entityTypes": {
+      "PERSON": "Person",
+      "EVENT": "Ereignis",
+      "SOURCE": "Quelle",
+      "LOCATION": "Ort",
+      "LITERATURE": "Literatur"
+    }
+  },
+  "propertyEvidence": {
+    "title": "Nachweise",
+    "add": "Beleg hinzufügen",
+    "delete": "Beleg löschen",
+    "badgeLabel_one": "{count} Quelle",
+    "badgeLabel_other": "{count} Quellen",
+    "fields": {
+      "source": "Quelle",
+      "pageReference": "Seite / Folio",
+      "quote": "Zitat (normalisiert)",
+      "rawTranscription": "Diplomatische Transkription",
+      "confidence": "Gewissheit",
+      "notes": "Notizen"
+    },
+    "noEvidence": "Keine Belege für dieses Feld.",
+    "saved_toast": "Beleg gespeichert.",
+    "deleted_toast": "Beleg gelöscht."
+  },
+  "entityActivity": {
+    "title": "Verlauf",
+    "actions": {
+      "CREATE": "erstellt",
+      "UPDATE": "aktualisiert",
+      "DELETE": "gelöscht"
+    },
+    "noActivity": "Kein Verlauf vorhanden."
   }
 }

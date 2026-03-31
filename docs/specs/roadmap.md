@@ -114,18 +114,25 @@
 
 **Deliverable:** Full CRUD for persons with search, filtering, pagination, and the detail profile view.
 
-- Person list: DataTable (shadcn Table + server-side pagination, search, column sort)
+- Person list: DataTable (shadcn Table + server-side pagination, search, column sort) — SSR, URL-param driven
 - Create/Edit form: react-hook-form + Zod, all fields with German + English labels (i18n)
-- Fields: first_name, last_name, name_variants (array), birth_date + birth_date_certainty (categorical selector), birth_place, death_date + death_date_certainty, death_place, notes
-- Person detail page: all attributes, tab for related events, tab for related persons, tab for related sources
+- Fields:
+  - `first_name`, `last_name` — direct columns, canonical display name
+  - **Partial dates** — `birth_year / birth_month / birth_day` (Int, all nullable; year-only and year+month are valid). `birth_date_certainty` (four-state enum). Same triple for death. No DateTime field — dates are stored as integer components to support historical partial dates.
+  - `birth_place`, `death_place` — free text. Location FK (`birth_location_id`, `death_location_id`) is wired in Epic 3.2 only.
+  - `notes`
+  - **Name variants** — managed via the separate `PersonName` table (`name`, `language: ISO 639-1`, `is_primary`). Not a JSON array. In-form dynamic rows: add/remove name variants, mark one as primary, set language code. Searched alongside first_name/last_name.
+- Person detail page: all attributes, name variants tab, tabs for related events/persons/sources. **Relations tab content is placeholder text in this epic; full content populated by Epic 2.4.**
 - Bulk delete (checkbox selection + confirm dialog)
-- Server-side search: first_name, last_name, name_variants (PostgreSQL full-text on person names)
+- Server-side search: first_name, last_name, and PersonName.name records (case-insensitive ILIKE JOIN). PostgreSQL `tsvector` upgrade deferred to Epic 4.1.
 - API: `GET/POST /api/persons`, `GET/PUT/DELETE /api/persons/[id]`, `POST /api/persons/bulk`
 - Redis cache for list queries; cache invalidated on write
 - Uncertainty UI: four-state selector component (Certain / Probable / Possible / Unknown) reusable across entities
+- **Soft-delete Prisma extension:** Add a Prisma client extension to `src/lib/db.ts` that transparently filters `deleted_at: null` on `findMany`/`findFirst` for Person (and stubs for Event, Source, Relation). This is the extension referenced in the Epic 2.2 soft-delete note — implemented here as the first entity with soft-delete exposed in the UI.
 - **Output sanitization:** Replace the `sanitize()` stub from Epic 1.4 with `sanitize-html` library. Apply at all DB write boundaries for text fields. (Epic 1.4 ships a thin strip-tags stub; this epic upgrades it.)
+- **Temporary project scope scaffold:** Since the multi-project workspace UI is Epic 3.1, a default project (user's first OWNER/EDITOR project) is derived from the session JWT. All API routes read `projectId` from the session. This scaffold is replaced by the project switcher in Epic 3.1.
 
-**Verifiable:** Create a person with uncertain birth date, view profile, edit, search by name, bulk delete.
+**Verifiable:** Create a person with uncertain partial birth date (year + month only), add a Latin name variant, view profile, edit, search by name variant, bulk delete.
 
 ---
 
@@ -134,16 +141,18 @@
 **Deliverable:** Full CRUD for events with hierarchical sub-events, date uncertainty, and location fields.
 
 - Event list: DataTable with search, filter by type, date range, location; server-side pagination
-- Create/Edit form: title, description, event_type (user-defined), start_date + certainty, end_date + certainty, location (free text + optional geocoded Location FK), parent event (for sub-events)
-- Event types: user-defined per project (name, color, icon) — no hardcoded types. Seeded defaults provided.
+- Create/Edit form: title, description, event_type (FK to EventType table), start_date + certainty, end_date + certainty, location (free text + optional geocoded Location FK), parent event (for sub-events)
+- **EventType table:** `EventType` is a proper DB table per project (`id, project_id, name, color, icon`). Epic 2.2 creates this table via migration and exposes CRUD for event types in project settings. The `event_type` column on `Event` is currently a free-text String in the schema stub; this epic adds the FK and migrates it.
+- Event types: user-defined per project — no hardcoded types. Seeded defaults provided (Battle, Treaty, Birth, Death, etc.).
 - Sub-event display: indented in list view; breadcrumb chain in detail view
 - Event detail page: all attributes, sub-events list, related persons tab, related sources tab
 - Date uncertainty: same four-state selector; display hints in list ("c. 1850", "before 1900")
 - API: `GET/POST /api/events`, `GET/PUT/DELETE /api/events/[id]`, `POST /api/events/bulk`
 
 **Soft delete note**
-Prisma does not auto-filter deleted_at. A middleware extension is deferred to Epic 2.1 to
-avoid boilerplate — the spec calls this out explicitly so it doesn't get forgotten.
+The Prisma client extension that auto-filters `deleted_at: null` is implemented in Epic 2.1
+(the first entity with soft-delete exposed in the UI). Epic 2.2 extends the same extension to
+cover the `event` model — no boilerplate needed here.
 
 **Verifiable:** Create a parent event (WWI), add sub-events, assign event type with color, view hierarchy, search by date range.
 
@@ -182,13 +191,56 @@ account for this.
   - Notes field
   - Evidence attachment: attach one or more Sources to this relation with optional notes
 - **Relation list view:** Tabular list, filterable by entity type pair, relation type, certainty. Shows both ends of the relation with links.
-- **Entity relation tabs:** Each entity detail page (Person, Event, Source) has a "Relations" tab listing all relations where that entity is a participant.
+- **Entity relation tabs:** Each entity detail page (Person, Event, Source) has a "Relations" tab listing all relations where that entity is a participant. (Epics 2.1, 2.2, and 2.3 render these tabs as placeholders; this epic populates them for all three entity types.)
+- **PropertyEvidence UI:** Attach a Source as evidence for a specific property value on any entity (e.g., "Source X supports birth_year=1848 for Person Y"). UI surfaces on entity detail pages as a secondary annotation alongside each field. Uses the `PropertyEvidence` table (already in schema). Exposes: add evidence for a property, view all evidence for a property, remove evidence.
 - **Relation detail/edit/delete:** Inline in list or modal.
-- API: `GET/POST /api/relations`, `GET/PUT/DELETE /api/relations/[id]`, `GET/POST/DELETE /api/relations/[id]/evidence`
+- API: `GET/POST /api/relations`, `GET/PUT/DELETE /api/relations/[id]`, `GET/POST/DELETE /api/relations/[id]/evidence`, `GET/POST/DELETE /api/property-evidence`
 
 **Key design constraint:** The relation model must be queryable efficiently. Add composite index on `(from_type, from_id)` and `(to_type, to_id)`. Prisma raw queries may be needed for complex graph traversal.
 
 **Verifiable:** Link Person A to Event B as "participant" (PROBABLE certainty), attach a Source as evidence. Link Person A to Person B as "colleague". View Person A's profile and see both relations in the Relations tab.
+
+---
+
+### Epic 2.5 — UI Polish & Brand Tokens
+
+**Deliverable:** A visually cohesive, transition-polished UI with a defined brand token foundation — ready for alpha testing.
+
+**Depends on:** All Phase 2 feature epics (2.1–2.4) complete. Brand direction agreed before implementation.
+
+- **Brand tokens in `@theme`:** Define CSS custom properties for primary/secondary/accent colors, typography scale (font family, size, weight), border-radius, and shadow levels. All existing components reference these tokens instead of raw Tailwind values.
+- **Dark/light mode transitions:** Smooth `transition: color, background-color, border-color` on `:root` / theme classes — eliminates harsh flash when toggling.
+- **Sidebar collapse animation:** CSS `width` or `translate` transition on the sidebar panel; icon-only state animates smoothly.
+- **Page transitions:** Subtle fade or slide transition between routes using Next.js App Router layout animations (or a lightweight wrapper).
+- **Component consistency pass:** Verify spacing, border-radius, and shadow tokens are applied uniformly across all Phase 2 pages.
+- **Empty states & loading skeletons:** Ensure every list/detail page has a designed empty state and skeleton — no raw spinners.
+- **DataTable column visibility:** Add show/hide column toggle to the DataTable component (all list views: Persons, Events, Sources, Relations). Each user's visible-column preference persisted in `localStorage` per table key.
+
+**Note:** This epic does _not_ include marketing/public-facing pages (see Epic 2.6). It focuses exclusively on the authenticated app shell and its components.
+
+**Verifiable:** Toggle dark/light mode — transition is smooth, no flash. Collapse/expand sidebar — animation is smooth. Navigate between Person list and detail page — transition is visible. All pages use brand colors.
+
+---
+
+### Epic 2.6 — Marketing & Pre-Auth Pages
+
+**Deliverable:** Public-facing marketing pages (Homepage, Features, About, etc.) using the brand tokens established in Epic 2.5.
+
+**Depends on:** Epic 2.5 (brand tokens must be in place before building marketing pages).
+
+**Target:** Beta/public launch — not required for internal alpha.
+
+- **Pages:** Homepage (`/`), Features, About, Pricing (if applicable), Privacy Policy, Terms of Service
+- **Layout:** Dedicated marketing layout (distinct from AppShell) — full-width, hero sections, no sidebar
+- **SEO:** `<title>`, `<meta description>`, Open Graph tags & schema.org, structured data on key pages
+- **Navigation:** Public nav bar with login/register CTA; footer with links
+- **Copy & design:** Requires brand direction and copy to be finalized before development
+- **i18n:** All pages fully translated (de + en)
+- **Performance:** Static generation (`generateStaticParams` / no dynamic rendering where possible); images optimized
+
+**Note:** Auth pages (`/auth/login`, `/auth/register`, etc.) are already implemented. This epic adds the _pre-auth_ marketing funnel pages only.
+
+**Verifiable:** Homepage renders with brand styling, hero CTA navigates to `/de/auth/register`, all text available in DE and EN, Lighthouse score >90 on public pages.
 
 ---
 
@@ -201,12 +253,12 @@ account for this.
 **Deliverable:** Multi-project workspaces with member management and project-scoped data isolation.
 
 - Project CRUD: create, rename, describe, delete (soft-delete with 30-day recovery window)
-- Project context: global project switcher in nav bar, all data queries scoped to active project
+- Project context: global project switcher in nav bar, all data queries scoped to active project. **Replaces the temporary default-project scaffold introduced in Epic 2.1** (where projectId was derived from the session JWT as a stopgap).
 - Member management: invite by email, assign role (OWNER/EDITOR/VIEWER), remove member
 - Permission enforcement: API middleware checks project membership and role before any data operation
 - Project stats page: counts of persons, events, sources, relations; data completeness indicators
 - Project-level RelationType management (from Epic 2.4 lives here in the settings panel)
-- Project settings: name, description, default locale, custom event types, custom relation types
+- Project settings: name, description, default locale, custom event types, custom relation types. **Note:** A basic `/settings/event-types` CRUD page is scaffolded in Epic 2.2 (the first settings page). Epic 3.1 integrates it into the full project settings panel and adds the project switcher context. The sidebar settings navigation pattern (settings items visually separated at the bottom of the sidebar, divided from primary data navigation) is also established in Epic 2.2.
 - API: full project and membership API set
 
 **Note:** VIEWER role is read-only; EDITOR can CRUD all data entities; OWNER can additionally manage project settings and members.
@@ -226,7 +278,7 @@ account for this.
 - Leaflet map view: plot all locations as pins; click pin to see linked entities; filter by entity type
 - Temporal filter on map: slider to show "who/what was at this location in year X"
 - Location management page: bulk geocoding trigger for un-geocoded locations, merge duplicate locations
-- Person/Event: `location_id` FK (optional); free-text `location` field retained as fallback for un-geocoded data
+- **Wire Location FKs on Person and Event:** Person gets `birth_location_id` and `death_location_id` wired to a Location autocomplete in the edit form (previously free-text only in Epic 2.1). Event gets `location_id` wired similarly. Free-text fallback fields (`birth_place`, `death_place`, `location`) are retained and pre-populated from the linked Location name when set.
 
 **Verifiable:** Search "Vienna", get autocomplete, select it, it geocodes and shows on map with a pin. Temporal filter slider changes which pins are visible.
 
@@ -419,15 +471,15 @@ account for this.
 
 ## Summary
 
-| Phase | Theme               | Epics   | Outcome                                            |
-| ----- | ------------------- | ------- | -------------------------------------------------- |
-| 1     | Foundation & Auth   | 1.1–1.4 | Secure, authenticated shell with infrastructure    |
-| 2     | Core Research Loop  | 2.1–2.4 | MVP: persons, events, sources, universal relations |
-| 3     | Research Context    | 3.1–3.4 | Projects, locations, literature, bulk import       |
-| 4     | Discovery           | 4.1–4.4 | Search, timeline, network graph, analytics         |
-| 5     | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage      |
+| Phase | Theme               | Epics   | Outcome                                                                |
+| ----- | ------------------- | ------- | ---------------------------------------------------------------------- |
+| 1     | Foundation & Auth   | 1.1–1.4 | Secure, authenticated shell with infrastructure                        |
+| 2     | Core Research Loop  | 2.1–2.6 | MVP: persons, events, sources, relations + UI polish + marketing pages |
+| 3     | Research Context    | 3.1–3.4 | Projects, locations, literature, bulk import                           |
+| 4     | Discovery           | 4.1–4.4 | Search, timeline, network graph, analytics                             |
+| 5     | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage                          |
 
-**MVP for university validation = Phase 1 + Phase 2 complete.**
+**MVP for university validation = Phase 1 + Phase 2 (including 2.5) complete.**
 Phase 3 adds collaborative workspace and import, making it suitable for a research group.
 Phases 4 and 5 make it a complete, production-ready product.
 
