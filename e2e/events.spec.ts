@@ -541,14 +541,21 @@ test.describe("TC-E-13: EventType settings CRUD", () => {
 test.describe("TC-E-14: Pagination", () => {
   test("events list shows pagination UI", async ({ page }) => {
     await loginAsAdmin(page);
+    // Page size is 25; seed only has 4 events. Create 25 more in parallel to guarantee
+    // totalPages > 1 regardless of how many events earlier tests may have created.
+    await Promise.all(
+      Array.from({ length: 25 }, (_, i) =>
+        page.request.post("/api/events", {
+          data: { title: `Paginierungstest ${i + 1}`, project_id: "seed-project-demo" },
+        }),
+      ),
+    );
     await page.goto("/de/events");
-
-    await page.waitForTimeout(1000);
 
     // Pagination element or page count should be present
     await expect(
       page.getByText(/Seite|Page/).or(page.getByRole("button", { name: /Weiter|Next/ })),
-    ).toBeVisible({ timeout: 5_000 });
+    ).toBeVisible({ timeout: 10_000 });
   });
 });
 

@@ -105,9 +105,11 @@ test.describe("TC-SRC-05: Search by title", () => {
     await page.goto("/de/sources");
 
     await page.getByPlaceholder("Titel oder Autor suchen…").fill("Archivbrief");
-    await page.waitForTimeout(600); // debounce
-
-    await expect(page.getByText("Test Archivbrief 1848 (bearbeitet)")).toBeVisible();
+    // Wait for the 300 ms debounce to fire and the URL to update before asserting
+    await page.waitForURL(/search=Archivbrief/, { timeout: 5_000 });
+    await expect(page.getByText("Test Archivbrief 1848 (bearbeitet)")).toBeVisible({
+      timeout: 5_000,
+    });
   });
 });
 
@@ -120,9 +122,11 @@ test.describe("TC-SRC-06: Search by author", () => {
     await page.goto("/de/sources");
 
     await page.getByPlaceholder("Titel oder Autor suchen…").fill("Müller");
-    await page.waitForTimeout(600);
-
-    await expect(page.getByText("Test Archivbrief 1848 (bearbeitet)")).toBeVisible();
+    // Wait for the 300 ms debounce to fire and the URL to update before asserting
+    await page.waitForURL(/[?&]search=/, { timeout: 5_000 });
+    await expect(page.getByText("Test Archivbrief 1848 (bearbeitet)")).toBeVisible({
+      timeout: 5_000,
+    });
   });
 });
 
@@ -239,8 +243,9 @@ test.describe("TC-SRC-04: Bulk delete 2 sources", () => {
 
     await page.goto("/de/sources");
 
-    // Select source2 and source3 via checkboxes — use data rows
+    // Wait for the table to be rendered before interacting with checkboxes
     const rows = page.getByRole("row");
+    await expect(rows.nth(1)).toBeVisible({ timeout: 10_000 });
     const rowCount = await rows.count();
 
     // Select first two data rows (skip header)
@@ -251,8 +256,12 @@ test.describe("TC-SRC-04: Bulk delete 2 sources", () => {
       await rows.nth(2).getByRole("checkbox").check();
     }
 
+    // Wait for React to process the selection and reveal the bulk delete button
+    const bulkDeleteBtn = page.getByRole("button", { name: "Löschen" });
+    await expect(bulkDeleteBtn).toBeVisible({ timeout: 5_000 });
+
     // Click bulk delete button
-    await page.getByRole("button", { name: "Löschen" }).click();
+    await bulkDeleteBtn.click();
 
     // Confirm in dialog
     await page.getByRole("button", { name: "Löschen" }).last().click();

@@ -395,8 +395,12 @@ test.describe("TC-2.4-06: Global relations page", () => {
       timeout: 10_000,
     });
 
-    // Seeded relations should be visible
-    await expect(page.getByText("was colleague of").first()).toBeVisible({ timeout: 10_000 });
+    // Seeded relations should be visible.
+    // Use span locator to avoid matching the hidden <option> in the relation-type filter select,
+    // which has the same text but is never "visible".
+    await expect(page.locator("span").filter({ hasText: "was colleague of" }).first()).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Search input is visible
     await expect(page.getByPlaceholder("Suchen…")).toBeVisible();
@@ -417,8 +421,11 @@ test.describe("TC-2.4-06: Global relations page", () => {
     await page.goto("/de/relations");
     await page.waitForURL(/\/de\/relations/);
 
-    // Wait for content
-    await expect(page.getByText("was colleague of").first()).toBeVisible({ timeout: 10_000 });
+    // Wait for relations data to load.
+    // Use span locator to avoid matching the hidden <option> in the filter select.
+    await expect(page.locator("span").filter({ hasText: "was colleague of" }).first()).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Search for something that matches a subset
     await page.getByPlaceholder("Suchen…").fill("Goethe");

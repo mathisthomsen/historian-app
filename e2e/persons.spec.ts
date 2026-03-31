@@ -122,6 +122,12 @@ test.describe("TC-P-04: Add name variant", () => {
     await page.getByRole("button", { name: "Person speichern" }).click();
     await page.waitForURL(/\/de\/persons\/[^/]+$/, { timeout: 10_000 });
 
+    // After SPA navigation the loading.tsx skeleton is shown briefly with no tabs;
+    // wait for the actual tab panel to become visible before clicking.
+    await expect(page.getByRole("tab", { name: "Weitere Namen" })).toBeVisible({
+      timeout: 15_000,
+    });
+
     // Click Weitere Namen tab
     await page.getByRole("tab", { name: "Weitere Namen" }).click();
     await expect(page.getByText("Carolus Magnus")).toBeVisible();
