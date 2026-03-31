@@ -11,6 +11,7 @@ interface EntityEvidenceTabProps {
   projectId: string;
   entityType: EntityType;
   entityId: string;
+  fieldLabels?: Record<string, string>;
 }
 
 // Map property keys to persons.fields translation keys
@@ -30,7 +31,12 @@ const FIELD_LABEL_KEYS: Record<string, string> = {
   notes: "notes",
 };
 
-export function EntityEvidenceTab({ projectId, entityType, entityId }: EntityEvidenceTabProps) {
+export function EntityEvidenceTab({
+  projectId,
+  entityType,
+  entityId,
+  fieldLabels,
+}: EntityEvidenceTabProps) {
   const t = useTranslations("persons.fields");
   const [items, setItems] = useState<PropertyEvidenceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,9 +77,7 @@ export function EntityEvidenceTab({ projectId, entityType, entityId }: EntityEvi
   }
 
   if (items.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">Keine Nachweise für diese Person vorhanden.</p>
-    );
+    return <p className="text-sm text-muted-foreground">Keine Nachweise vorhanden.</p>;
   }
 
   // Group by property
@@ -88,7 +92,11 @@ export function EntityEvidenceTab({ projectId, entityType, entityId }: EntityEvi
     <div className="space-y-6">
       {Array.from(grouped.entries()).map(([property, fieldItems]) => {
         const labelKey = FIELD_LABEL_KEYS[property];
-        const label = labelKey ? t(labelKey as Parameters<typeof t>[0]) : property;
+        const label = fieldLabels
+          ? (fieldLabels[property] ?? property)
+          : labelKey
+            ? t(labelKey as Parameters<typeof t>[0])
+            : property;
 
         return (
           <div key={property} className="space-y-2">

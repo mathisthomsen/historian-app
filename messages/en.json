@@ -199,6 +199,7 @@
         "persons": "Persons",
         "sources": "Sources",
         "relations": "Relations",
+        "evidence": "Evidence",
         "activity": "Activity"
       },
       "add_sub_event": "Add sub-event",
@@ -370,7 +371,10 @@
     "all_types": "All Types",
     "all_reliabilities": "All",
     "tab_details": "Details",
+    "tab_persons": "Persons",
+    "tab_events": "Events",
     "tab_relations": "Relations",
+    "tab_evidence": "Evidence",
     "tab_activity": "Activity",
     "relations_placeholder": "Relations will be populated in Epic 2.4.",
     "sidebar_link": "Sources",

@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useState } from "react";
 
 import { ActivityLog } from "@/components/relations/ActivityLog";
 import { RelationsTab } from "@/components/relations/RelationsTab";
+import { EntityEvidenceTab } from "@/components/research/EntityEvidenceTab";
 import { EventDetailCard } from "@/components/research/EventDetailCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPartialDate } from "@/lib/date";
@@ -18,6 +20,25 @@ interface EventDetailTabsProps {
 
 export function EventDetailTabs({ event, locale, projectId }: EventDetailTabsProps) {
   const t = useTranslations("events.detail");
+  const tFields = useTranslations("events.fields");
+  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
+
+  function handleRefresh() {
+    setActivityRefreshKey((k) => k + 1);
+  }
+
+  const eventFieldLabels: Record<string, string> = {
+    title: tFields("title"),
+    description: tFields("description"),
+    start_year: tFields("start_date"),
+    start_month: tFields("start_date"),
+    start_day: tFields("start_date"),
+    end_year: tFields("end_date"),
+    end_month: tFields("end_date"),
+    end_day: tFields("end_date"),
+    location: tFields("location"),
+    notes: tFields("notes"),
+  };
 
   const subEventCount = event._count?.sub_events ?? event.sub_events?.length ?? 0;
 
@@ -65,11 +86,12 @@ export function EventDetailTabs({ event, locale, projectId }: EventDetailTabsPro
         <TabsTrigger value="persons">{t("tabs.persons")}</TabsTrigger>
         <TabsTrigger value="sources">{t("tabs.sources")}</TabsTrigger>
         <TabsTrigger value="relations">{t("tabs.relations")}</TabsTrigger>
+        <TabsTrigger value="evidence">{t("tabs.evidence")}</TabsTrigger>
         <TabsTrigger value="activity">{t("tabs.activity")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="attributes" className="mt-4">
-        <EventDetailCard event={event} locale={locale} />
+        <EventDetailCard event={event} locale={locale} projectId={projectId} />
       </TabsContent>
 
       <TabsContent value="sub_events" className="mt-4">
@@ -95,11 +117,25 @@ export function EventDetailTabs({ event, locale, projectId }: EventDetailTabsPro
       </TabsContent>
 
       <TabsContent value="persons" className="mt-4">
-        <p className="text-sm text-muted-foreground">{t("relations_placeholder")}</p>
+        <RelationsTab
+          projectId={projectId}
+          entityType="EVENT"
+          entityId={event.id}
+          entityLabel={event.title}
+          filterToEntityType="PERSON"
+          onRefresh={handleRefresh}
+        />
       </TabsContent>
 
       <TabsContent value="sources" className="mt-4">
-        <p className="text-sm text-muted-foreground">{t("relations_placeholder")}</p>
+        <RelationsTab
+          projectId={projectId}
+          entityType="EVENT"
+          entityId={event.id}
+          entityLabel={event.title}
+          filterToEntityType="SOURCE"
+          onRefresh={handleRefresh}
+        />
       </TabsContent>
 
       <TabsContent value="relations" className="mt-4">
@@ -108,11 +144,26 @@ export function EventDetailTabs({ event, locale, projectId }: EventDetailTabsPro
           entityType="EVENT"
           entityId={event.id}
           entityLabel={event.title}
+          onRefresh={handleRefresh}
+        />
+      </TabsContent>
+
+      <TabsContent value="evidence" className="mt-4">
+        <EntityEvidenceTab
+          projectId={projectId}
+          entityType="EVENT"
+          entityId={event.id}
+          fieldLabels={eventFieldLabels}
         />
       </TabsContent>
 
       <TabsContent value="activity" className="mt-4">
-        <ActivityLog projectId={projectId} entityType="EVENT" entityId={event.id} />
+        <ActivityLog
+          projectId={projectId}
+          entityType="EVENT"
+          entityId={event.id}
+          refreshKey={activityRefreshKey}
+        />
       </TabsContent>
     </Tabs>
   );

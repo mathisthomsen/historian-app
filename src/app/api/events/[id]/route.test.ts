@@ -50,6 +50,10 @@ vi.mock("@/lib/sanitize", () => ({
   sanitize: vi.fn((s: string) => s),
 }));
 
+vi.mock("@/lib/activity", () => ({
+  logActivity: vi.fn(() => Promise.resolve()),
+}));
+
 // Import AFTER mocks are registered
 const { DELETE } = await import("./route");
 

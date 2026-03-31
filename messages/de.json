@@ -199,6 +199,7 @@
         "persons": "Personen",
         "sources": "Quellen",
         "relations": "Relationen",
+        "evidence": "Nachweise",
         "activity": "Verlauf"
       },
       "add_sub_event": "Unterereignis hinzufügen",
@@ -370,7 +371,10 @@
     "all_types": "Alle Typen",
     "all_reliabilities": "Alle",
     "tab_details": "Details",
+    "tab_persons": "Personen",
+    "tab_events": "Ereignisse",
     "tab_relations": "Verknüpfungen",
+    "tab_evidence": "Nachweise",
     "tab_activity": "Verlauf",
     "relations_placeholder": "Verknüpfungen werden nach Abschluss von Epic 2.4 angezeigt.",
     "sidebar_link": "Quellen",

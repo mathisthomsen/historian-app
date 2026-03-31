@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { logActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -296,6 +297,41 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     data: updateData,
     include: eventDetailInclude,
   });
+
+  const loggableFields = [
+    "title",
+    "description",
+    "event_type_id",
+    "start_year",
+    "start_month",
+    "start_day",
+    "start_date_certainty",
+    "end_year",
+    "end_month",
+    "end_day",
+    "end_date_certainty",
+    "location",
+    "parent_id",
+    "notes",
+  ] as const;
+
+  for (const field of loggableFields) {
+    if (!(field in data)) continue;
+    const oldVal = existing[field];
+    const newVal = updated[field];
+    if (oldVal !== newVal) {
+      await logActivity({
+        project_id: existing.project_id,
+        entity_type: "EVENT",
+        entity_id: id,
+        user_id: user.id,
+        action: "UPDATE",
+        field_path: field,
+        old_value: oldVal,
+        new_value: newVal,
+      }).catch(console.error);
+    }
+  }
 
   await cache.invalidateByPrefix(`event-list:${existing.project_id}:`);
 
