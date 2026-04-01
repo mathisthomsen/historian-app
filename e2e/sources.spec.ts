@@ -278,12 +278,13 @@ test.describe("TC-SRC-04: Bulk delete 2 sources", () => {
     // Wait for refresh
     await page.waitForTimeout(1_000);
 
-    // Sources should be gone
+    // Specific deleted sources should be gone — check by ID href to avoid matching
+    // leftover sources with the same title from previous CI runs
     if (source2Id) {
-      await expect(page.getByText("Hochwertige Quelle").first()).not.toBeVisible();
+      await expect(page.locator(`a[href="/de/sources/${source2Id}"]`)).not.toBeVisible();
     }
     if (source3Id) {
-      await expect(page.getByText("Bulk Delete Quelle 3").first()).not.toBeVisible();
+      await expect(page.locator(`a[href="/de/sources/${source3Id}"]`)).not.toBeVisible();
     }
   });
 });

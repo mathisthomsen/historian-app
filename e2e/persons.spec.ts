@@ -40,7 +40,8 @@ test.describe("TC-P-01: Persons list page", () => {
     await expect(page.getByText("Vorname")).toBeVisible();
     await expect(page.getByText("Geburtsdatum")).toBeVisible();
     await expect(page.getByText("Sterbedatum")).toBeVisible();
-    // Seed has von Goethe, von Schiller, von Humboldt, von Humboldt (Caroline)
+    // Search for seed person — pagination-safe (accumulated test data may push page 1 past 25 items)
+    await page.goto("/de/persons?search=Goethe");
     await expect(page.getByText("von Goethe")).toBeVisible();
   });
 });
@@ -279,11 +280,9 @@ test.describe("TC-P-10: English locale persons page", () => {
 test.describe("TC-P-11: Person detail attributes", () => {
   test("detail page shows birth year and seed person notes", async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/de/persons");
-
-    // Navigate to Goethe's detail page (seed data)
-    await page.getByText("von Goethe").click();
-    await page.waitForURL(/\/de\/persons\/[^/]+$/, { timeout: 5_000 });
+    // Navigate directly to seed person — pagination-safe
+    await page.goto("/de/persons/seed-person-goethe");
+    await page.waitForURL(/\/de\/persons\/seed-person-goethe/);
 
     await expect(page.getByRole("heading", { name: /Goethe/ })).toBeVisible();
     // Birth year 1749 should be visible
@@ -297,9 +296,9 @@ test.describe("TC-P-11: Person detail attributes", () => {
 test.describe("TC-P-12: Weitere Namen tab", () => {
   test("Goethe detail page shows Latin name variant", async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/de/persons");
-    await page.getByText("von Goethe").click();
-    await page.waitForURL(/\/de\/persons\/[^/]+$/, { timeout: 5_000 });
+    // Navigate directly to seed person — pagination-safe
+    await page.goto("/de/persons/seed-person-goethe");
+    await page.waitForURL(/\/de\/persons\/seed-person-goethe/);
 
     // Click Weitere Namen tab
     await page.getByRole("tab", { name: "Weitere Namen" }).click();

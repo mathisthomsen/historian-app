@@ -111,7 +111,7 @@ export function EntitySelector({
 
     setSearching(true);
     fetch(
-      `/api/${apiPath}?q=${encodeURIComponent(debouncedQuery)}&projectId=${encodeURIComponent(projectId)}&limit=10`,
+      `/api/${apiPath}?search=${encodeURIComponent(debouncedQuery)}&projectId=${encodeURIComponent(projectId)}&pageSize=10`,
       { signal: controller.signal },
     )
       .then((r) => r.json())
@@ -165,7 +165,7 @@ export function EntitySelector({
     return (
       <div className="flex items-center gap-2">
         <Badge variant="secondary" className="flex items-center gap-1 text-sm">
-          <span className="text-xs text-muted-foreground">{ENTITY_TYPE_LABELS[value.type]}</span>
+          <span className="text-muted-foreground text-xs">{ENTITY_TYPE_LABELS[value.type]}</span>
           <span>{selectedLabel}</span>
         </Badge>
         {!disabled && (
@@ -188,7 +188,7 @@ export function EntitySelector({
     <div className="flex items-center gap-2">
       {availableTypes.length > 1 && (
         <select
-          className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+          className="border-input bg-background rounded-md border px-2 py-1 text-sm"
           value={selectedType}
           onChange={(e) => {
             setSelectedType(e.target.value as EntityType);
@@ -209,7 +209,7 @@ export function EntitySelector({
           <Button
             type="button"
             variant="outline"
-            className="min-w-[160px] justify-start text-muted-foreground"
+            className="text-muted-foreground min-w-[160px] justify-start"
             disabled={disabled}
           >
             {displayPlaceholder}
@@ -220,10 +220,10 @@ export function EntitySelector({
             <CommandInput placeholder="Suchen…" value={query} onValueChange={setQuery} />
             <CommandList>
               {searching && (
-                <div className="py-2 text-center text-sm text-muted-foreground">Suche…</div>
+                <div className="text-muted-foreground py-2 text-center text-sm">Suche…</div>
               )}
               {!searching && query.length < 1 && (
-                <div className="py-2 text-center text-sm text-muted-foreground">
+                <div className="text-muted-foreground py-2 text-center text-sm">
                   Mindestens 1 Zeichen eingeben
                 </div>
               )}
