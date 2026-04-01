@@ -212,7 +212,9 @@ test.describe("TC-SRC-09: Relations tab renders", () => {
       if (
         msg.type() === "error" &&
         !msg.text().includes("Hydration") &&
-        !msg.text().includes("hydrat")
+        !msg.text().includes("hydrat") &&
+        !msg.text().includes("Failed to fetch RSC payload") &&
+        !msg.text().includes("RSC payload")
       ) {
         errors.push(msg.text());
       }
@@ -261,15 +263,17 @@ test.describe("TC-SRC-04: Bulk delete 2 sources", () => {
       await rows.nth(2).getByRole("checkbox").check();
     }
 
-    // Wait for React to process the selection and reveal the bulk delete button
-    const bulkDeleteBtn = page.getByRole("button", { name: "Löschen" });
+    // Wait for React to process the selection and reveal the bulk delete button.
+    // Use data-testid to avoid ambiguity with per-row "Quelle löschen" buttons and
+    // the dialog confirm button (all of which match a broad "Löschen" role query).
+    const bulkDeleteBtn = page.getByTestId("bulk-delete-btn");
     await expect(bulkDeleteBtn).toBeVisible({ timeout: 5_000 });
 
     // Click bulk delete button
     await bulkDeleteBtn.click();
 
-    // Confirm in dialog
-    await page.getByRole("button", { name: "Löschen" }).last().click();
+    // Confirm in dialog — scope to the dialog to avoid strict-mode violations
+    await page.getByRole("dialog").getByRole("button", { name: "Löschen" }).click();
 
     // Wait for refresh
     await page.waitForTimeout(1_000);

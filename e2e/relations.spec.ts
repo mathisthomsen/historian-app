@@ -81,12 +81,21 @@ test.describe("TC-2.4-01: Create relation with evidence", () => {
       .first();
     await zuSection.getByRole("button", { name: "Entität auswählen…" }).click();
 
-    // Wait for search input and type Schiller
+    // Wait for search input and type Schiller.
+    // Set up the API response listener BEFORE fill so the 300 ms debounce doesn't race.
+    const schillerSearchPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/persons") && res.status() === 200,
+      { timeout: 15_000 },
+    );
     await page.getByPlaceholder("Suchen…").last().fill("Schiller");
-    await expect(page.getByRole("option", { name: /Friedrich.*Schiller/ })).toBeVisible({
-      timeout: 8_000,
+    await schillerSearchPromise;
+    await expect(page.getByRole("option", { name: /Friedrich.*Schiller/ }).first()).toBeVisible({
+      timeout: 10_000,
     });
-    await page.getByRole("option", { name: /Friedrich.*Schiller/ }).click();
+    await page
+      .getByRole("option", { name: /Friedrich.*Schiller/ })
+      .first()
+      .click();
 
     // Select relation type "was colleague of" — native <select>
     // Option text is "name / inverse_name" = "was colleague of / was colleague of"
@@ -315,11 +324,19 @@ test.describe("TC-2.4-04: Activity log", () => {
       .filter({ has: page.getByText("Zu", { exact: true }) })
       .first();
     await zuSection.getByRole("button", { name: "Entität auswählen…" }).click();
+    const carolineSearchPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/persons") && res.status() === 200,
+      { timeout: 15_000 },
+    );
     await page.getByPlaceholder("Suchen…").last().fill("Caroline");
-    await expect(page.getByRole("option", { name: /Caroline.*Humboldt/ })).toBeVisible({
-      timeout: 8_000,
+    await carolineSearchPromise;
+    await expect(page.getByRole("option", { name: /Caroline.*Humboldt/ }).first()).toBeVisible({
+      timeout: 10_000,
     });
-    await page.getByRole("option", { name: /Caroline.*Humboldt/ }).click();
+    await page
+      .getByRole("option", { name: /Caroline.*Humboldt/ })
+      .first()
+      .click();
 
     // Select relation type — native <select>
     // Option text is "name / inverse_name" = "ist verwandt mit / ist verwandt mit"
@@ -437,12 +454,8 @@ test.describe("TC-2.4-06: Global relations page", () => {
       timeout: 10_000,
     });
 
-    // Search for something that matches a subset
+    // Search for something that matches a subset — confirm fill took effect
     await page.getByPlaceholder("Suchen…").fill("Goethe");
-
-    // Wait for debounced search — relations involving Goethe should appear
-    await page.waitForTimeout(500);
-    // At least the list should render (may filter down)
     await expect(page.getByPlaceholder("Suchen…")).toHaveValue("Goethe");
   });
 });

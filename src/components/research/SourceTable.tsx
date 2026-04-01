@@ -1,9 +1,9 @@
 "use client";
 
 import { Pencil } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -234,7 +234,12 @@ export function SourceTable({
               <span className="text-sm text-muted-foreground">
                 {t("bulk.selected", { count: selectedIds.length })}
               </span>
-              <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+              <Button
+                data-testid="bulk-delete-btn"
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkDeleteOpen(true)}
+              >
                 {t("bulk.delete_button")}
               </Button>
             </>

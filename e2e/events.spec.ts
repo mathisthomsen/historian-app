@@ -205,8 +205,14 @@ test.describe("TC-E-06: Delete event — blocked with sub-events", () => {
 
     // Try to delete parent — should show sub-event warning
     await page.goto(`/de/events/${wwiEventId}`);
-    await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: /löschen/i }).click();
+    // Wait for delete button to be visible before clicking
+    await expect(page.getByRole("button", { name: /löschen/i }).first()).toBeVisible({
+      timeout: 10_000,
+    });
+    await page
+      .getByRole("button", { name: /löschen/i })
+      .first()
+      .click();
 
     // Toast warning should appear (sub-event blocks deletion)
     await expect(page.getByRole("listitem").filter({ hasText: /Unterereignisse/ })).toBeVisible({
@@ -253,7 +259,7 @@ test.describe("TC-E-07: Bulk delete events", () => {
 
     // Navigate to events list filtered to our test events
     await page.goto("/de/events?search=Bulk+Delete+Test");
-    await page.waitForLoadState("networkidle");
+    await page.waitForURL(/search=Bulk\+Delete\+Test/, { timeout: 5_000 });
 
     // Check all checkboxes
     const checkboxes = page.getByRole("checkbox");
@@ -268,16 +274,21 @@ test.describe("TC-E-07: Bulk delete events", () => {
     await checkboxes.nth(1).check();
     await checkboxes.nth(2).check();
 
-    // Click bulk delete button
-    await page.getByRole("button", { name: /löschen/i }).click();
-
-    // Confirm in dialog
+    // Click bulk delete button — the bulk trigger is the first /löschen/ button in the toolbar
+    // (individual event rows in this filtered list don't have separate row-level delete buttons)
     await page
+      .getByRole("button", { name: /löschen/i })
+      .first()
+      .click();
+
+    // Confirm in dialog — scope to dialog to avoid strict-mode violations
+    await page
+      .getByRole("dialog")
       .getByRole("button", { name: /bestätigen|ja|löschen/i })
       .last()
       .click();
 
-    await expect(page.getByText(/gelöscht|deleted/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/gelöscht|deleted/i).first()).toBeVisible({ timeout: 10_000 });
   });
 });
 
@@ -303,11 +314,9 @@ test.describe("TC-E-08: Filter by EventType", () => {
     // Select Krieg (type filter uses custom buttons, not checkboxes)
     await page.getByRole("button", { name: "Krieg" }).click();
 
-    // Close popover
+    // Close popover and wait for filtered results to render
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(500);
-
-    await expect(page.getByText("Erster Weltkrieg").first()).toBeVisible();
+    await expect(page.getByText("Erster Weltkrieg").first()).toBeVisible({ timeout: 8_000 });
   });
 });
 
@@ -395,7 +404,7 @@ test.describe("TC-E-11: Search by title", () => {
     await page.goto("/de/events");
 
     await page.getByPlaceholder(/Nach Titel suchen|Search by title/i).fill("Weltkrieg");
-    await page.waitForTimeout(500);
+    await page.waitForURL(/search=Weltkrieg/, { timeout: 5_000 });
 
     await expect(page.getByText("Erster Weltkrieg").first()).toBeVisible();
     // Other events should not be visible
@@ -530,8 +539,7 @@ test.describe("TC-E-13: EventType settings CRUD", () => {
       .last()
       .click();
 
-    await page.waitForTimeout(1000);
-    await expect(page.getByText("Forschung")).not.toBeVisible();
+    await expect(page.getByText("Forschung")).not.toBeVisible({ timeout: 5_000 });
   });
 });
 

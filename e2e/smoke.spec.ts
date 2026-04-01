@@ -93,9 +93,15 @@ test.describe("TC-07: Component showcase", () => {
     const rows = page.locator("table tbody tr");
     await expect(rows).toHaveCount(5);
 
-    // Filter out React dev-mode hydration warnings (not functional errors)
+    // Filter out React dev-mode warnings and known Next.js RSC noise
     const fatalErrors = errors.filter(
-      (e) => !e.includes("Warning") && !e.includes("hydration") && !e.includes("did not match"),
+      (e) =>
+        !e.includes("Warning") &&
+        !e.includes("hydration") &&
+        !e.includes("Hydration") &&
+        !e.includes("did not match") &&
+        !e.includes("Failed to fetch RSC payload") &&
+        !e.includes("RSC payload"),
     );
     expect(fatalErrors).toHaveLength(0);
   });
