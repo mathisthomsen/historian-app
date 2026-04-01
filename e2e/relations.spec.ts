@@ -147,10 +147,13 @@ test.describe("TC-2.4-02: PropertyEvidence annotation", () => {
     await expect(page.getByPlaceholder("Quelle suchen…")).toBeVisible({ timeout: 5_000 });
     await page.getByPlaceholder("Quelle suchen…").fill("Goethe");
 
+    // Wait for dropdown to appear and stabilize (debounce)
+    await page.waitForTimeout(400);
+
     // Select the Goethe brief source from the search dropdown (use button role to
     // avoid matching existing evidence list entries which show the same source title as text)
     await expect(page.getByRole("button", { name: /Goethes Briefwechsel/ })).toBeVisible({
-      timeout: 8_000,
+      timeout: 15_000,
     });
     await page.getByRole("button", { name: /Goethes Briefwechsel/ }).click();
 

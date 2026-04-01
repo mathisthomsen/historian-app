@@ -305,7 +305,8 @@ test.describe("TC-P-12: Weitere Namen tab", () => {
     await page.getByRole("tab", { name: "Weitere Namen" }).click();
 
     // Seed has Ioannes Wolfgangus de Goethe (la)
-    await expect(page.getByText("Ioannes Wolfgangus de Goethe")).toBeVisible();
-    await expect(page.getByText("la")).toBeVisible();
+    const nameVariantRow = page.getByText("Ioannes Wolfgangus de Goethe");
+    await expect(nameVariantRow).toBeVisible();
+    await expect(nameVariantRow.locator("..").getByText("la")).toBeVisible();
   });
 });

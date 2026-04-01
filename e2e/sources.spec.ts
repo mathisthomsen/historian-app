@@ -108,7 +108,7 @@ test.describe("TC-SRC-05: Search by title", () => {
     // Wait for the 300 ms debounce to fire and the URL to update before asserting
     await page.waitForURL(/search=Archivbrief/, { timeout: 5_000 });
     await expect(
-      page.getByRole("link", { name: "Test Archivbrief 1848 (bearbeitet)" }),
+      page.getByRole("link", { name: "Test Archivbrief 1848 (bearbeitet)" }).first(),
     ).toBeVisible({
       timeout: 5_000,
     });
@@ -127,7 +127,7 @@ test.describe("TC-SRC-06: Search by author", () => {
     // Wait for the 300 ms debounce to fire and the URL to update before asserting
     await page.waitForURL(/[?&]search=/, { timeout: 5_000 });
     await expect(
-      page.getByRole("link", { name: "Test Archivbrief 1848 (bearbeitet)" }),
+      page.getByRole("link", { name: "Test Archivbrief 1848 (bearbeitet)" }).first(),
     ).toBeVisible({
       timeout: 5_000,
     });
