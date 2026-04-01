@@ -130,8 +130,13 @@ test.describe("TC-P-04: Add name variant", () => {
 
     // Click Weitere Namen tab
     await page.getByRole("tab", { name: "Weitere Namen" }).click();
-    await expect(page.getByText("Carolus Magnus")).toBeVisible();
-    await expect(page.getByText("la")).toBeVisible();
+
+    // Check that the name variant is visible
+    const nameVariantRow = page.getByText("Carolus Magnus");
+    await expect(nameVariantRow).toBeVisible();
+
+    // Check language code is visible within the same row as the name
+    await expect(nameVariantRow.locator("..").getByText("la")).toBeVisible();
   });
 });
 

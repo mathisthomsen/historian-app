@@ -107,7 +107,9 @@ test.describe("TC-SRC-05: Search by title", () => {
     await page.getByPlaceholder("Titel oder Autor suchen…").fill("Archivbrief");
     // Wait for the 300 ms debounce to fire and the URL to update before asserting
     await page.waitForURL(/search=Archivbrief/, { timeout: 5_000 });
-    await expect(page.getByText("Test Archivbrief 1848 (bearbeitet)")).toBeVisible({
+    await expect(
+      page.getByRole("link", { name: "Test Archivbrief 1848 (bearbeitet)" }),
+    ).toBeVisible({
       timeout: 5_000,
     });
   });

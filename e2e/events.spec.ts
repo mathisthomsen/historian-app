@@ -553,9 +553,12 @@ test.describe("TC-E-14: Pagination", () => {
     await page.goto("/de/events");
 
     // Pagination element or page count should be present
-    await expect(
-      page.getByText(/Seite|Page/).or(page.getByRole("button", { name: /Weiter|Next/ })),
-    ).toBeVisible({ timeout: 10_000 });
+    const paginationElement = page
+      .getByRole("button", { name: /Weiter|Next/ })
+      .or(page.getByRole("button", { name: /Zurück|Previous/ }))
+      .first();
+
+    await expect(paginationElement).toBeVisible({ timeout: 10_000 });
   });
 });
 
