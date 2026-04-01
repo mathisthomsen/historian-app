@@ -1,9 +1,9 @@
 "use client";
 
 import { Pencil } from "lucide-react";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -116,7 +116,7 @@ export function SourceTable({
       cell: (row: SourceSummary) => (
         <Link
           href={`/${locale}/sources/${row.id}`}
-          className="underline hover:text-foreground"
+          className="hover:text-foreground underline"
           onClick={(e) => e.stopPropagation()}
         >
           {row.title}
@@ -131,7 +131,7 @@ export function SourceTable({
       key: "type",
       header: t("columns.type"),
       cell: (row: SourceSummary) => (
-        <span className="rounded bg-muted px-2 py-0.5 text-xs">{row.type}</span>
+        <span className="bg-muted rounded px-2 py-0.5 text-xs">{row.type}</span>
       ),
     },
     {
@@ -160,7 +160,7 @@ export function SourceTable({
       cell: (row: SourceSummary) => (
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <Link href={`/${locale}/sources/${row.id}/edit`} aria-label="Edit">
-            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            <Pencil className="text-muted-foreground hover:text-foreground h-4 w-4" />
           </Link>
           <DeleteSourceButton id={row.id} locale={locale} label={t("delete")} />
         </div>
@@ -176,7 +176,7 @@ export function SourceTable({
         <p className="text-muted-foreground">{t("empty_state")}</p>
         <Link
           href={`/${locale}/sources/new`}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           {t("empty_action")}
         </Link>
@@ -198,7 +198,7 @@ export function SourceTable({
           <select
             value={type}
             onChange={(e) => handleTypeChange(e.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+            className="border-input bg-background rounded-md border px-3 py-1.5 text-sm"
           >
             <option value="">{t("all_types")}</option>
             {SOURCE_TYPE_SUGGESTIONS.map((s) => (
@@ -231,7 +231,7 @@ export function SourceTable({
         <div className="flex items-center gap-2">
           {selectedIds.length > 0 && (
             <>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground text-sm">
                 {t("bulk.selected", { count: selectedIds.length })}
               </span>
               <Button
@@ -246,7 +246,7 @@ export function SourceTable({
           )}
           <Link
             href={`/${locale}/sources/new`}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
           >
             {t("create")}
           </Link>
@@ -254,7 +254,7 @@ export function SourceTable({
       </div>
 
       {sources.length === 0 ? (
-        <p className="py-8 text-center text-muted-foreground">{t("empty_state")}</p>
+        <p className="text-muted-foreground py-8 text-center">{t("empty_state")}</p>
       ) : (
         <DataTable
           data={sources}
@@ -266,7 +266,7 @@ export function SourceTable({
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {total} {total === 1 ? "Quelle" : "Quellen"}
         </p>
         <DataTablePagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
