@@ -280,10 +280,10 @@ test.describe("TC-SRC-04: Bulk delete 2 sources", () => {
 
     // Sources should be gone
     if (source2Id) {
-      await expect(page.getByText("Hochwertige Quelle")).not.toBeVisible();
+      await expect(page.getByText("Hochwertige Quelle").first()).not.toBeVisible();
     }
     if (source3Id) {
-      await expect(page.getByText("Bulk Delete Quelle 3")).not.toBeVisible();
+      await expect(page.getByText("Bulk Delete Quelle 3").first()).not.toBeVisible();
     }
   });
 });

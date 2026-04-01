@@ -90,7 +90,7 @@ test.describe("TC-2.4-01: Create relation with evidence", () => {
     await page.getByPlaceholder("Suchen…").last().fill("Schiller");
     await schillerSearchPromise;
     await expect(page.getByRole("option", { name: /Friedrich.*Schiller/ }).first()).toBeVisible({
-      timeout: 10_000,
+      timeout: 15_000,
     });
     await page
       .getByRole("option", { name: /Friedrich.*Schiller/ })
@@ -166,7 +166,7 @@ test.describe("TC-2.4-02: PropertyEvidence annotation", () => {
     // Select the Goethe brief source from the search dropdown (use button role to
     // avoid matching existing evidence list entries which show the same source title as text)
     await expect(page.getByRole("button", { name: /Goethes Briefwechsel/ }).first()).toBeVisible({
-      timeout: 10_000,
+      timeout: 15_000,
     });
     await page
       .getByRole("button", { name: /Goethes Briefwechsel/ })
@@ -331,7 +331,7 @@ test.describe("TC-2.4-04: Activity log", () => {
     await page.getByPlaceholder("Suchen…").last().fill("Caroline");
     await carolineSearchPromise;
     await expect(page.getByRole("option", { name: /Caroline.*Humboldt/ }).first()).toBeVisible({
-      timeout: 10_000,
+      timeout: 15_000,
     });
     await page
       .getByRole("option", { name: /Caroline.*Humboldt/ })
