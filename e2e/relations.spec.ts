@@ -145,17 +145,24 @@ test.describe("TC-2.4-02: PropertyEvidence annotation", () => {
 
     // EvidenceForm appears — search for a source
     await expect(page.getByPlaceholder("Quelle suchen…")).toBeVisible({ timeout: 5_000 });
-    await page.getByPlaceholder("Quelle suchen…").fill("Goethe");
 
-    // Wait for dropdown to appear and stabilize (debounce)
-    await page.waitForTimeout(400);
+    // Wait for the API response before asserting on the dropdown results
+    const searchResponsePromise = page.waitForResponse(
+      (res) => res.url().includes("/api/sources") && res.status() === 200,
+      { timeout: 15_000 },
+    );
+    await page.getByPlaceholder("Quelle suchen…").fill("Goethe");
+    await searchResponsePromise;
 
     // Select the Goethe brief source from the search dropdown (use button role to
     // avoid matching existing evidence list entries which show the same source title as text)
-    await expect(page.getByRole("button", { name: /Goethes Briefwechsel/ })).toBeVisible({
-      timeout: 15_000,
+    await expect(page.getByRole("button", { name: /Goethes Briefwechsel/ }).first()).toBeVisible({
+      timeout: 10_000,
     });
-    await page.getByRole("button", { name: /Goethes Briefwechsel/ }).click();
+    await page
+      .getByRole("button", { name: /Goethes Briefwechsel/ })
+      .first()
+      .click();
 
     // Fill page reference and quote
     await page.getByPlaceholder("z. B. S. 42, fol. 3v").fill("S. 1");

@@ -156,7 +156,8 @@ test.describe("TC-SRC-07: Filter by reliability HIGH", () => {
 
     // Now filter by HIGH
     await page.goto("/de/sources?reliability=HIGH");
-    await expect(page.getByText("Hochwertige Quelle")).toBeVisible();
+    // Use .first() — retries may have created multiple sources with the same title
+    await expect(page.getByText("Hochwertige Quelle").first()).toBeVisible();
     // The MEDIUM source should not be visible
     await expect(page.getByText("Test Archivbrief 1848 (bearbeitet)")).not.toBeVisible();
   });
