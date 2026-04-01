@@ -49,7 +49,7 @@ export function EvidenceForm({ projectId, onSubmit, onCancel }: EvidenceFormProp
       return;
     }
     const res = await fetch(
-      `/api/sources?q=${encodeURIComponent(q)}&projectId=${encodeURIComponent(projectId)}&limit=10`,
+      `/api/sources?search=${encodeURIComponent(q)}&projectId=${encodeURIComponent(projectId)}&pageSize=10`,
     );
     if (res.ok) {
       const data = (await res.json()) as { data?: SourceSearchResult[] } | SourceSearchResult[];
@@ -92,7 +92,7 @@ export function EvidenceForm({ projectId, onSubmit, onCancel }: EvidenceFormProp
             <span className="text-sm">{selectedSource.title}</span>
             <button
               type="button"
-              className="text-xs text-muted-foreground underline hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground text-xs underline"
               onClick={() => {
                 setSelectedSource(null);
                 setSourceQuery("");
@@ -110,12 +110,12 @@ export function EvidenceForm({ projectId, onSubmit, onCancel }: EvidenceFormProp
               placeholder="Quelle suchen…"
             />
             {sourceResults.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg">
+              <div className="bg-background absolute z-10 mt-1 w-full rounded-md border shadow-lg">
                 {sourceResults.map((src) => (
                   <button
                     key={src.id}
                     type="button"
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                    className="hover:bg-accent w-full px-3 py-2 text-left text-sm"
                     onClick={() => {
                       setSelectedSource(src);
                       setSourceQuery(src.title);
@@ -158,7 +158,7 @@ export function EvidenceForm({ projectId, onSubmit, onCancel }: EvidenceFormProp
         label={t("fields.confidence")}
       />
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
 
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={submitting || !selectedSource}>

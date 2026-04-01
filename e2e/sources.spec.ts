@@ -248,7 +248,10 @@ test.describe("TC-SRC-04: Bulk delete 2 sources", () => {
     const url = page.url();
     source3Id = url.split("/").pop() ?? "";
 
-    await page.goto("/de/sources");
+    // Search to narrow the list to only our test sources — prevents accidentally
+    // selecting random accumulated sources from previous CI runs
+    await page.goto("/de/sources?search=Bulk+Delete+Quelle");
+    await page.waitForURL(/search=Bulk\+Delete\+Quelle/, { timeout: 5_000 });
 
     // Wait for the table to be rendered before interacting with checkboxes
     const rows = page.getByRole("row");
