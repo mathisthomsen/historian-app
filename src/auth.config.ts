@@ -1,15 +1,9 @@
 import type { UserRole } from "@prisma/client";
+import { NextResponse } from "next/server";
 import type { NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 
-const PUBLIC_PATHS = new Set([
-  "/auth/login",
-  "/auth/register",
-  "/auth/verify",
-  "/auth/forgot-password",
-  "/auth/reset-password",
-  "/",
-]);
+const DEFAULT_LOCALE = "de";
 
 export const authConfig: NextAuthConfig = {
   providers: [],
@@ -38,18 +32,17 @@ export const authConfig: NextAuthConfig = {
       if (jwt.projectId) session.user.projectId = jwt.projectId;
       return session;
     },
-    authorized({ auth: session, request }) {
+    authorized({ request }) {
       const { pathname } = request.nextUrl;
-      const isLoggedIn = !!session?.user;
+      const locale = pathname.match(/^\/([a-z]{2})/)?.[1] ?? DEFAULT_LOCALE;
       const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
-      const isPublic =
-        PUBLIC_PATHS.has(pathnameWithoutLocale) ||
-        pathnameWithoutLocale === "/" ||
-        pathnameWithoutLocale.startsWith("/api/auth") ||
-        pathnameWithoutLocale === "/api/health" ||
-        pathnameWithoutLocale.startsWith("/dev/");
-      if (isPublic) return true;
-      return isLoggedIn;
+
+      // Allow API routes and the holding page through; redirect everything else.
+      if (pathnameWithoutLocale === "/holding" || pathnameWithoutLocale.startsWith("/api/")) {
+        return true;
+      }
+
+      return NextResponse.redirect(new URL(`/${locale}/holding`, request.url));
     },
   },
 };
