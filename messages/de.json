@@ -18,7 +18,8 @@
       "literature": "Literatur",
       "settings": "Einstellungen",
       "event_types": "Ereignistypen",
-      "relation_types": "Relationstypen"
+      "relation_types": "Relationstypen",
+      "bottomNav": "Untere Navigation"
     },
     "topbar": {
       "toggleSidebar": "Seitenleiste umschalten",

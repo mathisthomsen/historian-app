@@ -6,8 +6,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { EvidenceForm } from "@/components/relations/EvidenceForm";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PropertyEvidenceItem } from "@/types/relations";
+
+type BadgeVariant = BadgeProps["variant"];
 
 interface EvidenceListProps {
   items: PropertyEvidenceItem[];
@@ -25,6 +28,7 @@ interface EvidenceListProps {
 
 export function EvidenceList({ items, projectId, onAdd, onDelete, loading }: EvidenceListProps) {
   const t = useTranslations("propertyEvidence");
+  const tCertainty = useTranslations("relations.certainties");
   const [showForm, setShowForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -47,7 +51,7 @@ export function EvidenceList({ items, projectId, onAdd, onDelete, loading }: Evi
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-4 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-2 py-4">
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
@@ -56,7 +60,7 @@ export function EvidenceList({ items, projectId, onAdd, onDelete, loading }: Evi
   return (
     <div className="space-y-3">
       {items.length === 0 && !showForm && (
-        <p className="text-sm text-muted-foreground">{t("noEvidence")}</p>
+        <p className="text-muted-foreground text-sm">{t("noEvidence")}</p>
       )}
 
       <div className="max-h-48 space-y-2 overflow-y-auto">
@@ -71,9 +75,11 @@ export function EvidenceList({ items, projectId, onAdd, onDelete, loading }: Evi
                 <p className="text-muted-foreground">{item.page_reference}</p>
               )}
               {item.quote && (
-                <p className="italic text-muted-foreground">&ldquo;{item.quote}&rdquo;</p>
+                <p className="text-muted-foreground italic">&ldquo;{item.quote}&rdquo;</p>
               )}
-              <p className="text-xs text-muted-foreground">{item.confidence}</p>
+              <Badge variant={item.confidence.toLowerCase() as BadgeVariant}>
+                {tCertainty(item.confidence)}
+              </Badge>
             </div>
             <Button
               type="button"

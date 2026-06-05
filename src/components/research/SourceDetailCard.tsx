@@ -16,11 +16,10 @@ export function SourceDetailCard({ source, locale, projectId }: SourceDetailCard
   const t = useTranslations("sources");
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {/* Title */}
+    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("field_title")}</p>
-        <div className="flex items-center gap-2 text-sm">
+        <dt className="text-muted-foreground text-xs font-medium">{t("field_title")}</dt>
+        <dd className="flex items-center gap-2 text-sm">
           <span>{source.title}</span>
           <PropertyEvidenceBadge
             projectId={projectId}
@@ -29,19 +28,19 @@ export function SourceDetailCard({ source, locale, projectId }: SourceDetailCard
             property="title"
             fieldLabel={t("field_title")}
           />
-        </div>
+        </dd>
       </div>
 
-      {/* Type */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("field_type")}</p>
-        <span className="inline-block rounded bg-muted px-2 py-0.5 text-xs">{source.type}</span>
+        <dt className="text-muted-foreground text-xs font-medium">{t("field_type")}</dt>
+        <dd>
+          <span className="bg-muted inline-block rounded px-2 py-0.5 text-xs">{source.type}</span>
+        </dd>
       </div>
 
-      {/* Author */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("field_author")}</p>
-        <div className="flex items-center gap-2 text-sm">
+        <dt className="text-muted-foreground text-xs font-medium">{t("field_author")}</dt>
+        <dd className="flex items-center gap-2 text-sm">
           <span>{source.author ?? "—"}</span>
           <PropertyEvidenceBadge
             projectId={projectId}
@@ -50,19 +49,19 @@ export function SourceDetailCard({ source, locale, projectId }: SourceDetailCard
             property="author"
             fieldLabel={t("field_author")}
           />
-        </div>
+        </dd>
       </div>
 
-      {/* Reliability */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("field_reliability")}</p>
-        <ReliabilityBadge reliability={source.reliability} />
+        <dt className="text-muted-foreground text-xs font-medium">{t("field_reliability")}</dt>
+        <dd>
+          <ReliabilityBadge reliability={source.reliability} />
+        </dd>
       </div>
 
-      {/* Date */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("field_date")}</p>
-        <div className="flex items-center gap-2 text-sm">
+        <dt className="text-muted-foreground text-xs font-medium">{t("field_date")}</dt>
+        <dd className="flex items-center gap-2 text-sm">
           <span>{source.date ?? "—"}</span>
           <PropertyEvidenceBadge
             projectId={projectId}
@@ -71,13 +70,12 @@ export function SourceDetailCard({ source, locale, projectId }: SourceDetailCard
             property="date"
             fieldLabel={t("field_date")}
           />
-        </div>
+        </dd>
       </div>
 
-      {/* Repository */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("field_repository")}</p>
-        <div className="flex items-center gap-2 text-sm">
+        <dt className="text-muted-foreground text-xs font-medium">{t("field_repository")}</dt>
+        <dd className="flex items-center gap-2 text-sm">
           <span>{source.repository ?? "—"}</span>
           <PropertyEvidenceBadge
             projectId={projectId}
@@ -86,13 +84,12 @@ export function SourceDetailCard({ source, locale, projectId }: SourceDetailCard
             property="repository"
             fieldLabel={t("field_repository")}
           />
-        </div>
+        </dd>
       </div>
 
-      {/* Call Number */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("field_call_number")}</p>
-        <div className="flex items-center gap-2 text-sm">
+        <dt className="text-muted-foreground text-xs font-medium">{t("field_call_number")}</dt>
+        <dd className="flex items-center gap-2 text-sm">
           <span>{source.call_number ?? "—"}</span>
           <PropertyEvidenceBadge
             projectId={projectId}
@@ -101,19 +98,18 @@ export function SourceDetailCard({ source, locale, projectId }: SourceDetailCard
             property="call_number"
             fieldLabel={t("field_call_number")}
           />
-        </div>
+        </dd>
       </div>
 
-      {/* URL */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("field_url")}</p>
-        <div className="flex items-center gap-2 text-sm">
+        <dt className="text-muted-foreground text-xs font-medium">{t("field_url")}</dt>
+        <dd className="flex items-center gap-2 text-sm">
           {source.url ? (
             <a
               href={source.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-foreground"
+              className="hover:text-foreground underline"
             >
               {source.url}
             </a>
@@ -127,14 +123,13 @@ export function SourceDetailCard({ source, locale, projectId }: SourceDetailCard
             property="url"
             fieldLabel={t("field_url")}
           />
-        </div>
+        </dd>
       </div>
 
-      {/* Notes — full width */}
       {source.notes && (
         <div className="space-y-1 sm:col-span-2">
-          <p className="text-xs font-medium text-muted-foreground">{t("field_notes")}</p>
-          <div className="flex items-start gap-2 text-sm">
+          <dt className="text-muted-foreground text-xs font-medium">{t("field_notes")}</dt>
+          <dd className="flex items-start gap-2 text-sm">
             <span className="whitespace-pre-wrap">{source.notes}</span>
             <PropertyEvidenceBadge
               projectId={projectId}
@@ -143,20 +138,19 @@ export function SourceDetailCard({ source, locale, projectId }: SourceDetailCard
               property="notes"
               fieldLabel={t("field_notes")}
             />
-          </div>
+          </dd>
         </div>
       )}
 
-      {/* Footer row */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("created_at")}</p>
-        <p className="text-sm">{new Date(source.created_at).toLocaleDateString(locale)}</p>
+        <dt className="text-muted-foreground text-xs font-medium">{t("created_at")}</dt>
+        <dd className="text-sm">{new Date(source.created_at).toLocaleDateString(locale)}</dd>
       </div>
 
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">{t("updated_at")}</p>
-        <p className="text-sm">{new Date(source.updated_at).toLocaleDateString(locale)}</p>
+        <dt className="text-muted-foreground text-xs font-medium">{t("updated_at")}</dt>
+        <dd className="text-sm">{new Date(source.updated_at).toLocaleDateString(locale)}</dd>
       </div>
-    </div>
+    </dl>
   );
 }

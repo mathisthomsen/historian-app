@@ -4,6 +4,14 @@ import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { SourceForm } from "@/components/research/SourceForm";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -28,8 +36,23 @@ export default async function NewSourcePage({ params }: PageProps) {
   const t = await getTranslations("sources");
 
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold">{t("new_title")}</h1>
+    <div className="page-container mx-auto max-w-2xl space-y-6">
+      <div className="hidden md:block">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/${locale}/sources`}>{t("title")}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>/</BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbPage>{t("new_title")}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+      <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">
+        {t("new_title")}
+      </h1>
       <SourceForm projectId={projectId} locale={locale} />
     </div>
   );

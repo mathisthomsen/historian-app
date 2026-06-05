@@ -5,6 +5,14 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { DeleteEventButton } from "@/components/research/DeleteEventButton";
 import { EventDetailTabs } from "@/components/research/EventDetailTabs";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { prisma } from "@/lib/db";
 import type { EventDetail, EventSummary } from "@/types/event";
 
@@ -123,13 +131,26 @@ export default async function EventDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="page-container mx-auto space-y-6">
+      <div className="hidden md:block">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/${locale}/events`}>{t("title")}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>/</BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbPage>{event.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{event.title}</h1>
+        <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">{event.title}</h1>
         <div className="flex gap-2">
           <Link
             href={`/${locale}/events/${id}/edit`}
-            className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+            className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
           >
             {t("edit_title")}
           </Link>
@@ -141,7 +162,12 @@ export default async function EventDetailPage({ params }: PageProps) {
           />
         </div>
       </div>
-      <EventDetailTabs event={event} locale={locale} projectId={raw.project_id} tabCounts={relationCounts} />
+      <EventDetailTabs
+        event={event}
+        locale={locale}
+        projectId={raw.project_id}
+        tabCounts={relationCounts}
+      />
     </div>
   );
 }

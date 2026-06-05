@@ -13,8 +13,10 @@ export default async function DashboardPage() {
   const name = session.user.name ?? session.user.email;
 
   return (
-    <div className="space-y-4 p-6">
-      <h1 className="text-2xl font-bold">{t("welcome", { name })}</h1>
+    <div className="page-container mx-auto space-y-4">
+      <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">
+        {t("welcome", { name })}
+      </h1>
       <p className="text-muted-foreground">{t("loggedIn")}</p>
       <LogoutButton label={t("logout")} />
     </div>

@@ -8,6 +8,13 @@ import { RelationFormDialog } from "@/components/relations/RelationFormDialog";
 import { RelationRow } from "@/components/relations/RelationRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRelationTypes } from "@/hooks/use-relation-types";
 import type { RelationWithDetails } from "@/types/relations";
 
@@ -74,50 +81,62 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <select
-          value={entityTypeFilter}
-          onChange={(e) => {
-            setEntityTypeFilter(e.target.value);
+        <Select
+          value={entityTypeFilter || "__all__"}
+          onValueChange={(value) => {
+            setEntityTypeFilter(value === "__all__" ? "" : value);
             setPage(1);
           }}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
-          <option value="">{t("filter.all_entity_types")}</option>
-          <option value="PERSON">{t("entityTypes.PERSON")}</option>
-          <option value="EVENT">{t("entityTypes.EVENT")}</option>
-          <option value="SOURCE">{t("entityTypes.SOURCE")}</option>
-        </select>
+          <SelectTrigger className="w-auto">
+            <SelectValue placeholder={t("filter.all_entity_types")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{t("filter.all_entity_types")}</SelectItem>
+            <SelectItem value="PERSON">{t("entityTypes.PERSON")}</SelectItem>
+            <SelectItem value="EVENT">{t("entityTypes.EVENT")}</SelectItem>
+            <SelectItem value="SOURCE">{t("entityTypes.SOURCE")}</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <select
-          value={relationTypeFilter}
-          onChange={(e) => {
-            setRelationTypeFilter(e.target.value);
+        <Select
+          value={relationTypeFilter || "__all__"}
+          onValueChange={(value) => {
+            setRelationTypeFilter(value === "__all__" ? "" : value);
             setPage(1);
           }}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
-          <option value="">{t("filter.all_types")}</option>
-          {allRelationTypes.map((rt) => (
-            <option key={rt.id} value={rt.id}>
-              {rt.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-auto">
+            <SelectValue placeholder={t("filter.all_types")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{t("filter.all_types")}</SelectItem>
+            {allRelationTypes.map((rt) => (
+              <SelectItem key={rt.id} value={rt.id}>
+                {rt.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <select
-          value={certaintyFilter}
-          onChange={(e) => {
-            setCertaintyFilter(e.target.value);
+        <Select
+          value={certaintyFilter || "__all__"}
+          onValueChange={(value) => {
+            setCertaintyFilter(value === "__all__" ? "" : value);
             setPage(1);
           }}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
-          <option value="">{t("filter.all_certainties")}</option>
-          <option value="CERTAIN">{t("certainties.CERTAIN")}</option>
-          <option value="PROBABLE">{t("certainties.PROBABLE")}</option>
-          <option value="POSSIBLE">{t("certainties.POSSIBLE")}</option>
-          <option value="UNKNOWN">{t("certainties.UNKNOWN")}</option>
-        </select>
+          <SelectTrigger className="w-auto">
+            <SelectValue placeholder={t("filter.all_certainties")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{t("filter.all_certainties")}</SelectItem>
+            <SelectItem value="CERTAIN">{t("certainties.CERTAIN")}</SelectItem>
+            <SelectItem value="PROBABLE">{t("certainties.PROBABLE")}</SelectItem>
+            <SelectItem value="POSSIBLE">{t("certainties.POSSIBLE")}</SelectItem>
+            <SelectItem value="UNKNOWN">{t("certainties.UNKNOWN")}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex items-center justify-between gap-2">
@@ -144,11 +163,11 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 py-8 text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 py-8">
           <Loader2 className="h-4 w-4 animate-spin" />
         </div>
       ) : relations.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">{t("noRelations")}</p>
+        <p className="text-muted-foreground py-8 text-center text-sm">{t("noRelations")}</p>
       ) : (
         <div className="space-y-2">
           {relations.map((r) => (
@@ -165,9 +184,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {t("list.total", { count: total })}
-          </p>
+          <p className="text-muted-foreground text-sm">{t("list.total", { count: total })}</p>
           <div className="flex gap-2">
             <Button
               type="button"

@@ -18,7 +18,8 @@
       "literature": "Literature",
       "settings": "Settings",
       "event_types": "Event Types",
-      "relation_types": "Relation Types"
+      "relation_types": "Relation Types",
+      "bottomNav": "Bottom navigation"
     },
     "topbar": {
       "toggleSidebar": "Toggle sidebar",

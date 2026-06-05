@@ -22,38 +22,32 @@ vi.mock("next-intl", async (importOriginal) => {
 });
 
 describe("ReliabilityBadge", () => {
-  it("renders 'Hoch' for HIGH with green classes", () => {
+  it("renders 'Hoch' for HIGH with success variant classes", () => {
     renderWithProviders(<ReliabilityBadge reliability="HIGH" />);
     const badge = screen.getByText("Hoch");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("text-green-700");
-    expect(badge).toHaveClass("bg-green-50");
+    expect(badge.className).toContain("bg-[var(--color-success-background)]");
   });
 
-  it("renders 'Mittel' for MEDIUM with yellow classes", () => {
+  it("renders 'Mittel' for MEDIUM with warning variant classes", () => {
     renderWithProviders(<ReliabilityBadge reliability="MEDIUM" />);
     const badge = screen.getByText("Mittel");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("text-yellow-700");
-    expect(badge).toHaveClass("bg-yellow-50");
+    expect(badge.className).toContain("bg-[var(--color-warning-background)]");
   });
 
-  it("renders 'Niedrig' for LOW with red classes", () => {
+  it("renders 'Niedrig' for LOW with destructive variant classes", () => {
     renderWithProviders(<ReliabilityBadge reliability="LOW" />);
     const badge = screen.getByText("Niedrig");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("text-red-700");
-    expect(badge).toHaveClass("bg-red-50");
+    expect(badge.className).toContain("bg-destructive");
   });
 
   it("renders 'Unbekannt' for UNKNOWN with secondary variant", () => {
     renderWithProviders(<ReliabilityBadge reliability="UNKNOWN" />);
     const badge = screen.getByText("Unbekannt");
     expect(badge).toBeInTheDocument();
-    // secondary variant should not have color-specific classes
-    expect(badge).not.toHaveClass("text-green-700");
-    expect(badge).not.toHaveClass("text-yellow-700");
-    expect(badge).not.toHaveClass("text-red-700");
+    expect(badge.className).toContain("bg-secondary");
   });
 
   it("renders translated label text for each reliability level", () => {

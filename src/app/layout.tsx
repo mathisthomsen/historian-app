@@ -15,11 +15,34 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html
+      lang="de"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable}`}
+    >
+      <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
-          <Toaster richColors />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              classNames: {
+                toast: "bg-card border border-border text-foreground shadow-md rounded-lg",
+                title: "text-sm font-semibold",
+                description: "text-sm text-muted-foreground",
+                actionButton:
+                  "bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium px-3 py-1.5 rounded-md",
+                cancelButton:
+                  "bg-muted text-muted-foreground hover:bg-muted/80 text-xs font-medium px-3 py-1.5 rounded-md",
+                closeButton: "text-muted-foreground hover:text-foreground",
+                success: "bg-success-background border-success-border text-success-foreground",
+                error:
+                  "bg-destructive-background border-destructive-border text-destructive-foreground",
+                warning: "bg-warning-background border-warning-border text-warning-foreground",
+                info: "bg-info-background border-info-border text-info-foreground",
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

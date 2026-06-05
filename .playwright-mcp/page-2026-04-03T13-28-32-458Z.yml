@@ -1,0 +1,10 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e5]: "404"
+    - generic [ref=e6]:
+      - paragraph [ref=e7]: Seite nicht gefunden
+      - paragraph [ref=e8]: Die angeforderte Seite existiert nicht.
+    - link "Zur Startseite" [ref=e10] [cursor=pointer]:
+      - /url: /
+  - region "Notifications alt+T"
+  - alert [ref=e11]

@@ -5,6 +5,14 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { DeleteSourceButton } from "@/components/research/DeleteSourceButton";
 import { SourceDetailTabs } from "@/components/research/SourceDetailTabs";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { prisma } from "@/lib/db";
 import type { SourceDetail } from "@/types/source";
 
@@ -89,28 +97,40 @@ export default async function SourceDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <Link
-          href={`/${locale}/sources`}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← {t("back_to_list")}
-        </Link>
+    <div className="page-container mx-auto space-y-6">
+      <div className="hidden md:block">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/${locale}/sources`}>{t("title")}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>/</BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbPage>{source.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
       </div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{source.title}</h1>
+        <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">
+          {source.title}
+        </h1>
         <div className="flex gap-2">
           <Link
             href={`/${locale}/sources/${id}/edit`}
-            className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+            className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
           >
             {t("edit_title")}
           </Link>
           <DeleteSourceButton id={id} locale={locale} label={t("delete")} />
         </div>
       </div>
-      <SourceDetailTabs source={source} locale={locale} projectId={raw.project_id} tabCounts={relationCounts} />
+      <SourceDetailTabs
+        source={source}
+        locale={locale}
+        projectId={raw.project_id}
+        tabCounts={relationCounts}
+      />
     </div>
   );
 }

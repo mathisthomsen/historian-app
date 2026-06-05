@@ -1,74 +1,406 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   EVIDOXA DESIGN SYSTEM — globals.css
+   Tailwind v4 CSS-first configuration. All tokens live in @theme.
+   Dark mode strategy: .dark class on <html> (next-themes).
+
+   Token naming:
+   --color-*           Color tokens (HSL values WITHOUT hsl() wrapper)
+   --font-*            Font-family stacks
+   --radius-*          Border radius scale
+   --shadow-*          Box shadow values
+   --duration-*        Animation duration scale
+   --ease-*            Easing functions
+   --sidebar-*         Layout: sidebar dimensions
+   --topbar-height     Layout: top bar height
+
+   Tailwind v4 consumption pattern:
+     bg-background       → background-color: var(--color-background)
+     text-foreground     → color: var(--color-foreground)
+     border-border       → border-color: var(--color-border)
+
+   shadcn/ui components reference these same variable names through their
+   internal class usage (bg-background, text-foreground, etc.). Changing the
+   values here automatically flows to all shadcn components.
+   ============================================================================= */
+
 @theme {
-  /* Fonts */
+  /* --------------------------------------------------------------------------
+     FONTS
+     Geist Sans (UI/body) and Geist Mono (code, IDs, dates, metadata) are
+     loaded via next/font/google and exposed as CSS variables on :root.
+     These @theme declarations consume those variables.
+     -------------------------------------------------------------------------- */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Zinc-based color system (shadcn/ui) */
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(240 10% 3.9%);
+  /* --------------------------------------------------------------------------
+     TYPOGRAPHY SCALE
+     Ratio: 1.200 (minor third), anchored at 1rem / 16px.
+     Line heights and letter spacings are matched to each size per identity.md
+     Section 3.2. These supplement Tailwind's built-in text-* utilities so
+     that component-specific typography utilities can reference them.
+     -------------------------------------------------------------------------- */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
 
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(240 10% 3.9%);
+  --leading-xs: 1.5; /* 18px at 12px */
+  --leading-sm: 1.5; /* 21px at 14px */
+  --leading-base: 1.625; /* 26px at 16px */
+  --leading-lg: 1.556; /* 28px at 18px */
+  --leading-xl: 1.5; /* 30px at 20px */
+  --leading-2xl: 1.333; /* 32px at 24px */
+  --leading-3xl: 1.267; /* 38px at 30px */
+  --leading-4xl: 1.222; /* 44px at 36px */
 
+  --tracking-xs: 0.02em;
+  --tracking-sm: 0.01em;
+  --tracking-base: 0em;
+  --tracking-lg: -0.005em;
+  --tracking-xl: -0.01em;
+  --tracking-2xl: -0.015em;
+  --tracking-3xl: -0.02em;
+  --tracking-4xl: -0.025em;
+
+  /* --------------------------------------------------------------------------
+     BORDER RADIUS SCALE
+     Source: identity.md Section 5.1
+     --radius (bare) is the shadcn/ui canonical variable, set to radius-lg.
+     -------------------------------------------------------------------------- */
+  --radius: 0.5rem; /* 8px — shadcn canonical; maps to radius-lg */
+  --radius-none: 0px; /* Table cells, inline elements */
+  --radius-sm: 0.25rem; /* 4px  — Badges, small chips, code blocks */
+  --radius-md: 0.375rem; /* 6px  — Buttons, inputs, selects */
+  --radius-lg: 0.5rem; /* 8px  — Cards, dialogs, popovers */
+  --radius-xl: 0.75rem; /* 12px — Large containers, modals */
+  --radius-full: 9999px; /* Avatars, circular indicators, pills */
+
+  /* --------------------------------------------------------------------------
+     LAYOUT TOKENS
+     Source: identity.md Section 4.3 / concept.md Section 7.4
+     -------------------------------------------------------------------------- */
+  --sidebar-width-open: 14rem; /* 224px — expanded sidebar */
+  --sidebar-width-collapsed: 3rem; /* 48px  — icon-only sidebar */
+  --topbar-height: 3.5rem; /* 56px  — fixed top bar */
+  --content-max-width: 80rem; /* 1280px — max-w-7xl */
+
+  /* --------------------------------------------------------------------------
+     MOTION TOKENS — DURATION SCALE
+     Source: identity.md Section 7.2
+     -------------------------------------------------------------------------- */
+  --duration-instant: 0ms; /* Checkboxes, radio buttons — no perceptible delay */
+  --duration-fast: 100ms; /* Hover states, focus rings, tooltip delay */
+  --duration-normal: 200ms; /* Sidebar, theme switch, tab changes */
+  --duration-slow: 300ms; /* Dialogs, toasts, popovers */
+  --duration-deliberate: 500ms; /* Page transitions, bulk feedback */
+
+  /* --------------------------------------------------------------------------
+     MOTION TOKENS — EASING FUNCTIONS
+     Source: identity.md Section 7.3
+     -------------------------------------------------------------------------- */
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1); /* Enter: fast start, gentle settle */
+  --ease-exit: cubic-bezier(0.7, 0, 0.84, 0); /* Exit: slow start, fast finish */
+  --ease-move: cubic-bezier(0.65, 0, 0.35, 1); /* Layout shifts: symmetric */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* Micro-interactions: subtle overshoot */
+  /* Aliased to match identity.md naming (ease-out / ease-in / ease-in-out) */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* --------------------------------------------------------------------------
+     SHADOW SCALE — LIGHT MODE
+     Source: identity.md Section 5.3
+     Shadows use the warm stone darkest neutral (hsl(20 14% 9%)) for shadow
+     color. This matches the palette instead of pure black, keeping the
+     "grounded" feel. Shadows are intentionally subtle — cards use borders.
+     -------------------------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px 0 hsl(20 14% 9% / 0.04);
+  --shadow-md: 0 4px 6px -1px hsl(20 14% 9% / 0.06), 0 2px 4px -2px hsl(20 14% 9% / 0.04);
+  --shadow-lg: 0 10px 15px -3px hsl(20 14% 9% / 0.07), 0 4px 6px -4px hsl(20 14% 9% / 0.04);
+
+  /* --------------------------------------------------------------------------
+     COLOR TOKENS — LIGHT MODE (WARM STONE PALETTE)
+     Source: identity.md Sections 2.2–2.8 and Section 8.1
+     Format: HSL channel values WITHOUT hsl() wrapper.
+     Tailwind v4 uses: var(--color-*) internally.
+     shadcn/ui components reference these as: bg-background, text-foreground, etc.
+     -------------------------------------------------------------------------- */
+
+  /* -- Surface Hierarchy (Section 2.7) --------------------------------------- */
+  /* Ground: warm off-white, the page floor. Hue 36 with subtle ochre undertone */
+  --color-background: hsl(36 25% 98.5%);
+  --color-foreground: hsl(20 14% 9%); /* Warm near-black; 15.8:1 on background (AAA) */
+
+  /* Surface: cards and primary content areas — nearly white but warm */
+  --color-card: hsl(36 20% 99.5%);
+  --color-card-foreground: hsl(20 14% 9%);
+
+  /* Raised: popovers, dropdowns, tooltips — true white for "floating" feel */
   --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(240 10% 3.9%);
+  --color-popover-foreground: hsl(20 14% 9%);
 
-  --color-primary: hsl(240 5.9% 10%);
-  --color-primary-foreground: hsl(0 0% 98%);
+  /* -- Brand Colors (Section 2.3 & 2.6) -------------------------------------- */
+  /* Primary: Archival Indigo — warm indigo evoking iron gall ink on manuscripts */
+  --color-primary: hsl(245 40% 36%);
+  --color-primary-foreground: hsl(240 20% 98%); /* 11.4:1 on primary (AAA) */
 
-  --color-secondary: hsl(240 4.8% 95.9%);
-  --color-secondary-foreground: hsl(240 5.9% 10%);
+  /* Secondary: neutral warm stone surface — muted backgrounds, secondary actions */
+  --color-secondary: hsl(33 16% 93%);
+  --color-secondary-foreground: hsl(20 12% 16%);
 
-  --color-muted: hsl(240 4.8% 95.9%);
-  --color-muted-foreground: hsl(240 3.8% 46.1%);
+  /* Muted: same warm stone as secondary — placeholder backgrounds */
+  --color-muted: hsl(33 16% 93%);
+  --color-muted-foreground: hsl(26 10% 38%); /* 5.8:1 on background (AA) */
 
-  --color-accent: hsl(240 4.8% 95.9%);
-  --color-accent-foreground: hsl(240 5.9% 10%);
+  /* Accent: Verdigris — desaturated teal for hover states, active sidebar items */
+  --color-accent: hsl(170 18% 92%);
+  --color-accent-foreground: hsl(170 25% 18%);
 
-  --color-destructive: hsl(0 84.2% 60.2%);
+  /* -- Borders and Inputs (Section 5.2 / Appendix A note) -------------------- */
+  /* border: subtle structural borders on cards, dividers. Low contrast by design. */
+  --color-border: hsl(30 14% 88%);
+  /* input: background fill for input elements (currently matches border) */
+  --color-input: hsl(30 14% 88%);
+  /* input-border: HIGHER contrast than --color-border; 3.5:1 on background.
+     Per Appendix A: form inputs must be perceivable by low-contrast sensitivity users. */
+  --color-input-border: hsl(30 14% 55%);
+  /* ring: focus ring color — archival indigo primary; 8.2:1 on background (AAA) */
+  --color-ring: hsl(245 40% 36%);
+
+  /* -- Semantic: Destructive / Iron Oxide (Section 2.4) ---------------------- */
+  /* Muted red-brown rather than pure red — serious but not alarming */
+  --color-destructive: hsl(4 60% 46%);
   --color-destructive-foreground: hsl(0 0% 98%);
+  --color-destructive-background: hsl(4 50% 95%);
+  --color-destructive-border: hsl(4 40% 84%);
 
-  --color-border: hsl(240 5.9% 90%);
-  --color-input: hsl(240 5.9% 90%);
-  --color-ring: hsl(240 5.9% 10%);
+  /* -- Semantic: Success / Muted Sage (Section 2.4) -------------------------- */
+  --color-success: hsl(152 45% 32%);
+  --color-success-foreground: hsl(152 50% 14%);
+  --color-success-background: hsl(152 35% 93%);
+  --color-success-border: hsl(152 30% 82%);
 
-  --radius: 0.5rem;
+  /* -- Semantic: Warning / Archival Amber (Section 2.4) ---------------------- */
+  --color-warning: hsl(38 80% 42%);
+  --color-warning-foreground: hsl(32 70% 18%);
+  --color-warning-background: hsl(40 60% 94%);
+  --color-warning-border: hsl(38 50% 82%);
+
+  /* -- Semantic: Info / Manuscript Blue (Section 2.4) ------------------------ */
+  --color-info: hsl(210 55% 44%);
+  --color-info-foreground: hsl(210 60% 16%);
+  --color-info-background: hsl(210 45% 94%);
+  --color-info-border: hsl(210 35% 82%);
+
+  /* -- Certainty Colors (Section 2.5) ----------------------------------------
+     The five-step certainty progression is the most critical color subsystem.
+     Direction: Teal → Blue → Indigo-Violet → Amber → Warm-Grey-Dashed
+     Each level has four variants: base, foreground, background, border.
+     NEVER rely on red-green spectrum. Distinguishable under protanopia,
+     deuteranopia, and tritanopia. Icon shapes provide dual-channel encoding.
+     -------------------------------------------------------------------------- */
+
+  /* Certain: Filled circle icon — cool teal, most confident */
+  --color-certainty-certain: hsl(180 50% 30%);
+  --color-certainty-certain-foreground: hsl(180 55% 14%);
+  --color-certainty-certain-background: hsl(180 40% 93%);
+  --color-certainty-certain-border: hsl(180 35% 78%);
+
+  /* Probable: Three-quarter circle icon — manuscript blue */
+  --color-certainty-probable: hsl(215 50% 38%);
+  --color-certainty-probable-foreground: hsl(215 55% 16%);
+  --color-certainty-probable-background: hsl(215 40% 93%);
+  --color-certainty-probable-border: hsl(215 35% 78%);
+
+  /* Possible: Half circle icon — muted indigo-violet */
+  --color-certainty-possible: hsl(265 35% 45%);
+  --color-certainty-possible-foreground: hsl(265 40% 18%);
+  --color-certainty-possible-background: hsl(265 30% 94%);
+  --color-certainty-possible-border: hsl(265 25% 80%);
+
+  /* Unknown: Empty circle (ring) icon — archival amber */
+  --color-certainty-unknown: hsl(38 65% 45%);
+  --color-certainty-unknown-foreground: hsl(38 70% 18%);
+  --color-certainty-unknown-background: hsl(38 50% 93%);
+  --color-certainty-unknown-border: hsl(38 40% 76%);
+
+  /* Unevidenced: Dashed circle icon — desaturated warm grey */
+  --color-certainty-unevidenced: hsl(20 15% 40%);
+  --color-certainty-unevidenced-foreground: hsl(20 20% 22%);
+  --color-certainty-unevidenced-background: hsl(20 10% 94%);
+  --color-certainty-unevidenced-border: hsl(20 10% 80%);
+
+  /* -- Sidebar (Section 2.1 / concept.md) ------------------------------------ */
+  /* Sidebar has its own surface color: slightly cooler than page bg for separation */
+  --color-sidebar: hsl(36 18% 97%);
+  --color-sidebar-foreground: hsl(20 14% 9%);
+  --color-sidebar-border: hsl(30 14% 88%);
+  --color-sidebar-accent: hsl(170 18% 92%);
+  --color-sidebar-accent-foreground: hsl(170 25% 18%);
+  --color-sidebar-ring: hsl(245 40% 36%);
+
+  /* -- Extended Surface Hierarchy -------------------------------------------- */
+  /* Named aliases for clarity in component code */
+  --color-surface: hsl(36 20% 99.5%); /* alias for card */
+  --color-surface-raised: hsl(0 0% 100%); /* alias for popover */
+  --color-surface-overlay: hsl(36 18% 97%); /* alias for sidebar */
+
+  /* -- Chart / Data Visualization -------------------------------------------- */
+  /* Uses brand and certainty hues in a logical order for chart series */
+  --color-chart-1: hsl(245 40% 36%); /* Archival Indigo (primary) */
+  --color-chart-2: hsl(180 50% 30%); /* Teal (certainty-certain) */
+  --color-chart-3: hsl(38 70% 50%); /* Manuscript Gold */
+  --color-chart-4: hsl(152 45% 32%); /* Muted Sage (success) */
+  --color-chart-5: hsl(265 35% 45%); /* Indigo-Violet (certainty-possible) */
 }
 
-/* Dark mode overrides */
+/* =============================================================================
+   DARK MODE OVERRIDES
+   Applied when next-themes adds .dark to <html>.
+   Source: identity.md Section 8.2
+   Warm charcoal palette (hue 20-30, saturation 7-10%). Warmth is preserved.
+   Elevation communicated through border use — shadows are less effective
+   on dark backgrounds (see concept.md Section 5.2).
+   ============================================================================= */
 .dark {
-  --color-background: hsl(240 10% 3.9%);
-  --color-foreground: hsl(0 0% 98%);
+  /* -- Shadow Scale — Dark Mode (Section 5.3) -------------------------------- */
+  /* Shadows shift to pure black with increased opacity since warm shadows
+     become nearly invisible against dark backgrounds */
+  --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.15);
+  --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.25), 0 2px 4px -2px hsl(0 0% 0% / 0.15);
+  --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.35), 0 4px 6px -4px hsl(0 0% 0% / 0.2);
 
-  --color-card: hsl(240 10% 3.9%);
-  --color-card-foreground: hsl(0 0% 98%);
+  /* -- Surface Hierarchy (Section 2.7 / 5.1) --------------------------------- */
+  /* Deep warm charcoal — not pure black. Warmth preserved (hue 20-30). */
+  --color-background: hsl(25 10% 4.5%);
+  --color-foreground: hsl(30 10% 94%); /* Cream, not white — 14.2:1 AAA */
 
-  --color-popover: hsl(240 10% 3.9%);
-  --color-popover-foreground: hsl(0 0% 98%);
+  --color-card: hsl(25 9% 6.5%);
+  --color-card-foreground: hsl(30 10% 94%);
 
-  --color-primary: hsl(0 0% 98%);
-  --color-primary-foreground: hsl(240 5.9% 10%);
+  --color-popover: hsl(24 8% 9%);
+  --color-popover-foreground: hsl(30 10% 94%);
 
-  --color-secondary: hsl(240 3.7% 15.9%);
-  --color-secondary-foreground: hsl(0 0% 98%);
+  /* -- Brand Colors ----------------------------------------------------------- */
+  /* Primary lightens in dark mode to maintain 8.7:1 contrast (AAA) */
+  --color-primary: hsl(245 40% 68%);
+  --color-primary-foreground: hsl(245 45% 13%);
 
-  --color-muted: hsl(240 3.7% 15.9%);
-  --color-muted-foreground: hsl(240 5% 64.9%);
+  --color-secondary: hsl(24 8% 14%);
+  --color-secondary-foreground: hsl(30 10% 94%);
 
-  --color-accent: hsl(240 3.7% 15.9%);
-  --color-accent-foreground: hsl(0 0% 98%);
+  --color-muted: hsl(24 8% 14%);
+  --color-muted-foreground: hsl(22 5% 55%); /* 5.2:1 on dark background (AA) */
 
-  --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(0 0% 98%);
+  /* Accent: dark verdigris tint — visible without glowing */
+  --color-accent: hsl(170 12% 14%);
+  --color-accent-foreground: hsl(170 18% 88%);
 
-  --color-border: hsl(240 3.7% 15.9%);
-  --color-input: hsl(240 3.7% 15.9%);
-  --color-ring: hsl(240 4.9% 83.9%);
+  /* -- Borders and Inputs ---------------------------------------------------- */
+  --color-border: hsl(22 7% 18%);
+  --color-input: hsl(22 7% 18%);
+  --color-input-border: hsl(22 7% 40%); /* 3.2:1 on dark background (AA UI) */
+  --color-ring: hsl(245 40% 68%); /* Lighter primary; 8.7:1 AAA */
+
+  /* -- Semantic: Destructive ------------------------------------------------- */
+  --color-destructive: hsl(4 55% 58%);
+  --color-destructive-foreground: hsl(4 40% 94%);
+  --color-destructive-background: hsl(4 35% 11%);
+  --color-destructive-border: hsl(4 25% 24%);
+
+  /* -- Semantic: Success ----------------------------------------------------- */
+  --color-success: hsl(152 40% 55%);
+  --color-success-foreground: hsl(152 30% 92%);
+  --color-success-background: hsl(152 25% 12%);
+  --color-success-border: hsl(152 20% 22%);
+
+  /* -- Semantic: Warning ----------------------------------------------------- */
+  --color-warning: hsl(38 70% 55%);
+  --color-warning-foreground: hsl(38 50% 94%);
+  --color-warning-background: hsl(38 40% 11%);
+  --color-warning-border: hsl(38 30% 24%);
+
+  /* -- Semantic: Info -------------------------------------------------------- */
+  --color-info: hsl(210 50% 62%);
+  --color-info-foreground: hsl(210 35% 94%);
+  --color-info-background: hsl(210 30% 11%);
+  --color-info-border: hsl(210 22% 24%);
+
+  /* -- Certainty Colors — Dark Mode (Section 5.3) ----------------------------
+     Two adjustments from light mode:
+     1. Saturation reduced 5-15% (prevents "neon glow" on dark surfaces)
+     2. Lightness increased to 50-62% range (maintains 3:1 contrast)
+     Background tints are very dark (10-13% lightness) — barely tinted.
+     Icon shapes remain the primary distinguishing signal.
+     -------------------------------------------------------------------------- */
+
+  /* Certain: teal */
+  --color-certainty-certain: hsl(180 40% 55%);
+  --color-certainty-certain-foreground: hsl(180 30% 92%);
+  --color-certainty-certain-background: hsl(180 25% 12%);
+  --color-certainty-certain-border: hsl(180 20% 26%);
+
+  /* Probable: manuscript blue */
+  --color-certainty-probable: hsl(215 42% 60%);
+  --color-certainty-probable-foreground: hsl(215 30% 92%);
+  --color-certainty-probable-background: hsl(215 25% 12%);
+  --color-certainty-probable-border: hsl(215 20% 26%);
+
+  /* Possible: indigo-violet */
+  --color-certainty-possible: hsl(265 32% 62%);
+  --color-certainty-possible-foreground: hsl(265 25% 92%);
+  --color-certainty-possible-background: hsl(265 20% 13%);
+  --color-certainty-possible-border: hsl(265 16% 28%);
+
+  /* Unknown: amber */
+  --color-certainty-unknown: hsl(38 55% 55%);
+  --color-certainty-unknown-foreground: hsl(38 40% 92%);
+  --color-certainty-unknown-background: hsl(38 30% 12%);
+  --color-certainty-unknown-border: hsl(38 25% 26%);
+
+  /* Unevidenced: desaturated warm grey */
+  --color-certainty-unevidenced: hsl(20 12% 56%);
+  --color-certainty-unevidenced-foreground: hsl(20 10% 88%);
+  --color-certainty-unevidenced-background: hsl(20 8% 10%);
+  --color-certainty-unevidenced-border: hsl(20 8% 22%);
+
+  /* -- Sidebar --------------------------------------------------------------- */
+  /* Marginally lighter than page background to maintain visual separation */
+  --color-sidebar: hsl(25 8% 5.5%);
+  --color-sidebar-foreground: hsl(30 10% 94%);
+  --color-sidebar-border: hsl(22 7% 18%);
+  --color-sidebar-accent: hsl(170 12% 14%);
+  --color-sidebar-accent-foreground: hsl(170 18% 88%);
+  --color-sidebar-ring: hsl(245 40% 68%);
+
+  /* -- Extended Surface Hierarchy -------------------------------------------- */
+  --color-surface: hsl(25 9% 6.5%);
+  --color-surface-raised: hsl(24 8% 9%);
+  --color-surface-overlay: hsl(25 8% 5.5%);
+
+  /* -- Chart Colors — Dark Mode ---------------------------------------------- */
+  --color-chart-1: hsl(245 40% 68%);
+  --color-chart-2: hsl(180 40% 55%);
+  --color-chart-3: hsl(38 60% 55%);
+  --color-chart-4: hsl(152 40% 55%);
+  --color-chart-5: hsl(265 32% 62%);
 }
 
+/* =============================================================================
+   BASE LAYER
+   Global resets and baseline styles. Every element inherits border color;
+   body gets warm stone background and Geist Sans.
+   Theme-switch transition is applied here so all surfaces animate together.
+   ============================================================================= */
 @layer base {
+  /* Apply warm stone border color to all elements by default */
   * {
     border-color: var(--color-border);
   }
@@ -77,5 +409,581 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+    /* Theme-switch transition — color properties animate at duration-normal.
+       Spatial motion (transform, layout) is NOT transitioned here to avoid
+       unintended layout shifts during mode switch. */
+    transition-property: background-color, color, border-color;
+    transition-duration: var(--duration-normal);
+    transition-timing-function: var(--ease-in-out);
+  }
+
+  /* Heading base styles — type scale per identity.md Section 3.3 and tokens.md Section 4.2.
+     h1/h2: semibold (600); h3/h4: medium (500).
+     Color always uses full-contrast foreground, never muted-foreground. */
+  h1 {
+    font-size: var(--text-3xl);
+    font-weight: 600;
+    line-height: var(--leading-3xl);
+    letter-spacing: var(--tracking-3xl);
+    color: var(--color-foreground);
+  }
+
+  h2 {
+    font-size: var(--text-2xl);
+    font-weight: 600;
+    line-height: var(--leading-2xl);
+    letter-spacing: var(--tracking-2xl);
+    color: var(--color-foreground);
+  }
+
+  h3 {
+    font-size: var(--text-xl);
+    font-weight: 500;
+    line-height: var(--leading-xl);
+    letter-spacing: var(--tracking-xl);
+    color: var(--color-foreground);
+  }
+
+  h4 {
+    font-size: var(--text-lg);
+    font-weight: 500;
+    line-height: var(--leading-lg);
+    letter-spacing: var(--tracking-lg);
+    color: var(--color-foreground);
+  }
+
+  /* Link base styles — archival indigo primary color with underline.
+     Navigation contexts (sidebar, topbar) override color via component classes.
+     Source: identity.md Section 3; concept.md Section 2.6. */
+  a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+    text-underline-offset: 2px;
+  }
+
+  a:hover {
+    text-decoration-color: var(--color-primary);
+    transition: text-decoration-color var(--duration-fast) var(--ease-out);
+  }
+
+  /* Selection styles — primary indigo at 15% opacity tint over existing background.
+     Text remains foreground (not primary-foreground) so contrast is preserved.
+     Source: identity.md Sections 2.3, 2.8. */
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-foreground);
+  }
+
+  /* Code and preformatted text — Geist Mono, muted background.
+     code: inline with subtle background chip.
+     pre: block with full muted background and overflow scroll.
+     pre code: reset inline styles so nesting is clean.
+     Source: identity.md Section 3.5; tokens.md Sections 4.1, 6. */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background-color: color-mix(in srgb, var(--color-muted) 60%, transparent);
+    border-radius: var(--radius-sm);
+    padding: 0.125em 0.25em;
+  }
+
+  pre {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    background-color: var(--color-muted);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    overflow-x: auto;
+  }
+
+  pre code {
+    background-color: transparent;
+    border-radius: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* Strong and em — preserve browser defaults explicitly.
+     Prevents accidental override by reset libraries. */
+  strong {
+    font-weight: 600;
+  }
+
+  em {
+    font-style: italic;
+  }
+
+  /* Focus ring — consistent high-contrast ring meeting 3:1 for UI components.
+     Uses --color-ring (archival indigo in light, lighter indigo in dark).
+     outline-offset: 2px provides breathing room between element and ring.
+     Per concept.md Section 5.4: focus ring is 2px, outline-offset 2px.
+     Exception: sidebar focus uses outline-offset: -2px (inset, per concept.md 2.1). */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar styling — thin scrollbar using muted colors.
+     Keeps the "receding interface" feel during long sessions. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-muted-foreground) 30%, transparent) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-muted-foreground) 30%, transparent);
+    border-radius: var(--radius-full);
+    border: 2px solid transparent;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
+  }
+
+  /* Reduced motion: replace all animation/transition with near-instant.
+     Individual components can opt back in to opacity-only fades at reduced
+     durations where feedback is essential (dialogs, toasts).
+     Source: identity.md Section 7.5 */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* =============================================================================
+   UTILITY LAYER
+   Custom utility classes. All motion utilities include prefers-reduced-motion
+   overrides. Typography and certainty badge utilities provide DRY shortcuts
+   for the most commonly repeated style combinations.
+   ============================================================================= */
+@layer utilities {
+  /* --------------------------------------------------------------------------
+     ANIMATION UTILITIES
+     Enter/exit animations for dialogs, toasts, popovers, and routing.
+     All spatial motion (translate, scale) is replaced with opacity-only
+     under prefers-reduced-motion, per identity.md Section 7.5.
+     -------------------------------------------------------------------------- */
+
+  /* Base enter/exit classes — attach to elements entering or leaving the DOM */
+  .animate-in {
+    animation-fill-mode: both;
+    animation-duration: var(--duration-slow);
+    animation-timing-function: var(--ease-enter);
+  }
+
+  .animate-out {
+    animation-fill-mode: both;
+    animation-duration: var(--duration-normal);
+    animation-timing-function: var(--ease-exit);
+  }
+
+  /* Fade */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  .fade-in {
+    animation-name: fade-in;
+  }
+  .fade-out {
+    animation-name: fade-out;
+  }
+
+  /* Slide from top */
+  @keyframes slide-in-from-top {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-out-to-top {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  .slide-in-from-top {
+    animation-name: slide-in-from-top;
+  }
+  .slide-out-to-top {
+    animation-name: slide-out-to-top;
+  }
+
+  /* Slide from bottom */
+  @keyframes slide-in-from-bottom {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-out-to-bottom {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  .slide-in-from-bottom {
+    animation-name: slide-in-from-bottom;
+  }
+  .slide-out-to-bottom {
+    animation-name: slide-out-to-bottom;
+  }
+
+  /* Slide from left */
+  @keyframes slide-in-from-left {
+    from {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-out-to-left {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+  }
+
+  .slide-in-from-left {
+    animation-name: slide-in-from-left;
+  }
+  .slide-out-to-left {
+    animation-name: slide-out-to-left;
+  }
+
+  /* Slide from right */
+  @keyframes slide-in-from-right {
+    from {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-out-to-right {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+  }
+
+  .slide-in-from-right {
+    animation-name: slide-in-from-right;
+  }
+  .slide-out-to-right {
+    animation-name: slide-out-to-right;
+  }
+
+  /* Scale up (dialog open) */
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes scale-out {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+
+  .scale-in {
+    animation-name: scale-in;
+  }
+  .scale-out {
+    animation-name: scale-out;
+  }
+
+  /* Skeleton pulse — continuous opacity cycle for loading states.
+     2s duration, ease-in-out, from 40% to 100% opacity.
+     Under reduced motion: static opacity-60, no pulse. */
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  .animate-skeleton-pulse {
+    animation: skeleton-pulse 2s var(--ease-in-out) infinite;
+  }
+
+  /* Badge count pulse — brief scale overshoot on value change */
+  @keyframes badge-pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .animate-badge-pulse {
+    animation: badge-pulse var(--duration-fast) var(--ease-spring);
+  }
+
+  /* --------------------------------------------------------------------------
+     PREFERS-REDUCED-MOTION: ANIMATION OVERRIDES
+     Replace spatial animations with opacity-only. Duration reductions are
+     already handled by the global reset in @layer base, but we keep fade-in/
+     fade-out available for essential feedback (dialogs, toasts) that opt in
+     after the global reset.
+     Per identity.md Section 7.5.
+     -------------------------------------------------------------------------- */
+  @media (prefers-reduced-motion: reduce) {
+    /* Slide animations become opacity-only fades */
+    .slide-in-from-top,
+    .slide-in-from-bottom,
+    .slide-in-from-left,
+    .slide-in-from-right {
+      animation-name: fade-in;
+      transform: none !important;
+    }
+
+    .slide-out-to-top,
+    .slide-out-to-bottom,
+    .slide-out-to-left,
+    .slide-out-to-right {
+      animation-name: fade-out;
+      transform: none !important;
+    }
+
+    /* Scale animations become opacity-only */
+    .scale-in {
+      animation-name: fade-in;
+      transform: none !important;
+    }
+    .scale-out {
+      animation-name: fade-out;
+      transform: none !important;
+    }
+
+    /* Skeleton pulse becomes static */
+    .animate-skeleton-pulse {
+      animation: none;
+      opacity: 0.6;
+    }
+
+    /* Badge pulse: no animation */
+    .animate-badge-pulse {
+      animation: none;
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     TYPOGRAPHY UTILITIES
+     Semantic text style classes corresponding to identity.md Section 3.4.
+     Each class sets size, line-height, letter-spacing, and font-weight.
+     Color is NOT set here — use Tailwind text-foreground / text-muted-foreground
+     as appropriate in the component.
+     -------------------------------------------------------------------------- */
+
+  /* Standard body text: form values, descriptions, primary UI text */
+  .text-body {
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+    letter-spacing: var(--tracking-base);
+    font-weight: 400;
+  }
+
+  /* Large body: notes, transcription reading, evidence quotes */
+  .text-body-large {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    letter-spacing: var(--tracking-lg);
+    font-weight: 400;
+  }
+
+  /* Small body: table cell text, compact contexts */
+  .text-body-small {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    letter-spacing: var(--tracking-sm);
+    font-weight: 400;
+  }
+
+  /* Caption: timestamps, attribution lines, count labels */
+  .text-caption {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    letter-spacing: var(--tracking-xs);
+    font-weight: 400;
+    color: var(--color-muted-foreground);
+  }
+
+  /* Overline: section labels above headings, uppercase entity-type labels */
+  .text-overline {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  /* Monospace: IDs, partial dates, transcriptions, archival references,
+     timestamps. Switches to Geist Mono. */
+  .text-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  /* Form label: 14px medium, used above inputs and in <dt> elements */
+  .text-label {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    letter-spacing: var(--tracking-sm);
+    font-weight: 500;
+  }
+
+  /* --------------------------------------------------------------------------
+     CERTAINTY BADGE UTILITIES
+     Convenience classes for certainty-level pill styling. Each sets
+     background, border, and text color from the certainty token family.
+     Usage: <span class="certainty-certain">Sicher</span>
+     Combine with Tailwind layout classes: rounded-full px-2 py-0.5 text-xs
+     -------------------------------------------------------------------------- */
+
+  .certainty-certain {
+    background-color: var(--color-certainty-certain-background);
+    border-color: var(--color-certainty-certain-border);
+    color: var(--color-certainty-certain-foreground);
+  }
+
+  .certainty-probable {
+    background-color: var(--color-certainty-probable-background);
+    border-color: var(--color-certainty-probable-border);
+    color: var(--color-certainty-probable-foreground);
+  }
+
+  .certainty-possible {
+    background-color: var(--color-certainty-possible-background);
+    border-color: var(--color-certainty-possible-border);
+    color: var(--color-certainty-possible-foreground);
+  }
+
+  .certainty-unknown {
+    background-color: var(--color-certainty-unknown-background);
+    border-color: var(--color-certainty-unknown-border);
+    color: var(--color-certainty-unknown-foreground);
+  }
+
+  .certainty-unevidenced {
+    background-color: var(--color-certainty-unevidenced-background);
+    border-color: var(--color-certainty-unevidenced-border);
+    color: var(--color-certainty-unevidenced-foreground);
+    border-style: dashed; /* Dashed border matches the dashed-circle icon shape */
+  }
+
+  /* --------------------------------------------------------------------------
+     LAYOUT UTILITIES
+     -------------------------------------------------------------------------- */
+
+  /* Page container: standard padding + max-width, matches concept.md 3.1 */
+  .page-container {
+    padding: 1.5rem; /* p-6 */
+    max-width: var(--content-max-width);
+  }
+
+  /* Sidebar inset: push main content right of the sidebar.
+     Used on the body's main content area. */
+  .sidebar-inset {
+    padding-left: var(--sidebar-width-open);
+    transition-property: padding-left;
+    transition-duration: var(--duration-normal);
+    transition-timing-function: var(--ease-in-out);
+  }
+
+  .sidebar-inset-collapsed {
+    padding-left: var(--sidebar-width-collapsed);
+  }
+
+  /* Topbar inset: push page content below the fixed TopBar */
+  .topbar-inset {
+    padding-top: var(--topbar-height);
   }
 }

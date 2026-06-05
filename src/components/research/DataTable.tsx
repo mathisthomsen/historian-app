@@ -3,6 +3,7 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import React from "react";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -40,8 +41,8 @@ export function DataTable<TData extends { id: string }>({
   const allSelected = data.length > 0 && data.every((row) => selectedIds.includes(row.id));
   const someSelected = data.some((row) => selectedIds.includes(row.id));
 
-  function handleSelectAll(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.checked) {
+  function handleSelectAll(checked: boolean | "indeterminate") {
+    if (checked === true) {
       onSelectionChange(data.map((row) => row.id));
     } else {
       onSelectionChange([]);
@@ -61,15 +62,10 @@ export function DataTable<TData extends { id: string }>({
       <TableHeader>
         <TableRow>
           <TableHead className="w-10">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              ref={(el) => {
-                if (el) el.indeterminate = someSelected && !allSelected;
-              }}
-              onChange={handleSelectAll}
+            <Checkbox
+              checked={allSelected ? true : someSelected && !allSelected ? "indeterminate" : false}
+              onCheckedChange={handleSelectAll}
               aria-label="Select all"
-              className="rounded border border-input"
             />
           </TableHead>
           {columns.map((col) => (
@@ -78,7 +74,7 @@ export function DataTable<TData extends { id: string }>({
                 <button
                   type="button"
                   onClick={() => col.onSort?.(col.key)}
-                  className="inline-flex items-center gap-1 font-medium hover:text-foreground"
+                  className="hover:text-foreground inline-flex items-center gap-1 font-medium"
                 >
                   {col.header}
                   {col.currentSort === col.key ? (
@@ -108,19 +104,19 @@ export function DataTable<TData extends { id: string }>({
               onRowClick
                 ? (e) => {
                     const target = e.target as HTMLElement;
-                    if (target.tagName !== "INPUT") onRowClick(row.id);
+                    if (target.tagName !== "INPUT" && !target.closest('[role="checkbox"]')) {
+                      onRowClick(row.id);
+                    }
                   }
                 : undefined
             }
           >
             <TableCell>
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={selectedIds.includes(row.id)}
-                onChange={(e) => handleSelectRow(row.id, e.target.checked)}
+                onCheckedChange={(checked) => handleSelectRow(row.id, checked === true)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Select row ${row.id}`}
-                className="rounded border border-input"
               />
             </TableCell>
             {columns.map((col) => (

@@ -1,0 +1,388 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Seitenleiste umschalten" [ref=e4]:
+        - img
+      - generic [ref=e5]: Evidoxa
+      - button "Projekt auswählen" [disabled]:
+        - generic: Projekt auswählen
+      - generic [ref=e6]:
+        - button "Design wechseln" [ref=e7]:
+          - img
+          - img
+        - group "Language switcher" [ref=e8]:
+          - button "DE" [pressed] [ref=e9]
+          - button "EN" [ref=e10]
+        - generic [ref=e12]: U
+    - complementary "Primary navigation" [ref=e13]:
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /de
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+          - link "Personen" [ref=e23] [cursor=pointer]:
+            - /url: /de/persons
+            - img [ref=e24]
+            - generic [ref=e29]: Personen
+          - link "Ereignisse" [ref=e30] [cursor=pointer]:
+            - /url: /de/events
+            - img [ref=e31]
+            - generic [ref=e33]: Ereignisse
+          - link "Quellen" [ref=e34] [cursor=pointer]:
+            - /url: /de/sources
+            - img [ref=e35]
+            - generic [ref=e38]: Quellen
+          - link "Beziehungen" [ref=e39] [cursor=pointer]:
+            - /url: /de/relations
+            - img [ref=e40]
+            - generic [ref=e43]: Beziehungen
+          - generic "Orte":
+            - img
+            - generic: Orte
+          - generic "Literatur":
+            - img
+            - generic: Literatur
+          - generic "Einstellungen":
+            - img
+            - generic: Einstellungen
+        - generic [ref=e44]:
+          - link "Ereignistypen" [ref=e45] [cursor=pointer]:
+            - /url: /de/settings/event-types
+            - img [ref=e46]
+            - generic [ref=e47]: Ereignistypen
+          - link "Relationstypen" [ref=e48] [cursor=pointer]:
+            - /url: /de/settings/relation-types
+            - img [ref=e49]
+            - generic [ref=e52]: Relationstypen
+    - main "Main content" [ref=e53]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - heading "Ereignisse" [level=1] [ref=e57]
+          - link "Neues Ereignis" [ref=e58] [cursor=pointer]:
+            - /url: /de/events/new
+        - generic [ref=e59]:
+          - generic [ref=e61]:
+            - img [ref=e62]
+            - searchbox "Nach Titel suchen…" [ref=e65]
+          - generic [ref=e66]:
+            - button "Typ" [ref=e67]:
+              - text: Typ
+              - img
+            - generic [ref=e68]:
+              - spinbutton "Von Jahr" [ref=e69]
+              - generic [ref=e70]: –
+              - spinbutton "Bis Jahr" [ref=e71]
+              - button "Zeigt Ereignisse, die sich zeitlich mit dem gewählten Bereich überschneiden. Ereignisse ohne Enddatum gelten als Einzelereignisse." [ref=e72]:
+                - img [ref=e73]
+            - generic [ref=e75]:
+              - checkbox "Nur Hauptereignisse Nur Hauptereignisse" [ref=e76]
+              - generic [ref=e77] [cursor=pointer]: Nur Hauptereignisse
+          - table [ref=e79]:
+            - rowgroup [ref=e80]:
+              - row "Select all Titel Typ Beginn Ende Übergeordnet" [ref=e81]:
+                - columnheader "Select all" [ref=e82]:
+                  - checkbox "Select all" [ref=e83]
+                - columnheader "Titel" [ref=e84]:
+                  - button "Titel" [ref=e85]:
+                    - text: Titel
+                    - img [ref=e86]
+                - columnheader "Typ" [ref=e88]
+                - columnheader "Beginn" [ref=e89]:
+                  - button "Beginn" [ref=e90]:
+                    - text: Beginn
+                    - img [ref=e91]
+                - columnheader "Ende" [ref=e93]
+                - columnheader "Übergeordnet" [ref=e94]
+            - rowgroup [ref=e95]:
+              - row "Select row seed-event-america-expedition Amerikanische Forschungsreise — 1799 1804 —" [ref=e96] [cursor=pointer]:
+                - cell "Select row seed-event-america-expedition" [ref=e97]:
+                  - checkbox "Select row seed-event-america-expedition" [ref=e98]
+                - cell "Amerikanische Forschungsreise" [ref=e99]:
+                  - link "Amerikanische Forschungsreise" [ref=e100]:
+                    - /url: /de/events/seed-event-america-expedition
+                - cell "—" [ref=e101]
+                - cell "1799" [ref=e102]
+                - cell "1804" [ref=e103]
+                - cell "—" [ref=e104]
+              - row "Select row cmmqufzqt005rj8qrg53rk82e Depth Limit Test Sub — — — Erster Weltkrieg" [ref=e105] [cursor=pointer]:
+                - cell "Select row cmmqufzqt005rj8qrg53rk82e" [ref=e106]:
+                  - checkbox "Select row cmmqufzqt005rj8qrg53rk82e" [ref=e107]
+                - cell "Depth Limit Test Sub" [ref=e108]:
+                  - link "Depth Limit Test Sub" [ref=e109]:
+                    - /url: /de/events/cmmqufzqt005rj8qrg53rk82e
+                - cell "—" [ref=e110]
+                - cell "—" [ref=e111]
+                - cell "—" [ref=e112]
+                - cell "Erster Weltkrieg" [ref=e113]:
+                  - link "Erster Weltkrieg" [ref=e114]:
+                    - /url: /de/events/cmmque5370019j8qr7jrsm12f
+              - row "Select row cmmnfruq300c1j8c4p17uo7le Depth Limit Test Sub — — — Erster Weltkrieg" [ref=e115] [cursor=pointer]:
+                - cell "Select row cmmnfruq300c1j8c4p17uo7le" [ref=e116]:
+                  - checkbox "Select row cmmnfruq300c1j8c4p17uo7le" [ref=e117]
+                - cell "Depth Limit Test Sub" [ref=e118]:
+                  - link "Depth Limit Test Sub" [ref=e119]:
+                    - /url: /de/events/cmmnfruq300c1j8c4p17uo7le
+                - cell "—" [ref=e120]
+                - cell "—" [ref=e121]
+                - cell "—" [ref=e122]
+                - cell "Erster Weltkrieg" [ref=e123]:
+                  - link "Erster Weltkrieg" [ref=e124]:
+                    - /url: /de/events/cmmnfqoej00avj8c4gfdsdrig
+              - row "Select row cmmqvquyx00ghj8qryrktf3fk Depth Limit Test Sub — — — Erster Weltkrieg" [ref=e125] [cursor=pointer]:
+                - cell "Select row cmmqvquyx00ghj8qryrktf3fk" [ref=e126]:
+                  - checkbox "Select row cmmqvquyx00ghj8qryrktf3fk" [ref=e127]
+                - cell "Depth Limit Test Sub" [ref=e128]:
+                  - link "Depth Limit Test Sub" [ref=e129]:
+                    - /url: /de/events/cmmqvquyx00ghj8qryrktf3fk
+                - cell "—" [ref=e130]
+                - cell "—" [ref=e131]
+                - cell "—" [ref=e132]
+                - cell "Erster Weltkrieg" [ref=e133]:
+                  - link "Erster Weltkrieg" [ref=e134]:
+                    - /url: /de/events/cmmqvoswa00bxj8qrunge4tvn
+              - row "Select row cmmnfxrzw00dbj8c4u5fqvx1e Depth Limit Test Sub — — — Erster Weltkrieg" [ref=e135] [cursor=pointer]:
+                - cell "Select row cmmnfxrzw00dbj8c4u5fqvx1e" [ref=e136]:
+                  - checkbox "Select row cmmnfxrzw00dbj8c4u5fqvx1e" [ref=e137]
+                - cell "Depth Limit Test Sub" [ref=e138]:
+                  - link "Depth Limit Test Sub" [ref=e139]:
+                    - /url: /de/events/cmmnfxrzw00dbj8c4u5fqvx1e
+                - cell "—" [ref=e140]
+                - cell "—" [ref=e141]
+                - cell "—" [ref=e142]
+                - cell "Erster Weltkrieg" [ref=e143]:
+                  - link "Erster Weltkrieg" [ref=e144]:
+                    - /url: /de/events/cmmnfwjtw00c5j8c45649tpb1
+              - row "Select row cmmng5mko00fhj8c4x51e6g33 Depth Limit Test Sub — — — Erster Weltkrieg" [ref=e145] [cursor=pointer]:
+                - cell "Select row cmmng5mko00fhj8c4x51e6g33" [ref=e146]:
+                  - checkbox "Select row cmmng5mko00fhj8c4x51e6g33" [ref=e147]
+                - cell "Depth Limit Test Sub" [ref=e148]:
+                  - link "Depth Limit Test Sub" [ref=e149]:
+                    - /url: /de/events/cmmng5mko00fhj8c4x51e6g33
+                - cell "—" [ref=e150]
+                - cell "—" [ref=e151]
+                - cell "—" [ref=e152]
+                - cell "Erster Weltkrieg" [ref=e153]:
+                  - link "Erster Weltkrieg" [ref=e154]:
+                    - /url: /de/events/cmmng48sx00ebj8c4ob0pqlp8
+              - row "Select row cmmnfqoej00avj8c4gfdsdrig Erster Weltkrieg Krieg 1914 — —" [ref=e155] [cursor=pointer]:
+                - cell "Select row cmmnfqoej00avj8c4gfdsdrig" [ref=e156]:
+                  - checkbox "Select row cmmnfqoej00avj8c4gfdsdrig" [ref=e157]
+                - cell "Erster Weltkrieg" [ref=e158]:
+                  - link "Erster Weltkrieg" [ref=e159]:
+                    - /url: /de/events/cmmnfqoej00avj8c4gfdsdrig
+                - cell "Krieg" [ref=e160]:
+                  - generic [ref=e161]: Krieg
+                - cell "1914" [ref=e163]
+                - cell "—" [ref=e164]
+                - cell "—" [ref=e165]
+              - row "Select row cmmnfwjtw00c5j8c45649tpb1 Erster Weltkrieg Krieg 1914 — —" [ref=e166] [cursor=pointer]:
+                - cell "Select row cmmnfwjtw00c5j8c45649tpb1" [ref=e167]:
+                  - checkbox "Select row cmmnfwjtw00c5j8c45649tpb1" [ref=e168]
+                - cell "Erster Weltkrieg" [ref=e169]:
+                  - link "Erster Weltkrieg" [ref=e170]:
+                    - /url: /de/events/cmmnfwjtw00c5j8c45649tpb1
+                - cell "Krieg" [ref=e171]:
+                  - generic [ref=e172]: Krieg
+                - cell "1914" [ref=e174]
+                - cell "—" [ref=e175]
+                - cell "—" [ref=e176]
+              - row "Select row cmmnfy2vu00dfj8c4vkafhofh Erster Weltkrieg Krieg 1914 — —" [ref=e177] [cursor=pointer]:
+                - cell "Select row cmmnfy2vu00dfj8c4vkafhofh" [ref=e178]:
+                  - checkbox "Select row cmmnfy2vu00dfj8c4vkafhofh" [ref=e179]
+                - cell "Erster Weltkrieg" [ref=e180]:
+                  - link "Erster Weltkrieg" [ref=e181]:
+                    - /url: /de/events/cmmnfy2vu00dfj8c4vkafhofh
+                - cell "Krieg" [ref=e182]:
+                  - generic [ref=e183]: Krieg
+                - cell "1914" [ref=e185]
+                - cell "—" [ref=e186]
+                - cell "—" [ref=e187]
+              - row "Select row cmmng14bm00dvj8c4l6zvp256 Erster Weltkrieg Krieg 1914 — —" [ref=e188] [cursor=pointer]:
+                - cell "Select row cmmng14bm00dvj8c4l6zvp256" [ref=e189]:
+                  - checkbox "Select row cmmng14bm00dvj8c4l6zvp256" [ref=e190]
+                - cell "Erster Weltkrieg" [ref=e191]:
+                  - link "Erster Weltkrieg" [ref=e192]:
+                    - /url: /de/events/cmmng14bm00dvj8c4l6zvp256
+                - cell "Krieg" [ref=e193]:
+                  - generic [ref=e194]: Krieg
+                - cell "1914" [ref=e196]
+                - cell "—" [ref=e197]
+                - cell "—" [ref=e198]
+              - row "Select row cmmng48sx00ebj8c4ob0pqlp8 Erster Weltkrieg Krieg 1914 — —" [ref=e199] [cursor=pointer]:
+                - cell "Select row cmmng48sx00ebj8c4ob0pqlp8" [ref=e200]:
+                  - checkbox "Select row cmmng48sx00ebj8c4ob0pqlp8" [ref=e201]
+                - cell "Erster Weltkrieg" [ref=e202]:
+                  - link "Erster Weltkrieg" [ref=e203]:
+                    - /url: /de/events/cmmng48sx00ebj8c4ob0pqlp8
+                - cell "Krieg" [ref=e204]:
+                  - generic [ref=e205]: Krieg
+                - cell "1914" [ref=e207]
+                - cell "—" [ref=e208]
+                - cell "—" [ref=e209]
+              - row "Select row cmmncib0a003xj8c4ly5rqwz5 Erster Weltkrieg Krieg 1914 — —" [ref=e210] [cursor=pointer]:
+                - cell "Select row cmmncib0a003xj8c4ly5rqwz5" [ref=e211]:
+                  - checkbox "Select row cmmncib0a003xj8c4ly5rqwz5" [ref=e212]
+                - cell "Erster Weltkrieg" [ref=e213]:
+                  - link "Erster Weltkrieg" [ref=e214]:
+                    - /url: /de/events/cmmncib0a003xj8c4ly5rqwz5
+                - cell "Krieg" [ref=e215]:
+                  - generic [ref=e216]: Krieg
+                - cell "1914" [ref=e218]
+                - cell "—" [ref=e219]
+                - cell "—" [ref=e220]
+              - row "Select row cmmnckhu2004nj8c4t8grny4r Erster Weltkrieg Krieg 1914 — —" [ref=e221] [cursor=pointer]:
+                - cell "Select row cmmnckhu2004nj8c4t8grny4r" [ref=e222]:
+                  - checkbox "Select row cmmnckhu2004nj8c4t8grny4r" [ref=e223]
+                - cell "Erster Weltkrieg" [ref=e224]:
+                  - link "Erster Weltkrieg" [ref=e225]:
+                    - /url: /de/events/cmmnckhu2004nj8c4t8grny4r
+                - cell "Krieg" [ref=e226]:
+                  - generic [ref=e227]: Krieg
+                - cell "1914" [ref=e229]
+                - cell "—" [ref=e230]
+                - cell "—" [ref=e231]
+              - row "Select row cmmncqq8l005hj8c4fjfex7zs Erster Weltkrieg Krieg 1914 — —" [ref=e232] [cursor=pointer]:
+                - cell "Select row cmmncqq8l005hj8c4fjfex7zs" [ref=e233]:
+                  - checkbox "Select row cmmncqq8l005hj8c4fjfex7zs" [ref=e234]
+                - cell "Erster Weltkrieg" [ref=e235]:
+                  - link "Erster Weltkrieg" [ref=e236]:
+                    - /url: /de/events/cmmncqq8l005hj8c4fjfex7zs
+                - cell "Krieg" [ref=e237]:
+                  - generic [ref=e238]: Krieg
+                - cell "1914" [ref=e240]
+                - cell "—" [ref=e241]
+                - cell "—" [ref=e242]
+              - row "Select row cmmnfh0wa007jj8c4nmldhjj5 Erster Weltkrieg Krieg 1914 — —" [ref=e243] [cursor=pointer]:
+                - cell "Select row cmmnfh0wa007jj8c4nmldhjj5" [ref=e244]:
+                  - checkbox "Select row cmmnfh0wa007jj8c4nmldhjj5" [ref=e245]
+                - cell "Erster Weltkrieg" [ref=e246]:
+                  - link "Erster Weltkrieg" [ref=e247]:
+                    - /url: /de/events/cmmnfh0wa007jj8c4nmldhjj5
+                - cell "Krieg" [ref=e248]:
+                  - generic [ref=e249]: Krieg
+                - cell "1914" [ref=e251]
+                - cell "—" [ref=e252]
+                - cell "—" [ref=e253]
+              - row "Select row cmmnfj0iu008hj8c437w56d3b Erster Weltkrieg Krieg 1914 — —" [ref=e254] [cursor=pointer]:
+                - cell "Select row cmmnfj0iu008hj8c437w56d3b" [ref=e255]:
+                  - checkbox "Select row cmmnfj0iu008hj8c437w56d3b" [ref=e256]
+                - cell "Erster Weltkrieg" [ref=e257]:
+                  - link "Erster Weltkrieg" [ref=e258]:
+                    - /url: /de/events/cmmnfj0iu008hj8c437w56d3b
+                - cell "Krieg" [ref=e259]:
+                  - generic [ref=e260]: Krieg
+                - cell "1914" [ref=e262]
+                - cell "—" [ref=e263]
+                - cell "—" [ref=e264]
+              - row "Select row cmmnflgkg009nj8c4mceb1kfc Erster Weltkrieg Krieg 1914 — —" [ref=e265] [cursor=pointer]:
+                - cell "Select row cmmnflgkg009nj8c4mceb1kfc" [ref=e266]:
+                  - checkbox "Select row cmmnflgkg009nj8c4mceb1kfc" [ref=e267]
+                - cell "Erster Weltkrieg" [ref=e268]:
+                  - link "Erster Weltkrieg" [ref=e269]:
+                    - /url: /de/events/cmmnflgkg009nj8c4mceb1kfc
+                - cell "Krieg" [ref=e270]:
+                  - generic [ref=e271]: Krieg
+                - cell "1914" [ref=e273]
+                - cell "—" [ref=e274]
+                - cell "—" [ref=e275]
+              - row "Select row cmmque5370019j8qr7jrsm12f Erster Weltkrieg Krieg 1914 — —" [ref=e276] [cursor=pointer]:
+                - cell "Select row cmmque5370019j8qr7jrsm12f" [ref=e277]:
+                  - checkbox "Select row cmmque5370019j8qr7jrsm12f" [ref=e278]
+                - cell "Erster Weltkrieg" [ref=e279]:
+                  - link "Erster Weltkrieg" [ref=e280]:
+                    - /url: /de/events/cmmque5370019j8qr7jrsm12f
+                - cell "Krieg" [ref=e281]:
+                  - generic [ref=e282]: Krieg
+                - cell "1914" [ref=e284]
+                - cell "—" [ref=e285]
+                - cell "—" [ref=e286]
+              - row "Select row cmmqvoswa00bxj8qrunge4tvn Erster Weltkrieg Krieg 1914 — —" [ref=e287] [cursor=pointer]:
+                - cell "Select row cmmqvoswa00bxj8qrunge4tvn" [ref=e288]:
+                  - checkbox "Select row cmmqvoswa00bxj8qrunge4tvn" [ref=e289]
+                - cell "Erster Weltkrieg" [ref=e290]:
+                  - link "Erster Weltkrieg" [ref=e291]:
+                    - /url: /de/events/cmmqvoswa00bxj8qrunge4tvn
+                - cell "Krieg" [ref=e292]:
+                  - generic [ref=e293]: Krieg
+                - cell "1914" [ref=e295]
+                - cell "—" [ref=e296]
+                - cell "—" [ref=e297]
+              - row "Select row seed-event-cosima Freundschaft Goethe–Schiller — Juli 1794 1805 —" [ref=e298] [cursor=pointer]:
+                - cell "Select row seed-event-cosima" [ref=e299]:
+                  - checkbox "Select row seed-event-cosima" [ref=e300]
+                - cell "Freundschaft Goethe–Schiller" [ref=e301]:
+                  - link "Freundschaft Goethe–Schiller" [ref=e302]:
+                    - /url: /de/events/seed-event-cosima
+                - cell "—" [ref=e303]
+                - cell "Juli 1794" [ref=e304]
+                - cell "1805" [ref=e305]
+                - cell "—" [ref=e306]
+              - row "Select row seed-event-weimar Goethes Ankunft in Weimar — 1775 — —" [ref=e307] [cursor=pointer]:
+                - cell "Select row seed-event-weimar" [ref=e308]:
+                  - checkbox "Select row seed-event-weimar" [ref=e309]
+                - cell "Goethes Ankunft in Weimar" [ref=e310]:
+                  - link "Goethes Ankunft in Weimar" [ref=e311]:
+                    - /url: /de/events/seed-event-weimar
+                - cell "—" [ref=e312]
+                - cell "1775" [ref=e313]
+                - cell "—" [ref=e314]
+                - cell "—" [ref=e315]
+              - row "Select row cmmnfy8mg00djj8c4h1hqkj5e Schlacht an der Somme — 1916 — Erster Weltkrieg" [ref=e316] [cursor=pointer]:
+                - cell "Select row cmmnfy8mg00djj8c4h1hqkj5e" [ref=e317]:
+                  - checkbox "Select row cmmnfy8mg00djj8c4h1hqkj5e" [ref=e318]
+                - cell "Schlacht an der Somme" [ref=e319]:
+                  - link "Schlacht an der Somme" [ref=e320]:
+                    - /url: /de/events/cmmnfy8mg00djj8c4h1hqkj5e
+                - cell "—" [ref=e321]
+                - cell "1916" [ref=e322]
+                - cell "—" [ref=e323]
+                - cell "Erster Weltkrieg" [ref=e324]:
+                  - link "Erster Weltkrieg" [ref=e325]:
+                    - /url: /de/events/cmmnfy2vu00dfj8c4vkafhofh
+              - row "Select row cmmng186a00dzj8c4ag6vjyj7 Schlacht an der Somme — 1916 — Erster Weltkrieg" [ref=e326] [cursor=pointer]:
+                - cell "Select row cmmng186a00dzj8c4ag6vjyj7" [ref=e327]:
+                  - checkbox "Select row cmmng186a00dzj8c4ag6vjyj7" [ref=e328]
+                - cell "Schlacht an der Somme" [ref=e329]:
+                  - link "Schlacht an der Somme" [ref=e330]:
+                    - /url: /de/events/cmmng186a00dzj8c4ag6vjyj7
+                - cell "—" [ref=e331]
+                - cell "1916" [ref=e332]
+                - cell "—" [ref=e333]
+                - cell "Erster Weltkrieg" [ref=e334]:
+                  - link "Erster Weltkrieg" [ref=e335]:
+                    - /url: /de/events/cmmng14bm00dvj8c4l6zvp256
+              - row "Select row cmmqufe1g004rj8qrorrjkne8 Verdun — — — Erster Weltkrieg" [ref=e336] [cursor=pointer]:
+                - cell "Select row cmmqufe1g004rj8qrorrjkne8" [ref=e337]:
+                  - checkbox "Select row cmmqufe1g004rj8qrorrjkne8" [ref=e338]
+                - cell "Verdun" [ref=e339]:
+                  - link "Verdun" [ref=e340]:
+                    - /url: /de/events/cmmqufe1g004rj8qrorrjkne8
+                - cell "—" [ref=e341]
+                - cell "—" [ref=e342]
+                - cell "—" [ref=e343]
+                - cell "Erster Weltkrieg" [ref=e344]:
+                  - link "Erster Weltkrieg" [ref=e345]:
+                    - /url: /de/events/cmmque5370019j8qr7jrsm12f
+              - row "Select row cmmqvq9mw00ftj8qrhkt6yovn Verdun — — — Erster Weltkrieg" [ref=e346] [cursor=pointer]:
+                - cell "Select row cmmqvq9mw00ftj8qrhkt6yovn" [ref=e347]:
+                  - checkbox "Select row cmmqvq9mw00ftj8qrhkt6yovn" [ref=e348]
+                - cell "Verdun" [ref=e349]:
+                  - link "Verdun" [ref=e350]:
+                    - /url: /de/events/cmmqvq9mw00ftj8qrhkt6yovn
+                - cell "—" [ref=e351]
+                - cell "—" [ref=e352]
+                - cell "—" [ref=e353]
+                - cell "Erster Weltkrieg" [ref=e354]:
+                  - link "Erster Weltkrieg" [ref=e355]:
+                    - /url: /de/events/cmmqvoswa00bxj8qrunge4tvn
+          - generic [ref=e356]:
+            - paragraph [ref=e357]: 26 Ereignisse
+            - generic [ref=e358]:
+              - button "< Zurück" [disabled]
+              - generic [ref=e359]: Seite 1 / 2
+              - button "Weiter >" [ref=e360]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e366] [cursor=pointer]:
+    - img [ref=e367]
+  - alert [ref=e370]

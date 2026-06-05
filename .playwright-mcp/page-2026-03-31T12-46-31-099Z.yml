@@ -1,0 +1,66 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e42]:
+    - banner [ref=e43]:
+      - button "Seitenleiste umschalten" [ref=e44]:
+        - img
+      - generic [ref=e45]: Evidoxa
+      - button "Projekt auswählen" [disabled]:
+        - generic: Projekt auswählen
+      - generic [ref=e46]:
+        - button "Design wechseln" [ref=e47]:
+          - img
+          - img
+        - group "Language switcher" [ref=e48]:
+          - button "DE" [pressed] [ref=e49]
+          - button "EN" [ref=e50]
+        - generic [ref=e52]: U
+    - complementary "Main navigation" [ref=e53]:
+      - navigation [ref=e54]:
+        - generic [ref=e55]:
+          - link "Dashboard" [ref=e56] [cursor=pointer]:
+            - /url: /de
+            - img [ref=e57]
+            - generic [ref=e62]: Dashboard
+          - link "Personen" [ref=e63] [cursor=pointer]:
+            - /url: /de/persons
+            - img [ref=e64]
+            - generic [ref=e69]: Personen
+          - link "Ereignisse" [ref=e70] [cursor=pointer]:
+            - /url: /de/events
+            - img [ref=e71]
+            - generic [ref=e73]: Ereignisse
+          - link "Quellen" [ref=e74] [cursor=pointer]:
+            - /url: /de/sources
+            - img [ref=e75]
+            - generic [ref=e78]: Quellen
+          - link "Beziehungen" [ref=e79] [cursor=pointer]:
+            - /url: /de/relations
+            - img [ref=e80]
+            - generic [ref=e83]: Beziehungen
+          - generic "Orte":
+            - img
+            - generic: Orte
+          - generic "Literatur":
+            - img
+            - generic: Literatur
+          - generic "Einstellungen":
+            - img
+            - generic: Einstellungen
+        - generic [ref=e84]:
+          - link "Ereignistypen" [ref=e85] [cursor=pointer]:
+            - /url: /de/settings/event-types
+            - img [ref=e86]
+            - generic [ref=e87]: Ereignistypen
+          - link "Relationstypen" [ref=e88] [cursor=pointer]:
+            - /url: /de/settings/relation-types
+            - img [ref=e89]
+            - generic [ref=e92]: Relationstypen
+    - main [ref=e93]:
+      - generic [ref=e94]:
+        - heading "Willkommen, Evidoxa Admin!" [level=1] [ref=e95]
+        - paragraph [ref=e96]: Du bist angemeldet.
+        - button "Abmelden" [ref=e97]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e38] [cursor=pointer]:
+    - img [ref=e39]
+  - alert [ref=e32]

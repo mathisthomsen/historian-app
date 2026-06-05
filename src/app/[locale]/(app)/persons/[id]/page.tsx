@@ -6,6 +6,14 @@ import { auth } from "@/auth";
 import { DeletePersonButton } from "@/components/research/DeletePersonButton";
 import { PersonDetailCard } from "@/components/research/PersonDetailCard";
 import { PersonDetailTabs } from "@/components/research/PersonDetailTabs";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { prisma } from "@/lib/db";
 import type { PersonDetail } from "@/types/person";
 
@@ -99,18 +107,18 @@ export default async function PersonDetailPage({ params }: PageProps) {
   const namesContent = (
     <ul className="space-y-2">
       {person.names.length === 0 ? (
-        <li className="text-sm text-muted-foreground">—</li>
+        <li className="text-muted-foreground text-sm">—</li>
       ) : (
         person.names.map((n, i) => (
           <li key={i} className="flex items-center gap-2 text-sm">
             <span>{n.name}</span>
             {n.language && (
-              <span className="rounded bg-muted px-1 py-0.5 text-xs text-muted-foreground">
+              <span className="bg-muted text-muted-foreground rounded px-1 py-0.5 text-xs">
                 {n.language}
               </span>
             )}
             {n.is_primary && (
-              <span className="rounded bg-primary/10 px-1 py-0.5 text-xs text-primary">
+              <span className="bg-primary/10 text-primary rounded px-1 py-0.5 text-xs">
                 {t("names.is_primary")}
               </span>
             )}
@@ -121,13 +129,26 @@ export default async function PersonDetailPage({ params }: PageProps) {
   );
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="page-container mx-auto space-y-6">
+      <div className="hidden md:block">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/${locale}/persons`}>{t("title")}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>/</BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbPage>{displayName}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{displayName}</h1>
+        <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">{displayName}</h1>
         <div className="flex gap-2">
           <Link
             href={`/${locale}/persons/${id}/edit`}
-            className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+            className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
           >
             {t("edit_title")}
           </Link>
@@ -135,7 +156,9 @@ export default async function PersonDetailPage({ params }: PageProps) {
         </div>
       </div>
       <PersonDetailTabs
-        attributesContent={<PersonDetailCard person={person} projectId={raw.project_id} locale={locale} />}
+        attributesContent={
+          <PersonDetailCard person={person} projectId={raw.project_id} locale={locale} />
+        }
         namesContent={namesContent}
         personId={id}
         personLabel={displayName}

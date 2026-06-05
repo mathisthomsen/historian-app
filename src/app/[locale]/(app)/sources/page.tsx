@@ -96,12 +96,12 @@ export default async function SourcesPage({ params, searchParams }: PageProps) {
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="page-container mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
+        <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">{t("title")}</h1>
         <Link
           href={`/${locale}/sources/new`}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           {t("create")}
         </Link>

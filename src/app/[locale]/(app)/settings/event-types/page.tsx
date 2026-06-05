@@ -21,8 +21,8 @@ export default async function EventTypesPage({ params: _params }: PageProps) {
   const projectId = session.user.projectId ?? "";
 
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold">{t("title")}</h1>
+    <div className="page-container mx-auto space-y-6">
+      <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">{t("title")}</h1>
       <EventTypeSettingsTable projectId={projectId} />
     </div>
   );
