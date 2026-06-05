@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - group "Language switcher" [ref=e4]:
+        - button "DE" [pressed] [ref=e5]
+        - button "EN" [ref=e6]
+      - button "Design wechseln" [ref=e7]:
+        - img
+        - img
+    - generic [ref=e9]:
+      - heading "Evidoxa" [level=1] [ref=e11]
+      - generic [ref=e12]:
+        - generic [ref=e14]: Anmelden
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - text: E-Mail
+            - textbox "E-Mail" [ref=e18]
+          - generic [ref=e19]:
+            - text: Passwort
+            - generic [ref=e20]:
+              - textbox "Passwort" [ref=e21]
+              - button "Show password" [ref=e22]:
+                - img [ref=e23]
+          - button "Anmelden" [ref=e26]
+          - generic [ref=e27]:
+            - link "Passwort vergessen?" [ref=e29] [cursor=pointer]:
+              - /url: /auth/forgot-password
+            - generic [ref=e30]:
+              - text: Noch kein Konto?
+              - link "Registrieren" [ref=e31] [cursor=pointer]:
+                - /url: /auth/register
+  - region "Notifications alt+T"
+  - alert [ref=e32]

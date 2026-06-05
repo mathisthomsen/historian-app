@@ -1,0 +1,135 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Seitenleiste umschalten" [ref=e4]:
+        - img
+      - generic [ref=e5]: Evidoxa
+      - button "Projekt auswählen" [disabled]:
+        - generic: Projekt auswählen
+      - generic [ref=e6]:
+        - button "Design wechseln" [ref=e7]:
+          - img
+          - img
+        - group "Language switcher" [ref=e8]:
+          - button "DE" [pressed] [ref=e9]
+          - button "EN" [ref=e10]
+        - generic [ref=e12]: U
+    - complementary "Primary navigation" [ref=e13]:
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /de
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+          - link "Personen" [ref=e23] [cursor=pointer]:
+            - /url: /de/persons
+            - img [ref=e24]
+            - generic [ref=e29]: Personen
+          - link "Ereignisse" [ref=e30] [cursor=pointer]:
+            - /url: /de/events
+            - img [ref=e31]
+            - generic [ref=e33]: Ereignisse
+          - link "Quellen" [ref=e34] [cursor=pointer]:
+            - /url: /de/sources
+            - img [ref=e35]
+            - generic [ref=e38]: Quellen
+          - link "Beziehungen" [ref=e39] [cursor=pointer]:
+            - /url: /de/relations
+            - img [ref=e40]
+            - generic [ref=e43]: Beziehungen
+          - generic "Orte":
+            - img
+            - generic: Orte
+          - generic "Literatur":
+            - img
+            - generic: Literatur
+          - generic "Einstellungen":
+            - img
+            - generic: Einstellungen
+        - generic [ref=e44]:
+          - link "Ereignistypen" [ref=e45] [cursor=pointer]:
+            - /url: /de/settings/event-types
+            - img [ref=e46]
+            - generic [ref=e47]: Ereignistypen
+          - link "Relationstypen" [ref=e48] [cursor=pointer]:
+            - /url: /de/settings/relation-types
+            - img [ref=e49]
+            - generic [ref=e52]: Relationstypen
+    - main "Main content" [ref=e53]:
+      - generic [ref=e55]:
+        - navigation "Breadcrumb" [ref=e57]:
+          - list [ref=e58]:
+            - listitem [ref=e59]:
+              - link "Personen" [ref=e60] [cursor=pointer]:
+                - /url: /de/persons
+            - listitem [ref=e61]: /
+            - listitem [ref=e62]:
+              - link "Alexander von Humboldt" [disabled] [ref=e63]
+        - generic [ref=e64]:
+          - heading "Alexander von Humboldt" [level=1] [ref=e65]
+          - generic [ref=e66]:
+            - link "Person bearbeiten" [ref=e67] [cursor=pointer]:
+              - /url: /de/persons/seed-person-humboldt/edit
+            - button "Person löschen" [ref=e68]
+        - generic [ref=e69]:
+          - tablist [ref=e70]:
+            - tab "Attribute" [selected] [ref=e71]
+            - tab "Weitere Namen" [ref=e72]
+            - tab "Ereignisse 1" [ref=e73]:
+              - text: Ereignisse
+              - generic [ref=e74]: "1"
+            - tab "Personen 10" [ref=e75]:
+              - text: Personen
+              - generic [ref=e76]: "10"
+            - tab "Quellen" [ref=e77]
+            - tab "Relationen 11" [ref=e78]:
+              - text: Relationen
+              - generic [ref=e79]: "11"
+            - tab "Nachweise" [ref=e80]
+            - tab "Verlauf" [ref=e81]
+          - tabpanel "Attribute" [ref=e82]:
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - term [ref=e85]: Geburtsdatum
+                - definition [ref=e86]:
+                  - generic [ref=e87]:
+                    - text: "1769"
+                    - generic [ref=e88]: (Sicher)
+                  - 'button "Geburtsdatum: 0 Quellen" [ref=e89]':
+                    - generic [ref=e90] [cursor=pointer]: 0 Quellen
+              - generic [ref=e91]:
+                - term [ref=e92]: Geburtsort
+                - definition [ref=e93]:
+                  - generic [ref=e94]: Berlin
+                  - 'button "Geburtsort: 0 Quellen" [ref=e95]':
+                    - generic [ref=e96] [cursor=pointer]: 0 Quellen
+              - generic [ref=e97]:
+                - term [ref=e98]: Sterbedatum
+                - definition [ref=e99]:
+                  - generic [ref=e100]:
+                    - text: "1859"
+                    - generic [ref=e101]: (Sicher)
+                  - 'button "Sterbedatum: 0 Quellen" [ref=e102]':
+                    - generic [ref=e103] [cursor=pointer]: 0 Quellen
+              - generic [ref=e104]:
+                - term [ref=e105]: Sterbeort
+                - definition [ref=e106]:
+                  - generic [ref=e107]: Berlin
+                  - 'button "Sterbeort: 0 Quellen" [ref=e108]':
+                    - generic [ref=e109] [cursor=pointer]: 0 Quellen
+              - generic [ref=e110]:
+                - term [ref=e111]: Notizen
+                - definition [ref=e112]:
+                  - generic [ref=e113]: Naturforscher und Weltreisender, Begründer der modernen Geographie
+                  - 'button "Notizen: 0 Quellen" [ref=e114]':
+                    - generic [ref=e115] [cursor=pointer]: 0 Quellen
+              - generic [ref=e116]:
+                - term [ref=e117]: Erstellt am
+                - definition [ref=e118]: 7.3.2026
+              - generic [ref=e119]:
+                - term [ref=e120]: Erstellt von
+                - definition [ref=e121]: seed-use…
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e127] [cursor=pointer]:
+    - img [ref=e128]
+  - alert [ref=e131]

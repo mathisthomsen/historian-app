@@ -1,0 +1,365 @@
+- generic:
+  - generic:
+    - banner:
+      - button:
+        - img
+      - generic: Evidoxa
+      - button [disabled]:
+        - generic: Projekt auswählen
+      - generic:
+        - button:
+          - img
+        - group:
+          - button [pressed]: DE
+          - button: EN
+        - generic:
+          - generic: U
+    - complementary:
+      - navigation:
+        - generic:
+          - link:
+            - /url: /de
+            - img
+            - generic: Dashboard
+          - link:
+            - /url: /de/persons
+            - img
+            - generic: Personen
+          - link:
+            - /url: /de/events
+            - img
+            - generic: Ereignisse
+          - link:
+            - /url: /de/sources
+            - img
+            - generic: Quellen
+          - link:
+            - /url: /de/relations
+            - img
+            - generic: Beziehungen
+          - generic:
+            - img
+            - generic: Orte
+          - generic:
+            - img
+            - generic: Literatur
+          - generic:
+            - img
+            - generic: Einstellungen
+        - generic:
+          - link:
+            - /url: /de/settings/event-types
+            - img
+            - generic: Ereignistypen
+          - link:
+            - /url: /de/settings/relation-types
+            - img
+            - generic: Relationstypen
+    - main:
+      - generic:
+        - generic:
+          - heading [level=1]: Johann Wolfgang von Goethe
+          - generic:
+            - link:
+              - /url: /de/persons/seed-person-goethe/edit
+              - text: Person bearbeiten
+            - button: Person löschen
+        - generic:
+          - tablist:
+            - tab: Attribute
+            - tab: Weitere Namen
+            - tab:
+              - text: Ereignisse
+              - generic: "1"
+            - tab:
+              - text: Personen
+              - generic: "11"
+            - tab: Quellen
+            - tab [selected]:
+              - text: Relationen
+              - generic: "12"
+            - tab: Nachweise
+            - tab: Verlauf
+          - tabpanel:
+            - generic:
+              - generic:
+                - button:
+                  - img
+                  - text: Relation hinzufügen
+              - generic:
+                - paragraph: Ausgehend
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: UNKNOWN
+                    - generic:
+                      - button:
+                        - text: 0 Belege
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: participated in
+                      - generic: →
+                      - generic: Goethes Ankunft in Weimar
+                      - generic: CERTAIN
+                      - generic: ab 1775
+                    - generic:
+                      - button:
+                        - text: 1 Beleg
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Johann Wolfgang von Goethe
+                      - generic: →
+                      - generic: was colleague of
+                      - generic: →
+                      - generic: Friedrich von Schiller
+                      - generic: CERTAIN
+                      - generic: 1794 – 1805
+                    - generic:
+                      - button:
+                        - text: 1 Beleg
+                        - img
+                      - button:
+                        - img
+                      - button:
+                        - img
+              - generic:
+                - paragraph: Eingehend
+                - paragraph: Noch keine Relationen.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e152] [cursor=pointer]:
+    - img [ref=e153]
+  - alert: Evidoxa
+  - dialog "Relation hinzufügen" [ref=e420]:
+    - heading "Relation hinzufügen" [level=2] [ref=e422]
+    - generic [ref=e423]:
+      - generic [ref=e424]:
+        - text: Von
+        - generic [ref=e426]:
+          - generic [ref=e427]: Person
+          - generic [ref=e428]: Johann Wolfgang von Goethe
+      - generic [ref=e429]:
+        - text: Relationstyp
+        - combobox [ref=e430]:
+          - option "Relationstyp" [selected]
+          - option "Elternteil von / Kind von"
+          - option "ist verwandt mit / ist verwandt mit"
+          - option "participated in / had participant"
+          - option "was born in / was birthplace of"
+          - option "was colleague of / was colleague of"
+      - generic [ref=e431]:
+        - text: Zu
+        - generic [ref=e432]:
+          - combobox [ref=e433]:
+            - option "Person" [selected]
+            - option "Ereignis"
+            - option "Quelle"
+          - button "Entität auswählen…" [ref=e434]
+      - generic [ref=e435]:
+        - text: Gewissheit
+        - group [ref=e436]:
+          - button "Sicher" [ref=e437]
+          - button "Wahrscheinlich" [ref=e438]
+          - button "Möglich" [ref=e439]
+          - button "Unbekannt" [pressed] [ref=e440]
+      - generic [ref=e441]:
+        - text: Notizen
+        - textbox [ref=e442]
+      - button "Zeitliche Gültigkeit" [ref=e444]:
+        - generic [ref=e445]: Zeitliche Gültigkeit
+        - img [ref=e446]
+      - generic [ref=e448]:
+        - button "Beleg hinzufügen" [active] [ref=e449]:
+          - generic [ref=e450]: Beleg hinzufügen
+          - img [ref=e460]
+        - generic [ref=e462]:
+          - generic [ref=e463]:
+            - text: Quelle
+            - button "Entität auswählen…" [ref=e465]
+          - generic [ref=e466]:
+            - text: Zitat
+            - textbox "Relevante Textstelle…" [ref=e467]
+          - generic [ref=e468]:
+            - text: Zuverlässigkeit
+            - group [ref=e469]:
+              - button "Sicher" [ref=e470]
+              - button "Wahrscheinlich" [ref=e471]
+              - button "Möglich" [ref=e472]
+              - button "Unbekannt" [pressed] [ref=e473]
+      - generic [ref=e453]:
+        - button "Abbrechen" [ref=e454]
+        - button "Relation erstellen" [disabled]
+    - button "Close" [ref=e455]:
+      - img [ref=e456]
+      - generic [ref=e459]: Close

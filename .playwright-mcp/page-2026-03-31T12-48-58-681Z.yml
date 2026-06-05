@@ -1,0 +1,127 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Seitenleiste umschalten" [ref=e4]:
+        - img
+      - generic [ref=e5]: Evidoxa
+      - button "Projekt auswählen" [disabled]:
+        - generic: Projekt auswählen
+      - generic [ref=e6]:
+        - button "Design wechseln" [ref=e7]:
+          - img
+          - img
+        - group "Language switcher" [ref=e8]:
+          - button "DE" [pressed] [ref=e9]
+          - button "EN" [ref=e10]
+        - generic [ref=e12]: U
+    - complementary "Main navigation" [ref=e13]:
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /de
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+          - link "Personen" [ref=e23] [cursor=pointer]:
+            - /url: /de/persons
+            - img [ref=e24]
+            - generic [ref=e29]: Personen
+          - link "Ereignisse" [ref=e30] [cursor=pointer]:
+            - /url: /de/events
+            - img [ref=e31]
+            - generic [ref=e33]: Ereignisse
+          - link "Quellen" [ref=e34] [cursor=pointer]:
+            - /url: /de/sources
+            - img [ref=e35]
+            - generic [ref=e38]: Quellen
+          - link "Beziehungen" [ref=e39] [cursor=pointer]:
+            - /url: /de/relations
+            - img [ref=e40]
+            - generic [ref=e43]: Beziehungen
+          - generic "Orte":
+            - img
+            - generic: Orte
+          - generic "Literatur":
+            - img
+            - generic: Literatur
+          - generic "Einstellungen":
+            - img
+            - generic: Einstellungen
+        - generic [ref=e44]:
+          - link "Ereignistypen" [ref=e45] [cursor=pointer]:
+            - /url: /de/settings/event-types
+            - img [ref=e46]
+            - generic [ref=e47]: Ereignistypen
+          - link "Relationstypen" [ref=e48] [cursor=pointer]:
+            - /url: /de/settings/relation-types
+            - img [ref=e49]
+            - generic [ref=e52]: Relationstypen
+    - main [ref=e53]:
+      - generic [ref=e157]:
+        - generic [ref=e158]:
+          - heading "Johann Wolfgang von Goethe" [level=1] [ref=e159]
+          - generic [ref=e160]:
+            - link "Person bearbeiten" [ref=e161] [cursor=pointer]:
+              - /url: /de/persons/seed-person-goethe/edit
+            - button "Person löschen" [ref=e162]
+        - generic [ref=e163]:
+          - tablist [ref=e164]:
+            - tab "Attribute" [selected] [ref=e165]
+            - tab "Weitere Namen" [ref=e166]
+            - tab "Ereignisse 1" [ref=e167]:
+              - text: Ereignisse
+              - generic [ref=e168]: "1"
+            - tab "Personen 11" [ref=e169]:
+              - text: Personen
+              - generic [ref=e170]: "11"
+            - tab "Quellen" [ref=e171]
+            - tab "Relationen 12" [ref=e172]:
+              - text: Relationen
+              - generic [ref=e173]: "12"
+            - tab "Nachweise" [ref=e174]
+            - tab "Verlauf" [ref=e175]
+          - tabpanel "Attribute" [ref=e176]:
+            - generic [ref=e177]:
+              - generic [ref=e178]:
+                - term [ref=e179]: Geburtsdatum
+                - definition [ref=e180]:
+                  - generic [ref=e181]:
+                    - text: "1750"
+                    - generic [ref=e182]: (Sicher)
+                  - 'button "Geburtsdatum: 9 Quellen" [ref=e183]':
+                    - generic [ref=e184] [cursor=pointer]: 9 Quellen
+              - generic [ref=e185]:
+                - term [ref=e186]: Geburtsort
+                - definition [ref=e187]:
+                  - generic [ref=e188]: Frankfurt am Main
+                  - 'button "Geburtsort: 1 Quelle" [ref=e189]':
+                    - generic [ref=e190] [cursor=pointer]: 1 Quelle
+              - generic [ref=e191]:
+                - term [ref=e192]: Sterbedatum
+                - definition [ref=e193]:
+                  - generic [ref=e194]:
+                    - text: "1832"
+                    - generic [ref=e195]: (Sicher)
+                  - 'button "Sterbedatum: 0 Quellen" [ref=e196]':
+                    - generic [ref=e197] [cursor=pointer]: 0 Quellen
+              - generic [ref=e198]:
+                - term [ref=e199]: Sterbeort
+                - definition [ref=e200]:
+                  - generic [ref=e201]: Weimar
+                  - 'button "Sterbeort: 0 Quellen" [ref=e202]':
+                    - generic [ref=e203] [cursor=pointer]: 0 Quellen
+              - generic [ref=e204]:
+                - term [ref=e205]: Notizen
+                - definition [ref=e206]:
+                  - generic [ref=e207]: Bedeutendster deutschsprachiger Dichter der Klassik. Updated.
+                  - 'button "Notizen: 0 Quellen" [ref=e208]':
+                    - generic [ref=e209] [cursor=pointer]: 0 Quellen
+              - generic [ref=e210]:
+                - term [ref=e211]: Erstellt am
+                - definition [ref=e212]: 7.3.2026
+              - generic [ref=e213]:
+                - term [ref=e214]: Erstellt von
+                - definition [ref=e215]: seed-use…
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e152] [cursor=pointer]:
+    - img [ref=e153]
+  - alert [ref=e156]: Evidoxa

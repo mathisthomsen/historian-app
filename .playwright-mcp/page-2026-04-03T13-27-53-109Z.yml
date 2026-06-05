@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Seitenleiste umschalten" [ref=e4]:
+        - img
+      - generic [ref=e5]: Evidoxa
+      - button "Projekt auswählen" [disabled]:
+        - generic: Projekt auswählen
+      - generic [ref=e6]:
+        - button "Design wechseln" [ref=e7]:
+          - img
+          - img
+        - group "Language switcher" [ref=e8]:
+          - button "DE" [pressed] [ref=e9]
+          - button "EN" [ref=e10]
+        - generic [ref=e12]: U
+    - complementary "Primary navigation" [ref=e13]:
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /de
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+          - link "Personen" [ref=e23] [cursor=pointer]:
+            - /url: /de/persons
+            - img [ref=e24]
+            - generic [ref=e29]: Personen
+          - link "Ereignisse" [ref=e30] [cursor=pointer]:
+            - /url: /de/events
+            - img [ref=e31]
+            - generic [ref=e33]: Ereignisse
+          - link "Quellen" [ref=e34] [cursor=pointer]:
+            - /url: /de/sources
+            - img [ref=e35]
+            - generic [ref=e38]: Quellen
+          - link "Beziehungen" [ref=e39] [cursor=pointer]:
+            - /url: /de/relations
+            - img [ref=e40]
+            - generic [ref=e43]: Beziehungen
+          - generic "Orte":
+            - img
+            - generic: Orte
+          - generic "Literatur":
+            - img
+            - generic: Literatur
+          - generic "Einstellungen":
+            - img
+            - generic: Einstellungen
+        - generic [ref=e44]:
+          - link "Ereignistypen" [ref=e45] [cursor=pointer]:
+            - /url: /de/settings/event-types
+            - img [ref=e46]
+            - generic [ref=e47]: Ereignistypen
+          - link "Relationstypen" [ref=e48] [cursor=pointer]:
+            - /url: /de/settings/relation-types
+            - img [ref=e49]
+            - generic [ref=e52]: Relationstypen
+    - main "Main content" [ref=e53]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e74] [cursor=pointer]:
+    - img [ref=e75]
+  - alert [ref=e78]

@@ -2,9 +2,9 @@
 
 import { Pencil } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { BulkDeleteDialog } from "@/components/research/BulkDeleteDialog";
@@ -14,8 +14,14 @@ import { DataTableSearch } from "@/components/research/DataTableSearch";
 import { DeleteSourceButton } from "@/components/research/DeleteSourceButton";
 import { ReliabilityBadge } from "@/components/research/ReliabilityBadge";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
 import { useListUrlState } from "@/hooks/use-list-url-state";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SOURCE_TYPE_SUGGESTIONS } from "@/lib/source-types";
 import type { SourceReliability, SourceSummary } from "@/types/source";
 
@@ -50,6 +56,7 @@ export function SourceTable({
 }: SourceTableProps) {
   const t = useTranslations("sources");
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -60,7 +67,7 @@ export function SourceTable({
   });
 
   function handleTypeChange(value: string) {
-    router.push(buildUrl({ type: value, page: "1" }));
+    router.push(buildUrl({ type: value === "__all__" ? "" : value, page: "1" }));
   }
 
   function handleReliabilityChange(value: SourceReliability) {
@@ -172,17 +179,18 @@ export function SourceTable({
           />
 
           {/* Type filter */}
-          <Select
-            value={type}
-            onChange={(e) => handleTypeChange(e.target.value)}
-            className="h-auto w-auto py-1.5"
-          >
-            <option value="">{t("all_types")}</option>
-            {SOURCE_TYPE_SUGGESTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+          <Select value={type || "__all__"} onValueChange={handleTypeChange}>
+            <SelectTrigger className="w-auto">
+              <SelectValue placeholder={t("all_types")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{t("all_types")}</SelectItem>
+              {SOURCE_TYPE_SUGGESTIONS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
 
           {/* Reliability filter */}
@@ -221,12 +229,6 @@ export function SourceTable({
               </Button>
             </>
           )}
-          <Link
-            href={`/${locale}/sources/new`}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
-          >
-            {t("create")}
-          </Link>
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React from "react";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -42,8 +43,8 @@ export function DataTable<TData extends { id: string }>({
   const allSelected = data.length > 0 && data.every((row) => selectedIds.includes(row.id));
   const someSelected = data.some((row) => selectedIds.includes(row.id));
 
-  function handleSelectAll(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.checked) {
+  function handleSelectAll(checked: boolean | "indeterminate") {
+    if (checked === true) {
       onSelectionChange(data.map((row) => row.id));
     } else {
       onSelectionChange([]);
@@ -63,15 +64,10 @@ export function DataTable<TData extends { id: string }>({
       <TableHeader>
         <TableRow>
           <TableHead className="w-10">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              ref={(el) => {
-                if (el) el.indeterminate = someSelected && !allSelected;
-              }}
-              onChange={handleSelectAll}
+            <Checkbox
+              checked={allSelected ? true : someSelected && !allSelected ? "indeterminate" : false}
+              onCheckedChange={handleSelectAll}
               aria-label={t("select_all")}
-              className="border-input rounded border"
             />
           </TableHead>
           {columns.map((col) => (
@@ -109,10 +105,11 @@ export function DataTable<TData extends { id: string }>({
             onClick={
               onRowClick
                 ? (e) => {
-                    // Don't hijack clicks that land on (or inside) an interactive
-                    // descendant — links, buttons, checkboxes and their labels.
                     const target = e.target as HTMLElement;
-                    if (!target.closest("a, button, input, label, select, textarea")) {
+                    // Superset of both branches: 2.5's Radix checkbox uses role="checkbox",
+                    // and F-H6 needs links/buttons exempt so a row click does not
+                    // fire on the edit/delete button padding.
+                    if (!target.closest('a, button, input, label, select, textarea, [role="checkbox"]')) {
                       onRowClick(row.id);
                     }
                   }
@@ -120,13 +117,11 @@ export function DataTable<TData extends { id: string }>({
             }
           >
             <TableCell>
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={selectedIds.includes(row.id)}
-                onChange={(e) => handleSelectRow(row.id, e.target.checked)}
+                onCheckedChange={(checked) => handleSelectRow(row.id, checked === true)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label={t("select_row")}
-                className="border-input rounded border"
               />
             </TableCell>
             {columns.map((col) => (

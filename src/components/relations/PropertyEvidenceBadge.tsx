@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import { PropertyEvidencePanel } from "@/components/relations/PropertyEvidencePanel";
-import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface PropertyEvidenceBadgeProps {
@@ -14,6 +13,8 @@ interface PropertyEvidenceBadgeProps {
   entityId: string;
   property: string;
   fieldLabel: string;
+  /** Pass true when this field has a certainty claim — shows warning state when count is 0. */
+  hasCertainty?: boolean;
 }
 
 export function PropertyEvidenceBadge({
@@ -22,9 +23,10 @@ export function PropertyEvidenceBadge({
   entityId,
   property,
   fieldLabel,
+  hasCertainty = false,
 }: PropertyEvidenceBadgeProps) {
   const t = useTranslations("propertyEvidence");
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -42,15 +44,31 @@ export function PropertyEvidenceBadge({
     void loadCount();
   }, [loadCount, refreshKey]);
 
-  const label = count === 1 ? t("badgeLabel_one", { count }) : t("badgeLabel_other", { count });
+  // Still loading — render nothing
+  if (count === null) return null;
+
+  // No evidence and no certainty claim — don't render at all
+  if (count === 0 && !hasCertainty) return null;
+
+  const isWarning = count === 0 && hasCertainty;
+  const countLabel =
+    count === 1 ? t("badgeLabel_one", { count }) : t("badgeLabel_other", { count });
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" aria-label={`${fieldLabel}: ${label}`}>
-          <Badge variant={count > 0 ? "default" : "outline"} className="cursor-pointer text-xs">
-            {label}
-          </Badge>
+        <button
+          type="button"
+          aria-label={`${fieldLabel}: ${countLabel}`}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className={
+            isWarning
+              ? "inline-flex cursor-pointer items-center rounded-full border border-dashed border-[var(--color-warning-border)] bg-[var(--color-warning-background)] px-1.5 py-0.5 font-mono text-xs text-[var(--color-warning-foreground)] tabular-nums"
+              : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex cursor-pointer items-center rounded-full px-1.5 py-0.5 font-mono text-xs tabular-nums transition-colors"
+          }
+        >
+          {count}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-3" align="start">

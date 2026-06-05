@@ -1,0 +1,151 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Seitenleiste umschalten" [ref=e4]:
+        - img
+      - generic [ref=e5]: Evidoxa
+      - button "Projekt auswählen" [disabled]:
+        - generic: Projekt auswählen
+      - generic [ref=e6]:
+        - button "Design wechseln" [ref=e7]:
+          - img
+          - img
+        - group "Language switcher" [ref=e8]:
+          - button "DE" [pressed] [ref=e9]
+          - button "EN" [ref=e10]
+        - generic [ref=e12]: U
+    - complementary "Primary navigation" [ref=e13]:
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /de
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+          - link "Personen" [ref=e23] [cursor=pointer]:
+            - /url: /de/persons
+            - img [ref=e24]
+            - generic [ref=e29]: Personen
+          - link "Ereignisse" [ref=e30] [cursor=pointer]:
+            - /url: /de/events
+            - img [ref=e31]
+            - generic [ref=e33]: Ereignisse
+          - link "Quellen" [ref=e34] [cursor=pointer]:
+            - /url: /de/sources
+            - img [ref=e35]
+            - generic [ref=e38]: Quellen
+          - link "Beziehungen" [ref=e39] [cursor=pointer]:
+            - /url: /de/relations
+            - img [ref=e40]
+            - generic [ref=e43]: Beziehungen
+          - generic "Orte":
+            - img
+            - generic: Orte
+          - generic "Literatur":
+            - img
+            - generic: Literatur
+          - generic "Einstellungen":
+            - img
+            - generic: Einstellungen
+        - generic [ref=e44]:
+          - link "Ereignistypen" [ref=e45] [cursor=pointer]:
+            - /url: /de/settings/event-types
+            - img [ref=e46]
+            - generic [ref=e47]: Ereignistypen
+          - link "Relationstypen" [ref=e48] [cursor=pointer]:
+            - /url: /de/settings/relation-types
+            - img [ref=e49]
+            - generic [ref=e52]: Relationstypen
+    - main "Main content" [ref=e53]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - heading "Personen" [level=1] [ref=e57]
+          - link "Neue Person" [ref=e58] [cursor=pointer]:
+            - /url: /de/persons/new
+        - generic [ref=e59]:
+          - generic [ref=e61]:
+            - img [ref=e62]
+            - searchbox "Nach Name suchen…" [ref=e65]
+          - table [ref=e67]:
+            - rowgroup [ref=e68]:
+              - row "Select all Nachname Vorname Geburtsdatum Sterbedatum" [ref=e69]:
+                - columnheader "Select all" [ref=e70]:
+                  - checkbox "Select all" [ref=e71]
+                - columnheader "Nachname" [ref=e72]:
+                  - button "Nachname" [ref=e73]:
+                    - text: Nachname
+                    - img [ref=e74]
+                - columnheader "Vorname" [ref=e76]:
+                  - button "Vorname" [ref=e77]:
+                    - text: Vorname
+                    - img [ref=e78]
+                - columnheader "Geburtsdatum" [ref=e80]
+                - columnheader "Sterbedatum" [ref=e81]
+            - rowgroup [ref=e82]:
+              - row "Select row cmmjdi36a0007j80phbk112j4 Maier Karl 1848 —" [ref=e83] [cursor=pointer]:
+                - cell "Select row cmmjdi36a0007j80phbk112j4" [ref=e84]:
+                  - checkbox "Select row cmmjdi36a0007j80phbk112j4" [ref=e85]
+                - cell "Maier" [ref=e86]
+                - cell "Karl" [ref=e87]
+                - cell "1848" [ref=e88]
+                - cell "—" [ref=e89]
+              - row "Select row cmmjdjbji000dj80pc41a72we Maier Karl 1848 —" [ref=e90] [cursor=pointer]:
+                - cell "Select row cmmjdjbji000dj80pc41a72we" [ref=e91]:
+                  - checkbox "Select row cmmjdjbji000dj80pc41a72we" [ref=e92]
+                - cell "Maier" [ref=e93]
+                - cell "Karl" [ref=e94]
+                - cell "1848" [ref=e95]
+                - cell "—" [ref=e96]
+              - row "Select row cmmjdt302000zj80pqozh588m Maier Karl 1848 —" [ref=e97] [cursor=pointer]:
+                - cell "Select row cmmjdt302000zj80pqozh588m" [ref=e98]:
+                  - checkbox "Select row cmmjdt302000zj80pqozh588m" [ref=e99]
+                - cell "Maier" [ref=e100]
+                - cell "Karl" [ref=e101]
+                - cell "1848" [ref=e102]
+                - cell "—" [ref=e103]
+              - row "Select row cmmque7tc001hj8qrubxpuwzd Maier Karl 1848 —" [ref=e104] [cursor=pointer]:
+                - cell "Select row cmmque7tc001hj8qrubxpuwzd" [ref=e105]:
+                  - checkbox "Select row cmmque7tc001hj8qrubxpuwzd" [ref=e106]
+                - cell "Maier" [ref=e107]
+                - cell "Karl" [ref=e108]
+                - cell "1848" [ref=e109]
+                - cell "—" [ref=e110]
+              - row "Select row cmmqvouxi00c3j8qr2h02zdzb Maier Karl 1848 —" [ref=e111] [cursor=pointer]:
+                - cell "Select row cmmqvouxi00c3j8qr2h02zdzb" [ref=e112]:
+                  - checkbox "Select row cmmqvouxi00c3j8qr2h02zdzb" [ref=e113]
+                - cell "Maier" [ref=e114]
+                - cell "Karl" [ref=e115]
+                - cell "1848" [ref=e116]
+                - cell "—" [ref=e117]
+              - row "Select row seed-person-goethe von Goethe Johann Wolfgang 1750 1832" [ref=e118] [cursor=pointer]:
+                - cell "Select row seed-person-goethe" [ref=e119]:
+                  - checkbox "Select row seed-person-goethe" [ref=e120]
+                - cell "von Goethe" [ref=e121]
+                - cell "Johann Wolfgang" [ref=e122]
+                - cell "1750" [ref=e123]
+                - cell "1832" [ref=e124]
+              - row "Select row seed-person-caroline von Humboldt Caroline 1766 1829" [ref=e125] [cursor=pointer]:
+                - cell "Select row seed-person-caroline" [ref=e126]:
+                  - checkbox "Select row seed-person-caroline" [ref=e127]
+                - cell "von Humboldt" [ref=e128]
+                - cell "Caroline" [ref=e129]
+                - cell "1766" [ref=e130]
+                - cell "1829" [ref=e131]
+              - row "Select row seed-person-humboldt von Humboldt Alexander 1769 1859" [ref=e132] [cursor=pointer]:
+                - cell "Select row seed-person-humboldt" [ref=e133]:
+                  - checkbox "Select row seed-person-humboldt" [ref=e134]
+                - cell "von Humboldt" [ref=e135]
+                - cell "Alexander" [ref=e136]
+                - cell "1769" [ref=e137]
+                - cell "1859" [ref=e138]
+              - row "Select row seed-person-schiller von Schiller Johann Christoph Friedrich 1759 1805" [ref=e139] [cursor=pointer]:
+                - cell "Select row seed-person-schiller" [ref=e140]:
+                  - checkbox "Select row seed-person-schiller" [ref=e141]
+                - cell "von Schiller" [ref=e142]
+                - cell "Johann Christoph Friedrich" [ref=e143]
+                - cell "1759" [ref=e144]
+                - cell "1805" [ref=e145]
+          - paragraph [ref=e147]: 9 Personen
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e153] [cursor=pointer]:
+    - img [ref=e154]
+  - alert [ref=e157]

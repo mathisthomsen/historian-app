@@ -1,0 +1,416 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Toggle sidebar" [ref=e4]:
+        - img
+      - generic [ref=e5]: Evidoxa
+      - button "Select project" [disabled]:
+        - generic: Select project
+      - generic [ref=e6]:
+        - button "Toggle theme" [ref=e7]:
+          - img
+          - img
+        - group "Language switcher" [ref=e8]:
+          - button "DE" [ref=e9]
+          - button "EN" [pressed] [ref=e10]
+        - generic [ref=e12]: U
+    - complementary "Main navigation" [ref=e13]:
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /en
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+          - link "Persons" [ref=e23] [cursor=pointer]:
+            - /url: /en/persons
+            - img [ref=e24]
+            - generic [ref=e29]: Persons
+          - link "Events" [ref=e30] [cursor=pointer]:
+            - /url: /en/events
+            - img [ref=e31]
+            - generic [ref=e33]: Events
+          - link "Sources" [ref=e34] [cursor=pointer]:
+            - /url: /en/sources
+            - img [ref=e35]
+            - generic [ref=e38]: Sources
+          - link "Relations" [ref=e39] [cursor=pointer]:
+            - /url: /en/relations
+            - img [ref=e40]
+            - generic [ref=e43]: Relations
+          - generic "Locations":
+            - img
+            - generic: Locations
+          - generic "Literature":
+            - img
+            - generic: Literature
+          - generic "Settings":
+            - img
+            - generic: Settings
+        - generic [ref=e44]:
+          - link "Event Types" [ref=e45] [cursor=pointer]:
+            - /url: /en/settings/event-types
+            - img [ref=e46]
+            - generic [ref=e47]: Event Types
+          - link "Relation Types" [ref=e48] [cursor=pointer]:
+            - /url: /en/settings/relation-types
+            - img [ref=e49]
+            - generic [ref=e52]: Relation Types
+    - main [ref=e53]:
+      - generic [ref=e54]:
+        - heading "Relations" [level=1] [ref=e55]
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - combobox [ref=e58]:
+              - option "All entity types" [selected]
+              - option "Person"
+              - option "Event"
+              - option "Source"
+            - combobox [ref=e59]:
+              - option "All types" [selected]
+              - option "Elternteil von"
+              - option "ist verwandt mit"
+              - option "participated in"
+              - option "was born in"
+              - option "was colleague of"
+            - combobox [ref=e60]:
+              - option "All certainties" [selected]
+              - option "Certain"
+              - option "Probable"
+              - option "Possible"
+              - option "Unknown"
+          - generic [ref=e61]:
+            - textbox "Search…" [ref=e62]
+            - button "Add Relation" [ref=e63]:
+              - img
+              - text: Add Relation
+          - generic [ref=e64]:
+            - generic [ref=e78]:
+              - generic [ref=e79]:
+                - generic [ref=e81]: Johann Wolfgang von Goethe
+                - generic [ref=e82]: →
+                - generic [ref=e83]: was colleague of
+                - generic [ref=e84]: →
+                - generic [ref=e85]: Friedrich von Schiller
+                - generic [ref=e86]: UNKNOWN
+              - generic [ref=e87]:
+                - button "0 sources" [ref=e88]:
+                  - text: 0 sources
+                  - img [ref=e89]
+                - button "Edit Relation" [ref=e91]:
+                  - img
+                - button "Delete Relation" [ref=e92]:
+                  - img
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - generic [ref=e97]: Alexander von Humboldt
+                - generic [ref=e98]: →
+                - generic [ref=e99]: ist verwandt mit
+                - generic [ref=e100]: →
+                - generic [ref=e101]: Caroline von Humboldt
+                - generic [ref=e102]: UNKNOWN
+              - generic [ref=e103]:
+                - button "0 sources" [ref=e104]:
+                  - text: 0 sources
+                  - img [ref=e105]
+                - button "Edit Relation" [ref=e107]:
+                  - img
+                - button "Delete Relation" [ref=e108]:
+                  - img
+            - generic [ref=e110]:
+              - generic [ref=e111]:
+                - generic [ref=e113]: Johann Wolfgang von Goethe
+                - generic [ref=e114]: →
+                - generic [ref=e115]: was colleague of
+                - generic [ref=e116]: →
+                - generic [ref=e117]: Friedrich von Schiller
+                - generic [ref=e118]: UNKNOWN
+              - generic [ref=e119]:
+                - button "0 sources" [ref=e120]:
+                  - text: 0 sources
+                  - img [ref=e121]
+                - button "Edit Relation" [ref=e123]:
+                  - img
+                - button "Delete Relation" [ref=e124]:
+                  - img
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - generic [ref=e129]: Alexander von Humboldt
+                - generic [ref=e130]: →
+                - generic [ref=e131]: ist verwandt mit
+                - generic [ref=e132]: →
+                - generic [ref=e133]: Caroline von Humboldt
+                - generic [ref=e134]: UNKNOWN
+              - generic [ref=e135]:
+                - button "0 sources" [ref=e136]:
+                  - text: 0 sources
+                  - img [ref=e137]
+                - button "Edit Relation" [ref=e139]:
+                  - img
+                - button "Delete Relation" [ref=e140]:
+                  - img
+            - generic [ref=e142]:
+              - generic [ref=e143]:
+                - generic [ref=e145]: Johann Wolfgang von Goethe
+                - generic [ref=e146]: →
+                - generic [ref=e147]: was colleague of
+                - generic [ref=e148]: →
+                - generic [ref=e149]: Friedrich von Schiller
+                - generic [ref=e150]: UNKNOWN
+              - generic [ref=e151]:
+                - button "0 sources" [ref=e152]:
+                  - text: 0 sources
+                  - img [ref=e153]
+                - button "Edit Relation" [ref=e155]:
+                  - img
+                - button "Delete Relation" [ref=e156]:
+                  - img
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - generic [ref=e161]: Alexander von Humboldt
+                - generic [ref=e162]: →
+                - generic [ref=e163]: ist verwandt mit
+                - generic [ref=e164]: →
+                - generic [ref=e165]: Caroline von Humboldt
+                - generic [ref=e166]: UNKNOWN
+              - generic [ref=e167]:
+                - button "0 sources" [ref=e168]:
+                  - text: 0 sources
+                  - img [ref=e169]
+                - button "Edit Relation" [ref=e171]:
+                  - img
+                - button "Delete Relation" [ref=e172]:
+                  - img
+            - generic [ref=e174]:
+              - generic [ref=e175]:
+                - generic [ref=e177]: Johann Wolfgang von Goethe
+                - generic [ref=e178]: →
+                - generic [ref=e179]: was colleague of
+                - generic [ref=e180]: →
+                - generic [ref=e181]: Friedrich von Schiller
+                - generic [ref=e182]: UNKNOWN
+              - generic [ref=e183]:
+                - button "0 sources" [ref=e184]:
+                  - text: 0 sources
+                  - img [ref=e185]
+                - button "Edit Relation" [ref=e187]:
+                  - img
+                - button "Delete Relation" [ref=e188]:
+                  - img
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - generic [ref=e193]: Alexander von Humboldt
+                - generic [ref=e194]: →
+                - generic [ref=e195]: ist verwandt mit
+                - generic [ref=e196]: →
+                - generic [ref=e197]: Caroline von Humboldt
+                - generic [ref=e198]: UNKNOWN
+              - generic [ref=e199]:
+                - button "0 sources" [ref=e200]:
+                  - text: 0 sources
+                  - img [ref=e201]
+                - button "Edit Relation" [ref=e203]:
+                  - img
+                - button "Delete Relation" [ref=e204]:
+                  - img
+            - generic [ref=e206]:
+              - generic [ref=e207]:
+                - generic [ref=e209]: Johann Wolfgang von Goethe
+                - generic [ref=e210]: →
+                - generic [ref=e211]: was colleague of
+                - generic [ref=e212]: →
+                - generic [ref=e213]: Friedrich von Schiller
+                - generic [ref=e214]: UNKNOWN
+              - generic [ref=e215]:
+                - button "0 sources" [ref=e216]:
+                  - text: 0 sources
+                  - img [ref=e217]
+                - button "Edit Relation" [ref=e219]:
+                  - img
+                - button "Delete Relation" [ref=e220]:
+                  - img
+            - generic [ref=e222]:
+              - generic [ref=e223]:
+                - generic [ref=e225]: Alexander von Humboldt
+                - generic [ref=e226]: →
+                - generic [ref=e227]: ist verwandt mit
+                - generic [ref=e228]: →
+                - generic [ref=e229]: Caroline von Humboldt
+                - generic [ref=e230]: UNKNOWN
+              - generic [ref=e231]:
+                - button "0 sources" [ref=e232]:
+                  - text: 0 sources
+                  - img [ref=e233]
+                - button "Edit Relation" [ref=e235]:
+                  - img
+                - button "Delete Relation" [ref=e236]:
+                  - img
+            - generic [ref=e238]:
+              - generic [ref=e239]:
+                - generic [ref=e241]: Johann Wolfgang von Goethe
+                - generic [ref=e242]: →
+                - generic [ref=e243]: was colleague of
+                - generic [ref=e244]: →
+                - generic [ref=e245]: Friedrich von Schiller
+                - generic [ref=e246]: UNKNOWN
+              - generic [ref=e247]:
+                - button "0 sources" [ref=e248]:
+                  - text: 0 sources
+                  - img [ref=e249]
+                - button "Edit Relation" [ref=e251]:
+                  - img
+                - button "Delete Relation" [ref=e252]:
+                  - img
+            - generic [ref=e254]:
+              - generic [ref=e255]:
+                - generic [ref=e257]: Alexander von Humboldt
+                - generic [ref=e258]: →
+                - generic [ref=e259]: ist verwandt mit
+                - generic [ref=e260]: →
+                - generic [ref=e261]: Caroline von Humboldt
+                - generic [ref=e262]: UNKNOWN
+              - generic [ref=e263]:
+                - button "0 sources" [ref=e264]:
+                  - text: 0 sources
+                  - img [ref=e265]
+                - button "Edit Relation" [ref=e267]:
+                  - img
+                - button "Delete Relation" [ref=e268]:
+                  - img
+            - generic [ref=e270]:
+              - generic [ref=e271]:
+                - generic [ref=e273]: Johann Wolfgang von Goethe
+                - generic [ref=e274]: →
+                - generic [ref=e275]: was colleague of
+                - generic [ref=e276]: →
+                - generic [ref=e277]: Friedrich von Schiller
+                - generic [ref=e278]: UNKNOWN
+              - generic [ref=e279]:
+                - button "0 sources" [ref=e280]:
+                  - text: 0 sources
+                  - img [ref=e281]
+                - button "Edit Relation" [ref=e283]:
+                  - img
+                - button "Delete Relation" [ref=e284]:
+                  - img
+            - generic [ref=e286]:
+              - generic [ref=e287]:
+                - generic [ref=e289]: Alexander von Humboldt
+                - generic [ref=e290]: →
+                - generic [ref=e291]: ist verwandt mit
+                - generic [ref=e292]: →
+                - generic [ref=e293]: Caroline von Humboldt
+                - generic [ref=e294]: UNKNOWN
+              - generic [ref=e295]:
+                - button "0 sources" [ref=e296]:
+                  - text: 0 sources
+                  - img [ref=e297]
+                - button "Edit Relation" [ref=e299]:
+                  - img
+                - button "Delete Relation" [ref=e300]:
+                  - img
+            - generic [ref=e302]:
+              - generic [ref=e303]:
+                - generic [ref=e305]: Johann Wolfgang von Goethe
+                - generic [ref=e306]: →
+                - generic [ref=e307]: was colleague of
+                - generic [ref=e308]: →
+                - generic [ref=e309]: Friedrich von Schiller
+                - generic [ref=e310]: UNKNOWN
+              - generic [ref=e311]:
+                - button "0 sources" [ref=e312]:
+                  - text: 0 sources
+                  - img [ref=e313]
+                - button "Edit Relation" [ref=e315]:
+                  - img
+                - button "Delete Relation" [ref=e316]:
+                  - img
+            - generic [ref=e318]:
+              - generic [ref=e319]:
+                - generic [ref=e321]: Alexander von Humboldt
+                - generic [ref=e322]: →
+                - generic [ref=e323]: ist verwandt mit
+                - generic [ref=e324]: →
+                - generic [ref=e325]: Caroline von Humboldt
+                - generic [ref=e326]: UNKNOWN
+              - generic [ref=e327]:
+                - button "0 sources" [ref=e328]:
+                  - text: 0 sources
+                  - img [ref=e329]
+                - button "Edit Relation" [ref=e331]:
+                  - img
+                - button "Delete Relation" [ref=e332]:
+                  - img
+            - generic [ref=e334]:
+              - generic [ref=e335]:
+                - generic [ref=e337]: Johann Wolfgang von Goethe
+                - generic [ref=e338]: →
+                - generic [ref=e339]: was colleague of
+                - generic [ref=e340]: →
+                - generic [ref=e341]: Friedrich von Schiller
+                - generic [ref=e342]: UNKNOWN
+              - generic [ref=e343]:
+                - button "0 sources" [ref=e344]:
+                  - text: 0 sources
+                  - img [ref=e345]
+                - button "Edit Relation" [ref=e347]:
+                  - img
+                - button "Delete Relation" [ref=e348]:
+                  - img
+            - generic [ref=e350]:
+              - generic [ref=e351]:
+                - generic [ref=e353]: Alexander von Humboldt
+                - generic [ref=e354]: →
+                - generic [ref=e355]: ist verwandt mit
+                - generic [ref=e356]: →
+                - generic [ref=e357]: Caroline von Humboldt
+                - generic [ref=e358]: UNKNOWN
+              - generic [ref=e359]:
+                - button "0 sources" [ref=e360]:
+                  - text: 0 sources
+                  - img [ref=e361]
+                - button "Edit Relation" [ref=e363]:
+                  - img
+                - button "Delete Relation" [ref=e364]:
+                  - img
+            - generic [ref=e366]:
+              - generic [ref=e367]:
+                - generic [ref=e369]: Johann Wolfgang von Goethe
+                - generic [ref=e370]: →
+                - generic [ref=e371]: was colleague of
+                - generic [ref=e372]: →
+                - generic [ref=e373]: Friedrich von Schiller
+                - generic [ref=e374]: UNKNOWN
+              - generic [ref=e375]:
+                - button "0 sources" [ref=e376]:
+                  - text: 0 sources
+                  - img [ref=e377]
+                - button "Edit Relation" [ref=e379]:
+                  - img
+                - button "Delete Relation" [ref=e380]:
+                  - img
+            - generic [ref=e382]:
+              - generic [ref=e383]:
+                - generic [ref=e385]: Friedrich von Schiller
+                - generic [ref=e386]: →
+                - generic [ref=e387]: participated in
+                - generic [ref=e388]: →
+                - generic [ref=e389]: Weimarer Klassik
+                - generic [ref=e390]: CERTAIN
+                - generic [ref=e391]: 1799 – 1805
+              - generic [ref=e392]:
+                - button "1 source" [ref=e393]:
+                  - text: 1 source
+                  - img [ref=e394]
+                - button "Edit Relation" [ref=e396]:
+                  - img
+                - button "Delete Relation" [ref=e397]:
+                  - img
+          - generic [ref=e398]:
+            - paragraph [ref=e399]: 24 total
+            - generic [ref=e400]:
+              - button "Previous" [disabled]
+              - button "Next" [ref=e401]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e72] [cursor=pointer]:
+    - img [ref=e73]
+  - alert [ref=e76]

@@ -1,0 +1,85 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Toggle sidebar" [ref=e4]:
+        - img
+      - generic [ref=e5]: Evidoxa
+      - button "Select project" [disabled]:
+        - generic: Select project
+      - generic [ref=e6]:
+        - button "Toggle theme" [ref=e7]:
+          - img
+          - img
+        - group "Language switcher" [ref=e8]:
+          - button "DE" [ref=e9]
+          - button "EN" [pressed] [ref=e10]
+        - generic [ref=e12]: U
+    - complementary "Main navigation" [ref=e13]:
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /en
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+          - link "Persons" [ref=e23] [cursor=pointer]:
+            - /url: /en/persons
+            - img [ref=e24]
+            - generic [ref=e29]: Persons
+          - link "Events" [ref=e30] [cursor=pointer]:
+            - /url: /en/events
+            - img [ref=e31]
+            - generic [ref=e33]: Events
+          - link "Sources" [ref=e34] [cursor=pointer]:
+            - /url: /en/sources
+            - img [ref=e35]
+            - generic [ref=e38]: Sources
+          - link "Relations" [ref=e39] [cursor=pointer]:
+            - /url: /en/relations
+            - img [ref=e40]
+            - generic [ref=e43]: Relations
+          - generic "Locations":
+            - img
+            - generic: Locations
+          - generic "Literature":
+            - img
+            - generic: Literature
+          - generic "Settings":
+            - img
+            - generic: Settings
+        - generic [ref=e44]:
+          - link "Event Types" [ref=e45] [cursor=pointer]:
+            - /url: /en/settings/event-types
+            - img [ref=e46]
+            - generic [ref=e47]: Event Types
+          - link "Relation Types" [ref=e48] [cursor=pointer]:
+            - /url: /en/settings/relation-types
+            - img [ref=e49]
+            - generic [ref=e52]: Relation Types
+    - main [ref=e53]:
+      - generic [ref=e54]:
+        - heading "Relations" [level=1] [ref=e55]
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - combobox [ref=e58]:
+              - option "All entity types" [selected]
+              - option "Person"
+              - option "Event"
+              - option "Source"
+            - combobox [ref=e59]:
+              - option "All types" [selected]
+            - combobox [ref=e60]:
+              - option "All certainties" [selected]
+              - option "Certain"
+              - option "Probable"
+              - option "Possible"
+              - option "Unknown"
+          - generic [ref=e61]:
+            - textbox "Search…" [ref=e62]
+            - button "Add Relation" [ref=e63]:
+              - img
+              - text: Add Relation
+          - img [ref=e65]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e72] [cursor=pointer]:
+    - img [ref=e73]
+  - alert [ref=e76]

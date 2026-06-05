@@ -5,9 +5,9 @@ import { describe, expect, it } from "vitest";
 import { PageSkeleton, Skeleton } from "./skeleton";
 
 describe("Skeleton", () => {
-  it("renders with animate-pulse class", () => {
+  it("renders with animate-skeleton-pulse class", () => {
     const { container } = render(<Skeleton />);
-    expect(container.firstChild).toHaveClass("animate-pulse");
+    expect(container.firstChild).toHaveClass("animate-skeleton-pulse");
   });
 
   it("accepts additional className", () => {

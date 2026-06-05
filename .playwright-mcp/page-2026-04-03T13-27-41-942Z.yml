@@ -1,0 +1,209 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Seitenleiste umschalten" [ref=e4]:
+        - img
+      - generic [ref=e5]: Evidoxa
+      - button "Projekt auswählen" [disabled]:
+        - generic: Projekt auswählen
+      - generic [ref=e6]:
+        - button "Design wechseln" [ref=e7]:
+          - img
+          - img
+        - group "Language switcher" [ref=e8]:
+          - button "DE" [pressed] [ref=e9]
+          - button "EN" [ref=e10]
+        - generic [ref=e12]: U
+    - complementary "Primary navigation" [ref=e13]:
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /de
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+          - link "Personen" [ref=e23] [cursor=pointer]:
+            - /url: /de/persons
+            - img [ref=e24]
+            - generic [ref=e29]: Personen
+          - link "Ereignisse" [ref=e30] [cursor=pointer]:
+            - /url: /de/events
+            - img [ref=e31]
+            - generic [ref=e33]: Ereignisse
+          - link "Quellen" [ref=e34] [cursor=pointer]:
+            - /url: /de/sources
+            - img [ref=e35]
+            - generic [ref=e38]: Quellen
+          - link "Beziehungen" [ref=e39] [cursor=pointer]:
+            - /url: /de/relations
+            - img [ref=e40]
+            - generic [ref=e43]: Beziehungen
+          - generic "Orte":
+            - img
+            - generic: Orte
+          - generic "Literatur":
+            - img
+            - generic: Literatur
+          - generic "Einstellungen":
+            - img
+            - generic: Einstellungen
+        - generic [ref=e44]:
+          - link "Ereignistypen" [ref=e45] [cursor=pointer]:
+            - /url: /de/settings/event-types
+            - img [ref=e46]
+            - generic [ref=e47]: Ereignistypen
+          - link "Relationstypen" [ref=e48] [cursor=pointer]:
+            - /url: /de/settings/relation-types
+            - img [ref=e49]
+            - generic [ref=e52]: Relationstypen
+    - main "Main content" [ref=e53]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - heading "Quellen" [level=1] [ref=e57]
+          - link "Neue Quelle" [ref=e58] [cursor=pointer]:
+            - /url: /de/sources/new
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - generic [ref=e62]:
+                - img [ref=e63]
+                - searchbox "Titel oder Autor suchen…" [ref=e66]
+              - combobox [ref=e67]:
+                - option "Alle Typen" [selected]
+                - option "archival_document"
+                - option "letter"
+                - option "newspaper"
+                - option "official_record"
+                - option "photograph"
+                - option "other"
+              - generic [ref=e68]:
+                - button "HIGH" [ref=e69]
+                - button "MEDIUM" [ref=e70]
+                - button "LOW" [ref=e71]
+                - button "UNKNOWN" [ref=e72]
+            - link "Neue Quelle" [ref=e74] [cursor=pointer]:
+              - /url: /de/sources/new
+          - table [ref=e76]:
+            - rowgroup [ref=e77]:
+              - row "Select all Titel Typ Autor Zuverlässigkeit Erstellt am Aktionen" [ref=e78]:
+                - columnheader "Select all" [ref=e79]:
+                  - checkbox "Select all" [ref=e80]
+                - columnheader "Titel" [ref=e81]:
+                  - button "Titel" [ref=e82]:
+                    - text: Titel
+                    - img [ref=e83]
+                - columnheader "Typ" [ref=e85]
+                - columnheader "Autor" [ref=e86]
+                - columnheader "Zuverlässigkeit" [ref=e87]
+                - columnheader "Erstellt am" [ref=e88]:
+                  - button "Erstellt am" [ref=e89]:
+                    - text: Erstellt am
+                    - img [ref=e90]
+                - columnheader "Aktionen" [ref=e92]
+            - rowgroup [ref=e93]:
+              - row "Select row cmmqvqaf900fvj8qrhuewlqa0 Test Archivbrief 1848 (bearbeitet) letter Johann Müller Mittel 14.3.2026 Edit Quelle löschen" [ref=e94] [cursor=pointer]:
+                - cell "Select row cmmqvqaf900fvj8qrhuewlqa0" [ref=e95]:
+                  - checkbox "Select row cmmqvqaf900fvj8qrhuewlqa0" [ref=e96]
+                - cell "Test Archivbrief 1848 (bearbeitet)" [ref=e97]:
+                  - link "Test Archivbrief 1848 (bearbeitet)" [ref=e98]:
+                    - /url: /de/sources/cmmqvqaf900fvj8qrhuewlqa0
+                - cell "letter" [ref=e99]
+                - cell "Johann Müller" [ref=e100]
+                - cell "Mittel" [ref=e101]:
+                  - generic [ref=e102]: Mittel
+                - cell "14.3.2026" [ref=e103]
+                - cell "Edit Quelle löschen" [ref=e104]:
+                  - generic [ref=e105]:
+                    - link "Edit" [ref=e106]:
+                      - /url: /de/sources/cmmqvqaf900fvj8qrhuewlqa0/edit
+                      - img [ref=e107]
+                    - button "Quelle löschen" [ref=e110]
+              - row "Select row cmmquftkk005hj8qr68ymg407 Hochwertige Quelle letter — Hoch 14.3.2026 Edit Quelle löschen" [ref=e111] [cursor=pointer]:
+                - cell "Select row cmmquftkk005hj8qr68ymg407" [ref=e112]:
+                  - checkbox "Select row cmmquftkk005hj8qr68ymg407" [ref=e113]
+                - cell "Hochwertige Quelle" [ref=e114]:
+                  - link "Hochwertige Quelle" [ref=e115]:
+                    - /url: /de/sources/cmmquftkk005hj8qr68ymg407
+                - cell "letter" [ref=e116]
+                - cell "—" [ref=e117]
+                - cell "Hoch" [ref=e118]:
+                  - generic [ref=e119]: Hoch
+                - cell "14.3.2026" [ref=e120]
+                - cell "Edit Quelle löschen" [ref=e121]:
+                  - generic [ref=e122]:
+                    - link "Edit" [ref=e123]:
+                      - /url: /de/sources/cmmquftkk005hj8qr68ymg407/edit
+                      - img [ref=e124]
+                    - button "Quelle löschen" [ref=e127]
+              - row "Select row cmmqufh5o004xj8qr892njwk2 Test Archivbrief 1848 (bearbeitet) letter Johann Müller Mittel 14.3.2026 Edit Quelle löschen" [ref=e128] [cursor=pointer]:
+                - cell "Select row cmmqufh5o004xj8qr892njwk2" [ref=e129]:
+                  - checkbox "Select row cmmqufh5o004xj8qr892njwk2" [ref=e130]
+                - cell "Test Archivbrief 1848 (bearbeitet)" [ref=e131]:
+                  - link "Test Archivbrief 1848 (bearbeitet)" [ref=e132]:
+                    - /url: /de/sources/cmmqufh5o004xj8qr892njwk2
+                - cell "letter" [ref=e133]
+                - cell "Johann Müller" [ref=e134]
+                - cell "Mittel" [ref=e135]:
+                  - generic [ref=e136]: Mittel
+                - cell "14.3.2026" [ref=e137]
+                - cell "Edit Quelle löschen" [ref=e138]:
+                  - generic [ref=e139]:
+                    - link "Edit" [ref=e140]:
+                      - /url: /de/sources/cmmqufh5o004xj8qr892njwk2/edit
+                      - img [ref=e141]
+                    - button "Quelle löschen" [ref=e144]
+              - row "Select row seed-source-humboldt-reisebericht Reise in die Aequinoctial-Gegenden des neuen Continents official_record Alexander von Humboldt Hoch 7.3.2026 Edit Quelle löschen" [ref=e145] [cursor=pointer]:
+                - cell "Select row seed-source-humboldt-reisebericht" [ref=e146]:
+                  - checkbox "Select row seed-source-humboldt-reisebericht" [ref=e147]
+                - cell "Reise in die Aequinoctial-Gegenden des neuen Continents" [ref=e148]:
+                  - link "Reise in die Aequinoctial-Gegenden des neuen Continents" [ref=e149]:
+                    - /url: /de/sources/seed-source-humboldt-reisebericht
+                - cell "official_record" [ref=e150]
+                - cell "Alexander von Humboldt" [ref=e151]
+                - cell "Hoch" [ref=e152]:
+                  - generic [ref=e153]: Hoch
+                - cell "7.3.2026" [ref=e154]
+                - cell "Edit Quelle löschen" [ref=e155]:
+                  - generic [ref=e156]:
+                    - link "Edit" [ref=e157]:
+                      - /url: /de/sources/seed-source-humboldt-reisebericht/edit
+                      - img [ref=e158]
+                    - button "Quelle löschen" [ref=e161]
+              - row "Select row seed-source-schiller-memoiren Schillers Tagebücher archival_document Friedrich von Schiller Hoch 7.3.2026 Edit Quelle löschen" [ref=e162] [cursor=pointer]:
+                - cell "Select row seed-source-schiller-memoiren" [ref=e163]:
+                  - checkbox "Select row seed-source-schiller-memoiren" [ref=e164]
+                - cell "Schillers Tagebücher" [ref=e165]:
+                  - link "Schillers Tagebücher" [ref=e166]:
+                    - /url: /de/sources/seed-source-schiller-memoiren
+                - cell "archival_document" [ref=e167]
+                - cell "Friedrich von Schiller" [ref=e168]
+                - cell "Hoch" [ref=e169]:
+                  - generic [ref=e170]: Hoch
+                - cell "7.3.2026" [ref=e171]
+                - cell "Edit Quelle löschen" [ref=e172]:
+                  - generic [ref=e173]:
+                    - link "Edit" [ref=e174]:
+                      - /url: /de/sources/seed-source-schiller-memoiren/edit
+                      - img [ref=e175]
+                    - button "Quelle löschen" [ref=e178]
+              - row "Select row seed-source-goethe-brief Goethes Briefwechsel mit Schiller letter Johann Wolfgang von Goethe Hoch 7.3.2026 Edit Quelle löschen" [ref=e179] [cursor=pointer]:
+                - cell "Select row seed-source-goethe-brief" [ref=e180]:
+                  - checkbox "Select row seed-source-goethe-brief" [ref=e181]
+                - cell "Goethes Briefwechsel mit Schiller" [ref=e182]:
+                  - link "Goethes Briefwechsel mit Schiller" [ref=e183]:
+                    - /url: /de/sources/seed-source-goethe-brief
+                - cell "letter" [ref=e184]
+                - cell "Johann Wolfgang von Goethe" [ref=e185]
+                - cell "Hoch" [ref=e186]:
+                  - generic [ref=e187]: Hoch
+                - cell "7.3.2026" [ref=e188]
+                - cell "Edit Quelle löschen" [ref=e189]:
+                  - generic [ref=e190]:
+                    - link "Edit" [ref=e191]:
+                      - /url: /de/sources/seed-source-goethe-brief/edit
+                      - img [ref=e192]
+                    - button "Quelle löschen" [ref=e195]
+          - paragraph [ref=e197]: 6 Quellen
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e203] [cursor=pointer]:
+    - img [ref=e204]
+  - alert [ref=e207]

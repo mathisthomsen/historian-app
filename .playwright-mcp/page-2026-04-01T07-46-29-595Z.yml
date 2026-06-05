@@ -1,0 +1,320 @@
+- generic [ref=e2]:
+  - region
+  - generic [ref=e3]:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=e6]:
+      - heading "Navigation Menu" [level=2] [ref=e7]
+      - generic [ref=e8]:
+        - link "Homepage" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img [ref=e11]
+        - generic [ref=e13]:
+          - navigation "Global" [ref=e16]:
+            - list [ref=e17]:
+              - listitem [ref=e18]:
+                - button "Platform" [ref=e20] [cursor=pointer]:
+                  - text: Platform
+                  - img [ref=e21]
+              - listitem [ref=e23]:
+                - button "Solutions" [ref=e25] [cursor=pointer]:
+                  - text: Solutions
+                  - img [ref=e26]
+              - listitem [ref=e28]:
+                - button "Resources" [ref=e30] [cursor=pointer]:
+                  - text: Resources
+                  - img [ref=e31]
+              - listitem [ref=e33]:
+                - button "Open Source" [ref=e35] [cursor=pointer]:
+                  - text: Open Source
+                  - img [ref=e36]
+              - listitem [ref=e38]:
+                - button "Enterprise" [ref=e40] [cursor=pointer]:
+                  - text: Enterprise
+                  - img [ref=e41]
+              - listitem [ref=e43]:
+                - link "Pricing" [ref=e44] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+                  - generic [ref=e45]: Pricing
+          - generic [ref=e46]:
+            - button "Search or jump to…" [ref=e49] [cursor=pointer]:
+              - img [ref=e51]
+              - generic [ref=e53]: Search or jump to...
+              - img [ref=e55]
+            - link "Sign in" [ref=e59] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fmathisthomsen%2Fhistorian-app%2Factions%2Fruns%2F23822120520
+            - link "Sign up" [ref=e60] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E%2Factions%2Fworkflow_runs%2Fshow&source=header-repo&source_repo=mathisthomsen%2Fhistorian-app
+            - button "Appearance settings" [ref=e63] [cursor=pointer]:
+              - img
+  - main [ref=e67]:
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e72]:
+            - img [ref=e73]
+            - link "mathisthomsen" [ref=e76] [cursor=pointer]:
+              - /url: /mathisthomsen
+            - generic [ref=e77]: /
+            - strong [ref=e78]:
+              - link "historian-app" [ref=e79] [cursor=pointer]:
+                - /url: /mathisthomsen/historian-app
+            - generic [ref=e80]: Public
+          - generic [ref=e81]:
+            - list:
+              - listitem [ref=e82]:
+                - link "You must be signed in to change notification settings" [ref=e83] [cursor=pointer]:
+                  - /url: /login?return_to=%2Fmathisthomsen%2Fhistorian-app
+                  - img [ref=e84]
+                  - text: Notifications
+              - listitem [ref=e86]:
+                - link "Fork 0" [ref=e87] [cursor=pointer]:
+                  - /url: /login?return_to=%2Fmathisthomsen%2Fhistorian-app
+                  - img [ref=e88]
+                  - text: Fork
+                  - generic "0" [ref=e90]
+              - listitem [ref=e91]:
+                - link "You must be signed in to star a repository" [ref=e93] [cursor=pointer]:
+                  - /url: /login?return_to=%2Fmathisthomsen%2Fhistorian-app
+                  - img [ref=e94]
+                  - text: Star
+                  - generic "0 users starred this repository" [ref=e96]: "0"
+        - navigation "Repository" [ref=e97]:
+          - list [ref=e98]:
+            - listitem [ref=e99]:
+              - link "Code" [ref=e100] [cursor=pointer]:
+                - /url: /mathisthomsen/historian-app
+                - img [ref=e101]
+                - generic [ref=e103]: Code
+            - listitem [ref=e104]:
+              - link "Issues 1" [ref=e105] [cursor=pointer]:
+                - /url: /mathisthomsen/historian-app/issues
+                - img [ref=e106]
+                - generic [ref=e109]: Issues
+                - generic "1" [ref=e110]
+            - listitem [ref=e111]:
+              - link "Pull requests" [ref=e112] [cursor=pointer]:
+                - /url: /mathisthomsen/historian-app/pulls
+                - img [ref=e113]
+                - generic [ref=e115]: Pull requests
+            - listitem [ref=e116]:
+              - link "Actions" [ref=e117] [cursor=pointer]:
+                - /url: /mathisthomsen/historian-app/actions
+                - img [ref=e118]
+                - generic [ref=e120]: Actions
+            - listitem [ref=e121]:
+              - link "Projects" [ref=e122] [cursor=pointer]:
+                - /url: /mathisthomsen/historian-app/projects
+                - img [ref=e123]
+                - generic [ref=e125]: Projects
+            - listitem [ref=e126]:
+              - link "Security and quality" [ref=e127] [cursor=pointer]:
+                - /url: /mathisthomsen/historian-app/security
+                - img [ref=e128]
+                - generic [ref=e130]: Security and quality
+            - listitem [ref=e131]:
+              - link "Insights" [ref=e132] [cursor=pointer]:
+                - /url: /mathisthomsen/historian-app/pulse
+                - img [ref=e133]
+                - generic [ref=e135]: Insights
+      - generic [ref=e140]:
+        - generic [ref=e143]:
+          - link "CI / CD" [ref=e146] [cursor=pointer]:
+            - /url: /mathisthomsen/historian-app/actions/workflows/ci.yml
+            - img [ref=e147]
+            - generic [ref=e149]: CI / CD
+          - generic [ref=e150]:
+            - generic [ref=e151]:
+              - img "failed:" [ref=e155]
+              - 'heading "fix: add missing prisma generate step to unit-tests CI job #30" [level=1] [ref=e157]':
+                - generic [ref=e158]: "fix: add missing prisma generate step to unit-tests CI job #30"
+            - link "Sign in to view logs" [ref=e161] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fmathisthomsen%2Fhistorian-app%2Factions%2Fruns%2F23822120520
+        - generic [ref=e162]:
+          - navigation "Workflow run" [ref=e168]:
+            - list [ref=e169]:
+              - listitem [ref=e170]:
+                - link "Summary" [ref=e171] [cursor=pointer]:
+                  - /url: /mathisthomsen/historian-app/actions/runs/23822120520
+                  - generic:
+                    - img
+                  - generic [ref=e173]: Summary
+              - generic [ref=e174]:
+                - heading "All jobs" [level=4] [ref=e175]
+                - button "Filter by job status" [ref=e176] [cursor=pointer]:
+                  - img [ref=e177]
+              - listitem [ref=e179]
+              - listitem [ref=e180]:
+                - list [ref=e181]:
+                  - listitem [ref=e182]:
+                    - generic "Loading" [ref=e183]:
+                      - generic [ref=e187]:
+                        - img [ref=e188]
+                        - generic [ref=e191]: Loading
+              - listitem [ref=e192]
+              - listitem [ref=e193]:
+                - heading "Run details" [level=3] [ref=e195]
+                - list "Run details" [ref=e196]:
+                  - listitem [ref=e197]:
+                    - link "Usage" [ref=e198] [cursor=pointer]:
+                      - /url: /mathisthomsen/historian-app/actions/runs/23822120520/usage
+                      - generic:
+                        - img
+                      - generic [ref=e200]: Usage
+                  - listitem [ref=e201]:
+                    - link "Workflow file" [ref=e202] [cursor=pointer]:
+                      - /url: /mathisthomsen/historian-app/actions/runs/23822120520/workflow
+                      - generic:
+                        - img
+                      - generic [ref=e204]: Workflow file
+          - generic [ref=e206]:
+            - region "Workflow run summary" [ref=e207]:
+              - generic [ref=e208]:
+                - generic [ref=e209]:
+                  - generic [ref=e210]: Triggered via push March 31, 2026 22:209 hours ago
+                  - generic [ref=e211]:
+                    - link "@mathisthomsen mathisthomsen" [ref=e212] [cursor=pointer]:
+                      - /url: /mathisthomsen
+                      - img "@mathisthomsen" [ref=e213]
+                      - text: mathisthomsen
+                    - generic [ref=e214]:
+                      - generic [ref=e215]: pushed
+                      - link "b59ea5b" [ref=e216] [cursor=pointer]:
+                        - /url: /mathisthomsen/historian-app/commit/b59ea5b2387bea8b0d7c420dcb55489defb56305
+                        - img [ref=e217]
+                        - text: b59ea5b
+                    - link "main" [ref=e219] [cursor=pointer]:
+                      - /url: /mathisthomsen/historian-app/tree/refs/heads/main
+                - generic [ref=e220]:
+                  - generic [ref=e221]: Status
+                  - text: Failure
+                - generic [ref=e222]:
+                  - generic [ref=e223]: Total duration
+                  - link "21m 9s" [ref=e224] [cursor=pointer]:
+                    - /url: /mathisthomsen/historian-app/actions/runs/23822120520/usage
+                - generic [ref=e225]:
+                  - generic [ref=e226]: Artifacts
+                  - text: –
+            - region "Workflow run graph" [ref=e227]:
+              - generic [ref=e229]:
+                - generic [ref=e231]:
+                  - heading "ci.yml" [level=2] [ref=e232]:
+                    - link "ci.yml" [ref=e233] [cursor=pointer]:
+                      - /url: /mathisthomsen/historian-app/actions/runs/23822120520/workflow
+                  - generic [ref=e234]: "on: push"
+                - generic [ref=e236]:
+                  - generic [ref=e237]:
+                    - img
+                    - img
+                    - generic [ref=e239]:
+                      - 'link "completed successfully: Lint 33s" [ref=e241] [cursor=pointer]':
+                        - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436702434
+                        - generic [ref=e243]:
+                          - img "completed successfully:" [ref=e245]
+                          - generic [ref=e248]: Lint
+                          - generic [ref=e249]: 33s
+                      - 'link "completed successfully: Type Check 24s" [ref=e251] [cursor=pointer]':
+                        - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436702440
+                        - generic [ref=e253]:
+                          - img "completed successfully:" [ref=e255]
+                          - generic [ref=e258]: Type Check
+                          - generic [ref=e259]: 24s
+                      - 'link "completed successfully: Unit Tests 35s" [ref=e261] [cursor=pointer]':
+                        - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436702435
+                        - generic [ref=e263]:
+                          - img "completed successfully:" [ref=e265]
+                          - generic [ref=e268]: Unit Tests
+                          - generic [ref=e269]: 35s
+                    - 'link "failed: Build → E2E → Deploy 20m 28s" [ref=e274] [cursor=pointer]':
+                      - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436775511
+                      - generic [ref=e276]:
+                        - img "failed:" [ref=e278]
+                        - generic [ref=e281]: Build → E2E → Deploy
+                        - generic [ref=e282]: 20m 28s
+                  - generic [ref=e284]:
+                    - paragraph [ref=e285]: Oh hello! Nice to see you.
+                    - paragraph [ref=e286]:
+                      - text: Made with ❤️ by
+                      - link [ref=e287] [cursor=pointer]:
+                        - /url: https://actions.github.io/humans.txt
+                        - text: humans.txt
+                - generic [ref=e288]:
+                  - button "Fit to window" [disabled] [ref=e289]:
+                    - img
+                  - generic [ref=e290]:
+                    - button "Zoom out" [disabled] [ref=e292]:
+                      - img
+                    - button "Zoom in" [disabled] [ref=e294]:
+                      - img
+            - region "Annotations" [ref=e295]:
+              - generic [ref=e296]:
+                - generic [ref=e298]:
+                  - heading "Annotations" [level=2] [ref=e299]
+                  - generic [ref=e300]: 1 error and 4 warnings
+                - table [ref=e301]:
+                  - rowgroup [ref=e302]:
+                    - row "Build → E2E → Deploy Process completed with exit code 1." [ref=e303]:
+                      - cell "Build → E2E → Deploy Process completed with exit code 1." [ref=e304]:
+                        - generic [ref=e305]:
+                          - img [ref=e307]
+                          - generic [ref=e309]:
+                            - link "Build → E2E → Deploy" [ref=e310] [cursor=pointer]:
+                              - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436775511#step:13:603
+                              - strong [ref=e311]: Build → E2E → Deploy
+                            - generic [ref=e314]: Process completed with exit code 1.
+                    - 'row "Type Check Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/ Show more" [ref=e315]':
+                      - 'cell "Type Check Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/ Show more" [ref=e316]':
+                        - generic [ref=e317]:
+                          - img [ref=e319]
+                          - generic [ref=e321]:
+                            - link "Type Check" [ref=e322] [cursor=pointer]:
+                              - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436702440#step:15:2
+                              - strong [ref=e323]: Type Check
+                            - generic [ref=e324]:
+                              - generic [ref=e326]:
+                                - text: "Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see:"
+                                - link "https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/" [ref=e327] [cursor=pointer]:
+                                  - /url: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+                              - button "Show more" [ref=e328] [cursor=pointer]
+                    - 'row "Lint Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/ Show more" [ref=e329]':
+                      - 'cell "Lint Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/ Show more" [ref=e330]':
+                        - generic [ref=e331]:
+                          - img [ref=e333]
+                          - generic [ref=e335]:
+                            - link "Lint" [ref=e336] [cursor=pointer]:
+                              - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436702434#step:15:2
+                              - strong [ref=e337]: Lint
+                            - generic [ref=e338]:
+                              - generic [ref=e340]:
+                                - text: "Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see:"
+                                - link "https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/" [ref=e341] [cursor=pointer]:
+                                  - /url: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+                              - button "Show more" [ref=e342] [cursor=pointer]
+                    - 'row "Unit Tests Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/ Show more" [ref=e343]':
+                      - 'cell "Unit Tests Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/ Show more" [ref=e344]':
+                        - generic [ref=e345]:
+                          - img [ref=e347]
+                          - generic [ref=e349]:
+                            - link "Unit Tests" [ref=e350] [cursor=pointer]:
+                              - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436702435#step:15:2
+                              - strong [ref=e351]: Unit Tests
+                            - generic [ref=e352]:
+                              - generic [ref=e354]:
+                                - text: "Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see:"
+                                - link "https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/" [ref=e355] [cursor=pointer]:
+                                  - /url: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+                              - button "Show more" [ref=e356] [cursor=pointer]
+                    - 'row "Build → E2E → Deploy Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/ Show more" [ref=e357]':
+                      - 'cell "Build → E2E → Deploy Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/ Show more" [ref=e358]':
+                        - generic [ref=e359]:
+                          - img [ref=e361]
+                          - generic [ref=e363]:
+                            - link "Build → E2E → Deploy" [ref=e364] [cursor=pointer]:
+                              - /url: /mathisthomsen/historian-app/actions/runs/23822120520/job/69436775511#step:29:5
+                              - strong [ref=e365]: Build → E2E → Deploy
+                            - generic [ref=e366]:
+                              - generic [ref=e368]:
+                                - text: "Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see:"
+                                - link "https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/" [ref=e369] [cursor=pointer]:
+                                  - /url: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+                              - button "Show more" [ref=e370] [cursor=pointer]
