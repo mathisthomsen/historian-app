@@ -104,7 +104,8 @@
       "passwordNeedsNumber": "At least one number.",
       "passwordNeedsSpecial": "At least one special character.",
       "passwordMismatch": "Passwords do not match.",
-      "serverError": "An error occurred. Please try again."
+      "serverError": "An error occurred. Please try again.",
+      "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly."
     },
     "invalidLink": "Invalid link",
     "invalidLinkMessage": "No verification token found."

@@ -43,12 +43,22 @@ describe("createRedisRateLimiter — allowed", () => {
     expect(result.remaining).toBe(0);
   });
 
-  it("fails open when limiter throws (allowed: true, remaining: -1)", async () => {
+  it("fails closed when limiter throws, flagging the result as degraded", async () => {
+    // Auth routes are the only callers: failing open would silently remove
+    // brute-force protection exactly while Redis is down (audit S-M2).
     mockLimit.mockRejectedValue(new Error("Redis unavailable"));
     const limiter = createRedisRateLimiter();
     const result = await limiter.check("test-key", 5, 60_000);
+    expect(result.allowed).toBe(false);
+    expect(result.degraded).toBe(true);
+  });
+
+  it("marks successful checks as not degraded", async () => {
+    mockLimit.mockResolvedValue({ success: true, remaining: 4, reset: Date.now() + 60_000 });
+    const limiter = createRedisRateLimiter();
+    const result = await limiter.check("test-key", 5, 60_000);
     expect(result.allowed).toBe(true);
-    expect(result.remaining).toBe(-1);
+    expect(result.degraded).toBe(false);
   });
 
   it("resetAt is a Date", async () => {
@@ -88,6 +98,16 @@ describe("checkRateLimit", () => {
     const body = (await response!.json()) as { error: string; retryAfter: number };
     expect(body.error).toBe("auth.errors.rateLimited");
     expect(typeof body.retryAfter).toBe("number");
+  });
+
+  it("returns 503 (not 429) when the limiter itself is unavailable", async () => {
+    mockLimit.mockRejectedValue(new Error("Redis unavailable"));
+    const response = await checkRateLimit("register:ip", 10, 3_600_000);
+    expect(response).not.toBeNull();
+    expect(response!.status).toBe(503);
+    const body = (await response!.json()) as { error: string };
+    expect(body.error).toBe("auth.errors.serviceUnavailable");
+    expect(response!.headers.get("Retry-After")).toBeTruthy();
   });
 
   it("429 response includes Retry-After header", async () => {

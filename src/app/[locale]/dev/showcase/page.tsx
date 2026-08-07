@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
@@ -45,13 +46,17 @@ const sampleData = [
 ];
 
 export default function ShowcasePage() {
+  // Component showcase: development-only. Never expose it in production
+  // (audit S-L3 — this was previously hidden only by the holding-page redirect).
+  if (process.env.NODE_ENV === "production") notFound();
+
   const t = useTranslations("showcase");
 
   return (
     <div className="mx-auto max-w-4xl space-y-12 p-8">
       <div>
         <h1 className="text-3xl font-bold">{t("title")}</h1>
-        <p className="mt-2 text-muted-foreground">All base UI components in one place.</p>
+        <p className="text-muted-foreground mt-2">All base UI components in one place.</p>
       </div>
 
       {/* Buttons */}
@@ -87,7 +92,7 @@ export default function ShowcasePage() {
               With error
             </Label>
             <Input id="error" placeholder="Error state..." className="border-destructive" />
-            <p className="text-xs text-destructive">This field is required</p>
+            <p className="text-destructive text-xs">This field is required</p>
           </div>
         </div>
       </section>
@@ -229,19 +234,19 @@ export default function ShowcasePage() {
         <h2 className="mb-4 text-xl font-semibold">{t("skeletons")}</h2>
         <div className="space-y-6">
           <div>
-            <p className="mb-2 text-sm text-muted-foreground">List variant</p>
+            <p className="text-muted-foreground mb-2 text-sm">List variant</p>
             <Card>
               <PageSkeleton variant="list" />
             </Card>
           </div>
           <div>
-            <p className="mb-2 text-sm text-muted-foreground">Detail variant</p>
+            <p className="text-muted-foreground mb-2 text-sm">Detail variant</p>
             <Card>
               <PageSkeleton variant="detail" />
             </Card>
           </div>
           <div>
-            <p className="mb-2 text-sm text-muted-foreground">Card-grid variant</p>
+            <p className="text-muted-foreground mb-2 text-sm">Card-grid variant</p>
             <Card>
               <PageSkeleton variant="card-grid" />
             </Card>
@@ -254,7 +259,7 @@ export default function ShowcasePage() {
         <h2 className="mb-4 text-xl font-semibold">{t("theme")}</h2>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Toggle between light, dark, and system theme
           </p>
         </div>
@@ -265,7 +270,7 @@ export default function ShowcasePage() {
         <h2 className="mb-4 text-xl font-semibold">{t("locale")}</h2>
         <div className="flex items-center gap-4">
           <LocaleSwitcher />
-          <p className="text-sm text-muted-foreground">Switch between DE and EN</p>
+          <p className="text-muted-foreground text-sm">Switch between DE and EN</p>
         </div>
       </section>
     </div>

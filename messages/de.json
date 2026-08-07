@@ -104,7 +104,8 @@
       "passwordNeedsNumber": "Mindestens eine Zahl.",
       "passwordNeedsSpecial": "Mindestens ein Sonderzeichen.",
       "passwordMismatch": "Passwörter stimmen nicht überein.",
-      "serverError": "Ein Fehler ist aufgetreten. Bitte versuche es erneut."
+      "serverError": "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
+      "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut."
     },
     "invalidLink": "Ungültiger Link",
     "invalidLinkMessage": "Kein Verifizierungstoken gefunden."
