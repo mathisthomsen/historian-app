@@ -8,9 +8,15 @@ import { SourceTable } from "@/components/research/SourceTable";
 import { prisma } from "@/lib/db";
 import type { SourceReliability, SourceSummary } from "@/types/source";
 
-export const metadata: Metadata = {
-  title: "Quellen",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "sources" });
+  return { title: t("title") };
+}
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -101,7 +107,7 @@ export default async function SourcesPage({ params, searchParams }: PageProps) {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Link
           href={`/${locale}/sources/new`}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           {t("create")}
         </Link>

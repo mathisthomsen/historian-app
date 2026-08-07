@@ -236,14 +236,14 @@ export function RelationFormDialog({
                   <div className="flex gap-2">
                     <Input
                       type="number"
-                      placeholder="Jahr"
+                      placeholder={t("year_placeholder")}
                       value={validFromYear}
                       onChange={(e) => setValidFromYear(e.target.value)}
                       className="w-24"
                     />
                     <Input
                       type="number"
-                      placeholder="Monat"
+                      placeholder={t("month_placeholder")}
                       min={1}
                       max={12}
                       value={validFromMonth}
@@ -259,14 +259,14 @@ export function RelationFormDialog({
                   <div className="flex gap-2">
                     <Input
                       type="number"
-                      placeholder="Jahr"
+                      placeholder={t("year_placeholder")}
                       value={validToYear}
                       onChange={(e) => setValidToYear(e.target.value)}
                       className="w-24"
                     />
                     <Input
                       type="number"
-                      placeholder="Monat"
+                      placeholder={t("month_placeholder")}
                       min={1}
                       max={12}
                       value={validToMonth}

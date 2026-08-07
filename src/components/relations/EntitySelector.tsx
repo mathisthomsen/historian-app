@@ -67,6 +67,7 @@ export function EntitySelector({
   displayLabel,
 }: EntitySelectorProps) {
   const t = useTranslations("relationTypes");
+  const tSel = useTranslations("entitySelector");
   const availableTypes = allowedTypes ?? ALL_TYPES;
   const [selectedType, setSelectedType] = useState<EntityType>(availableTypes[0] ?? "PERSON");
   const [open, setOpen] = useState(false);
@@ -147,7 +148,7 @@ export function EntitySelector({
       });
   }, [debouncedQuery, open, selectedType, projectId]);
 
-  const displayPlaceholder = placeholder ?? "Entität auswählen…";
+  const displayPlaceholder = placeholder ?? tSel("placeholder");
 
   function handleSelect(item: EntityOption) {
     setSelectedLabel(item.label);
@@ -175,7 +176,7 @@ export function EntitySelector({
             size="sm"
             className="h-6 w-6 p-0"
             onClick={handleClear}
-            aria-label="Auswahl entfernen"
+            aria-label={tSel("clear")}
           >
             <X className="h-3 w-3" />
           </Button>
@@ -217,10 +218,12 @@ export function EntitySelector({
         </PopoverTrigger>
         <PopoverContent className="w-64 p-0" align="start">
           <Command>
-            <CommandInput placeholder="Suchen…" value={query} onValueChange={setQuery} />
+            <CommandInput placeholder={tSel("search")} value={query} onValueChange={setQuery} />
             <CommandList>
               {searching && (
-                <div className="text-muted-foreground py-2 text-center text-sm">Suche…</div>
+                <div className="text-muted-foreground py-2 text-center text-sm">
+                  {tSel("searching")}
+                </div>
               )}
               {!searching && query.length < 1 && (
                 <div className="text-muted-foreground py-2 text-center text-sm">
@@ -228,7 +231,7 @@ export function EntitySelector({
                 </div>
               )}
               {!searching && query.length >= 1 && results.length === 0 && (
-                <CommandEmpty>Keine Ergebnisse.</CommandEmpty>
+                <CommandEmpty>{tSel("no_results")}</CommandEmpty>
               )}
               {results.length > 0 && (
                 <CommandGroup>

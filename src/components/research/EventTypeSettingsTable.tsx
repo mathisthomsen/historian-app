@@ -39,6 +39,7 @@ interface EventTypeSettingsTableProps {
 
 export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProps) {
   const t = useTranslations("event_types");
+  const tCommon = useTranslations("common");
   const params = useParams<{ locale: string }>();
   const locale = params?.locale ?? "de";
 
@@ -322,7 +323,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
                       type="button"
                       size="sm"
                       variant="ghost"
-                      aria-label="Edit"
+                      aria-label={tCommon("edit")}
                       onClick={() =>
                         setEditState({ id: type.id, name: type.name, color: type.color })
                       }
@@ -333,7 +334,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
                       type="button"
                       size="sm"
                       variant="ghost"
-                      aria-label="Delete"
+                      aria-label={tCommon("delete")}
                       onClick={() => handleDelete(type)}
                     >
                       <X className="h-4 w-4" />
@@ -364,7 +365,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
             <AlertDialogDescription>{t("delete_confirm_body")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={deleting}

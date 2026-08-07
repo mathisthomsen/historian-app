@@ -5,7 +5,15 @@
     "tryAgain": "Erneut versuchen",
     "backToHome": "Zur Startseite",
     "notFound": "Seite nicht gefunden",
-    "notFoundDescription": "Die angeforderte Seite existiert nicht."
+    "notFoundDescription": "Die angeforderte Seite existiert nicht.",
+    "cancel": "Abbrechen",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten.",
+    "select_all": "Alle auswählen",
+    "select_row": "Zeile auswählen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "main_navigation": "Hauptnavigation",
+    "year_format": "JJJJ"
   },
   "shell": {
     "nav": {
@@ -492,7 +500,9 @@
       "range": "{from} – {to}"
     },
     "save_failed": "Relation konnte nicht gespeichert werden.",
-    "delete_failed": "Relation konnte nicht gelöscht werden."
+    "delete_failed": "Relation konnte nicht gelöscht werden.",
+    "year_placeholder": "Jahr",
+    "month_placeholder": "Monat"
   },
   "relationTypes": {
     "title": "Relationstypen",
@@ -542,7 +552,12 @@
     },
     "noEvidence": "Keine Belege für dieses Feld.",
     "saved_toast": "Beleg gespeichert.",
-    "deleted_toast": "Beleg gelöscht."
+    "deleted_toast": "Beleg gelöscht.",
+    "delete_failed": "Konnte nicht gelöscht werden.",
+    "save_failed": "Konnte nicht gespeichert werden.",
+    "search_source": "Quelle suchen…",
+    "page_reference_placeholder": "z. B. S. 42, fol. 3v",
+    "quote_placeholder": "Relevantes Zitat"
   },
   "entityActivity": {
     "title": "Verlauf",
@@ -552,5 +567,17 @@
       "DELETE": "gelöscht"
     },
     "noActivity": "Kein Verlauf vorhanden."
+  },
+  "entitySelector": {
+    "placeholder": "Entität auswählen…",
+    "search": "Suchen…",
+    "searching": "Suche…",
+    "no_results": "Keine Ergebnisse.",
+    "clear": "Auswahl entfernen"
+  },
+  "pagination": {
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page": "Seite"
   }
 }

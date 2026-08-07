@@ -24,6 +24,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen }: SidebarProps) {
   const t = useTranslations("shell.nav");
+  const tCommon = useTranslations("common");
   const params = useParams<{ locale: string }>();
   const locale = params?.locale ?? "de";
 
@@ -52,7 +53,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
         <span
           key={key}
           className={cn(
-            "flex cursor-not-allowed items-center gap-3 rounded-md px-2 py-2 text-sm text-muted-foreground opacity-50 pointer-events-none",
+            "text-muted-foreground pointer-events-none flex cursor-not-allowed items-center gap-3 rounded-md px-2 py-2 text-sm opacity-50",
             !isOpen && "justify-center",
           )}
           title={!isOpen ? label : undefined}
@@ -70,7 +71,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
         key={key}
         href={href}
         className={cn(
-          "flex items-center gap-3 rounded-md px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+          "text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors",
           !isOpen && "justify-center",
         )}
         title={!isOpen ? label : undefined}
@@ -85,14 +86,16 @@ export function Sidebar({ isOpen }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed bottom-0 left-0 top-14 z-30 flex flex-col border-r bg-background transition-all duration-200",
+        "bg-background fixed top-14 bottom-0 left-0 z-30 flex flex-col border-r transition-all duration-200",
         isOpen ? "w-56" : "w-12",
       )}
-      aria-label="Main navigation"
+      aria-label={tCommon("main_navigation")}
     >
       <nav className="flex h-full flex-col p-2" role="navigation">
         <div className="flex-1 space-y-1">
-          {primaryNavItems.map(({ key, icon, label, disabled }) => navLink(key, icon, label, disabled))}
+          {primaryNavItems.map(({ key, icon, label, disabled }) =>
+            navLink(key, icon, label, disabled),
+          )}
         </div>
         <div className="mt-auto">
           <Separator className="mb-2" />

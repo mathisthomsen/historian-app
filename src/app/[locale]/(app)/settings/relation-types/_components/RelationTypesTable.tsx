@@ -197,7 +197,7 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
             <AlertDialogDescription>{t("delete_confirm_body")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void confirmDelete()}
               disabled={deleting}

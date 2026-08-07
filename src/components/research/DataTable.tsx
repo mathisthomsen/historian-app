@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import {
@@ -37,6 +38,7 @@ export function DataTable<TData extends { id: string }>({
   onSelectionChange,
   onRowClick,
 }: DataTableProps<TData>) {
+  const t = useTranslations("common");
   const allSelected = data.length > 0 && data.every((row) => selectedIds.includes(row.id));
   const someSelected = data.some((row) => selectedIds.includes(row.id));
 
@@ -68,7 +70,7 @@ export function DataTable<TData extends { id: string }>({
                 if (el) el.indeterminate = someSelected && !allSelected;
               }}
               onChange={handleSelectAll}
-              aria-label="Select all"
+              aria-label={t("select_all")}
               className="border-input rounded border"
             />
           </TableHead>
@@ -123,7 +125,7 @@ export function DataTable<TData extends { id: string }>({
                 checked={selectedIds.includes(row.id)}
                 onChange={(e) => handleSelectRow(row.id, e.target.checked)}
                 onClick={(e) => e.stopPropagation()}
-                aria-label={`Select row ${row.id}`}
+                aria-label={t("select_row")}
                 className="border-input rounded border"
               />
             </TableCell>

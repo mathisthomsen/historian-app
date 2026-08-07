@@ -20,12 +20,12 @@ export default function Error({ error, reset }: ErrorProps) {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="flex flex-row items-center gap-3">
-          <AlertCircle className="h-6 w-6 text-destructive" />
+          <AlertCircle className="text-destructive h-6 w-6" />
           <CardTitle>{t("error")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            {isDev ? error.message : "An unexpected error occurred."}
+          <p className="text-muted-foreground text-sm">
+            {isDev ? error.message : t("unexpectedError")}
           </p>
         </CardContent>
         <CardFooter className="gap-2">

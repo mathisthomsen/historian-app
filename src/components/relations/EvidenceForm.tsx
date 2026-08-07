@@ -76,7 +76,7 @@ export function EvidenceForm({ projectId, onSubmit, onCancel }: EvidenceFormProp
         confidence,
       });
     } catch {
-      setError("Fehler beim Speichern.");
+      setError(t("save_failed"));
     } finally {
       setSubmitting(false);
     }
@@ -107,7 +107,7 @@ export function EvidenceForm({ projectId, onSubmit, onCancel }: EvidenceFormProp
             <Input
               value={sourceQuery}
               onChange={(e) => void handleSourceSearch(e.target.value)}
-              placeholder="Quelle suchen…"
+              placeholder={t("search_source")}
             />
             {sourceResults.length > 0 && (
               <div className="bg-background absolute z-10 mt-1 w-full rounded-md border shadow-lg">
@@ -137,7 +137,7 @@ export function EvidenceForm({ projectId, onSubmit, onCancel }: EvidenceFormProp
         <Input
           value={pageReference}
           onChange={(e) => setPageReference(e.target.value)}
-          placeholder="z. B. S. 42, fol. 3v"
+          placeholder={t("page_reference_placeholder")}
         />
       </div>
 
@@ -147,7 +147,7 @@ export function EvidenceForm({ projectId, onSubmit, onCancel }: EvidenceFormProp
         <Input
           value={quote}
           onChange={(e) => setQuote(e.target.value)}
-          placeholder="Relevantes Zitat"
+          placeholder={t("quote_placeholder")}
         />
       </div>
 
