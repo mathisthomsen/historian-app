@@ -1,6 +1,7 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { forbidden, json, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
 import { validateEntityExists } from "@/lib/entity-validation";
@@ -18,30 +19,22 @@ type RouteContext = { params: Promise<{ type: string; id: string }> };
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { type: rawType, id } = await context.params;
 
   // Validate entity type (case-insensitive)
   const upperType = rawType.toUpperCase() as ValidEntityType;
   if (!VALID_ENTITY_TYPES.includes(upperType)) {
-    return NextResponse.json(
-      { error: "Invalid entity type", valid: VALID_ENTITY_TYPES },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return json({ error: "Invalid entity type", valid: VALID_ENTITY_TYPES }, { status: 400 });
   }
 
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return NextResponse.json(
+    return json(
       { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
+      { status: 400 },
     );
   }
 
@@ -52,19 +45,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
     where: { user_id: user.id, project_id: projectId },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   // Verify entity exists
   const entityExists = await validateEntityExists(upperType, id, projectId);
   if (!entityExists) {
-    return NextResponse.json(
-      { error: "Entity not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return json({ error: "Entity not found" }, { status: 404 });
   }
 
   const [records, total] = await Promise.all([
@@ -107,8 +94,5 @@ export async function GET(request: NextRequest, context: RouteContext) {
     created_at: r.created_at.toISOString(),
   }));
 
-  return NextResponse.json(
-    { data, total, page, pageSize },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ data, total, page, pageSize });
 }

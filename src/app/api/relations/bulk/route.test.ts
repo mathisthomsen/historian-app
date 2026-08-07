@@ -80,25 +80,19 @@ describe("POST /api/relations/bulk", () => {
   });
 
   it("returns 400 when action is not 'delete'", async () => {
-    const res = await POST(
-      makeRequest({ action: "restore", ids: ["rel-1"], projectId: "proj-1" }),
-    );
+    const res = await POST(makeRequest({ action: "restore", ids: ["rel-1"], projectId: "proj-1" }));
     expect(res.status).toBe(400);
   });
 
   it("returns 403 when not OWNER/EDITOR", async () => {
     mockUserProjectFindFirst.mockResolvedValue(null);
-    const res = await POST(
-      makeRequest({ action: "delete", ids: ["rel-1"], projectId: "proj-1" }),
-    );
+    const res = await POST(makeRequest({ action: "delete", ids: ["rel-1"], projectId: "proj-1" }));
     expect(res.status).toBe(403);
   });
 
   it("returns 401 when unauthenticated", async () => {
     mockRequireUser.mockResolvedValue(null);
-    const res = await POST(
-      makeRequest({ action: "delete", ids: ["rel-1"], projectId: "proj-1" }),
-    );
+    const res = await POST(makeRequest({ action: "delete", ids: ["rel-1"], projectId: "proj-1" }));
     expect(res.status).toBe(401);
   });
 });

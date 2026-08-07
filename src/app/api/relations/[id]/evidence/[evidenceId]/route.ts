@@ -1,5 +1,6 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 
+import { forbidden, json, notFoundError, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -8,12 +9,7 @@ type RouteContext = { params: Promise<{ id: string; evidenceId: string }> };
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id, evidenceId } = await context.params;
 
@@ -23,10 +19,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     select: { id: true, relation_id: true },
   });
   if (!evidence) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   // Get the relation to check project membership (use db for soft-delete exclusion)
@@ -35,20 +28,14 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     select: { project_id: true },
   });
   if (!relation) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: relation.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   await prisma.relationEvidence.delete({ where: { id: evidenceId } });
@@ -56,8 +43,5 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   // The relation list embeds evidence_count — it goes stale on every removal.
   await cache.invalidateByPrefix(`relation-list:${relation.project_id}:`);
 
-  return NextResponse.json(
-    { deleted: true },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ deleted: true });
 }

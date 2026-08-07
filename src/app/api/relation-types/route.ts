@@ -1,6 +1,7 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
@@ -23,20 +24,12 @@ const createRelationTypeSchema = z.object({
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { searchParams } = request.nextUrl;
   const projectId = searchParams.get("projectId") ?? user.projectId;
   if (!projectId) {
-    return NextResponse.json(
-      { error: "No project" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return json({ error: "No project" }, { status: 403 });
   }
 
   // Verify project membership
@@ -44,10 +37,7 @@ export async function GET(request: NextRequest) {
     where: { user_id: user.id, project_id: projectId },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const relationTypes = await prisma.relationType.findMany({
@@ -74,34 +64,20 @@ export async function GET(request: NextRequest) {
     _count: { relations: rt._count.relations },
   }));
 
-  return NextResponse.json({ data }, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json({ data });
 }
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = createRelationTypeSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -111,10 +87,7 @@ export async function POST(request: NextRequest) {
     where: { user_id: user.id, project_id: data.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const relationType = await prisma.relationType.create({
@@ -130,7 +103,7 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json(
+  return json(
     {
       id: relationType.id,
       name: relationType.name,
@@ -144,6 +117,6 @@ export async function POST(request: NextRequest) {
       updated_at: relationType.updated_at.toISOString(),
       _count: { relations: 0 },
     },
-    { status: 201, headers: { "Cache-Control": "no-store" } },
+    { status: 201 },
   );
 }

@@ -1,7 +1,8 @@
 import { type Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -54,39 +55,28 @@ function buildSourceSummary(source: {
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return NextResponse.json(
+    return json(
       { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
+      { status: 400 },
     );
   }
 
   const { page, pageSize, search, sort, order } = parsed.data;
   const projectId = parsed.data.projectId ?? user.projectId;
   if (!projectId) {
-    return NextResponse.json(
-      { error: "No project" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return json({ error: "No project" }, { status: 403 });
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: projectId },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const reliabilityValues = parsed.data.reliability
@@ -97,7 +87,7 @@ export async function GET(request: NextRequest) {
   const cacheKey = `source-list:${projectId}:${page}:${pageSize}:${search ?? ""}:${sort}:${order}:${reliabilityValues.join(",")}:${encodeURIComponent(typeFilter ?? "")}`;
   const cached = await cache.get(cacheKey);
   if (cached) {
-    return NextResponse.json(cached, { status: 200, headers: { "Cache-Control": "no-store" } });
+    return json(cached);
   }
 
   const where: Prisma.SourceWhereInput = {
@@ -141,34 +131,20 @@ export async function GET(request: NextRequest) {
 
   await cache.set(cacheKey, body, 60);
 
-  return NextResponse.json(body, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(body);
 }
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = createSourceSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -177,10 +153,7 @@ export async function POST(request: NextRequest) {
     where: { user_id: user.id, project_id: data.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const source = await prisma.source.create({
@@ -229,5 +202,5 @@ export async function POST(request: NextRequest) {
     },
   };
 
-  return NextResponse.json(responseBody, { status: 201, headers: { "Cache-Control": "no-store" } });
+  return json(responseBody, { status: 201 });
 }

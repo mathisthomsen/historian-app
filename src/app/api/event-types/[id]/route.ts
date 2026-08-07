@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { prisma } from "@/lib/db";
@@ -32,12 +33,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PUT(request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -45,38 +41,23 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     where: { id },
   });
   if (!existing) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: existing.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = updateEventTypeSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -100,10 +81,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       "code" in err &&
       (err as { code: string }).code === "P2002"
     ) {
-      return NextResponse.json(
-        { error: "DUPLICATE_NAME" },
-        { status: 409, headers: { "Cache-Control": "no-store" } },
-      );
+      return json({ error: "DUPLICATE_NAME" }, { status: 409 });
     }
     throw err;
   }
@@ -117,26 +95,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   // doesn't immediately read back their own stale edit.
   await cache.invalidateByPrefix(`event-list:${existing.project_id}:`);
 
-  return NextResponse.json(
-    {
-      id: updated.id,
-      name: updated.name,
-      color: updated.color,
-      icon: updated.icon,
-      event_count: eventCount,
-    },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({
+    id: updated.id,
+    name: updated.name,
+    color: updated.color,
+    icon: updated.icon,
+    event_count: eventCount,
+  });
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -144,20 +114,14 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { id },
   });
   if (!existing) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: existing.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   // Count non-deleted events using this type
@@ -166,13 +130,13 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   });
 
   if (eventCount > 0) {
-    return NextResponse.json(
+    return json(
       {
         error: "TYPE_IN_USE",
         count: eventCount,
         filter_url: `/events?typeIds=${id}`,
       },
-      { status: 409, headers: { "Cache-Control": "no-store" } },
+      { status: 409 },
     );
   }
 
@@ -182,10 +146,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { event_type_id: id, deleted_at: { not: null } },
   });
   if (softDeletedCount > 0) {
-    return NextResponse.json(
-      { error: "TYPE_IN_USE_BY_DELETED", count: softDeletedCount },
-      { status: 409, headers: { "Cache-Control": "no-store" } },
-    );
+    return json({ error: "TYPE_IN_USE_BY_DELETED", count: softDeletedCount }, { status: 409 });
   }
 
   try {
@@ -194,16 +155,10 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
-      return NextResponse.json(
-        { error: "TYPE_IN_USE" },
-        { status: 409, headers: { "Cache-Control": "no-store" } },
-      );
+      return json({ error: "TYPE_IN_USE" }, { status: 409 });
     }
     throw error;
   }
 
-  return NextResponse.json(
-    { deleted: true },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ deleted: true });
 }

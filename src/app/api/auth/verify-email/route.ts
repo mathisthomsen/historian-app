@@ -7,7 +7,10 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { anonymizeIp, hashToken } from "@/lib/security";
 
 const verifyEmailSchema = z.object({
-  token: z.string().length(64).regex(/^[0-9a-f]+$/),
+  token: z
+    .string()
+    .length(64)
+    .regex(/^[0-9a-f]+$/),
 });
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -52,7 +55,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       action: "INVALID_TOKEN",
       userId: confirmation.user_id,
       request,
-      metadata: { token_type: "email_confirmation", reason: confirmation.used_at ? "used" : "expired" },
+      metadata: {
+        token_type: "email_confirmation",
+        reason: confirmation.used_at ? "used" : "expired",
+      },
     });
     return NextResponse.json({ error: "auth.errors.tokenExpired" }, { status: 400 });
   }

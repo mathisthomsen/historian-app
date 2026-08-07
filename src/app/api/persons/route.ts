@@ -1,7 +1,17 @@
 import { type Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import {
+  WRITE_ROLES,
+  forbidden,
+  json,
+  jsonError,
+  parseJsonBody,
+  requireProjectMembership,
+  unauthorized,
+  validateBody,
+} from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -94,47 +104,26 @@ const createPersonSchema = z
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "Invalid query params", { details: parsed.error.flatten() });
   }
 
   const { page, pageSize, search, sort, order } = parsed.data;
   // TODO: Epic 3.1 — replace with project switcher
   const projectId = parsed.data.projectId ?? user.projectId;
-  if (!projectId) {
-    return NextResponse.json(
-      { error: "No project" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!projectId) return jsonError(403, "No project");
 
-  const membership = await prisma.userProject.findFirst({
-    where: { user_id: user.id, project_id: projectId },
-  });
-  if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  // Must precede the cache lookup: serving cached data before the membership
+  // check is exactly how the C1 IDOR leaked cross-tenant rows.
+  if (!(await requireProjectMembership(user.id, projectId))) return forbidden();
 
   const cacheKey = `person-list:${projectId}:${page}:${pageSize}:${search ?? ""}:${sort}:${order}`;
   const cached = await cache.get(cacheKey);
-  if (cached) {
-    return NextResponse.json(cached, { status: 200, headers: { "Cache-Control": "no-store" } });
-  }
+  if (cached) return json(cached);
 
   const where: Prisma.PersonWhereInput = {
     project_id: projectId,
@@ -203,47 +192,23 @@ export async function GET(request: NextRequest) {
 
   await cache.set(cacheKey, body, 60);
 
-  return NextResponse.json(body, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(body);
 }
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
 
-  const parsed = createPersonSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsed = validateBody(createPersonSchema, parsedBody.data);
+  if (!parsed.ok) return parsed.response;
 
   const data = parsed.data;
 
-  // Verify user is a member of the project
-  const membership = await prisma.userProject.findFirst({
-    where: { user_id: user.id, project_id: data.project_id, role: { in: ["OWNER", "EDITOR"] } },
-  });
-  if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+  if (!(await requireProjectMembership(user.id, data.project_id, WRITE_ROLES))) {
+    return forbidden();
   }
 
   const createData: Prisma.PersonUncheckedCreateInput = {
@@ -308,5 +273,5 @@ export async function POST(request: NextRequest) {
     _count: { relations_from: 0, relations_to: 0 },
   };
 
-  return NextResponse.json(responseBody, { status: 201, headers: { "Cache-Control": "no-store" } });
+  return json(responseBody, { status: 201 });
 }

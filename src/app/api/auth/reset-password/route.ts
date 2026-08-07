@@ -10,7 +10,10 @@ import { hashToken } from "@/lib/security";
 
 const resetPasswordSchema = z
   .object({
-    token: z.string().length(64).regex(/^[0-9a-f]+$/),
+    token: z
+      .string()
+      .length(64)
+      .regex(/^[0-9a-f]+$/),
     password: z
       .string()
       .min(8)
