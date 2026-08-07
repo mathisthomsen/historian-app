@@ -46,9 +46,16 @@ const sampleData = [
 ];
 
 export default function ShowcasePage() {
-  // Component showcase: development-only. Never expose it in production
-  // (audit S-L3 — this was previously hidden only by the holding-page redirect).
-  if (process.env.NODE_ENV === "production") notFound();
+  // Component showcase: development-only. Never served by a deployed build
+  // (audit S-L3 — previously hidden only by the holding-page redirect).
+  //
+  // CI runs E2E against a *production build* on localhost, which is not a
+  // deployment, so it opts in explicitly via E2E_ALLOW_DEV_ROUTES. Production
+  // never sets that flag, and an accidental opt-in is visible in config review
+  // rather than hidden behind a NODE_ENV coincidence.
+  if (process.env.NODE_ENV === "production" && process.env.E2E_ALLOW_DEV_ROUTES !== "true") {
+    notFound();
+  }
 
   const t = useTranslations("showcase");
 

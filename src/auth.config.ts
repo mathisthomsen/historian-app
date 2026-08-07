@@ -43,14 +43,16 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!session?.user;
       const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
 
-      // /dev/* is deliberately NOT public anymore (audit S-L3): it requires a
-      // session here and is additionally hard-blocked in production by the
-      // page's own notFound() guard.
+      // /dev/* stays public here; it is gated by the page's own build-time
+      // guard instead (audit S-L3), which returns 404 from any deployed build.
+      // Requiring a session would not add protection — the page holds no data —
+      // and would only make the dev-only route unusable without logging in.
       const isPublic =
         PUBLIC_PATHS.has(pathnameWithoutLocale) ||
         pathnameWithoutLocale === "/" ||
         pathnameWithoutLocale.startsWith("/api/auth") ||
-        pathnameWithoutLocale === "/api/health";
+        pathnameWithoutLocale === "/api/health" ||
+        pathnameWithoutLocale.startsWith("/dev/");
       if (isPublic) return true;
       return isLoggedIn;
     },
