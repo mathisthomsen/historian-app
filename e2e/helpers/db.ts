@@ -166,6 +166,54 @@ export async function resetRateLimits(): Promise<void> {
 }
 
 /**
+ * Removes relations left behind by earlier E2E runs, keeping seeded rows.
+ *
+ * The relation specs create relations and never delete them, so they pile up in
+ * the shared demo project run after run. RelationsTab lists at most 20 per page
+ * ordered by created_at DESC, so once ~20 have accumulated the *seeded*
+ * relations fall off page one and stop rendering — which is how TC-2.4-05
+ * started failing with "was colleague of" not found while the outgoing section
+ * showed 21 identical Humboldt→Caroline rows.
+ *
+ * relation_evidence cascades on relation delete, so this needs no second pass.
+ * Also drops the cached relation lists, otherwise the first read after the
+ * purge can still be served from the 60s cache.
+ */
+export async function deleteNonSeedRelations(projectId: string): Promise<void> {
+  const client = getClient();
+  await client.connect();
+  try {
+    await client.query(`DELETE FROM relations WHERE project_id = $1 AND id NOT LIKE 'seed-%'`, [
+      projectId,
+    ]);
+  } finally {
+    await client.end();
+  }
+
+  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  let cursor = "0";
+  do {
+    const scanUrl = new URL(`${url}/scan/${cursor}`);
+    scanUrl.searchParams.set("match", `cache:relation-list:${projectId}:*`);
+    scanUrl.searchParams.set("count", "100");
+    const res = await fetch(scanUrl, { headers });
+    const { result } = (await res.json()) as { result: [string, string[]] };
+    [cursor] = result;
+    const keys = result[1];
+    if (keys.length > 0) {
+      await fetch(`${url}/pipeline`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(keys.map((k) => ["DEL", k])),
+      });
+    }
+  } while (cursor !== "0");
+}
+
+/**
  * Creates a verified user with a known password, for tests that need to mutate
  * an account without touching the shared seeded admin.
  *

@@ -1,10 +1,12 @@
 import { type Page, expect, test } from "@playwright/test";
 
-import { resetRateLimits } from "./helpers/db";
+import { deleteNonSeedRelations, resetRateLimits } from "./helpers/db";
 
 // ---------------------------------------------------------------------------
 // Seed IDs (deterministic — from prisma/seed.ts)
 // ---------------------------------------------------------------------------
+
+const SEED_PROJECT = "seed-project-demo";
 
 const SEED = {
   person: {
@@ -20,6 +22,14 @@ const SEED = {
 
 const ADMIN_EMAIL = "admin@evidoxa.dev";
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
+
+// Relation specs create relations and never remove them, so they accumulate in
+// the shared demo project across runs and eventually push the seeded relations
+// off the first page of the list (see deleteNonSeedRelations). Start from a
+// known state instead of inheriting every previous run's leftovers.
+test.beforeAll(async () => {
+  await deleteNonSeedRelations(SEED_PROJECT);
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
