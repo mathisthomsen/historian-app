@@ -110,12 +110,24 @@ export async function insertTestResetToken(email: string): Promise<string> {
  * Uses a single SCAN pass for all keys created by our rate limiters
  * (@upstash/ratelimit prefix), regardless of which AUTH_SECRET created them.
  *
- * No-ops silently when UPSTASH_REDIS_REST_URL / TOKEN are absent.
+ * Credentials resolve the same way the app does (src/lib/env.ts): the Vercel
+ * integration's KV_REST_API_* pair first, then the legacy UPSTASH_* one.
+ *
+ * Throws when neither is configured. This used to no-op silently, which hid a
+ * real failure: the login limiter allows 5 attempts per 15 minutes per IP+email
+ * and every spec logs in as the same seeded admin from the same CI IP, so once
+ * this stops clearing counters the whole suite dies of "login just times out".
  */
 export async function resetRateLimits(): Promise<void> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return;
+  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    throw new Error(
+      "resetRateLimits: Redis is not configured (KV_REST_API_URL/TOKEN or " +
+        "UPSTASH_REDIS_REST_URL/TOKEN). Refusing to run auth E2E without it — " +
+        "the login rate limiter fails closed and would throttle the suite.",
+    );
+  }
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
