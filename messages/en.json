@@ -156,9 +156,18 @@
       "day": "Day",
       "no_month": "No Month",
       "months": {
-        "1": "January", "2": "February", "3": "March", "4": "April",
-        "5": "May", "6": "June", "7": "July", "8": "August",
-        "9": "September", "10": "October", "11": "November", "12": "December"
+        "1": "January",
+        "2": "February",
+        "3": "March",
+        "4": "April",
+        "5": "May",
+        "6": "June",
+        "7": "July",
+        "8": "August",
+        "9": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December"
       }
     },
     "certainty": {
@@ -236,7 +245,9 @@
       "name": "Name",
       "color": "Color",
       "event_count": "Events"
-    }
+    },
+    "save_failed": "Event type could not be saved.",
+    "delete_failed": "Event type could not be deleted."
   },
   "persons": {
     "title": "Persons",
@@ -268,9 +279,18 @@
       "day": "Day",
       "no_month": "No Month",
       "months": {
-        "1": "January", "2": "February", "3": "March", "4": "April",
-        "5": "May", "6": "June", "7": "July", "8": "August",
-        "9": "September", "10": "October", "11": "November", "12": "December"
+        "1": "January",
+        "2": "February",
+        "3": "March",
+        "4": "April",
+        "5": "May",
+        "6": "June",
+        "7": "July",
+        "8": "August",
+        "9": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December"
       }
     },
     "names": {
@@ -469,7 +489,8 @@
       "from_only": "from {year}",
       "to_only": "until {year}",
       "range": "{from} – {to}"
-    }
+    },
+    "save_failed": "Relation could not be saved."
   },
   "relationTypes": {
     "title": "Relation types",
@@ -499,7 +520,8 @@
       "SOURCE": "Source",
       "LOCATION": "Location",
       "LITERATURE": "Literature"
-    }
+    },
+    "save_failed": "Relation type could not be saved."
   },
   "propertyEvidence": {
     "title": "Evidence",

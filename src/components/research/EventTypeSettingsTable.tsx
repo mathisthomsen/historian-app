@@ -90,7 +90,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         toast.success(t("saved_toast"));
       } else {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? t("saved_toast"));
+        toast.error(data.error === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
       }
     } finally {
       setSaving(false);
@@ -122,8 +122,12 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         setDeleteTarget(null);
         toast.success(t("deleted_toast"));
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? t("deleted_toast"));
+        const data = (await res.json().catch(() => ({}))) as { error?: string; count?: number };
+        toast.error(
+          data.error === "TYPE_IN_USE"
+            ? t("in_use_toast", { count: data.count ?? 0 })
+            : t("delete_failed"),
+        );
       }
     } finally {
       setDeleting(false);
@@ -148,7 +152,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         toast.success(t("saved_toast"));
       } else {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? t("saved_toast"));
+        toast.error(data.error === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
       }
     } finally {
       setSavingNew(false);
@@ -157,7 +161,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-2 py-8">
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
@@ -290,19 +294,19 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
                 <TableCell>
                   {type.color ? (
                     <span
-                      className="inline-block h-5 w-5 rounded-full border border-border"
+                      className="border-border inline-block h-5 w-5 rounded-full border"
                       style={{ backgroundColor: type.color }}
                     />
                   ) : (
-                    <span className="inline-block h-5 w-5 rounded-full border border-dashed border-border" />
+                    <span className="border-border inline-block h-5 w-5 rounded-full border border-dashed" />
                   )}
                 </TableCell>
                 <TableCell className="font-medium">{type.name}</TableCell>
-                <TableCell className="text-right text-muted-foreground">
+                <TableCell className="text-muted-foreground text-right">
                   {type.event_count > 0 ? (
                     <Link
                       href={`/${locale}/events?typeIds=${type.id}`}
-                      className="underline hover:text-foreground"
+                      className="hover:text-foreground underline"
                     >
                       {type.event_count}
                     </Link>
@@ -340,7 +344,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
 
           {types.length === 0 && !creating && (
             <TableRow>
-              <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={4} className="text-muted-foreground py-8 text-center">
                 —
               </TableCell>
             </TableRow>

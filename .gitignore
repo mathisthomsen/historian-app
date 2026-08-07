@@ -172,4 +172,8 @@ public/images/*.png
 
 # Backup files
 *.backup
-backup-*.json.playwright-mcp/
+backup-*.json
+.playwright-mcp/
+
+# Debug artifacts
+*-debug.png

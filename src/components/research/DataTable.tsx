@@ -69,7 +69,7 @@ export function DataTable<TData extends { id: string }>({
               }}
               onChange={handleSelectAll}
               aria-label="Select all"
-              className="rounded border border-input"
+              className="border-input rounded border"
             />
           </TableHead>
           {columns.map((col) => (
@@ -78,7 +78,7 @@ export function DataTable<TData extends { id: string }>({
                 <button
                   type="button"
                   onClick={() => col.onSort?.(col.key)}
-                  className="inline-flex items-center gap-1 font-medium hover:text-foreground"
+                  className="hover:text-foreground inline-flex items-center gap-1 font-medium"
                 >
                   {col.header}
                   {col.currentSort === col.key ? (
@@ -107,8 +107,12 @@ export function DataTable<TData extends { id: string }>({
             onClick={
               onRowClick
                 ? (e) => {
+                    // Don't hijack clicks that land on (or inside) an interactive
+                    // descendant — links, buttons, checkboxes and their labels.
                     const target = e.target as HTMLElement;
-                    if (target.tagName !== "INPUT") onRowClick(row.id);
+                    if (!target.closest("a, button, input, label, select, textarea")) {
+                      onRowClick(row.id);
+                    }
                   }
                 : undefined
             }
@@ -120,7 +124,7 @@ export function DataTable<TData extends { id: string }>({
                 onChange={(e) => handleSelectRow(row.id, e.target.checked)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Select row ${row.id}`}
-                className="rounded border border-input"
+                className="border-input rounded border"
               />
             </TableCell>
             {columns.map((col) => (

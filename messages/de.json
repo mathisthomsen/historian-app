@@ -156,9 +156,18 @@
       "day": "Tag",
       "no_month": "Kein Monat",
       "months": {
-        "1": "Januar", "2": "Februar", "3": "März", "4": "April",
-        "5": "Mai", "6": "Juni", "7": "Juli", "8": "August",
-        "9": "September", "10": "Oktober", "11": "November", "12": "Dezember"
+        "1": "Januar",
+        "2": "Februar",
+        "3": "März",
+        "4": "April",
+        "5": "Mai",
+        "6": "Juni",
+        "7": "Juli",
+        "8": "August",
+        "9": "September",
+        "10": "Oktober",
+        "11": "November",
+        "12": "Dezember"
       }
     },
     "certainty": {
@@ -236,7 +245,9 @@
       "name": "Name",
       "color": "Farbe",
       "event_count": "Ereignisse"
-    }
+    },
+    "save_failed": "Ereignistyp konnte nicht gespeichert werden.",
+    "delete_failed": "Ereignistyp konnte nicht gelöscht werden."
   },
   "persons": {
     "title": "Personen",
@@ -268,9 +279,18 @@
       "day": "Tag",
       "no_month": "Kein Monat",
       "months": {
-        "1": "Januar", "2": "Februar", "3": "März", "4": "April",
-        "5": "Mai", "6": "Juni", "7": "Juli", "8": "August",
-        "9": "September", "10": "Oktober", "11": "November", "12": "Dezember"
+        "1": "Januar",
+        "2": "Februar",
+        "3": "März",
+        "4": "April",
+        "5": "Mai",
+        "6": "Juni",
+        "7": "Juli",
+        "8": "August",
+        "9": "September",
+        "10": "Oktober",
+        "11": "November",
+        "12": "Dezember"
       }
     },
     "names": {
@@ -469,7 +489,8 @@
       "from_only": "ab {year}",
       "to_only": "bis {year}",
       "range": "{from} – {to}"
-    }
+    },
+    "save_failed": "Relation konnte nicht gespeichert werden."
   },
   "relationTypes": {
     "title": "Relationstypen",
@@ -499,7 +520,8 @@
       "SOURCE": "Quelle",
       "LOCATION": "Ort",
       "LITERATURE": "Literatur"
-    }
+    },
+    "save_failed": "Relationstyp konnte nicht gespeichert werden."
   },
   "propertyEvidence": {
     "title": "Nachweise",

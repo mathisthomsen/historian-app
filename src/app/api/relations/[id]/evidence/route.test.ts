@@ -13,6 +13,14 @@ const mockSourceFindFirst = vi.fn();
 const mockUserProjectFindFirst = vi.fn();
 const mockSanitize = vi.fn((s: string) => s);
 
+vi.mock("@/lib/cache", () => ({
+  cache: {
+    get: vi.fn(),
+    set: vi.fn(),
+    invalidateByPrefix: vi.fn(),
+  },
+}));
+
 vi.mock("@/lib/auth-guard", () => ({
   requireUser: mockRequireUser,
 }));

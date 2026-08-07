@@ -386,7 +386,7 @@ export async function POST(request: NextRequest) {
 
   await logActivity({
     project_id: data.project_id,
-    entity_type: "PERSON", // use from_type as the primary entity anchor
+    entity_type: data.from_type, // use from_type as the primary entity anchor
     entity_id: data.from_id,
     user_id: user.id,
     action: "CREATE",

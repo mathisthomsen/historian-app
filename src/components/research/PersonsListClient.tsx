@@ -92,7 +92,15 @@ export function PersonsListClient({
     {
       key: "last_name",
       header: t("list.columns.last_name"),
-      cell: (row: PersonSummary) => row.last_name ?? "—",
+      cell: (row: PersonSummary) => (
+        <Link
+          href={`/${locale}/persons/${row.id}`}
+          className="hover:text-foreground underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {row.last_name ?? row.first_name ?? "—"}
+        </Link>
+      ),
       sortable: true,
       currentSort: sort,
       currentOrder: order as "asc" | "desc",
@@ -127,7 +135,7 @@ export function PersonsListClient({
         <p className="text-muted-foreground">{t("list.empty")}</p>
         <Link
           href={`/${locale}/persons/new`}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           {t("list.empty_action")}
         </Link>
@@ -145,7 +153,7 @@ export function PersonsListClient({
         />
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               {t("bulk.selected", { count: selectedIds.length })}
             </span>
             <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
@@ -156,7 +164,7 @@ export function PersonsListClient({
       </div>
 
       {persons.length === 0 && search ? (
-        <p className="py-8 text-center text-muted-foreground">{t("list.empty")}</p>
+        <p className="text-muted-foreground py-8 text-center">{t("list.empty")}</p>
       ) : (
         <DataTable
           data={persons}
@@ -168,7 +176,7 @@ export function PersonsListClient({
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {total} {total === 1 ? "Person" : "Personen"}
         </p>
         <DataTablePagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />

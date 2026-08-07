@@ -1,7 +1,9 @@
+import { Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth-guard";
+import { cache } from "@/lib/cache";
 import { prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
 
@@ -95,6 +97,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     },
   });
 
+  // The relation list embeds relation_type name/inverse_name/color/icon —
+  // invalidate so the writer doesn't immediately read back their own stale edit.
+  await cache.invalidateByPrefix(`relation-list:${existing.project_id}:`);
+
   return NextResponse.json(
     {
       id: updated.id,
@@ -155,7 +161,29 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     );
   }
 
-  await prisma.relationType.delete({ where: { id } });
+  // Soft-deleted relations still hold the FK (onDelete: Restrict), so a hard
+  // delete would fail with P2003. Report it as a conflict, not a 500.
+  const softDeletedCount = await prisma.relation.count({
+    where: { relation_type_id: id, deleted_at: { not: null } },
+  });
+  if (softDeletedCount > 0) {
+    return NextResponse.json(
+      { error: "IN_USE_BY_DELETED", count: softDeletedCount },
+      { status: 409, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  try {
+    await prisma.relationType.delete({ where: { id } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return NextResponse.json(
+        { error: "IN_USE" },
+        { status: 409, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    throw error;
+  }
 
   return NextResponse.json(
     { deleted: true },

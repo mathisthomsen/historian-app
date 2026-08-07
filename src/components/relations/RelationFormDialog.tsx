@@ -143,8 +143,7 @@ export function RelationFormDialog({
         onSuccess();
         onOpenChange(false);
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? t("saved_toast"));
+        toast.error(t("save_failed"));
       }
     } finally {
       setSaving(false);
@@ -206,7 +205,7 @@ export function RelationFormDialog({
           <div className="space-y-1">
             <Label>{t("fields.notes")}</Label>
             <textarea
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -217,7 +216,7 @@ export function RelationFormDialog({
           <div className="rounded-md border">
             <button
               type="button"
-              className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted"
+              className="hover:bg-muted flex w-full items-center justify-between px-3 py-2 text-sm font-medium"
               onClick={() => setShowTemporal((prev) => !prev)}
             >
               <span>{t("fields.temporalValidity")}</span>
@@ -231,7 +230,7 @@ export function RelationFormDialog({
               <div className="space-y-3 border-t px-3 py-3">
                 {/* Valid from */}
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">
+                  <p className="text-muted-foreground text-xs font-medium">
                     {t("fields.validFrom")}
                   </p>
                   <div className="flex gap-2">
@@ -256,7 +255,7 @@ export function RelationFormDialog({
                 </div>
                 {/* Valid to */}
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">{t("fields.validTo")}</p>
+                  <p className="text-muted-foreground text-xs font-medium">{t("fields.validTo")}</p>
                   <div className="flex gap-2">
                     <Input
                       type="number"
@@ -285,7 +284,7 @@ export function RelationFormDialog({
             <div className="rounded-md border">
               <button
                 type="button"
-                className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted"
+                className="hover:bg-muted flex w-full items-center justify-between px-3 py-2 text-sm font-medium"
                 onClick={() => setShowEvidence((prev) => !prev)}
               >
                 <span>{t("fields.addEvidence")}</span>
@@ -300,11 +299,7 @@ export function RelationFormDialog({
                   <div className="space-y-1">
                     <Label>{t("fields.evidenceSource")}</Label>
                     <EntitySelector
-                      value={
-                        evidenceSourceId
-                          ? { type: "SOURCE", id: evidenceSourceId }
-                          : null
-                      }
+                      value={evidenceSourceId ? { type: "SOURCE", id: evidenceSourceId } : null}
                       onChange={(v) => {
                         setEvidenceSourceId(v?.id ?? null);
                         setEvidenceSourceLabel(v?.label ?? "");
@@ -317,7 +312,7 @@ export function RelationFormDialog({
                   <div className="space-y-1">
                     <Label>{t("fields.evidenceQuote")}</Label>
                     <textarea
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
                       rows={2}
                       value={evidenceQuote}
                       onChange={(e) => setEvidenceQuote(e.target.value)}
