@@ -1,5 +1,4 @@
 import { type NextRequest } from "next/server";
-import { z } from "zod";
 
 import { logActivity } from "@/lib/activity";
 import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
@@ -7,62 +6,7 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
-
-const updatePersonSchema = z
-  .object({
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    birth_year: z.number().int().min(1).max(2100).optional().nullable(),
-    birth_month: z.number().int().min(1).max(12).optional().nullable(),
-    birth_day: z.number().int().min(1).max(31).optional().nullable(),
-    birth_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
-    birth_place: z.string().optional().nullable(),
-    death_year: z.number().int().min(1).max(2100).optional().nullable(),
-    death_month: z.number().int().min(1).max(12).optional().nullable(),
-    death_day: z.number().int().min(1).max(31).optional().nullable(),
-    death_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
-    death_place: z.string().optional().nullable(),
-    notes: z.string().optional().nullable(),
-    names: z
-      .array(
-        z.object({
-          name: z.string().min(1),
-          language: z.string().optional().nullable(),
-          is_primary: z.boolean().optional(),
-        }),
-      )
-      .optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.birth_month && !data.birth_year) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["birth_month"],
-        message: "month_requires_year",
-      });
-    }
-    if (data.birth_day && !data.birth_month) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["birth_day"],
-        message: "day_requires_month",
-      });
-    }
-    if (data.death_month && !data.death_year) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["death_month"],
-        message: "month_requires_year",
-      });
-    }
-    if (data.death_day && !data.death_month) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["death_day"],
-        message: "day_requires_month",
-      });
-    }
-  });
+import { updatePersonSchema } from "@/lib/schemas/person";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

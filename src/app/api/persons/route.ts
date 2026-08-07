@@ -16,6 +16,7 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
+import { createPersonSchema } from "@/lib/schemas/person";
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -25,82 +26,6 @@ const listQuerySchema = z.object({
   order: z.enum(["asc", "desc"]).default("asc"),
   projectId: z.string().optional(),
 });
-
-const createPersonSchema = z
-  .object({
-    project_id: z.string().min(1),
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    birth_year: z.number().int().min(1).max(2100).optional(),
-    birth_month: z.number().int().min(1).max(12).optional(),
-    birth_day: z.number().int().min(1).max(31).optional(),
-    birth_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
-    birth_place: z.string().optional(),
-    death_year: z.number().int().min(1).max(2100).optional(),
-    death_month: z.number().int().min(1).max(12).optional(),
-    death_day: z.number().int().min(1).max(31).optional(),
-    death_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
-    death_place: z.string().optional(),
-    notes: z.string().optional(),
-    names: z
-      .array(
-        z.object({
-          name: z.string().min(1),
-          language: z.string().optional(),
-          is_primary: z.boolean().optional(),
-        }),
-      )
-      .optional(),
-  })
-  .superRefine((data, ctx) => {
-    const hasName =
-      (data.first_name && data.first_name.trim().length > 0) ||
-      (data.last_name && data.last_name.trim().length > 0) ||
-      (data.names && data.names.length > 0);
-    if (!hasName) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["first_name"],
-        message: "name_required",
-      });
-    }
-    if (data.birth_month && !data.birth_year) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["birth_month"],
-        message: "month_requires_year",
-      });
-    }
-    if (data.birth_day && !data.birth_month) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["birth_day"],
-        message: "day_requires_month",
-      });
-    }
-    if (data.death_month && !data.death_year) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["death_month"],
-        message: "month_requires_year",
-      });
-    }
-    if (data.death_day && !data.death_month) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["death_day"],
-        message: "day_requires_month",
-      });
-    }
-    const primaryCount = (data.names ?? []).filter((n) => n.is_primary).length;
-    if (primaryCount > 1) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["names"],
-        message: "Only one primary name allowed",
-      });
-    }
-  });
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
