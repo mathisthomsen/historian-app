@@ -101,9 +101,9 @@ describe("DELETE /api/events/[id]", () => {
     const res = await DELETE(req, makeContext("evt-1"));
 
     expect(res.status).toBe(409);
-    const body = (await res.json()) as { error: string; count: number };
-    expect(body.error).toBe("HAS_SUB_EVENTS");
-    expect(body.count).toBe(3);
+    const body = (await res.json()) as { error: { code: string; details: { count: number } } };
+    expect(body.error.code).toBe("HAS_SUB_EVENTS");
+    expect(body.error.details.count).toBe(3);
   });
 
   it("soft-deletes event and invalidates cache when event has no sub-events", async () => {

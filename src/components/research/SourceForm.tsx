@@ -106,8 +106,7 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? t("errors.save_failed"));
+        toast.error(t("errors.save_failed"));
         return;
       }
 
@@ -135,7 +134,7 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
               disabled={isSubmitting}
             />
             {errors.title && (
-              <p className="text-xs text-destructive">{t("errors.title_required")}</p>
+              <p className="text-destructive text-xs">{t("errors.title_required")}</p>
             )}
           </div>
 
@@ -206,16 +205,14 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
                     </PopoverContent>
                   </Popover>
                   {field.value && (
-                    <span className="inline-block rounded bg-muted px-2 py-0.5 text-xs">
+                    <span className="bg-muted inline-block rounded px-2 py-0.5 text-xs">
                       {safeTypeLabel(field.value)}
                     </span>
                   )}
                 </div>
               )}
             />
-            {errors.type && (
-              <p className="text-xs text-destructive">{t("errors.type_required")}</p>
-            )}
+            {errors.type && <p className="text-destructive text-xs">{t("errors.type_required")}</p>}
           </div>
 
           {/* Author */}
@@ -240,7 +237,7 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
                       disabled={isSubmitting}
                       onClick={() => field.onChange(r)}
                       className={[
-                        "rounded-md border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                        "focus-visible:ring-ring rounded-md border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
                         field.value === r
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
@@ -272,7 +269,12 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
           {/* Repository */}
           <div className="space-y-1">
             <Label htmlFor="repository">{t("field_repository")}</Label>
-            <Input id="repository" type="text" {...register("repository")} disabled={isSubmitting} />
+            <Input
+              id="repository"
+              type="text"
+              {...register("repository")}
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* Call Number */}
@@ -296,9 +298,7 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
               aria-invalid={!!errors.url}
               disabled={isSubmitting}
             />
-            {errors.url && (
-              <p className="text-xs text-destructive">{t("errors.invalid_url")}</p>
-            )}
+            {errors.url && <p className="text-destructive text-xs">{t("errors.invalid_url")}</p>}
           </div>
         </div>
       </div>
@@ -311,7 +311,7 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
           rows={4}
           {...register("notes")}
           disabled={isSubmitting}
-          className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
@@ -330,7 +330,6 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
           {mode === "create" ? t("save") : t("save_changes")}
         </Button>
       </div>
-
     </form>
   );
 }

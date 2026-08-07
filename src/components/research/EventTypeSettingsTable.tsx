@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { errorCode, errorDetails, readErrorBody } from "@/lib/api-error";
 import type { EventType } from "@/types/event-type";
 
 type EditState = { id: string; name: string; color: string | null } | null;
@@ -89,8 +90,8 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         setEditState(null);
         toast.success(t("saved_toast"));
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
+        const code = errorCode(await readErrorBody(res));
+        toast.error(code === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
       }
     } finally {
       setSaving(false);
@@ -122,10 +123,11 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         setDeleteTarget(null);
         toast.success(t("deleted_toast"));
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string; count?: number };
+        const body = await readErrorBody(res);
+        const details = errorDetails<{ count?: number }>(body);
         toast.error(
-          data.error === "TYPE_IN_USE"
-            ? t("in_use_toast", { count: data.count ?? 0 })
+          errorCode(body) === "IN_USE"
+            ? t("in_use_toast", { count: details?.count ?? 0 })
             : t("delete_failed"),
         );
       }
@@ -151,8 +153,8 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         setNewColor(null);
         toast.success(t("saved_toast"));
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
+        const code = errorCode(await readErrorBody(res));
+        toast.error(code === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
       }
     } finally {
       setSavingNew(false);

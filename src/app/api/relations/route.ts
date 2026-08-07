@@ -157,10 +157,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const {
@@ -270,7 +267,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = createRelationSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -286,13 +283,13 @@ export async function POST(request: NextRequest) {
   // Validate from_id exists
   const fromExists = await validateEntityExists(data.from_type, data.from_id, data.project_id);
   if (!fromExists) {
-    return json({ error: "ENTITY_NOT_FOUND", field: "from_id" }, { status: 404 });
+    return jsonError(404, "ENTITY_NOT_FOUND", { details: { field: "from_id" } });
   }
 
   // Validate to_id exists
   const toExists = await validateEntityExists(data.to_type, data.to_id, data.project_id);
   if (!toExists) {
-    return json({ error: "ENTITY_NOT_FOUND", field: "to_id" }, { status: 404 });
+    return jsonError(404, "ENTITY_NOT_FOUND", { details: { field: "to_id" } });
   }
 
   // Validate relation_type belongs to same project and check valid types
@@ -300,29 +297,23 @@ export async function POST(request: NextRequest) {
     where: { id: data.relation_type_id, project_id: data.project_id },
   });
   if (!relationType) {
-    return json({ error: "relation_type_id not found or not in this project" }, { status: 404 });
+    return jsonError(404, "INVALID_REFERENCE", {
+      message: "relation_type_id not found or not in this project",
+    });
   }
 
   if (!relationType.valid_from_types.includes(data.from_type)) {
-    return json(
-      {
-        error: "INVALID_FROM_TYPE",
-        message: `from_type '${data.from_type}' is not valid for this relation type`,
-        valid_from_types: relationType.valid_from_types,
-      },
-      { status: 422 },
-    );
+    return jsonError(422, "INVALID_FROM_TYPE", {
+      message: `from_type '${data.from_type}' is not valid for this relation type`,
+      details: { valid_from_types: relationType.valid_from_types },
+    });
   }
 
   if (!relationType.valid_to_types.includes(data.to_type)) {
-    return json(
-      {
-        error: "INVALID_TO_TYPE",
-        message: `to_type '${data.to_type}' is not valid for this relation type`,
-        valid_to_types: relationType.valid_to_types,
-      },
-      { status: 422 },
-    );
+    return jsonError(422, "INVALID_TO_TYPE", {
+      message: `to_type '${data.to_type}' is not valid for this relation type`,
+      details: { valid_to_types: relationType.valid_to_types },
+    });
   }
 
   const relation = await prisma.relation.create({

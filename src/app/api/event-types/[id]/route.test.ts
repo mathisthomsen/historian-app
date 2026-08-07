@@ -92,13 +92,11 @@ describe("DELETE /api/event-types/[id]", () => {
 
     expect(res.status).toBe(409);
     const body = (await res.json()) as {
-      error: string;
-      count: number;
-      filter_url: string;
+      error: { code: string; details: { count: number; filter_url: string } };
     };
-    expect(body.error).toBe("TYPE_IN_USE");
-    expect(body.count).toBe(5);
-    expect(body.filter_url).toContain("et-1");
+    expect(body.error.code).toBe("IN_USE");
+    expect(body.error.details.count).toBe(5);
+    expect(body.error.details.filter_url).toContain("et-1");
   });
 
   it("deletes unused type and returns 200 with deleted:true", async () => {

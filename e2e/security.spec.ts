@@ -83,9 +83,11 @@ test.describe("SEC-05: Rate limiting on POST /api/auth/register", () => {
     }
 
     expect(lastResponse!.status()).toBe(429);
-    const body = await lastResponse!.json();
-    expect(body.error).toBe("auth.errors.rateLimited");
-    expect(typeof body.retryAfter).toBe("number");
+    const body = (await lastResponse!.json()) as {
+      error: { code: string; details: { retryAfter: number } };
+    };
+    expect(body.error.code).toBe("RATE_LIMITED");
+    expect(typeof body.error.details.retryAfter).toBe("number");
 
     // Verify rate limit response headers
     expect(lastResponse!.headers()["retry-after"]).toBeTruthy();

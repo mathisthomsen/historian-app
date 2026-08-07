@@ -80,8 +80,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setServerError(data.error ?? t("errors.save_failed"));
+        setServerError(t("errors.save_failed"));
         return;
       }
 

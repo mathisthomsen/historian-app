@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const projectId = searchParams.get("projectId") ?? user.projectId;
   if (!projectId) {
-    return json({ error: "No project" }, { status: 403 });
+    return jsonError(403, "NO_PROJECT");
   }
 
   // Check project membership
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = createEventTypeSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       "code" in err &&
       (err as { code: string }).code === "P2002"
     ) {
-      return json({ error: "DUPLICATE_NAME" }, { status: 409 });
+      return jsonError(409, "DUPLICATE_NAME");
     }
     throw err;
   }

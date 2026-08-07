@@ -165,9 +165,9 @@ describe("POST /api/property-evidence", () => {
     );
 
     expect(res.status).toBe(422);
-    const body = (await res.json()) as { error: string; allowed: string[] };
-    expect(body.error).toBe("INVALID_PROPERTY");
-    expect(Array.isArray(body.allowed)).toBe(true);
+    const body = (await res.json()) as { error: { code: string; details: { allowed: string[] } } };
+    expect(body.error.code).toBe("INVALID_PROPERTY");
+    expect(Array.isArray(body.error.details.allowed)).toBe(true);
   });
 
   it("returns 404 when entity does not exist", async () => {

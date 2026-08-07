@@ -491,7 +491,8 @@
       "to_only": "until {year}",
       "range": "{from} – {to}"
     },
-    "save_failed": "Relation could not be saved."
+    "save_failed": "Relation could not be saved.",
+    "delete_failed": "Relation could not be deleted."
   },
   "relationTypes": {
     "title": "Relation types",
@@ -522,7 +523,8 @@
       "LOCATION": "Location",
       "LITERATURE": "Literature"
     },
-    "save_failed": "Relation type could not be saved."
+    "save_failed": "Relation type could not be saved.",
+    "delete_failed": "Relation type could not be deleted."
   },
   "propertyEvidence": {
     "title": "Evidence",

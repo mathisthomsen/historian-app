@@ -34,13 +34,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return jsonError(400, "Invalid query params", { details: parsed.error.flatten() });
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const { page, pageSize, search, sort, order } = parsed.data;
   // TODO: Epic 3.1 — replace with project switcher
   const projectId = parsed.data.projectId ?? user.projectId;
-  if (!projectId) return jsonError(403, "No project");
+  if (!projectId) return jsonError(403, "NO_PROJECT");
 
   // Must precede the cache lookup: serving cached data before the membership
   // check is exactly how the C1 IDOR leaked cross-tenant rows.

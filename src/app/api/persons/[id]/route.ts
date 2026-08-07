@@ -91,7 +91,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const parsed = updatePersonSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;

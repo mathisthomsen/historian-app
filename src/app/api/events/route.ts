@@ -115,10 +115,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const { page, pageSize, search, sort, order, fromYear, toYear } = parsed.data;
@@ -126,7 +123,7 @@ export async function GET(request: NextRequest) {
   // TODO: Epic 3.1 — replace with project switcher
   const projectId = parsed.data.projectId ?? user.projectId;
   if (!projectId) {
-    return json({ error: "No project" }, { status: 403 });
+    return jsonError(403, "NO_PROJECT");
   }
 
   const membership = await prisma.userProject.findFirst({
@@ -214,7 +211,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = createEventSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -234,17 +231,13 @@ export async function POST(request: NextRequest) {
       select: { id: true, title: true, parent_id: true },
     });
     if (!parent) {
-      return json({ error: "Parent event not found" }, { status: 400 });
+      return jsonError(400, "INVALID_REFERENCE", { message: "Parent event not found" });
     }
     if (parent.parent_id !== null) {
-      return json(
-        {
-          error: "DEPTH_LIMIT_EXCEEDED",
-          message: "Cannot nest events more than one level deep",
-          parent_title: parent.title,
-        },
-        { status: 400 },
-      );
+      return jsonError(400, "DEPTH_LIMIT_EXCEEDED", {
+        message: "Cannot nest events more than one level deep",
+        details: { parent_title: parent.title },
+      });
     }
   }
 
@@ -254,10 +247,9 @@ export async function POST(request: NextRequest) {
       where: { id: data.event_type_id, project_id: data.project_id },
     });
     if (!eventType) {
-      return json(
-        { error: "Invalid event_type_id: type does not belong to this project" },
-        { status: 400 },
-      );
+      return jsonError(400, "INVALID_REFERENCE", {
+        message: "Invalid event_type_id: type does not belong to this project",
+      });
     }
   }
 

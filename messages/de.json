@@ -491,7 +491,8 @@
       "to_only": "bis {year}",
       "range": "{from} – {to}"
     },
-    "save_failed": "Relation konnte nicht gespeichert werden."
+    "save_failed": "Relation konnte nicht gespeichert werden.",
+    "delete_failed": "Relation konnte nicht gelöscht werden."
   },
   "relationTypes": {
     "title": "Relationstypen",
@@ -522,7 +523,8 @@
       "LOCATION": "Ort",
       "LITERATURE": "Literatur"
     },
-    "save_failed": "Relationstyp konnte nicht gespeichert werden."
+    "save_failed": "Relationstyp konnte nicht gespeichert werden.",
+    "delete_failed": "Relationstyp konnte nicht gelöscht werden."
   },
   "propertyEvidence": {
     "title": "Nachweise",

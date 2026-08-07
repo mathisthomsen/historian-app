@@ -200,7 +200,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const parsed = updateEventSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -212,17 +212,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       select: { id: true, title: true, parent_id: true },
     });
     if (!parent) {
-      return json({ error: "Parent event not found" }, { status: 400 });
+      return jsonError(400, "INVALID_REFERENCE", { message: "Parent event not found" });
     }
     if (parent.parent_id !== null) {
-      return json(
-        {
-          error: "DEPTH_LIMIT_EXCEEDED",
-          message: "Cannot nest events more than one level deep",
-          parent_title: parent.title,
-        },
-        { status: 400 },
-      );
+      return jsonError(400, "DEPTH_LIMIT_EXCEEDED", {
+        message: "Cannot nest events more than one level deep",
+        details: { parent_title: parent.title },
+      });
     }
   }
 
@@ -232,10 +228,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       where: { id: data.event_type_id, project_id: existing.project_id },
     });
     if (!eventType) {
-      return json(
-        { error: "Invalid event_type_id: type does not belong to this project" },
-        { status: 400 },
-      );
+      return jsonError(400, "INVALID_REFERENCE", {
+        message: "Invalid event_type_id: type does not belong to this project",
+      });
     }
   }
 
@@ -368,14 +363,10 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { parent_id: id, deleted_at: null },
   });
   if (subEventCount > 0) {
-    return json(
-      {
-        error: "HAS_SUB_EVENTS",
-        message: "Cannot delete an event that has active sub-events",
-        count: subEventCount,
-      },
-      { status: 409 },
-    );
+    return jsonError(409, "HAS_SUB_EVENTS", {
+      message: "Cannot delete an event that has active sub-events",
+      details: { count: subEventCount },
+    });
   }
 
   await prisma.event.update({

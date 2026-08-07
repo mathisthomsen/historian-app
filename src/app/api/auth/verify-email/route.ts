@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -27,12 +28,12 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "auth.errors.tokenInvalid" }, { status: 400 });
+    return jsonError(400, "TOKEN_INVALID");
   }
 
   const parsed = verifyEmailSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "auth.errors.tokenInvalid" }, { status: 400 });
+    return jsonError(400, "TOKEN_INVALID");
   }
 
   const tokenHash = hashToken(parsed.data.token);
@@ -47,7 +48,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
       metadata: { token_type: "email_confirmation", reason: "not_found" },
     });
-    return NextResponse.json({ error: "auth.errors.tokenInvalid" }, { status: 400 });
+    return jsonError(400, "TOKEN_INVALID");
   }
 
   if (confirmation.used_at !== null || confirmation.expires_at <= new Date()) {
@@ -60,7 +61,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         reason: confirmation.used_at ? "used" : "expired",
       },
     });
-    return NextResponse.json({ error: "auth.errors.tokenExpired" }, { status: 400 });
+    return jsonError(400, "TOKEN_EXPIRED");
   }
 
   await prisma.$transaction([

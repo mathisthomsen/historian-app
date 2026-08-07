@@ -52,7 +52,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const parsed = updateRelationTypeSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -122,7 +122,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { relation_type_id: id, deleted_at: null },
   });
   if (relationCount > 0) {
-    return json({ error: "IN_USE", count: relationCount }, { status: 409 });
+    return jsonError(409, "IN_USE", { details: { count: relationCount } });
   }
 
   // Soft-deleted relations still hold the FK (onDelete: Restrict), so a hard
@@ -131,14 +131,14 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { relation_type_id: id, deleted_at: { not: null } },
   });
   if (softDeletedCount > 0) {
-    return json({ error: "IN_USE_BY_DELETED", count: softDeletedCount }, { status: 409 });
+    return jsonError(409, "IN_USE_BY_DELETED", { details: { count: softDeletedCount } });
   }
 
   try {
     await prisma.relationType.delete({ where: { id } });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
-      return json({ error: "IN_USE" }, { status: 409 });
+      return jsonError(409, "IN_USE");
     }
     throw error;
   }

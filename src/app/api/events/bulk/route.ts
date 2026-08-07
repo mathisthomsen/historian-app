@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = bulkEventSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const { ids } = parsed.data;
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       where: { user_id: user.id, project_id: projectId, role: { in: ["OWNER", "EDITOR"] } },
     });
     if (!membership) {
-      return json({ error: "Forbidden" }, { status: 403 });
+      return jsonError(403, "FORBIDDEN");
     }
   }
 

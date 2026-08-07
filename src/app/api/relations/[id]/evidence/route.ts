@@ -91,7 +91,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   const parsed = createEvidenceSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -102,7 +102,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     select: { id: true },
   });
   if (!source) {
-    return json({ error: "Source does not belong to this project" }, { status: 403 });
+    return jsonError(403, "INVALID_REFERENCE", {
+      message: "Source does not belong to this project",
+    });
   }
 
   let evidence: {
@@ -137,10 +139,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       "code" in err &&
       (err as { code: string }).code === "P2002"
     ) {
-      return json(
-        { error: "DUPLICATE_EVIDENCE", message: "This source is already attached as evidence" },
-        { status: 409 },
-      );
+      return jsonError(409, "DUPLICATE_EVIDENCE", {
+        message: "This source is already attached as evidence",
+      });
     }
     throw err;
   }

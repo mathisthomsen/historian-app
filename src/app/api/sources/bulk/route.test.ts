@@ -98,7 +98,7 @@ describe("POST /api/sources/bulk", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 });

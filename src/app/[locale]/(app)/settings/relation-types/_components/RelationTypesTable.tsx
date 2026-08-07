@@ -45,9 +45,7 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
     try {
       const res = await fetch(`/api/relation-types?projectId=${encodeURIComponent(projectId)}`);
       if (res.ok) {
-        const data = (await res.json()) as
-          | RelationTypeItem[]
-          | { data?: RelationTypeItem[] };
+        const data = (await res.json()) as RelationTypeItem[] | { data?: RelationTypeItem[] };
         if (Array.isArray(data)) {
           setTypes(data);
         } else if (data && Array.isArray((data as { data?: RelationTypeItem[] }).data)) {
@@ -82,11 +80,10 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
         setDeleteTarget(null);
         toast.success(t("deleted_toast"));
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
         if (res.status === 409) {
           toast.error(t("deleteBlocked", { count: deleteTarget._count.relations }));
         } else {
-          toast.error(data.error ?? "Fehler beim Löschen.");
+          toast.error(t("delete_failed"));
         }
         setDeleteTarget(null);
       }
@@ -97,7 +94,7 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-2 py-8">
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
@@ -135,16 +132,16 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
               <TableCell>
                 {type.color ? (
                   <span
-                    className="inline-block h-5 w-5 rounded-full border border-border"
+                    className="border-border inline-block h-5 w-5 rounded-full border"
                     style={{ backgroundColor: type.color }}
                   />
                 ) : (
-                  <span className="inline-block h-5 w-5 rounded-full border border-dashed border-border" />
+                  <span className="border-border inline-block h-5 w-5 rounded-full border border-dashed" />
                 )}
               </TableCell>
               <TableCell className="font-medium">{type.name}</TableCell>
               <TableCell className="text-muted-foreground">{type.inverse_name ?? "—"}</TableCell>
-              <TableCell className="text-right text-muted-foreground">
+              <TableCell className="text-muted-foreground text-right">
                 {type._count.relations}
               </TableCell>
               <TableCell>
@@ -177,7 +174,7 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
 
           {types.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={5} className="text-muted-foreground py-8 text-center">
                 —
               </TableCell>
             </TableRow>
@@ -196,9 +193,7 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("delete_confirm_title")}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{t("delete_confirm_title")}</AlertDialogTitle>
             <AlertDialogDescription>{t("delete_confirm_body")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

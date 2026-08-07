@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const parsed = updateEventTypeSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -81,7 +81,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       "code" in err &&
       (err as { code: string }).code === "P2002"
     ) {
-      return json({ error: "DUPLICATE_NAME" }, { status: 409 });
+      return jsonError(409, "DUPLICATE_NAME");
     }
     throw err;
   }
@@ -130,14 +130,9 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   });
 
   if (eventCount > 0) {
-    return json(
-      {
-        error: "TYPE_IN_USE",
-        count: eventCount,
-        filter_url: `/events?typeIds=${id}`,
-      },
-      { status: 409 },
-    );
+    return jsonError(409, "IN_USE", {
+      details: { count: eventCount, filter_url: `/events?typeIds=${id}` },
+    });
   }
 
   // Soft-deleted events still hold the FK (onDelete: Restrict), so a hard
@@ -146,7 +141,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { event_type_id: id, deleted_at: { not: null } },
   });
   if (softDeletedCount > 0) {
-    return json({ error: "TYPE_IN_USE_BY_DELETED", count: softDeletedCount }, { status: 409 });
+    return jsonError(409, "IN_USE_BY_DELETED", { details: { count: softDeletedCount } });
   }
 
   try {
@@ -155,7 +150,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
-      return json({ error: "TYPE_IN_USE" }, { status: 409 });
+      return jsonError(409, "IN_USE");
     }
     throw error;
   }

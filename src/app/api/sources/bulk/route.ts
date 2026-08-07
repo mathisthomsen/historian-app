@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = bulkSourceSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const { ids, project_id } = parsed.data;

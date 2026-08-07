@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const projectId = searchParams.get("projectId") ?? user.projectId;
   if (!projectId) {
-    return json({ error: "No project" }, { status: 403 });
+    return jsonError(403, "NO_PROJECT");
   }
 
   // Verify project membership
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = createRelationTypeSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;

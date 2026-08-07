@@ -28,20 +28,80 @@ export function json<T>(
 }
 
 /**
- * Error response in the shape every route already emits: `{ error, ...extra }`.
- * `extra` carries the per-case fields (`count`, `details`, `filter_url`, …).
+ * Machine-readable error codes (audit A-H4 / X-H-d).
+ *
+ * The `error` field previously carried three incompatible conventions at once —
+ * prose ("Entity not found"), SCREAMING codes ("ENTITY_NOT_FOUND"), and i18n
+ * keys ("auth.errors.tokenExpired") — and the same condition got different
+ * codes in different families (`IN_USE` vs `TYPE_IN_USE`). Clients had no
+ * reliable way to branch on a failure, so they either string-matched or gave up
+ * and showed the raw value to the user.
+ *
+ * Codes are stable API surface: rename one and you break clients. Human copy
+ * belongs in `messages/*.json`, keyed off the code — never in the response.
  */
-export function jsonError(
-  status: number,
-  error: string,
-  extra?: Record<string, unknown>,
-): NextResponse {
-  return json({ error, ...extra }, { status });
+export const ERROR_CODES = [
+  // auth / access
+  "UNAUTHORIZED",
+  "FORBIDDEN",
+  "NO_PROJECT",
+  "RATE_LIMITED",
+  "SERVICE_UNAVAILABLE",
+  // request shape
+  "INVALID_JSON",
+  "VALIDATION_FAILED",
+  "INVALID_QUERY_PARAMS",
+  // resource
+  "NOT_FOUND",
+  "ENTITY_NOT_FOUND",
+  // conflicts
+  "IN_USE",
+  "IN_USE_BY_DELETED",
+  "DUPLICATE_NAME",
+  "DUPLICATE_EVIDENCE",
+  "HAS_SUB_EVENTS",
+  // references / domain rules
+  "INVALID_REFERENCE",
+  "INVALID_FROM_TYPE",
+  "INVALID_TO_TYPE",
+  "INVALID_PROPERTY",
+  "INVALID_ENTITY_TYPE",
+  "DEPTH_LIMIT_EXCEEDED",
+  // auth flows
+  "TOKEN_EXPIRED",
+  "TOKEN_INVALID",
+  "EMAIL_TAKEN",
+] as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[number];
+
+/** The single error envelope every route emits. */
+export interface ApiErrorBody {
+  error: {
+    code: ErrorCode;
+    /** Developer-facing detail. Never rendered to users — clients key off `code`. */
+    message?: string;
+    /** Structured payload: Zod `flatten()`, conflict counts, filter URLs, … */
+    details?: unknown;
+  };
 }
 
-export const unauthorized = (): NextResponse => jsonError(401, "Unauthorized");
-export const forbidden = (): NextResponse => jsonError(403, "Forbidden");
-export const notFoundError = (error = "Not found"): NextResponse => jsonError(404, error);
+/** Error response in the unified `{ error: { code, message?, details? } }` envelope. */
+export function jsonError(
+  status: number,
+  code: ErrorCode,
+  init?: { message?: string; details?: unknown },
+): NextResponse {
+  const error: ApiErrorBody["error"] = { code };
+  if (init?.message !== undefined) error.message = init.message;
+  if (init?.details !== undefined) error.details = init.details;
+  return json({ error }, { status });
+}
+
+export const unauthorized = (): NextResponse => jsonError(401, "UNAUTHORIZED");
+export const forbidden = (): NextResponse => jsonError(403, "FORBIDDEN");
+export const notFoundError = (code: ErrorCode = "NOT_FOUND", message?: string): NextResponse =>
+  jsonError(404, code, message === undefined ? undefined : { message });
 
 /**
  * Reads and JSON-parses a request body.
@@ -55,13 +115,13 @@ export async function parseJsonBody(
   try {
     return { ok: true, data: (await request.json()) as unknown };
   } catch {
-    return { ok: false, response: jsonError(400, "Invalid JSON") };
+    return { ok: false, response: jsonError(400, "INVALID_JSON") };
   }
 }
 
 /**
  * Validates `body` against `schema`, emitting the standard 400 payload
- * (`{ error: "Validation failed", details: flatten() }`) on failure.
+ * (`{ error: { code: "VALIDATION_FAILED", details: flatten() } }`) on failure.
  */
 export function validateBody<S extends z.ZodTypeAny>(
   schema: S,
@@ -71,7 +131,7 @@ export function validateBody<S extends z.ZodTypeAny>(
   if (!parsed.success) {
     return {
       ok: false,
-      response: jsonError(400, "Validation failed", { details: parsed.error.flatten() }),
+      response: jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() }),
     };
   }
   return { ok: true, data: parsed.data as z.infer<S> };

@@ -45,35 +45,50 @@ describe("json", () => {
 });
 
 describe("jsonError", () => {
-  it("emits { error } with the given status", async () => {
-    const res = jsonError(418, "TEAPOT");
-    expect(res.status).toBe(418);
-    expect(await res.json()).toEqual({ error: "TEAPOT" });
+  it("wraps the code in the unified envelope", async () => {
+    const res = jsonError(409, "IN_USE");
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: { code: "IN_USE" } });
   });
 
-  it("merges extra fields alongside error", async () => {
-    const res = jsonError(409, "IN_USE", { count: 5 });
-    expect(await res.json()).toEqual({ error: "IN_USE", count: 5 });
+  it("omits message and details when not supplied", async () => {
+    const body = (await jsonError(403, "FORBIDDEN").json()) as Record<string, unknown>;
+    expect(body).toEqual({ error: { code: "FORBIDDEN" } });
+    expect(Object.keys(body["error"] as object)).toEqual(["code"]);
+  });
+
+  it("carries structured details under error.details", async () => {
+    const res = jsonError(409, "IN_USE", { details: { count: 5 } });
+    expect(await res.json()).toEqual({ error: { code: "IN_USE", details: { count: 5 } } });
+  });
+
+  it("carries a developer-facing message under error.message", async () => {
+    const res = jsonError(422, "INVALID_REFERENCE", { message: "Parent event not found" });
+    expect(await res.json()).toEqual({
+      error: { code: "INVALID_REFERENCE", message: "Parent event not found" },
+    });
   });
 });
 
 describe("standard error shorthands", () => {
-  it("unauthorized is 401 Unauthorized", async () => {
+  it("unauthorized is 401 UNAUTHORIZED", async () => {
     const res = unauthorized();
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ error: "Unauthorized" });
+    expect(await res.json()).toEqual({ error: { code: "UNAUTHORIZED" } });
   });
 
-  it("forbidden is 403 Forbidden", async () => {
+  it("forbidden is 403 FORBIDDEN", async () => {
     const res = forbidden();
     expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: "Forbidden" });
+    expect(await res.json()).toEqual({ error: { code: "FORBIDDEN" } });
   });
 
-  it("notFoundError defaults to 404 Not found and accepts an override", async () => {
+  it("notFoundError defaults to NOT_FOUND and accepts a more specific code", async () => {
     expect(notFoundError().status).toBe(404);
-    expect(await notFoundError().json()).toEqual({ error: "Not found" });
-    expect(await notFoundError("ENTITY_NOT_FOUND").json()).toEqual({ error: "ENTITY_NOT_FOUND" });
+    expect(await notFoundError().json()).toEqual({ error: { code: "NOT_FOUND" } });
+    expect(await notFoundError("ENTITY_NOT_FOUND").json()).toEqual({
+      error: { code: "ENTITY_NOT_FOUND" },
+    });
   });
 });
 
@@ -89,7 +104,7 @@ describe("parseJsonBody", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.response.status).toBe(400);
-      expect(await result.response.json()).toEqual({ error: "Invalid JSON" });
+      expect(await result.response.json()).toEqual({ error: { code: "INVALID_JSON" } });
     }
   });
 });
@@ -108,9 +123,11 @@ describe("validateBody", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.response.status).toBe(400);
-      const body = (await result.response.json()) as { error: string; details: unknown };
-      expect(body.error).toBe("Validation failed");
-      expect(body.details).toBeDefined();
+      const body = (await result.response.json()) as {
+        error: { code: string; details: unknown };
+      };
+      expect(body.error.code).toBe("VALIDATION_FAILED");
+      expect(body.error.details).toBeDefined();
     }
   });
 });

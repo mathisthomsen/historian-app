@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { forbidden, json, unauthorized } from "@/lib/api";
+import { forbidden, json, jsonError, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
 import { validateEntityExists } from "@/lib/entity-validation";
@@ -26,16 +26,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
   // Validate entity type (case-insensitive)
   const upperType = rawType.toUpperCase() as ValidEntityType;
   if (!VALID_ENTITY_TYPES.includes(upperType)) {
-    return json({ error: "Invalid entity type", valid: VALID_ENTITY_TYPES }, { status: 400 });
+    return jsonError(400, "INVALID_ENTITY_TYPE", { details: { valid: VALID_ENTITY_TYPES } });
   }
 
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const { projectId, page, pageSize } = parsed.data;
@@ -51,7 +48,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   // Verify entity exists
   const entityExists = await validateEntityExists(upperType, id, projectId);
   if (!entityExists) {
-    return json({ error: "Entity not found" }, { status: 404 });
+    return jsonError(404, "ENTITY_NOT_FOUND");
   }
 
   const [records, total] = await Promise.all([

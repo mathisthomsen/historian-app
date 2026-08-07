@@ -119,8 +119,8 @@ describe("GET /api/persons", () => {
     const res = await GET(req);
 
     expect(res.status).toBe(401);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Unauthorized");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
   it("returns 403 when the user is not a member of the requested project", async () => {
@@ -220,8 +220,8 @@ describe("POST /api/persons", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 
   it("returns 403 when the user is not a member of the target project", async () => {

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { errorCode, readErrorBody } from "@/lib/api-error";
+
 interface VerifyEmailCardProps {
   token: string | null;
 }
@@ -31,12 +33,8 @@ export function VerifyEmailCard({ token }: VerifyEmailCardProps) {
         if (res.ok) {
           setState("success");
         } else {
-          const data = (await res.json()) as { error?: string };
-          if (data.error === "auth.errors.tokenExpired") {
-            setErrorKey("tokenExpired");
-          } else {
-            setErrorKey("tokenInvalid");
-          }
+          const code = errorCode(await readErrorBody(res));
+          setErrorKey(code === "TOKEN_EXPIRED" ? "tokenExpired" : "tokenInvalid");
           setState("error");
         }
       } catch {
@@ -52,7 +50,7 @@ export function VerifyEmailCard({ token }: VerifyEmailCardProps) {
 
   if (state === "pending") {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span>{t("verify.verifying")}</span>
       </div>
@@ -66,8 +64,8 @@ export function VerifyEmailCard({ token }: VerifyEmailCardProps) {
           <CheckCircle className="h-5 w-5" />
           <span className="font-medium">{t("verify.success")}</span>
         </div>
-        <p className="text-sm text-muted-foreground">{t("verify.successMessage")}</p>
-        <Link href="/auth/login" className="text-sm text-primary hover:underline">
+        <p className="text-muted-foreground text-sm">{t("verify.successMessage")}</p>
+        <Link href="/auth/login" className="text-primary text-sm hover:underline">
           {t("verify.loginNow")} →
         </Link>
       </div>
@@ -76,12 +74,12 @@ export function VerifyEmailCard({ token }: VerifyEmailCardProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-destructive">
+      <div className="text-destructive flex items-center gap-2">
         <XCircle className="h-5 w-5" />
         <span className="font-medium">{t("errors.tokenInvalid")}</span>
       </div>
-      <p className="text-sm text-muted-foreground">{t(`errors.${errorKey}`)}</p>
-      <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+      <p className="text-muted-foreground text-sm">{t(`errors.${errorKey}`)}</p>
+      <Link href="/auth/forgot-password" className="text-primary text-sm hover:underline">
         {t("verify.requestNew")} →
       </Link>
     </div>

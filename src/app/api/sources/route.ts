@@ -60,16 +60,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const { page, pageSize, search, sort, order } = parsed.data;
   const projectId = parsed.data.projectId ?? user.projectId;
   if (!projectId) {
-    return json({ error: "No project" }, { status: 403 });
+    return jsonError(403, "NO_PROJECT");
   }
 
   const membership = await prisma.userProject.findFirst({
@@ -144,7 +141,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = createSourceSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;

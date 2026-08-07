@@ -69,10 +69,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const { projectId, entityType, entityId, property } = parsed.data;
@@ -127,7 +124,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = createPropertyEvidenceSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError(400, "Validation failed", { details: parsed.error.flatten() });
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -143,7 +140,7 @@ export async function POST(request: NextRequest) {
   // Validate property against allowed list
   const allowed = ALLOWED_PROPERTIES[data.entity_type] ?? [];
   if (!allowed.includes(data.property)) {
-    return json({ error: "INVALID_PROPERTY", allowed }, { status: 422 });
+    return jsonError(422, "INVALID_PROPERTY", { details: { allowed } });
   }
 
   // Validate entity exists
@@ -153,7 +150,7 @@ export async function POST(request: NextRequest) {
     data.project_id,
   );
   if (!entityExists) {
-    return json({ error: "Entity not found" }, { status: 404 });
+    return jsonError(404, "ENTITY_NOT_FOUND");
   }
 
   // Validate source belongs to same project
@@ -162,7 +159,9 @@ export async function POST(request: NextRequest) {
     select: { id: true },
   });
   if (!source) {
-    return json({ error: "Source does not belong to this project" }, { status: 403 });
+    return jsonError(403, "INVALID_REFERENCE", {
+      message: "Source does not belong to this project",
+    });
   }
 
   const record = await prisma.propertyEvidence.create({

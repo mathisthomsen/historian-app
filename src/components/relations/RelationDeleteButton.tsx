@@ -36,8 +36,7 @@ export function RelationDeleteButton({ relationId, onDeleted }: RelationDeleteBu
         onDeleted();
         setOpen(false);
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? "Fehler beim Löschen.");
+        toast.error(t("delete_failed"));
       }
     } finally {
       setDeleting(false);

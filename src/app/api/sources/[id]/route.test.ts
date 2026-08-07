@@ -122,8 +122,8 @@ describe("GET /api/sources/[id]", () => {
     const res = await GET(req, makeContext("src-deleted"));
 
     expect(res.status).toBe(404);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Not found");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("NOT_FOUND");
   });
 
   it("returns 403 for non-member", async () => {
@@ -134,8 +134,8 @@ describe("GET /api/sources/[id]", () => {
     const res = await GET(req, makeContext("src-1"));
 
     expect(res.status).toBe(403);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Forbidden");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("FORBIDDEN");
   });
 });
 
@@ -179,8 +179,8 @@ describe("PUT /api/sources/[id]", () => {
     const res = await PUT(req, makeContext("src-1"));
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 });
 
@@ -219,7 +219,7 @@ describe("DELETE /api/sources/[id]", () => {
     const res = await DELETE(req, makeContext("src-deleted"));
 
     expect(res.status).toBe(404);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Not found");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("NOT_FOUND");
   });
 });
