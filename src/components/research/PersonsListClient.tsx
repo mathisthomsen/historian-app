@@ -35,6 +35,7 @@ export function PersonsListClient({
   search,
   sort,
   order,
+  projectId,
 }: PersonsListClientProps) {
   const t = useTranslations("persons");
   const router = useRouter();
@@ -76,7 +77,7 @@ export function PersonsListClient({
     const res = await fetch("/api/persons/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: selectedIds, action: "delete" }),
+      body: JSON.stringify({ action: "delete", ids: selectedIds, project_id: projectId }),
     });
     if (res.ok) {
       toast.success(t("bulk.deleted_toast", { count: selectedIds.length }));

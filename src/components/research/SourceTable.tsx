@@ -97,7 +97,7 @@ export function SourceTable({
     const res = await fetch("/api/sources/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: selectedIds, project_id: projectId }),
+      body: JSON.stringify({ action: "delete", ids: selectedIds, project_id: projectId }),
     });
     if (res.ok) {
       toast.success(t("bulk.deleted_toast", { count: selectedIds.length }));

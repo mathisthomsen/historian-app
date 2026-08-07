@@ -47,6 +47,7 @@ export function EventsListClient({
   toYear,
   topLevelOnly,
   availableTypes,
+  projectId,
 }: EventsListClientProps) {
   const t = useTranslations("events");
   const router = useRouter();
@@ -97,7 +98,7 @@ export function EventsListClient({
     const res = await fetch("/api/events/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: selectedIds, action: "delete" }),
+      body: JSON.stringify({ action: "delete", ids: selectedIds, project_id: projectId }),
     });
     if (res.ok) {
       const data = (await res.json()) as { deleted?: number; skipped?: number };
@@ -126,7 +127,7 @@ export function EventsListClient({
       cell: (row: EventSummary) => (
         <Link
           href={`/${locale}/events/${row.id}`}
-          className="underline hover:text-foreground"
+          className="hover:text-foreground underline"
           onClick={(e) => e.stopPropagation()}
         >
           {row.title}
@@ -178,7 +179,7 @@ export function EventsListClient({
         row.parent ? (
           <Link
             href={`/${locale}/events/${row.parent.id}`}
-            className="underline hover:text-foreground"
+            className="hover:text-foreground underline"
             onClick={(e) => e.stopPropagation()}
           >
             {row.parent.title}
@@ -202,7 +203,7 @@ export function EventsListClient({
         <p className="text-muted-foreground">{t("list.empty")}</p>
         <Link
           href={`/${locale}/events/new`}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           {t("list.empty_action")}
         </Link>
@@ -220,7 +221,7 @@ export function EventsListClient({
         />
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               {t("bulk.selected", { count: selectedIds.length })}
             </span>
             <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
@@ -240,7 +241,7 @@ export function EventsListClient({
       />
 
       {events.length === 0 ? (
-        <p className="py-8 text-center text-muted-foreground">{t("list.empty")}</p>
+        <p className="text-muted-foreground py-8 text-center">{t("list.empty")}</p>
       ) : (
         <DataTable
           data={events}
@@ -252,7 +253,7 @@ export function EventsListClient({
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {total} {total === 1 ? "Ereignis" : "Ereignisse"}
         </p>
         <DataTablePagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
