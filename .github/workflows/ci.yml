@@ -120,6 +120,20 @@ jobs:
         env:
           SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
 
+      # Without these, a failing E2E run leaves nothing to debug with: the
+      # per-test error-context.md holds the rendered page snapshot that shows
+      # *why* a step failed, and the trace allows a full replay.
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Deploy to Vercel
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: pnpm dlx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}

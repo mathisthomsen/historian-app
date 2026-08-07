@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 
 import { Client } from "pg";
 
@@ -84,7 +84,17 @@ export async function insertTestVerificationToken(email: string): Promise<string
 
 /** Inserts a known raw token for password reset testing. */
 export async function insertTestResetToken(email: string): Promise<string> {
-  const rawToken = "b".repeat(64); // deterministic test reset token
+  // Random, not deterministic. The previous "b".repeat(64) had two proven
+  // hazards, both of which only bite now that the limiter fails closed against
+  // a live Redis:
+  //   1. password_resets.token_hash is globally UNIQUE, so a leftover row for
+  //      any *other* user makes this INSERT throw.
+  //   2. reset-password rate-limits on `reset:${token.slice(0,8)}`, so every
+  //      run of this test shared one bucket. Measured: the 6th request in a
+  //      15-minute window gets a 429, and a CI run makes up to 6 (two browsers
+  //      x three attempts) — so consecutive runs could start already throttled.
+  // Nothing depends on the value being fixed; the caller uses the return value.
+  const rawToken = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(rawToken).digest("hex");
   const client = getClient();
   await client.connect();
