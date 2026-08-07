@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 
+import bcrypt from "bcryptjs";
 import { Client } from "pg";
 
 function getClient(): Client {
@@ -162,6 +163,28 @@ export async function resetRateLimits(): Promise<void> {
       });
     }
   } while (cursor !== "0");
+}
+
+/**
+ * Creates a verified user with a known password, for tests that need to mutate
+ * an account without touching the shared seeded admin.
+ *
+ * Idempotent: any existing user with this email is removed first.
+ */
+export async function createTestUser(email: string, password: string): Promise<void> {
+  const password_hash = await bcrypt.hash(password, 10);
+  const client = getClient();
+  await client.connect();
+  try {
+    await client.query("DELETE FROM users WHERE email = $1", [email.toLowerCase()]);
+    await client.query(
+      `INSERT INTO users (id, email, name, password_hash, email_verified_at, role, created_at, updated_at)
+         VALUES (gen_random_uuid()::text, $1, 'E2E Test User', $2, NOW(), 'USER', NOW(), NOW())`,
+      [email.toLowerCase(), password_hash],
+    );
+  } finally {
+    await client.end();
+  }
 }
 
 /** Deletes a test user by email (for cleanup after registration tests). */

@@ -98,7 +98,34 @@ async function main() {
   // ---- User ----------------------------------------------------------------
   // SEED_ADMIN_PASSWORD lets CI/prod seed a non-public password while local
   // dev keeps the documented demo credential.
-  const demoPasswordHash = await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!", 10);
+  const demoPassword = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
+
+  // The app enforces this policy on every real password. A seeded admin that
+  // violates it still *logs in* (login only compares the hash), so the mismatch
+  // is invisible until something runs the value through the policy — which is
+  // how a secret with no special character turned into an E2E failure that
+  // named neither the field nor the rule. Warn rather than throw: the account
+  // is still usable, and failing the seed would block deploys.
+  const policy: readonly (readonly [RegExp, string])[] = [
+    [/.{8,}/, "at least 8 characters"],
+    [/[A-Z]/, "an uppercase letter"],
+    [/[a-z]/, "a lowercase letter"],
+    [/[0-9]/, "a digit"],
+    [/[^A-Za-z0-9]/, "a special character"],
+  ];
+  const missing = policy.filter(([re]) => !re.test(demoPassword));
+
+  if (missing.length > 0) {
+    console.warn(
+      `[seed] WARNING: SEED_ADMIN_PASSWORD does not satisfy the app's password policy — missing ${missing
+        .map(([, label]) => label)
+        .join(
+          ", ",
+        )}. Login still works, but any flow that validates the password (e.g. the reset form) will reject it.`,
+    );
+  }
+
+  const demoPasswordHash = await bcrypt.hash(demoPassword, 10);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@evidoxa.dev" },
