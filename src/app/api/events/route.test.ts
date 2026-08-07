@@ -99,6 +99,28 @@ describe("GET /api/events", () => {
     mockRequireUser.mockResolvedValue({ id: "user-1", projectId: "proj-1" });
     mockCacheGet.mockResolvedValue(null);
     mockCacheSet.mockResolvedValue(undefined);
+    mockUserProjectFindFirst.mockResolvedValue({ id: "mem-1" });
+  });
+
+  it("returns 403 when the user is not a member of the requested project", async () => {
+    mockUserProjectFindFirst.mockResolvedValue(null);
+
+    const req = makeRequest("http://localhost/api/events?projectId=other-project");
+    const res = await GET(req);
+
+    expect(res.status).toBe(403);
+    expect(mockFindMany).not.toHaveBeenCalled();
+  });
+
+  it("checks project membership before reading from cache", async () => {
+    mockUserProjectFindFirst.mockResolvedValue(null);
+    mockCacheGet.mockResolvedValue({ data: [], pagination: {} });
+
+    const req = makeRequest("http://localhost/api/events?projectId=other-project");
+    const res = await GET(req);
+
+    expect(res.status).toBe(403);
+    expect(mockCacheGet).not.toHaveBeenCalled();
   });
 
   it("returns paginated list with event_type included", async () => {

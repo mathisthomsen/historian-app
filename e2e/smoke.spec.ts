@@ -139,7 +139,9 @@ test.describe("TC-11: Sidebar collapse", () => {
     // Login with seeded demo account
     await page.goto("/de/auth/login");
     await page.getByLabel("E-Mail").fill("admin@evidoxa.dev");
-    await page.getByLabel("Passwort", { exact: true }).fill("Demo1234!");
+    await page
+      .getByLabel("Passwort", { exact: true })
+      .fill(process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!");
     await page.getByRole("button", { name: "Anmelden" }).click();
     await page.waitForURL(/\/de\/dashboard/, { timeout: 15_000 });
 

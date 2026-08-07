@@ -136,6 +136,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const membership = await prisma.userProject.findFirst({
+    where: { user_id: user.id, project_id: projectId },
+  });
+  if (!membership) {
+    return NextResponse.json(
+      { error: "Forbidden" },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   const typeIds = parsed.data.typeIds ? parsed.data.typeIds.split(",").filter(Boolean) : [];
   const sortedTypeIds = [...typeIds].sort().join(",");
 

@@ -19,7 +19,7 @@ const SEED = {
 };
 
 const ADMIN_EMAIL = "admin@evidoxa.dev";
-const ADMIN_PASSWORD = "Demo1234!";
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
 
 // ---------------------------------------------------------------------------
 // Helpers

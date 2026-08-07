@@ -6,7 +6,7 @@ import { resetRateLimits } from "./helpers/db";
 test.describe.configure({ mode: "serial" });
 
 const SEED_EMAIL = "admin@evidoxa.dev";
-const SEED_PASSWORD = "Demo1234!";
+const SEED_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
 
 // IDs created during the test run — shared across tests
 let sourceId = "";

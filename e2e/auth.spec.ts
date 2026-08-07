@@ -12,7 +12,7 @@ import {
 test.describe.configure({ mode: "serial" });
 
 const SEED_EMAIL = "admin@evidoxa.dev";
-const SEED_PASSWORD = "Demo1234!";
+const SEED_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
 
 // Helper: login with the seeded admin account
 async function loginAsAdmin(page: Page) {

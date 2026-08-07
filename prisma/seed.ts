@@ -96,7 +96,9 @@ async function main() {
   await prisma.$executeRawUnsafe(`UPDATE relations SET deleted_at = NULL WHERE id LIKE 'seed-%'`);
 
   // ---- User ----------------------------------------------------------------
-  const demoPasswordHash = await bcrypt.hash("Demo1234!", 10);
+  // SEED_ADMIN_PASSWORD lets CI/prod seed a non-public password while local
+  // dev keeps the documented demo credential.
+  const demoPasswordHash = await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!", 10);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@evidoxa.dev" },
