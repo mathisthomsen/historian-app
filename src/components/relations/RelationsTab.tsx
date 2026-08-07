@@ -43,12 +43,10 @@ export function RelationsTab({
         `/api/relations?entityType=${entityType}&entityId=${encodeURIComponent(entityId)}&projectId=${encodeURIComponent(projectId)}`,
       );
       if (res.ok) {
-        const data = (await res.json()) as RelationWithDetails[] | { data?: RelationWithDetails[] };
-        if (Array.isArray(data)) {
-          setRelations(data);
-        } else if (data && Array.isArray((data as { data?: RelationWithDetails[] }).data)) {
-          setRelations((data as { data: RelationWithDetails[] }).data);
-        }
+        // The list envelope is now uniform, so the old
+        // `Array.isArray(data) ? … : data.data` normalisation is gone.
+        const data = (await res.json()) as { data?: RelationWithDetails[] };
+        setRelations(data.data ?? []);
       }
     } finally {
       setLoading(false);
@@ -78,7 +76,7 @@ export function RelationsTab({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-2 py-8">
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
@@ -95,11 +93,11 @@ export function RelationsTab({
 
       {/* Outgoing relations */}
       <div className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           {t("outgoing")}
         </p>
         {outgoing.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("noRelations")}</p>
+          <p className="text-muted-foreground text-sm">{t("noRelations")}</p>
         ) : (
           outgoing.map((r) => (
             <RelationRow
@@ -120,11 +118,11 @@ export function RelationsTab({
 
       {/* Incoming relations */}
       <div className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           {t("incoming")}
         </p>
         {incoming.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("noRelations")}</p>
+          <p className="text-muted-foreground text-sm">{t("noRelations")}</p>
         ) : (
           incoming.map((r) => (
             <RelationRow

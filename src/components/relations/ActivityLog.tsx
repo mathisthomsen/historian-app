@@ -54,12 +54,12 @@ export function ActivityLog({ projectId, entityType, entityId, refreshKey }: Act
       setLoading(true);
       try {
         const res = await fetch(
-          `/api/entities/${entityType.toLowerCase()}/${entityId}/activity?projectId=${encodeURIComponent(projectId)}&page=${p}&limit=${PAGE_SIZE}`,
+          `/api/entities/${entityType.toLowerCase()}/${entityId}/activity?projectId=${encodeURIComponent(projectId)}&page=${p}&pageSize=${PAGE_SIZE}`,
         );
         if (res.ok) {
           const data = (await res.json()) as {
             data?: ActivityEntry[];
-            hasMore?: boolean;
+            pagination?: { page: number; totalPages: number };
           };
           const items = data.data ?? [];
           if (p === 1) {
@@ -67,7 +67,10 @@ export function ActivityLog({ projectId, entityType, entityId, refreshKey }: Act
           } else {
             setEntries((prev) => [...prev, ...items]);
           }
-          setHasMore(data.hasMore ?? items.length === PAGE_SIZE);
+          // The endpoint never returned `hasMore`; the old fallback guessed from
+          // page length and was wrong when the last page was exactly PAGE_SIZE.
+          const pagination = data.pagination;
+          setHasMore(pagination ? pagination.page < pagination.totalPages : false);
         }
       } finally {
         setLoading(false);
@@ -89,14 +92,14 @@ export function ActivityLog({ projectId, entityType, entityId, refreshKey }: Act
 
   if (loading && entries.length === 0) {
     return (
-      <div className="flex items-center gap-2 py-8 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-2 py-8">
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
   }
 
   if (!loading && entries.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t("noActivity")}</p>;
+    return <p className="text-muted-foreground text-sm">{t("noActivity")}</p>;
   }
 
   return (
@@ -119,7 +122,7 @@ export function ActivityLog({ projectId, entityType, entityId, refreshKey }: Act
                   <span className="text-muted-foreground"> · {entry.field_path}</span>
                 )}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {formatRelativeTime(entry.created_at)}
               </p>
             </div>

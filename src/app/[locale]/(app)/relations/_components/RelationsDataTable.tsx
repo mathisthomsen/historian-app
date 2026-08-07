@@ -50,10 +50,10 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       if (res.ok) {
         const data = (await res.json()) as {
           data?: RelationWithDetails[];
-          total?: number;
+          pagination?: { total: number };
         };
         setRelations(data.data ?? []);
-        setTotal(data.total ?? 0);
+        setTotal(data.pagination?.total ?? 0);
       }
     } finally {
       setLoading(false);

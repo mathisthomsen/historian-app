@@ -11,6 +11,7 @@ vi.mock("@/lib/db", () => ({
 
 const {
   forbidden,
+  paginated,
   json,
   jsonError,
   notFoundError,
@@ -167,5 +168,27 @@ describe("requireProjectMembership", () => {
     expect(mockUserProjectFindFirst.mock.calls[1]?.[0].where.role).toEqual({
       in: ["OWNER", "EDITOR"],
     });
+  });
+});
+
+describe("paginated", () => {
+  it("wraps rows in the single list envelope", () => {
+    const body = paginated([{ id: "1" }], { page: 1, pageSize: 25, total: 1 });
+    expect(body).toEqual({
+      data: [{ id: "1" }],
+      pagination: { page: 1, pageSize: 25, total: 1, totalPages: 1 },
+    });
+  });
+
+  it("rounds totalPages up for a partial final page", () => {
+    expect(paginated([], { page: 1, pageSize: 25, total: 51 }).pagination.totalPages).toBe(3);
+  });
+
+  it("reports zero pages for an empty result set", () => {
+    expect(paginated([], { page: 1, pageSize: 25, total: 0 }).pagination.totalPages).toBe(0);
+  });
+
+  it("is exact when total divides evenly by pageSize", () => {
+    expect(paginated([], { page: 2, pageSize: 20, total: 40 }).pagination.totalPages).toBe(2);
   });
 });

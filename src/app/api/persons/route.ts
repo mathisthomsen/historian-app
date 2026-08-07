@@ -7,6 +7,7 @@ import {
   forbidden,
   json,
   jsonError,
+  paginated,
   parseJsonBody,
   requireProjectMembership,
   unauthorized,
@@ -87,8 +88,8 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  const body = {
-    data: persons.map((p) => ({
+  const body = paginated(
+    persons.map((p) => ({
       id: p.id,
       first_name: p.first_name,
       last_name: p.last_name,
@@ -107,13 +108,8 @@ export async function GET(request: NextRequest) {
         is_primary: n.is_primary,
       })),
     })),
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
-  };
+    { page, pageSize, total },
+  );
 
   await cache.set(cacheKey, body, 60);
 

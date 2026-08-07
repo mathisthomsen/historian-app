@@ -27,6 +27,46 @@ export function json<T>(
   });
 }
 
+/** Pagination block shared by every list endpoint. */
+export interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+/** The single list envelope: `{ data, pagination }`. */
+export interface PaginatedBody<T> {
+  data: T[];
+  pagination: Pagination;
+}
+
+/**
+ * Builds the one list envelope (audit A-H2).
+ *
+ * Three endpoints returned `{ data, pagination: {…} }` while relations and
+ * activity returned a flat `{ data, total, page, pageSize }`. Clients coped
+ * with defensive `Array.isArray(data) ? … : data.data` branches, which is a
+ * sign the contract — not the client — was wrong.
+ *
+ * Standardising matters before Epic 5.1: the export format would otherwise
+ * freeze both shapes permanently.
+ */
+export function paginated<T>(
+  data: T[],
+  init: { page: number; pageSize: number; total: number },
+): PaginatedBody<T> {
+  return {
+    data,
+    pagination: {
+      page: init.page,
+      pageSize: init.pageSize,
+      total: init.total,
+      totalPages: Math.ceil(init.total / init.pageSize),
+    },
+  };
+}
+
 /**
  * Machine-readable error codes (audit A-H4 / X-H-d).
  *

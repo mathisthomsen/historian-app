@@ -2,7 +2,7 @@ import { type Prisma } from "@prisma/client";
 import { type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
+import { forbidden, json, jsonError, paginated, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -186,15 +186,7 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  const body = {
-    data: events.map(buildEventSummary),
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
-  };
+  const body = paginated(events.map(buildEventSummary), { page, pageSize, total });
 
   await cache.set(cacheKey, body, 60);
 

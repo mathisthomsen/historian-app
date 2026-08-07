@@ -3,7 +3,7 @@ import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { logActivity } from "@/lib/activity";
-import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
+import { forbidden, json, jsonError, paginated, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -246,7 +246,7 @@ export async function GET(request: NextRequest) {
     evidence_count: r._count.evidence,
   }));
 
-  const body = { data, total, page, pageSize };
+  const body = paginated(data, { page, pageSize, total });
 
   await cache.set(cacheKey, body, 60);
 

@@ -142,12 +142,13 @@ describe("GET /api/relations", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
       data: { id: string; from_label: string; to_label: string }[];
-      total: number;
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
     };
     expect(body.data).toHaveLength(1);
     expect(body.data[0]?.from_label).toBe("Max Müller");
     expect(body.data[0]?.to_label).toBe("Anna Müller");
-    expect(body.total).toBe(1);
+    expect(body.pagination.total).toBe(1);
+    expect(body.pagination.totalPages).toBe(1);
   });
 
   it("returns 401 when unauthenticated", async () => {

@@ -84,11 +84,12 @@ describe("GET /api/entities/[type]/[id]/activity", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
       data: { id: string; user_name: string | null }[];
-      total: number;
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
     };
     expect(body.data).toHaveLength(1);
     expect(body.data[0]?.user_name).toBe("Max Müller");
-    expect(body.total).toBe(1);
+    expect(body.pagination.total).toBe(1);
+    expect(body.pagination.totalPages).toBe(1);
   });
 
   it("is case-insensitive for entity type (person -> PERSON)", async () => {

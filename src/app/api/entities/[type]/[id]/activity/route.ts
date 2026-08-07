@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { forbidden, json, jsonError, unauthorized } from "@/lib/api";
+import { forbidden, json, jsonError, paginated, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
 import { validateEntityExists } from "@/lib/entity-validation";
@@ -91,5 +91,5 @@ export async function GET(request: NextRequest, context: RouteContext) {
     created_at: r.created_at.toISOString(),
   }));
 
-  return json({ data, total, page, pageSize });
+  return json(paginated(data, { page, pageSize, total }));
 }

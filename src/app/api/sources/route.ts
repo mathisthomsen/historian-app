@@ -2,7 +2,7 @@ import { type Prisma } from "@prisma/client";
 import { type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
+import { forbidden, json, jsonError, paginated, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -116,15 +116,7 @@ export async function GET(request: NextRequest) {
     prisma.source.count({ where: { ...where, deleted_at: null } }),
   ]);
 
-  const body = {
-    data: sources.map(buildSourceSummary),
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
-  };
+  const body = paginated(sources.map(buildSourceSummary), { page, pageSize, total });
 
   await cache.set(cacheKey, body, 60);
 
