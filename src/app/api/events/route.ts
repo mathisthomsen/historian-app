@@ -1,7 +1,8 @@
 import { type Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { forbidden, json, jsonError, paginated, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -109,20 +110,12 @@ function buildEventSummary(event: {
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const { page, pageSize, search, sort, order, fromYear, toYear } = parsed.data;
@@ -130,20 +123,14 @@ export async function GET(request: NextRequest) {
   // TODO: Epic 3.1 — replace with project switcher
   const projectId = parsed.data.projectId ?? user.projectId;
   if (!projectId) {
-    return NextResponse.json(
-      { error: "No project" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(403, "NO_PROJECT");
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: projectId },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const typeIds = parsed.data.typeIds ? parsed.data.typeIds.split(",").filter(Boolean) : [];
@@ -152,7 +139,7 @@ export async function GET(request: NextRequest) {
   const cacheKey = `event-list:${projectId}:${page}:${pageSize}:${search ?? ""}:${sort}:${order}:${sortedTypeIds}:${fromYear ?? ""}:${toYear ?? ""}:${topLevelOnly}`;
   const cached = await cache.get(cacheKey);
   if (cached) {
-    return NextResponse.json(cached, { status: 200, headers: { "Cache-Control": "no-store" } });
+    return json(cached);
   }
 
   const where: Prisma.EventWhereInput = {
@@ -199,46 +186,24 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  const body = {
-    data: events.map(buildEventSummary),
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
-  };
+  const body = paginated(events.map(buildEventSummary), { page, pageSize, total });
 
   await cache.set(cacheKey, body, 60);
 
-  return NextResponse.json(body, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(body);
 }
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = createEventSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -248,10 +213,7 @@ export async function POST(request: NextRequest) {
     where: { user_id: user.id, project_id: data.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   // Validate parent depth limit
@@ -261,20 +223,13 @@ export async function POST(request: NextRequest) {
       select: { id: true, title: true, parent_id: true },
     });
     if (!parent) {
-      return NextResponse.json(
-        { error: "Parent event not found" },
-        { status: 400, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(400, "INVALID_REFERENCE", { message: "Parent event not found" });
     }
     if (parent.parent_id !== null) {
-      return NextResponse.json(
-        {
-          error: "DEPTH_LIMIT_EXCEEDED",
-          message: "Cannot nest events more than one level deep",
-          parent_title: parent.title,
-        },
-        { status: 400, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(400, "DEPTH_LIMIT_EXCEEDED", {
+        message: "Cannot nest events more than one level deep",
+        details: { parent_title: parent.title },
+      });
     }
   }
 
@@ -284,10 +239,9 @@ export async function POST(request: NextRequest) {
       where: { id: data.event_type_id, project_id: data.project_id },
     });
     if (!eventType) {
-      return NextResponse.json(
-        { error: "Invalid event_type_id: type does not belong to this project" },
-        { status: 400, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(400, "INVALID_REFERENCE", {
+        message: "Invalid event_type_id: type does not belong to this project",
+      });
     }
   }
 
@@ -360,5 +314,5 @@ export async function POST(request: NextRequest) {
     sub_events: event.sub_events.map(buildEventSummary),
   };
 
-  return NextResponse.json(responseBody, { status: 201, headers: { "Cache-Control": "no-store" } });
+  return json(responseBody, { status: 201 });
 }

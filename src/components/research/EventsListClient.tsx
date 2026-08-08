@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { BulkDeleteDialog } from "@/components/research/BulkDeleteDialog";
@@ -12,6 +12,7 @@ import { DataTablePagination } from "@/components/research/DataTablePagination";
 import { DataTableSearch } from "@/components/research/DataTableSearch";
 import { EventFilters } from "@/components/research/EventFilters";
 import { Button } from "@/components/ui/button";
+import { useListUrlState } from "@/hooks/use-list-url-state";
 import { formatPartialDate } from "@/lib/date";
 import type { EventFilterState, EventSummary } from "@/types/event";
 import type { EventType } from "@/types/event-type";
@@ -47,42 +48,18 @@ export function EventsListClient({
   toYear,
   topLevelOnly,
   availableTypes,
+  projectId,
 }: EventsListClientProps) {
   const t = useTranslations("events");
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
-  function buildUrl(params: Record<string, string>) {
-    const current = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(params)) {
-      if (value) {
-        current.set(key, value);
-      } else {
-        current.delete(key);
-      }
-    }
-    return `?${current.toString()}`;
-  }
-
-  const handleSearch = useCallback(
-    (value: string) => {
-      router.push(buildUrl({ search: value, page: "1" }));
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [router, searchParams],
-  );
-
-  function handleSort(key: string) {
-    const newOrder = sort === key && order === "asc" ? "desc" : "asc";
-    router.push(buildUrl({ sort: key, order: newOrder, page: "1" }));
-  }
-
-  function handlePageChange(newPage: number) {
-    router.push(buildUrl({ page: String(newPage) }));
-  }
+  const { buildUrl, handleSearch, handleSort, handlePageChange } = useListUrlState({
+    sort,
+    order,
+  });
 
   function handleFiltersChange(filters: EventFilterState) {
     const params: Record<string, string> = { page: "1" };
@@ -97,7 +74,7 @@ export function EventsListClient({
     const res = await fetch("/api/events/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: selectedIds, action: "delete" }),
+      body: JSON.stringify({ action: "delete", ids: selectedIds, project_id: projectId }),
     });
     if (res.ok) {
       const data = (await res.json()) as { deleted?: number; skipped?: number };
@@ -126,7 +103,7 @@ export function EventsListClient({
       cell: (row: EventSummary) => (
         <Link
           href={`/${locale}/events/${row.id}`}
-          className="underline hover:text-foreground"
+          className="hover:text-foreground underline"
           onClick={(e) => e.stopPropagation()}
         >
           {row.title}
@@ -178,7 +155,7 @@ export function EventsListClient({
         row.parent ? (
           <Link
             href={`/${locale}/events/${row.parent.id}`}
-            className="underline hover:text-foreground"
+            className="hover:text-foreground underline"
             onClick={(e) => e.stopPropagation()}
           >
             {row.parent.title}
@@ -202,7 +179,7 @@ export function EventsListClient({
         <p className="text-muted-foreground">{t("list.empty")}</p>
         <Link
           href={`/${locale}/events/new`}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           {t("list.empty_action")}
         </Link>
@@ -220,7 +197,7 @@ export function EventsListClient({
         />
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               {t("bulk.selected", { count: selectedIds.length })}
             </span>
             <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
@@ -240,7 +217,7 @@ export function EventsListClient({
       />
 
       {events.length === 0 ? (
-        <p className="py-8 text-center text-muted-foreground">{t("list.empty")}</p>
+        <p className="text-muted-foreground py-8 text-center">{t("list.empty")}</p>
       ) : (
         <DataTable
           data={events}
@@ -252,7 +229,7 @@ export function EventsListClient({
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {total} {total === 1 ? "Ereignis" : "Ereignisse"}
         </p>
         <DataTablePagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />

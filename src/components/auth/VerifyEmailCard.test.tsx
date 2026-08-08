@@ -30,10 +30,7 @@ describe("VerifyEmailCard", () => {
   });
 
   it("shows pending then success when fetch returns 200", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValueOnce({ ok: true, status: 200 } as Response),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce({ ok: true, status: 200 } as Response));
 
     renderWithProviders(<VerifyEmailCard token="valid-token" />);
 
@@ -53,7 +50,7 @@ describe("VerifyEmailCard", () => {
       vi.fn().mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: () => Promise.resolve({ error: "auth.errors.tokenInvalid" }),
+        json: () => Promise.resolve({ error: { code: "TOKEN_INVALID" } }),
       } as Response),
     );
 

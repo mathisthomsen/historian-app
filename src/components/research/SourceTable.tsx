@@ -2,9 +2,9 @@
 
 import { Pencil } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { BulkDeleteDialog } from "@/components/research/BulkDeleteDialog";
@@ -14,6 +14,8 @@ import { DataTableSearch } from "@/components/research/DataTableSearch";
 import { DeleteSourceButton } from "@/components/research/DeleteSourceButton";
 import { ReliabilityBadge } from "@/components/research/ReliabilityBadge";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { useListUrlState } from "@/hooks/use-list-url-state";
 import { SOURCE_TYPE_SUGGESTIONS } from "@/lib/source-types";
 import type { SourceReliability, SourceSummary } from "@/types/source";
 
@@ -48,39 +50,14 @@ export function SourceTable({
 }: SourceTableProps) {
   const t = useTranslations("sources");
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
-  function buildUrl(params: Record<string, string>) {
-    const current = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(params)) {
-      if (value) {
-        current.set(key, value);
-      } else {
-        current.delete(key);
-      }
-    }
-    return `?${current.toString()}`;
-  }
-
-  const handleSearch = useCallback(
-    (value: string) => {
-      router.push(buildUrl({ search: value, page: "1" }));
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [router, searchParams],
-  );
-
-  function handleSort(key: string) {
-    const newOrder = sort === key && order === "asc" ? "desc" : "asc";
-    router.push(buildUrl({ sort: key, order: newOrder, page: "1" }));
-  }
-
-  function handlePageChange(newPage: number) {
-    router.push(buildUrl({ page: String(newPage) }));
-  }
+  const { buildUrl, handleSearch, handleSort, handlePageChange } = useListUrlState({
+    sort,
+    order,
+  });
 
   function handleTypeChange(value: string) {
     router.push(buildUrl({ type: value, page: "1" }));
@@ -97,7 +74,7 @@ export function SourceTable({
     const res = await fetch("/api/sources/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: selectedIds, project_id: projectId }),
+      body: JSON.stringify({ action: "delete", ids: selectedIds, project_id: projectId }),
     });
     if (res.ok) {
       toast.success(t("bulk.deleted_toast", { count: selectedIds.length }));
@@ -195,10 +172,10 @@ export function SourceTable({
           />
 
           {/* Type filter */}
-          <select
+          <Select
             value={type}
             onChange={(e) => handleTypeChange(e.target.value)}
-            className="border-input bg-background rounded-md border px-3 py-1.5 text-sm"
+            className="h-auto w-auto py-1.5"
           >
             <option value="">{t("all_types")}</option>
             {SOURCE_TYPE_SUGGESTIONS.map((s) => (
@@ -206,7 +183,7 @@ export function SourceTable({
                 {s}
               </option>
             ))}
-          </select>
+          </Select>
 
           {/* Reliability filter */}
           <div className="flex items-center gap-1">

@@ -1,8 +1,9 @@
 import { type Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { logActivity } from "@/lib/activity";
+import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
 import { validateEntityExists } from "@/lib/entity-validation";
@@ -63,20 +64,12 @@ const createPropertyEvidenceSchema = z.object({
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const { projectId, entityType, entityId, property } = parsed.data;
@@ -86,10 +79,7 @@ export async function GET(request: NextRequest) {
     where: { user_id: user.id, project_id: projectId },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const where: Prisma.PropertyEvidenceWhereInput = { project_id: projectId };
@@ -121,34 +111,20 @@ export async function GET(request: NextRequest) {
     created_at: r.created_at.toISOString(),
   }));
 
-  return NextResponse.json({ data }, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json({ data });
 }
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = createPropertyEvidenceSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -158,28 +134,23 @@ export async function POST(request: NextRequest) {
     where: { user_id: user.id, project_id: data.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   // Validate property against allowed list
   const allowed = ALLOWED_PROPERTIES[data.entity_type] ?? [];
   if (!allowed.includes(data.property)) {
-    return NextResponse.json(
-      { error: "INVALID_PROPERTY", allowed },
-      { status: 422, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(422, "INVALID_PROPERTY", { details: { allowed } });
   }
 
   // Validate entity exists
-  const entityExists = await validateEntityExists(data.entity_type, data.entity_id, data.project_id);
+  const entityExists = await validateEntityExists(
+    data.entity_type,
+    data.entity_id,
+    data.project_id,
+  );
   if (!entityExists) {
-    return NextResponse.json(
-      { error: "Entity not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(404, "ENTITY_NOT_FOUND");
   }
 
   // Validate source belongs to same project
@@ -188,10 +159,9 @@ export async function POST(request: NextRequest) {
     select: { id: true },
   });
   if (!source) {
-    return NextResponse.json(
-      { error: "Source does not belong to this project" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(403, "INVALID_REFERENCE", {
+      message: "Source does not belong to this project",
+    });
   }
 
   const record = await prisma.propertyEvidence.create({
@@ -222,7 +192,7 @@ export async function POST(request: NextRequest) {
     new_value: { source_id: data.source_id, confidence: record.confidence },
   }).catch(console.error);
 
-  return NextResponse.json(
+  return json(
     {
       id: record.id,
       project_id: record.project_id,
@@ -238,6 +208,6 @@ export async function POST(request: NextRequest) {
       confidence: record.confidence,
       created_at: record.created_at.toISOString(),
     },
-    { status: 201, headers: { "Cache-Control": "no-store" } },
+    { status: 201 },
   );
 }

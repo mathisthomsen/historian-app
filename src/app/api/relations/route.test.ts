@@ -142,12 +142,13 @@ describe("GET /api/relations", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
       data: { id: string; from_label: string; to_label: string }[];
-      total: number;
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
     };
     expect(body.data).toHaveLength(1);
     expect(body.data[0]?.from_label).toBe("Max Müller");
     expect(body.data[0]?.to_label).toBe("Anna Müller");
-    expect(body.total).toBe(1);
+    expect(body.pagination.total).toBe(1);
+    expect(body.pagination.totalPages).toBe(1);
   });
 
   it("returns 401 when unauthenticated", async () => {
@@ -240,8 +241,8 @@ describe("POST /api/relations", () => {
     );
 
     expect(res.status).toBe(404);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("ENTITY_NOT_FOUND");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("ENTITY_NOT_FOUND");
   });
 
   it("returns 422 when from_type is not in valid_from_types", async () => {
@@ -264,8 +265,8 @@ describe("POST /api/relations", () => {
     );
 
     expect(res.status).toBe(422);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("INVALID_FROM_TYPE");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("INVALID_FROM_TYPE");
   });
 
   it("returns 422 when to_type is not in valid_to_types", async () => {
@@ -288,8 +289,8 @@ describe("POST /api/relations", () => {
     );
 
     expect(res.status).toBe(422);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("INVALID_TO_TYPE");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("INVALID_TO_TYPE");
   });
 
   it("returns 404 when relation_type_id not in project", async () => {
@@ -312,7 +313,7 @@ describe("POST /api/relations", () => {
   it("returns 400 when required fields missing", async () => {
     const res = await POST(makePostRequest({ project_id: "proj-1" }));
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 });

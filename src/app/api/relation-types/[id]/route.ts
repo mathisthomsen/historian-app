@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { prisma } from "@/lib/db";
@@ -27,12 +28,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PUT(request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -40,38 +36,23 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     where: { id },
   });
   if (!existing) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: existing.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = updateRelationTypeSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -101,32 +82,24 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   // invalidate so the writer doesn't immediately read back their own stale edit.
   await cache.invalidateByPrefix(`relation-list:${existing.project_id}:`);
 
-  return NextResponse.json(
-    {
-      id: updated.id,
-      name: updated.name,
-      inverse_name: updated.inverse_name,
-      description: updated.description,
-      color: updated.color,
-      icon: updated.icon,
-      valid_from_types: updated.valid_from_types,
-      valid_to_types: updated.valid_to_types,
-      created_at: updated.created_at.toISOString(),
-      updated_at: updated.updated_at.toISOString(),
-      _count: { relations: updated._count.relations },
-    },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({
+    id: updated.id,
+    name: updated.name,
+    inverse_name: updated.inverse_name,
+    description: updated.description,
+    color: updated.color,
+    icon: updated.icon,
+    valid_from_types: updated.valid_from_types,
+    valid_to_types: updated.valid_to_types,
+    created_at: updated.created_at.toISOString(),
+    updated_at: updated.updated_at.toISOString(),
+    _count: { relations: updated._count.relations },
+  });
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -134,20 +107,14 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { id },
   });
   if (!existing) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: existing.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   // Check if any non-deleted relations use this type
@@ -155,10 +122,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { relation_type_id: id, deleted_at: null },
   });
   if (relationCount > 0) {
-    return NextResponse.json(
-      { error: "IN_USE", count: relationCount },
-      { status: 409, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(409, "IN_USE", { details: { count: relationCount } });
   }
 
   // Soft-deleted relations still hold the FK (onDelete: Restrict), so a hard
@@ -167,26 +131,17 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { relation_type_id: id, deleted_at: { not: null } },
   });
   if (softDeletedCount > 0) {
-    return NextResponse.json(
-      { error: "IN_USE_BY_DELETED", count: softDeletedCount },
-      { status: 409, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(409, "IN_USE_BY_DELETED", { details: { count: softDeletedCount } });
   }
 
   try {
     await prisma.relationType.delete({ where: { id } });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
-      return NextResponse.json(
-        { error: "IN_USE" },
-        { status: 409, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(409, "IN_USE");
     }
     throw error;
   }
 
-  return NextResponse.json(
-    { deleted: true },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ deleted: true });
 }

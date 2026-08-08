@@ -1,78 +1,18 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { type NextRequest } from "next/server";
 
 import { logActivity } from "@/lib/activity";
+import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
-
-const updatePersonSchema = z
-  .object({
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    birth_year: z.number().int().min(1).max(2100).optional().nullable(),
-    birth_month: z.number().int().min(1).max(12).optional().nullable(),
-    birth_day: z.number().int().min(1).max(31).optional().nullable(),
-    birth_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
-    birth_place: z.string().optional().nullable(),
-    death_year: z.number().int().min(1).max(2100).optional().nullable(),
-    death_month: z.number().int().min(1).max(12).optional().nullable(),
-    death_day: z.number().int().min(1).max(31).optional().nullable(),
-    death_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
-    death_place: z.string().optional().nullable(),
-    notes: z.string().optional().nullable(),
-    names: z
-      .array(
-        z.object({
-          name: z.string().min(1),
-          language: z.string().optional().nullable(),
-          is_primary: z.boolean().optional(),
-        }),
-      )
-      .optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.birth_month && !data.birth_year) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["birth_month"],
-        message: "month_requires_year",
-      });
-    }
-    if (data.birth_day && !data.birth_month) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["birth_day"],
-        message: "day_requires_month",
-      });
-    }
-    if (data.death_month && !data.death_year) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["death_month"],
-        message: "month_requires_year",
-      });
-    }
-    if (data.death_day && !data.death_month) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["death_day"],
-        message: "day_requires_month",
-      });
-    }
-  });
+import { updatePersonSchema } from "@/lib/schemas/person";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -84,10 +24,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   });
 
   if (!person) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   // Check project membership
@@ -95,10 +32,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     where: { user_id: user.id, project_id: person.project_id },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const body = {
@@ -127,17 +61,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     _count: { relations_from: 0, relations_to: 0 },
   };
 
-  return NextResponse.json(body, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(body);
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -146,38 +75,23 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     where: { id, deleted_at: null },
   });
   if (!existing) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: existing.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = updatePersonSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -314,17 +228,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     _count: updatedPerson._count,
   };
 
-  return NextResponse.json(responseBody, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(responseBody);
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -332,20 +241,14 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { id, deleted_at: null },
   });
   if (!person) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: person.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   await prisma.person.update({
@@ -355,8 +258,5 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
   await cache.invalidateByPrefix(`person-list:${person.project_id}:`);
 
-  return NextResponse.json(
-    { deleted: true },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ deleted: true });
 }

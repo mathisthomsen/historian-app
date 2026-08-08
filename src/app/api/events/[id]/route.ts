@@ -1,7 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { logActivity } from "@/lib/activity";
+import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -115,12 +116,7 @@ function buildEventSummary(event: {
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -130,10 +126,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   });
 
   if (!event) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   // Check project membership
@@ -141,10 +134,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     where: { user_id: user.id, project_id: event.project_id },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const [relationsFromCount, relationsToCount] = await Promise.all([
@@ -181,17 +171,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     sub_events: event.sub_events.map(buildEventSummary),
   };
 
-  return NextResponse.json(body, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(body);
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -199,38 +184,23 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     where: { id, deleted_at: null },
   });
   if (!existing) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: existing.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = updateEventSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -242,20 +212,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       select: { id: true, title: true, parent_id: true },
     });
     if (!parent) {
-      return NextResponse.json(
-        { error: "Parent event not found" },
-        { status: 400, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(400, "INVALID_REFERENCE", { message: "Parent event not found" });
     }
     if (parent.parent_id !== null) {
-      return NextResponse.json(
-        {
-          error: "DEPTH_LIMIT_EXCEEDED",
-          message: "Cannot nest events more than one level deep",
-          parent_title: parent.title,
-        },
-        { status: 400, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(400, "DEPTH_LIMIT_EXCEEDED", {
+        message: "Cannot nest events more than one level deep",
+        details: { parent_title: parent.title },
+      });
     }
   }
 
@@ -265,10 +228,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       where: { id: data.event_type_id, project_id: existing.project_id },
     });
     if (!eventType) {
-      return NextResponse.json(
-        { error: "Invalid event_type_id: type does not belong to this project" },
-        { status: 400, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(400, "INVALID_REFERENCE", {
+        message: "Invalid event_type_id: type does not belong to this project",
+      });
     }
   }
 
@@ -373,17 +335,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     sub_events: updated.sub_events.map(buildEventSummary),
   };
 
-  return NextResponse.json(responseBody, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(responseBody);
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -391,20 +348,14 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { id, deleted_at: null },
   });
   if (!event) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: event.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   // Check if event has active sub-events
@@ -412,14 +363,10 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { parent_id: id, deleted_at: null },
   });
   if (subEventCount > 0) {
-    return NextResponse.json(
-      {
-        error: "HAS_SUB_EVENTS",
-        message: "Cannot delete an event that has active sub-events",
-        count: subEventCount,
-      },
-      { status: 409, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(409, "HAS_SUB_EVENTS", {
+      message: "Cannot delete an event that has active sub-events",
+      details: { count: subEventCount },
+    });
   }
 
   await prisma.event.update({
@@ -429,8 +376,5 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
   await cache.invalidateByPrefix(`event-list:${event.project_id}:`);
 
-  return NextResponse.json(
-    { deleted: true },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ deleted: true });
 }

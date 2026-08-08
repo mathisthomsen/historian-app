@@ -147,9 +147,9 @@ describe("DELETE /api/relation-types/[id]", () => {
     mockRelationCount.mockResolvedValue(5);
     const res = await DELETE(makeDeleteRequest("rt-1"), makeCtx("rt-1"));
     expect(res.status).toBe(409);
-    const body = (await res.json()) as { error: string; count: number };
-    expect(body.error).toBe("IN_USE");
-    expect(body.count).toBe(5);
+    const body = (await res.json()) as { error: { code: string; details: { count: number } } };
+    expect(body.error.code).toBe("IN_USE");
+    expect(body.error.details.count).toBe(5);
   });
 
   it("returns 409 IN_USE_BY_DELETED when only soft-deleted relations reference it", async () => {
@@ -157,9 +157,9 @@ describe("DELETE /api/relation-types/[id]", () => {
     mockRelationCount.mockResolvedValueOnce(0).mockResolvedValueOnce(3);
     const res = await DELETE(makeDeleteRequest("rt-1"), makeCtx("rt-1"));
     expect(res.status).toBe(409);
-    const body = (await res.json()) as { error: string; count: number };
-    expect(body.error).toBe("IN_USE_BY_DELETED");
-    expect(body.count).toBe(3);
+    const body = (await res.json()) as { error: { code: string; details: { count: number } } };
+    expect(body.error.code).toBe("IN_USE_BY_DELETED");
+    expect(body.error.details.count).toBe(3);
     expect(mockRelationTypeDelete).not.toHaveBeenCalled();
   });
 
@@ -172,8 +172,8 @@ describe("DELETE /api/relation-types/[id]", () => {
     );
     const res = await DELETE(makeDeleteRequest("rt-1"), makeCtx("rt-1"));
     expect(res.status).toBe(409);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("IN_USE");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("IN_USE");
   });
 
   it("returns 404 when relation type not found", async () => {

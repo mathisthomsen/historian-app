@@ -46,7 +46,7 @@ function makeRequest(body: unknown): NextRequest {
 describe("POST /api/relations/bulk", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockRequireUser.mockResolvedValue({ id: "user-1", projectId: "proj-1" });
+    mockRequireUser.mockResolvedValue({ id: "user-1", project_id: "proj-1" });
     mockUserProjectFindFirst.mockResolvedValue({ id: "mem-1", role: "OWNER" });
     mockCacheInvalidate.mockResolvedValue(undefined);
   });
@@ -55,7 +55,7 @@ describe("POST /api/relations/bulk", () => {
     mockRelationUpdateMany.mockResolvedValue({ count: 2 });
 
     const res = await POST(
-      makeRequest({ action: "delete", ids: ["rel-1", "rel-2"], projectId: "proj-1" }),
+      makeRequest({ action: "delete", ids: ["rel-1", "rel-2"], project_id: "proj-1" }),
     );
 
     expect(res.status).toBe(200);
@@ -75,30 +75,26 @@ describe("POST /api/relations/bulk", () => {
   });
 
   it("returns 400 when ids is empty", async () => {
-    const res = await POST(makeRequest({ action: "delete", ids: [], projectId: "proj-1" }));
+    const res = await POST(makeRequest({ action: "delete", ids: [], project_id: "proj-1" }));
     expect(res.status).toBe(400);
   });
 
   it("returns 400 when action is not 'delete'", async () => {
     const res = await POST(
-      makeRequest({ action: "restore", ids: ["rel-1"], projectId: "proj-1" }),
+      makeRequest({ action: "restore", ids: ["rel-1"], project_id: "proj-1" }),
     );
     expect(res.status).toBe(400);
   });
 
   it("returns 403 when not OWNER/EDITOR", async () => {
     mockUserProjectFindFirst.mockResolvedValue(null);
-    const res = await POST(
-      makeRequest({ action: "delete", ids: ["rel-1"], projectId: "proj-1" }),
-    );
+    const res = await POST(makeRequest({ action: "delete", ids: ["rel-1"], project_id: "proj-1" }));
     expect(res.status).toBe(403);
   });
 
   it("returns 401 when unauthenticated", async () => {
     mockRequireUser.mockResolvedValue(null);
-    const res = await POST(
-      makeRequest({ action: "delete", ids: ["rel-1"], projectId: "proj-1" }),
-    );
+    const res = await POST(makeRequest({ action: "delete", ids: ["rel-1"], project_id: "proj-1" }));
     expect(res.status).toBe(401);
   });
 });

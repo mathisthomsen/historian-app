@@ -1,96 +1,74 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { type NextRequest } from "next/server";
 
+import {
+  WRITE_ROLES,
+  forbidden,
+  json,
+  parseJsonBody,
+  requireProjectMembership,
+  unauthorized,
+  validateBody,
+} from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { prisma } from "@/lib/db";
-
-const bulkEventSchema = z.object({
-  ids: z.array(z.string()).min(1).max(500),
-  action: z.literal("delete"),
-});
+import { type BulkDeleteResult, type BulkSkipped, bulkDeleteSchema } from "@/lib/schemas/bulk";
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
+  if (!user) return unauthorized();
+
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+
+  const parsed = validateBody(bulkDeleteSchema, parsedBody.data);
+  if (!parsed.ok) return parsed.response;
+
+  const { ids, project_id } = parsed.data;
+
+  if (!(await requireProjectMembership(user.id, project_id, WRITE_ROLES))) {
+    return forbidden();
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  const parsed = bulkEventSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  const { ids } = parsed.data;
-
-  // Fetch all requested events (non-deleted)
+  // Scoped to the caller's project, so a request can never span projects.
   const events = await prisma.event.findMany({
-    where: { id: { in: ids }, deleted_at: null },
-    select: { id: true, project_id: true },
+    where: { id: { in: ids }, project_id, deleted_at: null },
+    select: { id: true },
   });
 
   if (events.length === 0) {
-    return NextResponse.json(
-      { deleted: 0, skipped: [] },
-      { status: 200, headers: { "Cache-Control": "no-store" } },
-    );
+    return json<BulkDeleteResult>({ deleted: 0, skipped: [] });
   }
 
-  // Verify membership for all projects
-  const projectIds = [...new Set(events.map((e) => e.project_id))];
-  for (const projectId of projectIds) {
-    const membership = await prisma.userProject.findFirst({
-      where: { user_id: user.id, project_id: projectId, role: { in: ["OWNER", "EDITOR"] } },
-    });
-    if (!membership) {
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403, headers: { "Cache-Control": "no-store" } },
-      );
-    }
-  }
+  const eventIds = events.map((e) => e.id);
 
-  let deleted = 0;
-  const skipped: { id: string; reason: "HAS_SUB_EVENTS" }[] = [];
-
-  for (const event of events) {
-    const subEventCount = await prisma.event.count({
-      where: { parent_id: event.id, deleted_at: null },
-    });
-
-    if (subEventCount > 0) {
-      skipped.push({ id: event.id, reason: "HAS_SUB_EVENTS" });
-    } else {
-      await prisma.event.update({
-        where: { id: event.id },
-        data: { deleted_at: new Date() },
-      });
-      deleted += 1;
-    }
-  }
-
-  for (const projectId of projectIds) {
-    await cache.invalidateByPrefix(`event-list:${projectId}:`);
-  }
-
-  return NextResponse.json(
-    { deleted, skipped },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
+  // One groupBy instead of a count per event — this was up to 500 sequential
+  // queries followed by 500 sequential updates (audit A-M6).
+  const subEventCounts = await prisma.event.groupBy({
+    by: ["parent_id"],
+    where: { parent_id: { in: eventIds }, deleted_at: null },
+    _count: { _all: true },
+  });
+  const hasSubEvents = new Set(
+    subEventCounts.map((row) => row.parent_id).filter((id): id is string => id !== null),
   );
+
+  const skipped: BulkSkipped[] = eventIds
+    .filter((id) => hasSubEvents.has(id))
+    .map((id) => ({ id, reason: "HAS_SUB_EVENTS" }));
+  const deletableIds = eventIds.filter((id) => !hasSubEvents.has(id));
+
+  // Single transactional updateMany: a crash can no longer commit a partial
+  // delete with no report of what was actually removed.
+  const result =
+    deletableIds.length > 0
+      ? await prisma.event.updateMany({
+          where: { id: { in: deletableIds }, project_id, deleted_at: null },
+          data: { deleted_at: new Date() },
+        })
+      : { count: 0 };
+
+  await cache.invalidateByPrefix(`event-list:${project_id}:`);
+
+  return json<BulkDeleteResult>({ deleted: result.count, skipped });
 }

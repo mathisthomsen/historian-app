@@ -24,6 +24,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { errorCode } from "@/lib/api-error";
 import type { EventDetail, EventSummary } from "@/types/event";
 
 const formSchema = z
@@ -165,14 +167,14 @@ export function EventForm({
           error?: string;
           parent_title?: string;
         };
-        if (data.error === "DEPTH_LIMIT_EXCEEDED") {
+        if (errorCode(data) === "DEPTH_LIMIT_EXCEEDED") {
           setError("parent_id", {
             type: "manual",
             message: t("errors.depth_limit", { parent_title: data.parent_title ?? "" }),
           });
           return;
         }
-        toast.error(data.error ?? t("errors.save_failed"));
+        toast.error(t("errors.save_failed"));
         return;
       }
 
@@ -196,18 +198,18 @@ export function EventForm({
           aria-invalid={!!errors.title}
           disabled={isSubmitting}
         />
-        {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+        {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
       </div>
 
       {/* Description */}
       <div className="space-y-1">
         <Label htmlFor="description">{t("fields.description")}</Label>
-        <textarea
+        <Textarea
           id="description"
           rows={3}
           {...register("description")}
           disabled={isSubmitting}
-          className="flex min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-[72px]"
         />
       </div>
 
@@ -259,7 +261,7 @@ export function EventForm({
           )}
         />
         {(errors.start_year || errors.start_month || errors.start_day) && (
-          <p className="text-xs text-destructive">
+          <p className="text-destructive text-xs">
             {errors.start_year?.message ?? errors.start_month?.message ?? errors.start_day?.message}
           </p>
         )}
@@ -309,7 +311,7 @@ export function EventForm({
           )}
         />
         {(errors.end_year || errors.end_month || errors.end_day) && (
-          <p className="text-xs text-destructive">
+          <p className="text-destructive text-xs">
             {errors.end_year?.message ?? errors.end_month?.message ?? errors.end_day?.message}
           </p>
         )}
@@ -393,19 +395,13 @@ export function EventForm({
             </Command>
           </PopoverContent>
         </Popover>
-        {errors.parent_id && <p className="text-xs text-destructive">{errors.parent_id.message}</p>}
+        {errors.parent_id && <p className="text-destructive text-xs">{errors.parent_id.message}</p>}
       </div>
 
       {/* Notes */}
       <div className="space-y-1">
         <Label htmlFor="notes">{t("fields.notes")}</Label>
-        <textarea
-          id="notes"
-          rows={4}
-          {...register("notes")}
-          disabled={isSubmitting}
-          className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-        />
+        <Textarea id="notes" rows={4} {...register("notes")} disabled={isSubmitting} />
       </div>
 
       {/* Actions */}

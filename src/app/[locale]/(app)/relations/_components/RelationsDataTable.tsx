@@ -8,6 +8,7 @@ import { RelationFormDialog } from "@/components/relations/RelationFormDialog";
 import { RelationRow } from "@/components/relations/RelationRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { useRelationTypes } from "@/hooks/use-relation-types";
 import type { RelationWithDetails } from "@/types/relations";
 
@@ -50,10 +51,10 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       if (res.ok) {
         const data = (await res.json()) as {
           data?: RelationWithDetails[];
-          total?: number;
+          pagination?: { total: number };
         };
         setRelations(data.data ?? []);
-        setTotal(data.total ?? 0);
+        setTotal(data.pagination?.total ?? 0);
       }
     } finally {
       setLoading(false);
@@ -74,27 +75,27 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <select
+        <Select
           value={entityTypeFilter}
           onChange={(e) => {
             setEntityTypeFilter(e.target.value);
             setPage(1);
           }}
-          className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+          className="w-auto"
         >
           <option value="">{t("filter.all_entity_types")}</option>
           <option value="PERSON">{t("entityTypes.PERSON")}</option>
           <option value="EVENT">{t("entityTypes.EVENT")}</option>
           <option value="SOURCE">{t("entityTypes.SOURCE")}</option>
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={relationTypeFilter}
           onChange={(e) => {
             setRelationTypeFilter(e.target.value);
             setPage(1);
           }}
-          className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+          className="w-auto"
         >
           <option value="">{t("filter.all_types")}</option>
           {allRelationTypes.map((rt) => (
@@ -102,22 +103,22 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
               {rt.name}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={certaintyFilter}
           onChange={(e) => {
             setCertaintyFilter(e.target.value);
             setPage(1);
           }}
-          className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+          className="w-auto"
         >
           <option value="">{t("filter.all_certainties")}</option>
           <option value="CERTAIN">{t("certainties.CERTAIN")}</option>
           <option value="PROBABLE">{t("certainties.PROBABLE")}</option>
           <option value="POSSIBLE">{t("certainties.POSSIBLE")}</option>
           <option value="UNKNOWN">{t("certainties.UNKNOWN")}</option>
-        </select>
+        </Select>
       </div>
 
       <div className="flex items-center justify-between gap-2">

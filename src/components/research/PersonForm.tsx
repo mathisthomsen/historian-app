@@ -3,9 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 
 import { CertaintySelector } from "@/components/research/CertaintySelector";
 import { PartialDateInput } from "@/components/research/PartialDateInput";
@@ -13,34 +12,9 @@ import { PersonNameList } from "@/components/research/PersonNameList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { type PersonFormValues, buildPersonFormSchema } from "@/lib/schemas/person";
 import type { PersonDetail } from "@/types/person";
-
-const formSchema = z.object({
-  first_name: z.string().optional(),
-  last_name: z.string().optional(),
-  birth_year: z.number().int().min(1).max(2100).optional().nullable(),
-  birth_month: z.number().int().min(1).max(12).optional().nullable(),
-  birth_day: z.number().int().min(1).max(31).optional().nullable(),
-  birth_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]),
-  birth_place: z.string().optional(),
-  death_year: z.number().int().min(1).max(2100).optional().nullable(),
-  death_month: z.number().int().min(1).max(12).optional().nullable(),
-  death_day: z.number().int().min(1).max(31).optional().nullable(),
-  death_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]),
-  death_place: z.string().optional(),
-  notes: z.string().optional(),
-  names: z
-    .array(
-      z.object({
-        name: z.string().min(1),
-        language: z.string().nullable().optional(),
-        is_primary: z.boolean().optional(),
-      }),
-    )
-    .optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 interface PersonFormProps {
   mode: "create" | "edit";
@@ -54,12 +28,16 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
   const t = useTranslations("persons");
   const [serverError, setServerError] = useState<string | null>(null);
 
+  // Built inside the component so Zod messages resolve through t() — the same
+  // convention the auth forms use. Shares the server's rules (audit X-H-c).
+  const formSchema = useMemo(() => buildPersonFormSchema((key) => t(`errors.${key}`)), [t]);
+
   const {
     register,
     handleSubmit,
     control,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
+  } = useForm<PersonFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       first_name: initial?.first_name ?? "",
@@ -79,7 +57,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
     },
   });
 
-  async function onSubmit(values: FormValues) {
+  async function onSubmit(values: PersonFormValues) {
     setServerError(null);
     try {
       const url = mode === "create" ? "/api/persons" : `/api/persons/${initial?.id}`;
@@ -103,8 +81,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setServerError(data.error ?? t("errors.save_failed"));
+        setServerError(t("errors.save_failed"));
         return;
       }
 
@@ -118,7 +95,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {serverError && (
-        <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+        <div role="alert" className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
           {serverError}
         </div>
       )}
@@ -134,7 +111,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
             aria-invalid={!!errors.first_name}
           />
           {errors.first_name && (
-            <p className="text-xs text-destructive">{errors.first_name.message}</p>
+            <p className="text-destructive text-xs">{errors.first_name.message}</p>
           )}
         </div>
         <div className="space-y-1">
@@ -146,7 +123,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
             aria-invalid={!!errors.last_name}
           />
           {errors.last_name && (
-            <p className="text-xs text-destructive">{errors.last_name.message}</p>
+            <p className="text-destructive text-xs">{errors.last_name.message}</p>
           )}
         </div>
       </div>
@@ -275,13 +252,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
       {/* Notes */}
       <div className="space-y-1">
         <Label htmlFor="notes">{t("fields.notes")}</Label>
-        <textarea
-          id="notes"
-          rows={4}
-          {...register("notes")}
-          disabled={isSubmitting}
-          className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-        />
+        <Textarea id="notes" rows={4} {...register("notes")} disabled={isSubmitting} />
       </div>
 
       {/* Actions */}

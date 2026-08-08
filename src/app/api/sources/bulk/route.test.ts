@@ -61,7 +61,7 @@ describe("POST /api/sources/bulk", () => {
   it("bulk deletes 2 sources and returns { deleted: 2 }", async () => {
     mockSourceUpdateMany.mockResolvedValue({ count: 2 });
 
-    const req = makeRequest({ ids: ["src-1", "src-2"], project_id: "proj-1" });
+    const req = makeRequest({ action: "delete", ids: ["src-1", "src-2"], project_id: "proj-1" });
     const res = await POST(req);
 
     expect(res.status).toBe(200);
@@ -85,7 +85,11 @@ describe("POST /api/sources/bulk", () => {
     // Only 1 of the 2 IDs belongs to the project — updateMany handles this via where clause
     mockSourceUpdateMany.mockResolvedValue({ count: 1 });
 
-    const req = makeRequest({ ids: ["src-proj1", "src-other-project"], project_id: "proj-1" });
+    const req = makeRequest({
+      action: "delete",
+      ids: ["src-proj1", "src-other-project"],
+      project_id: "proj-1",
+    });
     const res = await POST(req);
 
     expect(res.status).toBe(200);
@@ -94,11 +98,11 @@ describe("POST /api/sources/bulk", () => {
   });
 
   it("returns 400 for empty ids array", async () => {
-    const req = makeRequest({ ids: [], project_id: "proj-1" });
+    const req = makeRequest({ action: "delete", ids: [], project_id: "proj-1" });
     const res = await POST(req);
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 });

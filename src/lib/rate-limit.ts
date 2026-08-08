@@ -81,7 +81,7 @@ export async function checkRateLimit(
     // caller's fault, so report 503 rather than a misleading "too many requests".
     if (result.degraded) {
       return NextResponse.json(
-        { error: "auth.errors.serviceUnavailable", retryAfter },
+        { error: { code: "SERVICE_UNAVAILABLE", details: { retryAfter } } },
         {
           status: 503,
           headers: { "Retry-After": String(retryAfter), "Cache-Control": "no-store" },
@@ -89,13 +89,14 @@ export async function checkRateLimit(
       );
     }
     return NextResponse.json(
-      { error: "auth.errors.rateLimited", retryAfter },
+      { error: { code: "RATE_LIMITED", details: { retryAfter } } },
       {
         status: 429,
         headers: {
           "Retry-After": String(retryAfter),
           "X-RateLimit-Remaining": "0",
           "X-RateLimit-Reset": result.resetAt.toISOString(),
+          "Cache-Control": "no-store",
         },
       },
     );

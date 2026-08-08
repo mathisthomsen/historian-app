@@ -9,9 +9,15 @@ import { prisma } from "@/lib/db";
 import type { EventSummary } from "@/types/event";
 import type { EventType } from "@/types/event-type";
 
-export const metadata: Metadata = {
-  title: "Ereignisse",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "events" });
+  return { title: t("title") };
+}
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -145,7 +151,7 @@ export default async function EventsPage({ params, searchParams }: PageProps) {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Link
           href={`/${locale}/events/new`}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           {t("create")}
         </Link>

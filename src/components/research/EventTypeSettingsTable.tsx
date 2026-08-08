@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { errorCode, errorDetails, readErrorBody } from "@/lib/api-error";
 import type { EventType } from "@/types/event-type";
 
 type EditState = { id: string; name: string; color: string | null } | null;
@@ -38,6 +39,7 @@ interface EventTypeSettingsTableProps {
 
 export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProps) {
   const t = useTranslations("event_types");
+  const tCommon = useTranslations("common");
   const params = useParams<{ locale: string }>();
   const locale = params?.locale ?? "de";
 
@@ -89,8 +91,8 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         setEditState(null);
         toast.success(t("saved_toast"));
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
+        const code = errorCode(await readErrorBody(res));
+        toast.error(code === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
       }
     } finally {
       setSaving(false);
@@ -122,10 +124,11 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         setDeleteTarget(null);
         toast.success(t("deleted_toast"));
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string; count?: number };
+        const body = await readErrorBody(res);
+        const details = errorDetails<{ count?: number }>(body);
         toast.error(
-          data.error === "TYPE_IN_USE"
-            ? t("in_use_toast", { count: data.count ?? 0 })
+          errorCode(body) === "IN_USE"
+            ? t("in_use_toast", { count: details?.count ?? 0 })
             : t("delete_failed"),
         );
       }
@@ -151,8 +154,8 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         setNewColor(null);
         toast.success(t("saved_toast"));
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
+        const code = errorCode(await readErrorBody(res));
+        toast.error(code === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
       }
     } finally {
       setSavingNew(false);
@@ -320,7 +323,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
                       type="button"
                       size="sm"
                       variant="ghost"
-                      aria-label="Edit"
+                      aria-label={tCommon("edit")}
                       onClick={() =>
                         setEditState({ id: type.id, name: type.name, color: type.color })
                       }
@@ -331,7 +334,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
                       type="button"
                       size="sm"
                       variant="ghost"
-                      aria-label="Delete"
+                      aria-label={tCommon("delete")}
                       onClick={() => handleDelete(type)}
                     >
                       <X className="h-4 w-4" />
@@ -362,7 +365,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
             <AlertDialogDescription>{t("delete_confirm_body")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={deleting}

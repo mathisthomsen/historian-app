@@ -1,11 +1,23 @@
 import { type Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import {
+  WRITE_ROLES,
+  forbidden,
+  json,
+  jsonError,
+  paginated,
+  parseJsonBody,
+  requireProjectMembership,
+  unauthorized,
+  validateBody,
+} from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
+import { createPersonSchema } from "@/lib/schemas/person";
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -16,125 +28,28 @@ const listQuerySchema = z.object({
   projectId: z.string().optional(),
 });
 
-const createPersonSchema = z
-  .object({
-    project_id: z.string().min(1),
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    birth_year: z.number().int().min(1).max(2100).optional(),
-    birth_month: z.number().int().min(1).max(12).optional(),
-    birth_day: z.number().int().min(1).max(31).optional(),
-    birth_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
-    birth_place: z.string().optional(),
-    death_year: z.number().int().min(1).max(2100).optional(),
-    death_month: z.number().int().min(1).max(12).optional(),
-    death_day: z.number().int().min(1).max(31).optional(),
-    death_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
-    death_place: z.string().optional(),
-    notes: z.string().optional(),
-    names: z
-      .array(
-        z.object({
-          name: z.string().min(1),
-          language: z.string().optional(),
-          is_primary: z.boolean().optional(),
-        }),
-      )
-      .optional(),
-  })
-  .superRefine((data, ctx) => {
-    const hasName =
-      (data.first_name && data.first_name.trim().length > 0) ||
-      (data.last_name && data.last_name.trim().length > 0) ||
-      (data.names && data.names.length > 0);
-    if (!hasName) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["first_name"],
-        message: "name_required",
-      });
-    }
-    if (data.birth_month && !data.birth_year) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["birth_month"],
-        message: "month_requires_year",
-      });
-    }
-    if (data.birth_day && !data.birth_month) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["birth_day"],
-        message: "day_requires_month",
-      });
-    }
-    if (data.death_month && !data.death_year) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["death_month"],
-        message: "month_requires_year",
-      });
-    }
-    if (data.death_day && !data.death_month) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["death_day"],
-        message: "day_requires_month",
-      });
-    }
-    const primaryCount = (data.names ?? []).filter((n) => n.is_primary).length;
-    if (primaryCount > 1) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["names"],
-        message: "Only one primary name allowed",
-      });
-    }
-  });
-
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const { page, pageSize, search, sort, order } = parsed.data;
   // TODO: Epic 3.1 — replace with project switcher
   const projectId = parsed.data.projectId ?? user.projectId;
-  if (!projectId) {
-    return NextResponse.json(
-      { error: "No project" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!projectId) return jsonError(403, "NO_PROJECT");
 
-  const membership = await prisma.userProject.findFirst({
-    where: { user_id: user.id, project_id: projectId },
-  });
-  if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  // Must precede the cache lookup: serving cached data before the membership
+  // check is exactly how the C1 IDOR leaked cross-tenant rows.
+  if (!(await requireProjectMembership(user.id, projectId))) return forbidden();
 
   const cacheKey = `person-list:${projectId}:${page}:${pageSize}:${search ?? ""}:${sort}:${order}`;
   const cached = await cache.get(cacheKey);
-  if (cached) {
-    return NextResponse.json(cached, { status: 200, headers: { "Cache-Control": "no-store" } });
-  }
+  if (cached) return json(cached);
 
   const where: Prisma.PersonWhereInput = {
     project_id: projectId,
@@ -173,8 +88,8 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  const body = {
-    data: persons.map((p) => ({
+  const body = paginated(
+    persons.map((p) => ({
       id: p.id,
       first_name: p.first_name,
       last_name: p.last_name,
@@ -193,57 +108,28 @@ export async function GET(request: NextRequest) {
         is_primary: n.is_primary,
       })),
     })),
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
-  };
+    { page, pageSize, total },
+  );
 
   await cache.set(cacheKey, body, 60);
 
-  return NextResponse.json(body, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(body);
 }
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
 
-  const parsed = createPersonSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsed = validateBody(createPersonSchema, parsedBody.data);
+  if (!parsed.ok) return parsed.response;
 
   const data = parsed.data;
 
-  // Verify user is a member of the project
-  const membership = await prisma.userProject.findFirst({
-    where: { user_id: user.id, project_id: data.project_id, role: { in: ["OWNER", "EDITOR"] } },
-  });
-  if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+  if (!(await requireProjectMembership(user.id, data.project_id, WRITE_ROLES))) {
+    return forbidden();
   }
 
   const createData: Prisma.PersonUncheckedCreateInput = {
@@ -308,5 +194,5 @@ export async function POST(request: NextRequest) {
     _count: { relations_from: 0, relations_to: 0 },
   };
 
-  return NextResponse.json(responseBody, { status: 201, headers: { "Cache-Control": "no-store" } });
+  return json(responseBody, { status: 201 });
 }

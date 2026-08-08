@@ -1,7 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { logActivity } from "@/lib/activity";
+import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -24,12 +25,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -44,10 +40,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   });
 
   if (!relation) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   // Verify project membership
@@ -55,45 +48,34 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     where: { user_id: user.id, project_id: relation.project_id },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
-  return NextResponse.json(
-    {
-      id: relation.id,
-      project_id: relation.project_id,
-      from_type: relation.from_type,
-      from_id: relation.from_id,
-      to_type: relation.to_type,
-      to_id: relation.to_id,
-      relation_type: relation.relation_type,
-      notes: relation.notes,
-      certainty: relation.certainty,
-      valid_from_year: relation.valid_from_year,
-      valid_from_month: relation.valid_from_month,
-      valid_from_cert: relation.valid_from_cert,
-      valid_to_year: relation.valid_to_year,
-      valid_to_month: relation.valid_to_month,
-      valid_to_cert: relation.valid_to_cert,
-      created_at: relation.created_at.toISOString(),
-      updated_at: relation.updated_at.toISOString(),
-      evidence_count: relation._count.evidence,
-    },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({
+    id: relation.id,
+    project_id: relation.project_id,
+    from_type: relation.from_type,
+    from_id: relation.from_id,
+    to_type: relation.to_type,
+    to_id: relation.to_id,
+    relation_type: relation.relation_type,
+    notes: relation.notes,
+    certainty: relation.certainty,
+    valid_from_year: relation.valid_from_year,
+    valid_from_month: relation.valid_from_month,
+    valid_from_cert: relation.valid_from_cert,
+    valid_to_year: relation.valid_to_year,
+    valid_to_month: relation.valid_to_month,
+    valid_to_cert: relation.valid_to_cert,
+    created_at: relation.created_at.toISOString(),
+    updated_at: relation.updated_at.toISOString(),
+    evidence_count: relation._count.evidence,
+  });
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -101,38 +83,23 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     where: { id, deleted_at: null },
   });
   if (!existing) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: existing.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = updateRelationSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -169,39 +136,31 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   await cache.invalidateByPrefix(`relation-list:${existing.project_id}:`);
 
-  return NextResponse.json(
-    {
-      id: updated.id,
-      project_id: updated.project_id,
-      from_type: updated.from_type,
-      from_id: updated.from_id,
-      to_type: updated.to_type,
-      to_id: updated.to_id,
-      relation_type: updated.relation_type,
-      notes: updated.notes,
-      certainty: updated.certainty,
-      valid_from_year: updated.valid_from_year,
-      valid_from_month: updated.valid_from_month,
-      valid_from_cert: updated.valid_from_cert,
-      valid_to_year: updated.valid_to_year,
-      valid_to_month: updated.valid_to_month,
-      valid_to_cert: updated.valid_to_cert,
-      created_at: updated.created_at.toISOString(),
-      updated_at: updated.updated_at.toISOString(),
-      evidence_count: updated._count.evidence,
-    },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({
+    id: updated.id,
+    project_id: updated.project_id,
+    from_type: updated.from_type,
+    from_id: updated.from_id,
+    to_type: updated.to_type,
+    to_id: updated.to_id,
+    relation_type: updated.relation_type,
+    notes: updated.notes,
+    certainty: updated.certainty,
+    valid_from_year: updated.valid_from_year,
+    valid_from_month: updated.valid_from_month,
+    valid_from_cert: updated.valid_from_cert,
+    valid_to_year: updated.valid_to_year,
+    valid_to_month: updated.valid_to_month,
+    valid_to_cert: updated.valid_to_cert,
+    created_at: updated.created_at.toISOString(),
+    updated_at: updated.updated_at.toISOString(),
+    evidence_count: updated._count.evidence,
+  });
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -209,20 +168,14 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     where: { id, deleted_at: null },
   });
   if (!relation) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: relation.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   await prisma.relation.update({
@@ -240,8 +193,5 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
   await cache.invalidateByPrefix(`relation-list:${relation.project_id}:`);
 
-  return NextResponse.json(
-    { deleted: true },
-    { status: 200, headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ deleted: true });
 }

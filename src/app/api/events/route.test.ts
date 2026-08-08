@@ -250,8 +250,8 @@ describe("POST /api/events", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 
   it("returns 400 when start_month provided without start_year", async () => {
@@ -268,8 +268,8 @@ describe("POST /api/events", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 
   it("returns 400 DEPTH_LIMIT_EXCEEDED when parent is itself a sub-event", async () => {
@@ -294,10 +294,9 @@ describe("POST /api/events", () => {
 
     expect(res.status).toBe(400);
     const body = (await res.json()) as {
-      error: string;
-      parent_title: string;
+      error: { code: string; details: { parent_title: string } };
     };
-    expect(body.error).toBe("DEPTH_LIMIT_EXCEEDED");
-    expect(body.parent_title).toBe("Verdun");
+    expect(body.error.code).toBe("DEPTH_LIMIT_EXCEEDED");
+    expect(body.error.details.parent_title).toBe("Verdun");
   });
 });

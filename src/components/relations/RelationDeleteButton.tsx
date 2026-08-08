@@ -36,8 +36,7 @@ export function RelationDeleteButton({ relationId, onDeleted }: RelationDeleteBu
         onDeleted();
         setOpen(false);
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? "Fehler beim Löschen.");
+        toast.error(t("delete_failed"));
       }
     } finally {
       setDeleting(false);
@@ -64,7 +63,7 @@ export function RelationDeleteButton({ relationId, onDeleted }: RelationDeleteBu
             <AlertDialogDescription>{t("deleteConfirm")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void handleConfirm()}
               disabled={deleting}

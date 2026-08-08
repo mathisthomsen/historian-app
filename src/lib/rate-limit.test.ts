@@ -95,9 +95,11 @@ describe("checkRateLimit", () => {
     const response = await checkRateLimit("register:ip", 10, 3_600_000);
     expect(response).not.toBeNull();
     expect(response!.status).toBe(429);
-    const body = (await response!.json()) as { error: string; retryAfter: number };
-    expect(body.error).toBe("auth.errors.rateLimited");
-    expect(typeof body.retryAfter).toBe("number");
+    const body = (await response!.json()) as {
+      error: { code: string; details: { retryAfter: number } };
+    };
+    expect(body.error.code).toBe("RATE_LIMITED");
+    expect(typeof body.error.details.retryAfter).toBe("number");
   });
 
   it("returns 503 (not 429) when the limiter itself is unavailable", async () => {
@@ -105,8 +107,8 @@ describe("checkRateLimit", () => {
     const response = await checkRateLimit("register:ip", 10, 3_600_000);
     expect(response).not.toBeNull();
     expect(response!.status).toBe(503);
-    const body = (await response!.json()) as { error: string };
-    expect(body.error).toBe("auth.errors.serviceUnavailable");
+    const body = (await response!.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("SERVICE_UNAVAILABLE");
     expect(response!.headers.get("Retry-After")).toBeTruthy();
   });
 

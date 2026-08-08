@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
@@ -22,7 +23,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return jsonError(400, "INVALID_JSON");
   }
 
   const parsed = forgotPasswordSchema.safeParse(body);
@@ -32,7 +33,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       const field = issue.path[0]?.toString() ?? "unknown";
       fields[field] = issue.message;
     }
-    return NextResponse.json({ error: "Validation failed", fields }, { status: 400 });
+    return jsonError(400, "VALIDATION_FAILED", { details: { fields } });
   }
 
   const { email } = parsed.data;

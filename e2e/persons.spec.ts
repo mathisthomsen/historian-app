@@ -1,6 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
 
-import { resetRateLimits } from "./helpers/db";
+import { deleteNonSeedRows, resetRateLimits } from "./helpers/db";
 
 // Tests share state (persons created in early tests are used in later tests)
 test.describe.configure({ mode: "serial" });
@@ -18,6 +18,15 @@ async function loginAsAdmin(page: Page) {
   await page.getByRole("button", { name: "Anmelden" }).click();
   await page.waitForURL(/\/de\/dashboard/, { timeout: 15_000 });
 }
+
+const SEED_PROJECT = "seed-project-demo";
+
+// These specs create persons and never remove them, so they accumulate in the
+// shared demo project across runs until the seeded fixtures fall off page one
+// of every list. Start from a known state (see deleteNonSeedRows).
+test.beforeAll(async () => {
+  await deleteNonSeedRows("persons", SEED_PROJECT);
+});
 
 test.beforeEach(async ({ context, page }) => {
   await resetRateLimits();

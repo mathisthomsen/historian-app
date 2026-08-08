@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useRelationTypes } from "@/hooks/use-relation-types";
 import type { RelationWithDetails } from "@/types/relations";
 
@@ -204,7 +205,7 @@ export function RelationFormDialog({
           {/* Notes */}
           <div className="space-y-1">
             <Label>{t("fields.notes")}</Label>
-            <textarea
+            <Textarea
               className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
               rows={2}
               value={notes}
@@ -236,14 +237,14 @@ export function RelationFormDialog({
                   <div className="flex gap-2">
                     <Input
                       type="number"
-                      placeholder="Jahr"
+                      placeholder={t("year_placeholder")}
                       value={validFromYear}
                       onChange={(e) => setValidFromYear(e.target.value)}
                       className="w-24"
                     />
                     <Input
                       type="number"
-                      placeholder="Monat"
+                      placeholder={t("month_placeholder")}
                       min={1}
                       max={12}
                       value={validFromMonth}
@@ -259,14 +260,14 @@ export function RelationFormDialog({
                   <div className="flex gap-2">
                     <Input
                       type="number"
-                      placeholder="Jahr"
+                      placeholder={t("year_placeholder")}
                       value={validToYear}
                       onChange={(e) => setValidToYear(e.target.value)}
                       className="w-24"
                     />
                     <Input
                       type="number"
-                      placeholder="Monat"
+                      placeholder={t("month_placeholder")}
                       min={1}
                       max={12}
                       value={validToMonth}
@@ -311,7 +312,7 @@ export function RelationFormDialog({
                   </div>
                   <div className="space-y-1">
                     <Label>{t("fields.evidenceQuote")}</Label>
-                    <textarea
+                    <Textarea
                       className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
                       rows={2}
                       value={evidenceQuote}

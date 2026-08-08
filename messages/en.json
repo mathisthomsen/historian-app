@@ -5,7 +5,15 @@
     "tryAgain": "Try again",
     "backToHome": "Back to home",
     "notFound": "Page not found",
-    "notFoundDescription": "The requested page does not exist."
+    "notFoundDescription": "The requested page does not exist.",
+    "cancel": "Cancel",
+    "unexpectedError": "An unexpected error occurred.",
+    "select_all": "Select all",
+    "select_row": "Select row",
+    "edit": "Edit",
+    "delete": "Delete",
+    "main_navigation": "Main navigation",
+    "year_format": "YYYY"
   },
   "shell": {
     "nav": {
@@ -491,7 +499,10 @@
       "to_only": "until {year}",
       "range": "{from} – {to}"
     },
-    "save_failed": "Relation could not be saved."
+    "save_failed": "Relation could not be saved.",
+    "delete_failed": "Relation could not be deleted.",
+    "year_placeholder": "Year",
+    "month_placeholder": "Month"
   },
   "relationTypes": {
     "title": "Relation types",
@@ -522,7 +533,8 @@
       "LOCATION": "Location",
       "LITERATURE": "Literature"
     },
-    "save_failed": "Relation type could not be saved."
+    "save_failed": "Relation type could not be saved.",
+    "delete_failed": "Relation type could not be deleted."
   },
   "propertyEvidence": {
     "title": "Evidence",
@@ -540,7 +552,12 @@
     },
     "noEvidence": "No evidence for this field.",
     "saved_toast": "Evidence saved.",
-    "deleted_toast": "Evidence deleted."
+    "deleted_toast": "Evidence deleted.",
+    "delete_failed": "Could not be deleted.",
+    "save_failed": "Could not be saved.",
+    "search_source": "Search source…",
+    "page_reference_placeholder": "e.g. p. 42, fol. 3v",
+    "quote_placeholder": "Relevant quotation"
   },
   "entityActivity": {
     "title": "Activity",
@@ -550,5 +567,17 @@
       "DELETE": "deleted"
     },
     "noActivity": "No activity yet."
+  },
+  "entitySelector": {
+    "placeholder": "Select entity…",
+    "search": "Search…",
+    "searching": "Searching…",
+    "no_results": "No results.",
+    "clear": "Clear selection"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page"
   }
 }

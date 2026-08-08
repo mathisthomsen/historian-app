@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { Select } from "@/components/ui/select";
 import type { RelationTypeItem } from "@/types/relations";
 
 interface RelationTypeSelectorProps {
@@ -31,18 +32,17 @@ export function RelationTypeSelector({
   const filtered =
     fromType && toType
       ? allTypes.filter(
-          (rt) =>
-            rt.valid_from_types.includes(fromType) && rt.valid_to_types.includes(toType),
+          (rt) => rt.valid_from_types.includes(fromType) && rt.valid_to_types.includes(toType),
         )
       : allTypes;
 
   if (fromType && toType && filtered.length === 0) {
     return (
       <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">{t("noTypeForCombination")}</p>
+        <p className="text-muted-foreground text-sm">{t("noTypeForCombination")}</p>
         <Link
           href={`/${locale}/settings/relation-types`}
-          className="text-xs text-primary underline hover:text-primary/80"
+          className="text-primary hover:text-primary/80 text-xs underline"
         >
           {t("manageTypes")}
         </Link>
@@ -51,8 +51,8 @@ export function RelationTypeSelector({
   }
 
   return (
-    <select
-      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+    <Select
+      className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || null)}
       disabled={disabled}
@@ -64,6 +64,6 @@ export function RelationTypeSelector({
           {rt.inverse_name ? ` / ${rt.inverse_name}` : ""}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }

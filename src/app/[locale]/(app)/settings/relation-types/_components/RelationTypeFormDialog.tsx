@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { RelationTypeItem } from "@/types/relations";
 
 interface RelationTypeFormDialogProps {
@@ -135,7 +136,7 @@ export function RelationTypeFormDialog({
           {/* Description */}
           <div className="space-y-1">
             <Label>{t("fields.description")}</Label>
-            <textarea
+            <Textarea
               className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
               rows={2}
               value={description}

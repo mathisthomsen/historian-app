@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -10,7 +11,10 @@ import { hashToken } from "@/lib/security";
 
 const resetPasswordSchema = z
   .object({
-    token: z.string().length(64).regex(/^[0-9a-f]+$/),
+    token: z
+      .string()
+      .length(64)
+      .regex(/^[0-9a-f]+$/),
     password: z
       .string()
       .min(8)
@@ -30,7 +34,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return jsonError(400, "INVALID_JSON");
   }
 
   const parsed = resetPasswordSchema.safeParse(body);
@@ -40,7 +44,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       const key = issue.path[0]?.toString() ?? "unknown";
       fields[key] = issue.message;
     }
-    return NextResponse.json({ error: "Validation failed", fields }, { status: 400 });
+    return jsonError(400, "VALIDATION_FAILED", { details: { fields } });
   }
 
   const { token, password } = parsed.data;
@@ -58,7 +62,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
       metadata: { token_type: "password_reset", reason: "not_found" },
     });
-    return NextResponse.json({ error: "auth.errors.tokenInvalid" }, { status: 400 });
+    return jsonError(400, "TOKEN_INVALID");
   }
 
   if (resetRow.used_at !== null || resetRow.expires_at <= new Date()) {
@@ -68,7 +72,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
       metadata: { token_type: "password_reset", reason: resetRow.used_at ? "used" : "expired" },
     });
-    return NextResponse.json({ error: "auth.errors.tokenExpired" }, { status: 400 });
+    return jsonError(400, "TOKEN_EXPIRED");
   }
 
   const password_hash = await bcrypt.hash(password, env.BCRYPT_ROUNDS);

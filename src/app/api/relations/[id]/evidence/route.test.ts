@@ -156,8 +156,8 @@ describe("POST /api/relations/[id]/evidence", () => {
     );
 
     expect(res.status).toBe(409);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("DUPLICATE_EVIDENCE");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("DUPLICATE_EVIDENCE");
   });
 
   it("returns 403 when source not in project", async () => {

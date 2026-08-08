@@ -1,8 +1,9 @@
 import { type EntityType, type Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { logActivity } from "@/lib/activity";
+import { forbidden, json, jsonError, paginated, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -151,20 +152,12 @@ async function batchResolveLabels(
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { searchParams } = request.nextUrl;
   const parsed = listQuerySchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid query params", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "INVALID_QUERY_PARAMS", { details: parsed.error.flatten() });
   }
 
   const {
@@ -186,16 +179,13 @@ export async function GET(request: NextRequest) {
     where: { user_id: user.id, project_id: projectId },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const cacheKey = `relation-list:${projectId}:${page}:${pageSize}:${fromType ?? ""}:${fromId ?? ""}:${toType ?? ""}:${toId ?? ""}:${entityType ?? ""}:${entityId ?? ""}:${relationTypeId ?? ""}:${certainty ?? ""}`;
   const cached = await cache.get(cacheKey);
   if (cached) {
-    return NextResponse.json(cached, { status: 200, headers: { "Cache-Control": "no-store" } });
+    return json(cached);
   }
 
   const where: Prisma.RelationWhereInput = { project_id: projectId };
@@ -256,11 +246,11 @@ export async function GET(request: NextRequest) {
     evidence_count: r._count.evidence,
   }));
 
-  const body = { data, total, page, pageSize };
+  const body = paginated(data, { page, pageSize, total });
 
   await cache.set(cacheKey, body, 60);
 
-  return NextResponse.json(body, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json(body);
 }
 
 // ---------------------------------------------------------------------------
@@ -269,29 +259,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = createRelationSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -301,28 +277,19 @@ export async function POST(request: NextRequest) {
     where: { user_id: user.id, project_id: data.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   // Validate from_id exists
   const fromExists = await validateEntityExists(data.from_type, data.from_id, data.project_id);
   if (!fromExists) {
-    return NextResponse.json(
-      { error: "ENTITY_NOT_FOUND", field: "from_id" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(404, "ENTITY_NOT_FOUND", { details: { field: "from_id" } });
   }
 
   // Validate to_id exists
   const toExists = await validateEntityExists(data.to_type, data.to_id, data.project_id);
   if (!toExists) {
-    return NextResponse.json(
-      { error: "ENTITY_NOT_FOUND", field: "to_id" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(404, "ENTITY_NOT_FOUND", { details: { field: "to_id" } });
   }
 
   // Validate relation_type belongs to same project and check valid types
@@ -330,32 +297,23 @@ export async function POST(request: NextRequest) {
     where: { id: data.relation_type_id, project_id: data.project_id },
   });
   if (!relationType) {
-    return NextResponse.json(
-      { error: "relation_type_id not found or not in this project" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(404, "INVALID_REFERENCE", {
+      message: "relation_type_id not found or not in this project",
+    });
   }
 
   if (!relationType.valid_from_types.includes(data.from_type)) {
-    return NextResponse.json(
-      {
-        error: "INVALID_FROM_TYPE",
-        message: `from_type '${data.from_type}' is not valid for this relation type`,
-        valid_from_types: relationType.valid_from_types,
-      },
-      { status: 422, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(422, "INVALID_FROM_TYPE", {
+      message: `from_type '${data.from_type}' is not valid for this relation type`,
+      details: { valid_from_types: relationType.valid_from_types },
+    });
   }
 
   if (!relationType.valid_to_types.includes(data.to_type)) {
-    return NextResponse.json(
-      {
-        error: "INVALID_TO_TYPE",
-        message: `to_type '${data.to_type}' is not valid for this relation type`,
-        valid_to_types: relationType.valid_to_types,
-      },
-      { status: 422, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(422, "INVALID_TO_TYPE", {
+      message: `to_type '${data.to_type}' is not valid for this relation type`,
+      details: { valid_to_types: relationType.valid_to_types },
+    });
   }
 
   const relation = await prisma.relation.create({
@@ -395,7 +353,7 @@ export async function POST(request: NextRequest) {
 
   await cache.invalidateByPrefix(`relation-list:${data.project_id}:`);
 
-  return NextResponse.json(
+  return json(
     {
       id: relation.id,
       project_id: relation.project_id,
@@ -416,6 +374,6 @@ export async function POST(request: NextRequest) {
       updated_at: relation.updated_at.toISOString(),
       evidence_count: relation._count.evidence,
     },
-    { status: 201, headers: { "Cache-Control": "no-store" } },
+    { status: 201 },
   );
 }

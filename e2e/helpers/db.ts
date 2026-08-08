@@ -166,24 +166,40 @@ export async function resetRateLimits(): Promise<void> {
 }
 
 /**
- * Removes relations left behind by earlier E2E runs, keeping seeded rows.
+ * Entity tables an E2E spec may purge, mapped to the cache prefix their list
+ * endpoint writes. Allow-listed because the table name is interpolated.
+ */
+const PURGEABLE = {
+  relations: "relation-list",
+  events: "event-list",
+  persons: "person-list",
+  sources: "source-list",
+} as const;
+
+export type PurgeableTable = keyof typeof PURGEABLE;
+
+/**
+ * Removes rows left behind by earlier E2E runs, keeping seeded ones.
  *
- * The relation specs create relations and never delete them, so they pile up in
- * the shared demo project run after run. RelationsTab lists at most 20 per page
- * ordered by created_at DESC, so once ~20 have accumulated the *seeded*
- * relations fall off page one and stop rendering — which is how TC-2.4-05
- * started failing with "was colleague of" not found while the outgoing section
- * showed 21 identical Humboldt→Caroline rows.
+ * The specs create entities and never delete them, so they pile up in the
+ * shared demo project run after run. Every list is paginated and ordered
+ * newest-first, so once enough have accumulated the *seeded* fixtures fall off
+ * page one and stop rendering. That is not hypothetical: TC-2.4-05 failed with
+ * 21 duplicate relations burying the seeded one, and TC-E-10 failed with the
+ * events list reporting "Seite 1 / 35".
  *
- * relation_evidence cascades on relation delete, so this needs no second pass.
- * Also drops the cached relation lists, otherwise the first read after the
+ * Scoped to `project_id = <demo> AND id NOT LIKE 'seed-%'`, so seeded fixtures
+ * and every other project are untouched. relation_evidence cascades, and
+ * events.parent_id is an optional relation (SetNull), so no ordering is needed.
+ *
+ * Also drops the matching cached lists — otherwise the first read after the
  * purge can still be served from the 60s cache.
  */
-export async function deleteNonSeedRelations(projectId: string): Promise<void> {
+export async function deleteNonSeedRows(table: PurgeableTable, projectId: string): Promise<void> {
   const client = getClient();
   await client.connect();
   try {
-    await client.query(`DELETE FROM relations WHERE project_id = $1 AND id NOT LIKE 'seed-%'`, [
+    await client.query(`DELETE FROM ${table} WHERE project_id = $1 AND id NOT LIKE 'seed-%'`, [
       projectId,
     ]);
   } finally {
@@ -197,7 +213,7 @@ export async function deleteNonSeedRelations(projectId: string): Promise<void> {
   let cursor = "0";
   do {
     const scanUrl = new URL(`${url}/scan/${cursor}`);
-    scanUrl.searchParams.set("match", `cache:relation-list:${projectId}:*`);
+    scanUrl.searchParams.set("match", `cache:${PURGEABLE[table]}:${projectId}:*`);
     scanUrl.searchParams.set("count", "100");
     const res = await fetch(scanUrl, { headers });
     const { result } = (await res.json()) as { result: [string, string[]] };
@@ -211,6 +227,11 @@ export async function deleteNonSeedRelations(projectId: string): Promise<void> {
       });
     }
   } while (cursor !== "0");
+}
+
+/** Back-compat wrapper used by relations.spec. */
+export async function deleteNonSeedRelations(projectId: string): Promise<void> {
+  await deleteNonSeedRows("relations", projectId);
 }
 
 /**

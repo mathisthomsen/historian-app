@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 interface PartialDateInputProps {
   yearValue: number | null;
@@ -29,6 +30,7 @@ export function PartialDateInput({
   label,
 }: PartialDateInputProps) {
   const t = useTranslations("persons.date");
+  const tCommon = useTranslations("common");
 
   function handleYearChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value;
@@ -69,7 +71,7 @@ export function PartialDateInput({
       <legend className="text-sm font-medium">{label}</legend>
       <div className="flex gap-2">
         <div className="flex-1 space-y-1">
-          <Label htmlFor={`${label}-year`} className="text-xs text-muted-foreground">
+          <Label htmlFor={`${label}-year`} className="text-muted-foreground text-xs">
             {t("year")}
           </Label>
           <Input
@@ -77,7 +79,7 @@ export function PartialDateInput({
             type="number"
             min={1}
             max={2100}
-            placeholder="YYYY"
+            placeholder={tCommon("year_format")}
             value={yearValue ?? ""}
             onChange={handleYearChange}
             disabled={disabled}
@@ -85,15 +87,15 @@ export function PartialDateInput({
           />
         </div>
         <div className="flex-1 space-y-1">
-          <Label htmlFor={`${label}-month`} className="text-xs text-muted-foreground">
+          <Label htmlFor={`${label}-month`} className="text-muted-foreground text-xs">
             {t("month")}
           </Label>
-          <select
+          <Select
             id={`${label}-month`}
             value={monthValue ?? ""}
             onChange={handleMonthChange}
             disabled={monthDisabled}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            className="border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="">{t("no_month")}</option>
             {MONTH_KEYS.map((m) => (
@@ -101,10 +103,10 @@ export function PartialDateInput({
                 {t(`months.${m}`)}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="flex-1 space-y-1">
-          <Label htmlFor={`${label}-day`} className="text-xs text-muted-foreground">
+          <Label htmlFor={`${label}-day`} className="text-muted-foreground text-xs">
             {t("day")}
           </Label>
           <Input

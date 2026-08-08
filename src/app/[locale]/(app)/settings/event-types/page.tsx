@@ -5,9 +5,15 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { EventTypeSettingsTable } from "@/components/research/EventTypeSettingsTable";
 
-export const metadata: Metadata = {
-  title: "Ereignistypen",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "event_types" });
+  return { title: t("title") };
+}
 
 interface PageProps {
   params: Promise<{ locale: string }>;

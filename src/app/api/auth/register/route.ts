@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { sendVerificationEmail } from "@/lib/email";
@@ -36,7 +37,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return jsonError(400, "INVALID_JSON");
   }
 
   const parsed = registerSchema.safeParse(body);
@@ -46,7 +47,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       const field = issue.path[0]?.toString() ?? "unknown";
       fields[field] = issue.message;
     }
-    return NextResponse.json({ error: "Validation failed", fields }, { status: 400 });
+    return jsonError(400, "VALIDATION_FAILED", { details: { fields } });
   }
 
   const { email, password } = parsed.data;
@@ -54,7 +55,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return NextResponse.json({ error: "auth.errors.emailTaken" }, { status: 409 });
+    return jsonError(409, "EMAIL_TAKEN");
   }
 
   const password_hash = await bcrypt.hash(password, env.BCRYPT_ROUNDS);

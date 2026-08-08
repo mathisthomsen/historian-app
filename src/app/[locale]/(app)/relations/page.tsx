@@ -5,9 +5,15 @@ import { getTranslations } from "next-intl/server";
 import { RelationsDataTable } from "@/app/[locale]/(app)/relations/_components/RelationsDataTable";
 import { auth } from "@/auth";
 
-export const metadata: Metadata = {
-  title: "Relationen",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "relations" });
+  return { title: t("title") };
+}
 
 interface PageProps {
   params: Promise<{ locale: string }>;

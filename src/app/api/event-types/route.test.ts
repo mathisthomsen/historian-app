@@ -138,8 +138,8 @@ describe("POST /api/event-types", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 
   it("returns 409 DUPLICATE_NAME when Prisma throws P2002", async () => {
@@ -155,8 +155,8 @@ describe("POST /api/event-types", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(409);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("DUPLICATE_NAME");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("DUPLICATE_NAME");
   });
 
   it("returns 400 when name is missing", async () => {
@@ -167,7 +167,7 @@ describe("POST /api/event-types", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Validation failed");
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("VALIDATION_FAILED");
   });
 });

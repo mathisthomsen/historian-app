@@ -1,7 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { logActivity } from "@/lib/activity";
+import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
@@ -19,12 +20,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -34,20 +30,14 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     select: { id: true, project_id: true },
   });
   if (!relation) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: relation.project_id },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const evidence = await prisma.relationEvidence.findMany({
@@ -70,17 +60,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     created_at: e.created_at.toISOString(),
   }));
 
-  return NextResponse.json({ data }, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json({ data });
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { id } = await context.params;
 
@@ -90,38 +75,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
     select: { id: true, project_id: true, from_type: true, from_id: true },
   });
   if (!relation) {
-    return NextResponse.json(
-      { error: "Not found" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+    return notFoundError();
   }
 
   const membership = await prisma.userProject.findFirst({
     where: { user_id: user.id, project_id: relation.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = createEvidenceSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -132,10 +102,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     select: { id: true },
   });
   if (!source) {
-    return NextResponse.json(
-      { error: "Source does not belong to this project" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(403, "INVALID_REFERENCE", {
+      message: "Source does not belong to this project",
+    });
   }
 
   let evidence: {
@@ -170,10 +139,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       "code" in err &&
       (err as { code: string }).code === "P2002"
     ) {
-      return NextResponse.json(
-        { error: "DUPLICATE_EVIDENCE", message: "This source is already attached as evidence" },
-        { status: 409, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(409, "DUPLICATE_EVIDENCE", {
+        message: "This source is already attached as evidence",
+      });
     }
     throw err;
   }
@@ -191,7 +159,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   // The relation list embeds evidence_count — it goes stale on every add.
   await cache.invalidateByPrefix(`relation-list:${relation.project_id}:`);
 
-  return NextResponse.json(
+  return json(
     {
       id: evidence.id,
       relation_id: evidence.relation_id,
@@ -203,6 +171,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       confidence: evidence.confidence,
       created_at: evidence.created_at.toISOString(),
     },
-    { status: 201, headers: { "Cache-Control": "no-store" } },
+    { status: 201 },
   );
 }

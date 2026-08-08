@@ -28,10 +28,7 @@ describe("ResetPasswordForm", () => {
   });
 
   it("calls router.push to login page on successful 200 response", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValueOnce({ ok: true, status: 200 } as Response),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce({ ok: true, status: 200 } as Response));
 
     renderWithProviders(<ResetPasswordForm token="valid-token" />);
 
@@ -56,7 +53,7 @@ describe("ResetPasswordForm", () => {
       vi.fn().mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: () => Promise.resolve({ error: "auth.errors.tokenExpired" }),
+        json: () => Promise.resolve({ error: { code: "TOKEN_EXPIRED" } }),
       } as Response),
     );
 

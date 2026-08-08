@@ -1,7 +1,8 @@
 import { type Prisma } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
@@ -30,20 +31,12 @@ const createEventTypeSchema = z.object({
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
   const { searchParams } = request.nextUrl;
   const projectId = searchParams.get("projectId") ?? user.projectId;
   if (!projectId) {
-    return NextResponse.json(
-      { error: "No project" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(403, "NO_PROJECT");
   }
 
   // Check project membership
@@ -51,10 +44,7 @@ export async function GET(request: NextRequest) {
     where: { user_id: user.id, project_id: projectId },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   const eventTypes = await prisma.eventType.findMany({
@@ -75,34 +65,20 @@ export async function GET(request: NextRequest) {
     event_count: et._count.events,
   }));
 
-  return NextResponse.json({ data }, { status: 200, headers: { "Cache-Control": "no-store" } });
+  return json({ data });
 }
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  if (!user) return unauthorized();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.data;
 
   const parsed = createEventTypeSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
+    return jsonError(400, "VALIDATION_FAILED", { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -112,10 +88,7 @@ export async function POST(request: NextRequest) {
     where: { user_id: user.id, project_id: data.project_id, role: { in: ["OWNER", "EDITOR"] } },
   });
   if (!membership) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return forbidden();
   }
 
   let eventType: Prisma.EventTypeGetPayload<Record<string, never>>;
@@ -136,15 +109,12 @@ export async function POST(request: NextRequest) {
       "code" in err &&
       (err as { code: string }).code === "P2002"
     ) {
-      return NextResponse.json(
-        { error: "DUPLICATE_NAME" },
-        { status: 409, headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonError(409, "DUPLICATE_NAME");
     }
     throw err;
   }
 
-  return NextResponse.json(
+  return json(
     {
       id: eventType.id,
       name: eventType.name,
@@ -152,6 +122,6 @@ export async function POST(request: NextRequest) {
       icon: eventType.icon,
       event_count: 0,
     },
-    { status: 201, headers: { "Cache-Control": "no-store" } },
+    { status: 201 },
   );
 }

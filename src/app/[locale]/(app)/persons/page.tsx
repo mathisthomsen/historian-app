@@ -9,9 +9,15 @@ import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import type { PersonSummary } from "@/types/person";
 
-export const metadata: Metadata = {
-  title: "Personen",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "persons" });
+  return { title: t("title") };
+}
 
 interface PageProps {
   params: Promise<{ locale: string }>;
