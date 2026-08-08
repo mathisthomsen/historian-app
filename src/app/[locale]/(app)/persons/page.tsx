@@ -49,8 +49,11 @@ export default async function PersonsPage({ params, searchParams }: PageProps) {
       persons = cached.data;
       total = cached.pagination.total;
     } else {
+      // deleted_at is explicit (not relying on the db extension) because
+      // `count` is not covered by it — both queries must use the same where.
       const where = {
         project_id: projectId,
+        deleted_at: null,
         ...(search
           ? {
               OR: [
@@ -75,7 +78,7 @@ export default async function PersonsPage({ params, searchParams }: PageProps) {
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),
-        prisma.person.count({ where: { project_id: projectId, deleted_at: null } }),
+        prisma.person.count({ where }),
       ]);
 
       persons = rawPersons.map((p) => ({
@@ -111,7 +114,7 @@ export default async function PersonsPage({ params, searchParams }: PageProps) {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Link
           href={`/${locale}/persons/new`}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           {t("create")}
         </Link>

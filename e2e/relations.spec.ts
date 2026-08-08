@@ -1,10 +1,12 @@
 import { type Page, expect, test } from "@playwright/test";
 
-import { resetRateLimits } from "./helpers/db";
+import { deleteNonSeedRelations, resetRateLimits } from "./helpers/db";
 
 // ---------------------------------------------------------------------------
 // Seed IDs (deterministic — from prisma/seed.ts)
 // ---------------------------------------------------------------------------
+
+const SEED_PROJECT = "seed-project-demo";
 
 const SEED = {
   person: {
@@ -20,6 +22,14 @@ const SEED = {
 
 const ADMIN_EMAIL = "admin@evidoxa.dev";
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
+
+// Relation specs create relations and never remove them, so they accumulate in
+// the shared demo project across runs and eventually push the seeded relations
+// off the first page of the list (see deleteNonSeedRelations). Start from a
+// known state instead of inheriting every previous run's leftovers.
+test.beforeAll(async () => {
+  await deleteNonSeedRelations(SEED_PROJECT);
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -374,13 +384,14 @@ test.describe("TC-2.4-05: Inverse relation display", () => {
     // Click Relations tab
     await page.getByRole("tab", { name: "Relationen" }).click();
 
-    // Wait for relations to load
-    await expect(
-      page.getByText("Eingehend").or(page.getByText("Noch keine Relationen.")),
-    ).toBeVisible({ timeout: 10_000 });
-
-    // Verify the "Eingehend" section is visible
-    await expect(page.getByText("Eingehend")).toBeVisible();
+    // Wait for the tab to finish loading. RelationsTab always renders both the
+    // "Ausgehend" and "Eingehend" headings once loaded, and each empty section
+    // renders its own "Noch keine Relationen." — so the previous
+    // .or(noRelations) locator matched two elements and died on strict mode
+    // whenever *either* section was empty, reporting a locator conflict instead
+    // of the missing relation. Waiting on the always-present heading is
+    // unambiguous and leaves the real assertions below to do the work.
+    await expect(page.getByText("Eingehend")).toBeVisible({ timeout: 10_000 });
 
     // The seeded relation: Caroline → "was colleague of" → Humboldt
     // In incoming view, the relation type name is shown (the spec uses inverse_name for display)

@@ -7,6 +7,12 @@ export interface RateLimitResult {
   allowed: boolean;
   remaining: number;
   resetAt: Date;
+  /**
+   * True when the limiter could not reach Redis and therefore denied the
+   * request without actually counting it. Callers can distinguish "you hit the
+   * limit" (429) from "we cannot enforce the limit right now" (503).
+   */
+  degraded: boolean;
 }
 
 export interface RateLimiter {
@@ -26,7 +32,11 @@ function msToDuration(
 
 /**
  * Redis-backed sliding-window rate limiter via Upstash.
- * Fails open: if Redis is unavailable the request is allowed through.
+ *
+ * Fails CLOSED: if Redis is unavailable the request is denied. Every caller is
+ * an auth route, where failing open silently removes brute-force and
+ * account-enumeration protection — the exact window an attacker wants (audit
+ * S-M2). Redis health is surfaced via /api/health.
  */
 export function createRedisRateLimiter(): RateLimiter {
   return {
@@ -38,10 +48,15 @@ export function createRedisRateLimiter(): RateLimiter {
           prefix: "@upstash/ratelimit",
         });
         const { success, remaining, reset } = await limiter.limit(key);
-        return { allowed: success, remaining, resetAt: new Date(reset) };
-      } catch {
-        // Fail open: Redis unavailability is monitored via /api/health
-        return { allowed: true, remaining: -1, resetAt: new Date() };
+        return { allowed: success, remaining, resetAt: new Date(reset), degraded: false };
+      } catch (error) {
+        console.error("[rate-limit] limiter unavailable, failing closed", { key, error });
+        return {
+          allowed: false,
+          remaining: 0,
+          resetAt: new Date(Date.now() + 60_000),
+          degraded: true,
+        };
       }
     },
   };
@@ -62,6 +77,17 @@ export async function checkRateLimit(
   const result = await rateLimiter.check(key, limit, windowMs);
   if (!result.allowed) {
     const retryAfter = Math.ceil((result.resetAt.getTime() - Date.now()) / 1000);
+    // Degraded means we never counted this request — it is our outage, not the
+    // caller's fault, so report 503 rather than a misleading "too many requests".
+    if (result.degraded) {
+      return NextResponse.json(
+        { error: "auth.errors.serviceUnavailable", retryAfter },
+        {
+          status: 503,
+          headers: { "Retry-After": String(retryAfter), "Cache-Control": "no-store" },
+        },
+      );
+    }
     return NextResponse.json(
       { error: "auth.errors.rateLimited", retryAfter },
       {

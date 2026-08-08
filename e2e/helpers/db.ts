@@ -1,5 +1,6 @@
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 
+import bcrypt from "bcryptjs";
 import { Client } from "pg";
 
 function getClient(): Client {
@@ -84,7 +85,17 @@ export async function insertTestVerificationToken(email: string): Promise<string
 
 /** Inserts a known raw token for password reset testing. */
 export async function insertTestResetToken(email: string): Promise<string> {
-  const rawToken = "b".repeat(64); // deterministic test reset token
+  // Random, not deterministic. The previous "b".repeat(64) had two proven
+  // hazards, both of which only bite now that the limiter fails closed against
+  // a live Redis:
+  //   1. password_resets.token_hash is globally UNIQUE, so a leftover row for
+  //      any *other* user makes this INSERT throw.
+  //   2. reset-password rate-limits on `reset:${token.slice(0,8)}`, so every
+  //      run of this test shared one bucket. Measured: the 6th request in a
+  //      15-minute window gets a 429, and a CI run makes up to 6 (two browsers
+  //      x three attempts) — so consecutive runs could start already throttled.
+  // Nothing depends on the value being fixed; the caller uses the return value.
+  const rawToken = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(rawToken).digest("hex");
   const client = getClient();
   await client.connect();
@@ -110,12 +121,24 @@ export async function insertTestResetToken(email: string): Promise<string> {
  * Uses a single SCAN pass for all keys created by our rate limiters
  * (@upstash/ratelimit prefix), regardless of which AUTH_SECRET created them.
  *
- * No-ops silently when UPSTASH_REDIS_REST_URL / TOKEN are absent.
+ * Credentials resolve the same way the app does (src/lib/env.ts): the Vercel
+ * integration's KV_REST_API_* pair first, then the legacy UPSTASH_* one.
+ *
+ * Throws when neither is configured. This used to no-op silently, which hid a
+ * real failure: the login limiter allows 5 attempts per 15 minutes per IP+email
+ * and every spec logs in as the same seeded admin from the same CI IP, so once
+ * this stops clearing counters the whole suite dies of "login just times out".
  */
 export async function resetRateLimits(): Promise<void> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return;
+  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    throw new Error(
+      "resetRateLimits: Redis is not configured (KV_REST_API_URL/TOKEN or " +
+        "UPSTASH_REDIS_REST_URL/TOKEN). Refusing to run auth E2E without it — " +
+        "the login rate limiter fails closed and would throttle the suite.",
+    );
+  }
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
@@ -140,6 +163,76 @@ export async function resetRateLimits(): Promise<void> {
       });
     }
   } while (cursor !== "0");
+}
+
+/**
+ * Removes relations left behind by earlier E2E runs, keeping seeded rows.
+ *
+ * The relation specs create relations and never delete them, so they pile up in
+ * the shared demo project run after run. RelationsTab lists at most 20 per page
+ * ordered by created_at DESC, so once ~20 have accumulated the *seeded*
+ * relations fall off page one and stop rendering — which is how TC-2.4-05
+ * started failing with "was colleague of" not found while the outgoing section
+ * showed 21 identical Humboldt→Caroline rows.
+ *
+ * relation_evidence cascades on relation delete, so this needs no second pass.
+ * Also drops the cached relation lists, otherwise the first read after the
+ * purge can still be served from the 60s cache.
+ */
+export async function deleteNonSeedRelations(projectId: string): Promise<void> {
+  const client = getClient();
+  await client.connect();
+  try {
+    await client.query(`DELETE FROM relations WHERE project_id = $1 AND id NOT LIKE 'seed-%'`, [
+      projectId,
+    ]);
+  } finally {
+    await client.end();
+  }
+
+  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  let cursor = "0";
+  do {
+    const scanUrl = new URL(`${url}/scan/${cursor}`);
+    scanUrl.searchParams.set("match", `cache:relation-list:${projectId}:*`);
+    scanUrl.searchParams.set("count", "100");
+    const res = await fetch(scanUrl, { headers });
+    const { result } = (await res.json()) as { result: [string, string[]] };
+    [cursor] = result;
+    const keys = result[1];
+    if (keys.length > 0) {
+      await fetch(`${url}/pipeline`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(keys.map((k) => ["DEL", k])),
+      });
+    }
+  } while (cursor !== "0");
+}
+
+/**
+ * Creates a verified user with a known password, for tests that need to mutate
+ * an account without touching the shared seeded admin.
+ *
+ * Idempotent: any existing user with this email is removed first.
+ */
+export async function createTestUser(email: string, password: string): Promise<void> {
+  const password_hash = await bcrypt.hash(password, 10);
+  const client = getClient();
+  await client.connect();
+  try {
+    await client.query("DELETE FROM users WHERE email = $1", [email.toLowerCase()]);
+    await client.query(
+      `INSERT INTO users (id, email, name, password_hash, email_verified_at, role, created_at, updated_at)
+         VALUES (gen_random_uuid()::text, $1, 'E2E Test User', $2, NOW(), 'USER', NOW(), NOW())`,
+      [email.toLowerCase(), password_hash],
+    );
+  } finally {
+    await client.end();
+  }
 }
 
 /** Deletes a test user by email (for cleanup after registration tests). */

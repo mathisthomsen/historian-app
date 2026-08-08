@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { logActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth-guard";
+import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
 
@@ -186,6 +187,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     field_path: "evidence",
     new_value: { evidence_id: evidence.id, relation_id: id },
   }).catch(console.error);
+
+  // The relation list embeds evidence_count — it goes stale on every add.
+  await cache.invalidateByPrefix(`relation-list:${relation.project_id}:`);
 
   return NextResponse.json(
     {

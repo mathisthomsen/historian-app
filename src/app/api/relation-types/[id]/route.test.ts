@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,6 +13,14 @@ const mockRelationTypeDelete = vi.fn();
 const mockRelationCount = vi.fn();
 const mockUserProjectFindFirst = vi.fn();
 const mockSanitize = vi.fn((s: string) => s);
+
+vi.mock("@/lib/cache", () => ({
+  cache: {
+    get: vi.fn(),
+    set: vi.fn(),
+    invalidateByPrefix: vi.fn(),
+  },
+}));
 
 vi.mock("@/lib/auth-guard", () => ({
   requireUser: mockRequireUser,
@@ -141,6 +150,30 @@ describe("DELETE /api/relation-types/[id]", () => {
     const body = (await res.json()) as { error: string; count: number };
     expect(body.error).toBe("IN_USE");
     expect(body.count).toBe(5);
+  });
+
+  it("returns 409 IN_USE_BY_DELETED when only soft-deleted relations reference it", async () => {
+    // First count = active relations (0), second = soft-deleted ones (3).
+    mockRelationCount.mockResolvedValueOnce(0).mockResolvedValueOnce(3);
+    const res = await DELETE(makeDeleteRequest("rt-1"), makeCtx("rt-1"));
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as { error: string; count: number };
+    expect(body.error).toBe("IN_USE_BY_DELETED");
+    expect(body.count).toBe(3);
+    expect(mockRelationTypeDelete).not.toHaveBeenCalled();
+  });
+
+  it("maps a P2003 FK violation to 409 instead of a 500", async () => {
+    mockRelationTypeDelete.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("FK constraint failed", {
+        code: "P2003",
+        clientVersion: "6.19.2",
+      }),
+    );
+    const res = await DELETE(makeDeleteRequest("rt-1"), makeCtx("rt-1"));
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("IN_USE");
   });
 
   it("returns 404 when relation type not found", async () => {

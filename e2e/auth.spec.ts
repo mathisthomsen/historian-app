@@ -1,6 +1,7 @@
 import { type Page, expect, test } from "@playwright/test";
 
 import {
+  createTestUser,
   deleteTestUser,
   insertTestResetToken,
   insertTestVerificationToken,
@@ -253,12 +254,29 @@ test.describe("TC-AUTH-14: Forgot password", () => {
 // TC-AUTH-15: Password reset with valid token
 // ---------------------------------------------------------------------------
 test.describe("TC-AUTH-15: Password reset flow", () => {
+  // Uses a dedicated user rather than the seeded admin. Two reasons:
+  //  - The reset form enforces the password policy (upper + lower + digit +
+  //    special). Filling SEED_ADMIN_PASSWORD coupled this test to the
+  //    composition of an operator-chosen secret; when that secret contained no
+  //    special character the form refused to submit and the test failed with
+  //    an opaque waitForURL timeout that named neither the field nor the rule.
+  //  - It no longer rewrites the shared admin's password mid-suite, which is
+  //    what forced this file into serial mode.
+  const resetEmail = `e2e-reset-${Date.now()}@evidoxa.test`;
+  const oldPassword = "OldValidP@ss1";
+  const newPassword = "NewValidP@ss1";
+
+  test.afterAll(async () => {
+    await deleteTestUser(resetEmail);
+  });
+
   test("valid token → new password → redirects to login with success banner", async ({ page }) => {
-    const rawToken = await insertTestResetToken(SEED_EMAIL);
+    await createTestUser(resetEmail, oldPassword);
+    const rawToken = await insertTestResetToken(resetEmail);
     await page.goto(`/de/auth/reset-password?token=${rawToken}`);
     await expect(page.getByLabel("Neues Passwort")).toBeVisible();
-    await page.getByLabel("Neues Passwort").fill(SEED_PASSWORD);
-    await page.getByLabel("Passwort bestätigen").fill(SEED_PASSWORD);
+    await page.getByLabel("Neues Passwort").fill(newPassword);
+    await page.getByLabel("Passwort bestätigen").fill(newPassword);
     await page.getByRole("button", { name: "Passwort speichern" }).click();
     await page.waitForURL(/\/auth\/login\?reset=1/, { timeout: 10_000 });
     await expect(page.getByText("Passwort wurde zurückgesetzt")).toBeVisible();
@@ -272,10 +290,16 @@ test.describe("TC-AUTH-16: Expired/invalid reset token", () => {
   test("invalid token → submit → shows error", async ({ page }) => {
     await page.goto("/de/auth/reset-password?token=" + "c".repeat(64));
     await expect(page.getByLabel("Neues Passwort")).toBeVisible();
-    await page.getByLabel("Neues Passwort").fill(SEED_PASSWORD);
-    await page.getByLabel("Passwort bestätigen").fill(SEED_PASSWORD);
+    // Must be a policy-compliant password, otherwise the form blocks submission
+    // client-side and the server is never reached.
+    await page.getByLabel("Neues Passwort").fill("NewValidP@ss1");
+    await page.getByLabel("Passwort bestätigen").fill("NewValidP@ss1");
     await page.getByRole("button", { name: "Passwort speichern" }).click();
-    await expect(page.getByRole("alert")).toBeVisible({ timeout: 10_000 });
+    // Assert the actual server error, not getByRole("alert"): the Sonner
+    // toaster renders an always-present empty alert region, so that locator
+    // matched even when the form never submitted — which is exactly how the
+    // TC-AUTH-15 failure stayed hidden.
+    await expect(page.getByText("Ungültiger Link.")).toBeVisible({ timeout: 10_000 });
   });
 
   test("no token on reset page shows invalid link error", async ({ page }) => {

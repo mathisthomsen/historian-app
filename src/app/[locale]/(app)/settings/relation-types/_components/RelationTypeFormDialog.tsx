@@ -102,8 +102,7 @@ export function RelationTypeFormDialog({
         onSuccess();
         onOpenChange(false);
       } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? t("saved_toast"));
+        toast.error(t("save_failed"));
       }
     } finally {
       setSaving(false);
@@ -137,7 +136,7 @@ export function RelationTypeFormDialog({
           <div className="space-y-1">
             <Label>{t("fields.description")}</Label>
             <textarea
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -151,7 +150,7 @@ export function RelationTypeFormDialog({
               <div className="flex items-center gap-2">
                 {color && (
                   <span
-                    className="h-5 w-5 rounded-full border border-border"
+                    className="border-border h-5 w-5 rounded-full border"
                     style={{ backgroundColor: color }}
                   />
                 )}

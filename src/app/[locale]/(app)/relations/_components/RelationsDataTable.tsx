@@ -80,7 +80,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
             setEntityTypeFilter(e.target.value);
             setPage(1);
           }}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
         >
           <option value="">{t("filter.all_entity_types")}</option>
           <option value="PERSON">{t("entityTypes.PERSON")}</option>
@@ -94,7 +94,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
             setRelationTypeFilter(e.target.value);
             setPage(1);
           }}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
         >
           <option value="">{t("filter.all_types")}</option>
           {allRelationTypes.map((rt) => (
@@ -110,7 +110,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
             setCertaintyFilter(e.target.value);
             setPage(1);
           }}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
         >
           <option value="">{t("filter.all_certainties")}</option>
           <option value="CERTAIN">{t("certainties.CERTAIN")}</option>
@@ -144,11 +144,11 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 py-8 text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 py-8">
           <Loader2 className="h-4 w-4 animate-spin" />
         </div>
       ) : relations.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">{t("noRelations")}</p>
+        <p className="text-muted-foreground py-8 text-center text-sm">{t("noRelations")}</p>
       ) : (
         <div className="space-y-2">
           {relations.map((r) => (
@@ -165,9 +165,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {t("list.total", { count: total })}
-          </p>
+          <p className="text-muted-foreground text-sm">{t("list.total", { count: total })}</p>
           <div className="flex gap-2">
             <Button
               type="button"
@@ -192,6 +190,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       )}
 
       <RelationFormDialog
+        key={editingRelation?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={(o) => {
           setDialogOpen(o);

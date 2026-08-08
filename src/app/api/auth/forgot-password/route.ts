@@ -61,13 +61,25 @@ export async function POST(request: Request): Promise<NextResponse> {
   const acceptLang = request.headers.get("accept-language") ?? "";
   const locale = acceptLang.startsWith("en") ? "en" : "de";
 
+  // Email failure must not change the (deliberately generic) response, but it
+  // must leave a trace — otherwise a silent delivery outage is invisible.
+  let emailError: string | null = null;
   try {
     await sendPasswordResetEmail({ to: email, name: user.name ?? email, token: tokenRaw, locale });
-  } catch {
-    // Email failure logged but not returned
+  } catch (err) {
+    emailError = err instanceof Error ? err.message : String(err);
+    console.error("[forgot-password] reset email failed", { userId: user.id, error: emailError });
   }
 
-  await writeAuditLog({ action: "PASSWORD_RESET_REQUESTED", userId: user.id, request });
+  await writeAuditLog({
+    action: "PASSWORD_RESET_REQUESTED",
+    userId: user.id,
+    request,
+    metadata: {
+      email_sent: emailError === null,
+      ...(emailError ? { email_error: emailError } : {}),
+    },
+  });
 
   return NextResponse.json({ message: "auth.forgot.emailSent" });
 }

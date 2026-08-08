@@ -76,13 +76,25 @@ export async function POST(request: Request): Promise<NextResponse> {
   const acceptLang = request.headers.get("accept-language") ?? "";
   const locale = acceptLang.startsWith("en") ? "en" : "de";
 
+  // Email failure must not fail registration, but it must leave a trace —
+  // otherwise a user who never receives their verification mail is invisible.
+  let emailError: string | null = null;
   try {
     await sendVerificationEmail({ to: email, name, token: tokenRaw, locale });
-  } catch {
-    // Email failure: still created user, log but don't fail
+  } catch (err) {
+    emailError = err instanceof Error ? err.message : String(err);
+    console.error("[register] verification email failed", { userId: user.id, error: emailError });
   }
 
-  await writeAuditLog({ action: "REGISTER", userId: user.id, request });
+  await writeAuditLog({
+    action: "REGISTER",
+    userId: user.id,
+    request,
+    metadata: {
+      email_sent: emailError === null,
+      ...(emailError ? { email_error: emailError } : {}),
+    },
+  });
 
   return NextResponse.json({ message: "auth.register.verificationSent" }, { status: 201 });
 }

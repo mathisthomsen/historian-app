@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth-guard";
+import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string; evidenceId: string }> };
@@ -51,6 +52,9 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   }
 
   await prisma.relationEvidence.delete({ where: { id: evidenceId } });
+
+  // The relation list embeds evidence_count — it goes stale on every removal.
+  await cache.invalidateByPrefix(`relation-list:${relation.project_id}:`);
 
   return NextResponse.json(
     { deleted: true },

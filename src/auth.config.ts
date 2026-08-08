@@ -1,9 +1,15 @@
 import type { UserRole } from "@prisma/client";
-import { NextResponse } from "next/server";
 import type { NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 
-const DEFAULT_LOCALE = "de";
+const PUBLIC_PATHS = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/verify",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/",
+]);
 
 export const authConfig: NextAuthConfig = {
   providers: [],
@@ -32,17 +38,23 @@ export const authConfig: NextAuthConfig = {
       if (jwt.projectId) session.user.projectId = jwt.projectId;
       return session;
     },
-    authorized({ request }) {
+    authorized({ auth: session, request }) {
       const { pathname } = request.nextUrl;
-      const locale = pathname.match(/^\/([a-z]{2})/)?.[1] ?? DEFAULT_LOCALE;
+      const isLoggedIn = !!session?.user;
       const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
 
-      // Allow API routes and the holding page through; redirect everything else.
-      if (pathnameWithoutLocale === "/holding" || pathnameWithoutLocale.startsWith("/api/")) {
-        return true;
-      }
-
-      return NextResponse.redirect(new URL(`/${locale}/holding`, request.url));
+      // /dev/* stays public here; it is gated by the page's own build-time
+      // guard instead (audit S-L3), which returns 404 from any deployed build.
+      // Requiring a session would not add protection — the page holds no data —
+      // and would only make the dev-only route unusable without logging in.
+      const isPublic =
+        PUBLIC_PATHS.has(pathnameWithoutLocale) ||
+        pathnameWithoutLocale === "/" ||
+        pathnameWithoutLocale.startsWith("/api/auth") ||
+        pathnameWithoutLocale === "/api/health" ||
+        pathnameWithoutLocale.startsWith("/dev/");
+      if (isPublic) return true;
+      return isLoggedIn;
     },
   },
 };
