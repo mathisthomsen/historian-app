@@ -14,6 +14,7 @@ import { DataTableSearch } from "@/components/research/DataTableSearch";
 import { DeleteSourceButton } from "@/components/research/DeleteSourceButton";
 import { ReliabilityBadge } from "@/components/research/ReliabilityBadge";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { SOURCE_TYPE_SUGGESTIONS } from "@/lib/source-types";
 import type { SourceReliability, SourceSummary } from "@/types/source";
 
@@ -195,10 +196,10 @@ export function SourceTable({
           />
 
           {/* Type filter */}
-          <select
+          <Select
             value={type}
             onChange={(e) => handleTypeChange(e.target.value)}
-            className="border-input bg-background rounded-md border px-3 py-1.5 text-sm"
+            className="h-auto w-auto py-1.5"
           >
             <option value="">{t("all_types")}</option>
             {SOURCE_TYPE_SUGGESTIONS.map((s) => (
@@ -206,7 +207,7 @@ export function SourceTable({
                 {s}
               </option>
             ))}
-          </select>
+          </Select>
 
           {/* Reliability filter */}
           <div className="flex items-center gap-1">

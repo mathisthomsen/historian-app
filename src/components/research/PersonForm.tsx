@@ -12,6 +12,7 @@ import { PersonNameList } from "@/components/research/PersonNameList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { type PersonFormValues, buildPersonFormSchema } from "@/lib/schemas/person";
 import type { PersonDetail } from "@/types/person";
 
@@ -251,13 +252,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
       {/* Notes */}
       <div className="space-y-1">
         <Label htmlFor="notes">{t("fields.notes")}</Label>
-        <textarea
-          id="notes"
-          rows={4}
-          {...register("notes")}
-          disabled={isSubmitting}
-          className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        />
+        <Textarea id="notes" rows={4} {...register("notes")} disabled={isSubmitting} />
       </div>
 
       {/* Actions */}

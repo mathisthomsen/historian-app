@@ -16,6 +16,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select } from "@/components/ui/select";
 
 interface EntityOption {
   id: string;
@@ -188,8 +189,8 @@ export function EntitySelector({
   return (
     <div className="flex items-center gap-2">
       {availableTypes.length > 1 && (
-        <select
-          className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+        <Select
+          className="h-auto w-auto px-2 py-1"
           value={selectedType}
           onChange={(e) => {
             setSelectedType(e.target.value as EntityType);
@@ -203,7 +204,7 @@ export function EntitySelector({
               {t(`entityTypes.${type}`)}
             </option>
           ))}
-        </select>
+        </Select>
       )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>

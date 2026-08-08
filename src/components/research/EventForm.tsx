@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { errorCode } from "@/lib/api-error";
 import type { EventDetail, EventSummary } from "@/types/event";
 
@@ -203,12 +204,12 @@ export function EventForm({
       {/* Description */}
       <div className="space-y-1">
         <Label htmlFor="description">{t("fields.description")}</Label>
-        <textarea
+        <Textarea
           id="description"
           rows={3}
           {...register("description")}
           disabled={isSubmitting}
-          className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[72px] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-[72px]"
         />
       </div>
 
@@ -400,13 +401,7 @@ export function EventForm({
       {/* Notes */}
       <div className="space-y-1">
         <Label htmlFor="notes">{t("fields.notes")}</Label>
-        <textarea
-          id="notes"
-          rows={4}
-          {...register("notes")}
-          disabled={isSubmitting}
-          className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        />
+        <Textarea id="notes" rows={4} {...register("notes")} disabled={isSubmitting} />
       </div>
 
       {/* Actions */}

@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { SOURCE_TYPE_SUGGESTIONS } from "@/lib/source-types";
 import type { SourceDetail, SourceReliability } from "@/types/source";
 
@@ -306,13 +307,7 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
       {/* Notes — full width */}
       <div className="space-y-1">
         <Label htmlFor="notes">{t("field_notes")}</Label>
-        <textarea
-          id="notes"
-          rows={4}
-          {...register("notes")}
-          disabled={isSubmitting}
-          className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        />
+        <Textarea id="notes" rows={4} {...register("notes")} disabled={isSubmitting} />
       </div>
 
       {/* Actions */}
