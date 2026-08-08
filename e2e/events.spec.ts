@@ -1,6 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
 
-import { resetRateLimits } from "./helpers/db";
+import { deleteNonSeedRows, resetRateLimits } from "./helpers/db";
 
 // Tests share state — created events are used in later tests
 test.describe.configure({ mode: "serial" });
@@ -26,6 +26,15 @@ async function openTypeCombobox(page: Page) {
   // It is the first custom combobox on the form
   await page.getByText("Typ").locator("..").getByRole("combobox").click();
 }
+
+const SEED_PROJECT = "seed-project-demo";
+
+// These specs create events and never remove them, so they accumulate in the
+// shared demo project across runs until the seeded fixtures fall off page one
+// of every list. Start from a known state (see deleteNonSeedRows).
+test.beforeAll(async () => {
+  await deleteNonSeedRows("events", SEED_PROJECT);
+});
 
 test.beforeEach(async ({ context, page }) => {
   await resetRateLimits();
@@ -503,7 +512,7 @@ test.describe("TC-E-13: EventType settings CRUD", () => {
     await page
       .getByRole("row")
       .filter({ hasText: "Expedition" })
-      .getByRole("button", { name: /Edit/ })
+      .getByRole("button", { name: /Bearbeiten/ })
       .click();
 
     // Row is now in edit mode — get the active textbox (input with current value)
@@ -518,7 +527,7 @@ test.describe("TC-E-13: EventType settings CRUD", () => {
     await page
       .getByRole("row")
       .filter({ hasText: "Krieg" })
-      .getByRole("button", { name: /Delete/ })
+      .getByRole("button", { name: /Löschen/ })
       .click();
 
     await expect(page.getByText(/wird von.*Ereignissen verwendet|used by.*events/i)).toBeVisible({
@@ -529,7 +538,7 @@ test.describe("TC-E-13: EventType settings CRUD", () => {
     await page
       .getByRole("row")
       .filter({ hasText: "Forschung" })
-      .getByRole("button", { name: /Delete/ })
+      .getByRole("button", { name: /Löschen/ })
       .click();
 
     // AlertDialog should appear
