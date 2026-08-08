@@ -63,6 +63,10 @@ jobs:
     needs: [lint, typecheck, unit-tests]
     runs-on: ubuntu-latest
     env:
+      # DATABASE_URL / DATABASE_URL_UNPOOLED point at the disposable Neon *ci*
+      # branch. Nothing in this job may touch production: E2E creates hundreds of
+      # users per run and the fixture purges delete rows. Production is migrated
+      # by its own step below, immediately before the deploy.
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
@@ -133,6 +137,18 @@ jobs:
             test-results/
           retention-days: 14
           if-no-files-found: ignore
+
+      # CI's migrate step above runs against the ci branch, so production would
+      # otherwise never receive migrations — Vercel's build only runs
+      # `prisma generate && next build`. This is the only step in the workflow
+      # that touches the production database, and it deliberately does not seed:
+      # seeding production is what put a known admin credential there (audit C2).
+      - name: Migrate production database
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.PRODUCTION_DATABASE_URL }}
 
       - name: Deploy to Vercel
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
