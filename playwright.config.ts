@@ -15,7 +15,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 2 : 0,
-  workers: process.env["CI"] ? 1 : 4,
+  // One worker everywhere. These specs share a single database and a single
+  // Redis, so parallel files interfere: every beforeEach calls resetRateLimits(),
+  // which clears *all* buckets and would wipe SEC-05's counter mid-test.
+  // CI already ran with 1; matching it locally keeps local reproducible.
+  workers: 1,
   reporter: "html",
   use: {
     baseURL: "http://localhost:3000",

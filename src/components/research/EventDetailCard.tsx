@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { PropertyEvidenceBadge } from "@/components/relations/PropertyEvidenceBadge";
+import { Badge } from "@/components/ui/badge";
 import { formatPartialDate } from "@/lib/date";
 import type { EventDetail } from "@/types/event";
 
@@ -32,11 +33,29 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
     resolvedLocale === "de" ? "de-DE" : "en-US",
   );
 
+  const startCertainty = event.start_date_certainty.toLowerCase() as
+    | "certain"
+    | "probable"
+    | "possible"
+    | "unknown"
+    | "unevidenced";
+  const endCertainty = event.end_date_certainty.toLowerCase() as
+    | "certain"
+    | "probable"
+    | "possible"
+    | "unknown"
+    | "unevidenced";
+
+  const hasStartDate = startDate !== "—";
+  const hasEndDate = endDate !== "—";
+  const showStartCertainty = hasStartDate && event.start_date_certainty !== "UNKNOWN";
+  const showEndCertainty = hasEndDate && event.end_date_certainty !== "UNKNOWN";
+
   return (
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {event.event_type && (
         <div className="space-y-1">
-          <dt className="text-xs font-medium text-muted-foreground">{t("event_type")}</dt>
+          <dt className="text-muted-foreground text-xs font-medium">{t("event_type")}</dt>
           <dd className="flex items-center gap-2 text-sm">
             {event.event_type.color && (
               <span
@@ -50,50 +69,44 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
       )}
 
       <div className="space-y-1">
-        <dt className="text-xs font-medium text-muted-foreground">{t("start_date")}</dt>
+        <dt className="text-muted-foreground text-xs font-medium">{t("start_date")}</dt>
         <dd className="flex items-center gap-2 text-sm">
-          <span>
-            {startDate}
-            {startDate !== "—" && event.start_date_certainty !== "UNKNOWN" && (
-              <span className="ml-1 text-xs text-muted-foreground">
-                ({tCertainty(event.start_date_certainty)})
-              </span>
-            )}
-          </span>
+          <span>{startDate}</span>
+          {showStartCertainty && (
+            <Badge variant={startCertainty}>{tCertainty(event.start_date_certainty)}</Badge>
+          )}
           <PropertyEvidenceBadge
             projectId={projectId}
             entityType="EVENT"
             entityId={event.id}
             property="start_year"
             fieldLabel={t("start_date")}
+            hasCertainty={hasStartDate}
           />
         </dd>
       </div>
 
       <div className="space-y-1">
-        <dt className="text-xs font-medium text-muted-foreground">{t("end_date")}</dt>
+        <dt className="text-muted-foreground text-xs font-medium">{t("end_date")}</dt>
         <dd className="flex items-center gap-2 text-sm">
-          <span>
-            {endDate}
-            {endDate !== "—" && event.end_date_certainty !== "UNKNOWN" && (
-              <span className="ml-1 text-xs text-muted-foreground">
-                ({tCertainty(event.end_date_certainty)})
-              </span>
-            )}
-          </span>
+          <span>{endDate}</span>
+          {showEndCertainty && (
+            <Badge variant={endCertainty}>{tCertainty(event.end_date_certainty)}</Badge>
+          )}
           <PropertyEvidenceBadge
             projectId={projectId}
             entityType="EVENT"
             entityId={event.id}
             property="end_year"
             fieldLabel={t("end_date")}
+            hasCertainty={hasEndDate}
           />
         </dd>
       </div>
 
       {event.location && (
         <div className="space-y-1">
-          <dt className="text-xs font-medium text-muted-foreground">{t("location")}</dt>
+          <dt className="text-muted-foreground text-xs font-medium">{t("location")}</dt>
           <dd className="flex items-center gap-2 text-sm">
             <span>{event.location}</span>
             <PropertyEvidenceBadge
@@ -109,11 +122,11 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
 
       {event.parent && (
         <div className="space-y-1">
-          <dt className="text-xs font-medium text-muted-foreground">{t("parent")}</dt>
+          <dt className="text-muted-foreground text-xs font-medium">{t("parent")}</dt>
           <dd className="text-sm">
             <Link
               href={`/${resolvedLocale}/events/${event.parent.id}`}
-              className="underline hover:text-foreground"
+              className="hover:text-foreground underline"
             >
               {event.parent.title}
             </Link>
@@ -123,7 +136,7 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
 
       {event.description && (
         <div className="col-span-full space-y-1">
-          <dt className="text-xs font-medium text-muted-foreground">{t("description")}</dt>
+          <dt className="text-muted-foreground text-xs font-medium">{t("description")}</dt>
           <dd className="flex items-start gap-2 text-sm">
             <span className="whitespace-pre-wrap">{event.description}</span>
             <PropertyEvidenceBadge
@@ -139,7 +152,7 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
 
       {event.notes && (
         <div className="col-span-full space-y-1">
-          <dt className="text-xs font-medium text-muted-foreground">{t("notes")}</dt>
+          <dt className="text-muted-foreground text-xs font-medium">{t("notes")}</dt>
           <dd className="flex items-start gap-2 text-sm">
             <span className="whitespace-pre-wrap">{event.notes}</span>
             <PropertyEvidenceBadge
@@ -154,14 +167,14 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
       )}
 
       <div className="space-y-1">
-        <dt className="text-xs font-medium text-muted-foreground">{t("created_at")}</dt>
+        <dt className="text-muted-foreground text-xs font-medium">{t("created_at")}</dt>
         <dd className="text-sm">{createdAt}</dd>
       </div>
 
       {event.created_by_id && (
         <div className="space-y-1">
-          <dt className="text-xs font-medium text-muted-foreground">{t("created_by")}</dt>
-          <dd className="text-sm text-muted-foreground" title={event.created_by_id}>
+          <dt className="text-muted-foreground text-xs font-medium">{t("created_by")}</dt>
+          <dd className="text-muted-foreground text-sm" title={event.created_by_id}>
             {`${event.created_by_id.slice(0, 8)}…`}
           </dd>
         </div>

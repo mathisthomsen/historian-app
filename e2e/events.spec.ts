@@ -62,7 +62,7 @@ test.describe("TC-E-01: Create top-level event", () => {
     await page.getByLabel("Jahr").first().fill("1914");
 
     // Set certainty to Wahrscheinlich
-    await page.getByRole("button", { name: "Wahrscheinlich" }).first().click();
+    await page.getByRole("radio", { name: "Wahrscheinlich" }).first().click();
 
     await page.getByRole("button", { name: "Ereignis speichern" }).click();
 
@@ -188,7 +188,7 @@ test.describe("TC-E-05: Edit event", () => {
     await page.goto(`/de/events/${wwiEventId}/edit`);
 
     // Change certainty to Sicher (first group = start certainty)
-    await page.getByRole("button", { name: "Sicher" }).first().click();
+    await page.getByRole("radio", { name: "Sicher" }).first().click();
 
     await page.getByRole("button", { name: "Ereignis speichern" }).click();
 
@@ -196,7 +196,9 @@ test.describe("TC-E-05: Edit event", () => {
       timeout: 15_000,
     });
 
-    await expect(page.getByText("(Sicher)")).toBeVisible();
+    // Epic 2.5 renders certainty as a Badge with the plain label; it used to be
+    // parenthesised inline text.
+    await expect(page.getByText("Sicher", { exact: true }).first()).toBeVisible();
   });
 });
 

@@ -1,5 +1,7 @@
 "use client";
 
+/* DS: components.md Section 16 — TopBar (Task 4.3) */
+
 import { Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -18,7 +20,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
 
   return (
     <header
-      className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 border-b bg-background px-4"
+      className="border-border bg-card fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-3 border-b px-4"
       role="banner"
     >
       <Button
@@ -31,7 +33,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
         <Menu className="h-5 w-5" />
       </Button>
 
-      <div className="text-lg font-semibold">Evidoxa</div>
+      <div className="text-foreground text-lg font-semibold tracking-tight">Evidoxa</div>
 
       {/* Project switcher stub */}
       <Button variant="outline" size="sm" className="ml-2 hidden sm:flex" disabled>

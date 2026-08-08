@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { EvidenceList } from "@/components/relations/EvidenceList";
 import { RelationDeleteButton } from "@/components/relations/RelationDeleteButton";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PropertyEvidenceItem, RelationWithDetails } from "@/types/relations";
 
@@ -32,6 +33,7 @@ interface RelationEvidenceItem {
 
 export function RelationRow({ relation, onEdit, onDeleted, onEvidenceChange }: RelationRowProps) {
   const t = useTranslations("relations");
+  const tCertainty = useTranslations("relations.certainties");
 
   const fromYear = relation.valid_from_year;
   const toYear = relation.valid_to_year;
@@ -47,6 +49,13 @@ export function RelationRow({ relation, onEdit, onDeleted, onEvidenceChange }: R
   const [evidenceItems, setEvidenceItems] = useState<PropertyEvidenceItem[]>([]);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceCount, setEvidenceCount] = useState(relation.evidence_count);
+
+  const relationCertainty = relation.certainty.toLowerCase() as
+    | "certain"
+    | "probable"
+    | "possible"
+    | "unknown"
+    | "unevidenced";
 
   const loadEvidence = useCallback(async () => {
     setEvidenceLoading(true);
@@ -136,15 +145,13 @@ export function RelationRow({ relation, onEdit, onDeleted, onEvidenceChange }: R
             />
           )}
           <span className="truncate font-medium">{relation.from_label}</span>
-          <span className="shrink-0 text-muted-foreground">→</span>
-          <span className="shrink-0 text-muted-foreground">{relation.relation_type.name}</span>
-          <span className="shrink-0 text-muted-foreground">→</span>
+          <span className="text-muted-foreground shrink-0">→</span>
+          <span className="text-muted-foreground shrink-0">{relation.relation_type.name}</span>
+          <span className="text-muted-foreground shrink-0">→</span>
           <span className="truncate font-medium">{relation.to_label}</span>
-          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-            {relation.certainty}
-          </span>
+          <Badge variant={relationCertainty}>{tCertainty(relation.certainty)}</Badge>
           {validityString && (
-            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+            <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 text-xs">
               {validityString}
             </span>
           )}
@@ -152,7 +159,7 @@ export function RelationRow({ relation, onEdit, onDeleted, onEvidenceChange }: R
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
-            className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-2 py-0.5 text-xs"
             onClick={() => setEvidenceOpen((prev) => !prev)}
             aria-expanded={evidenceOpen}
           >

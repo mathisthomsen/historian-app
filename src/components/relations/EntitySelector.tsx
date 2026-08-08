@@ -15,8 +15,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select } from "@/components/ui/select";
 
 interface EntityOption {
   id: string;
@@ -189,7 +189,7 @@ export function EntitySelector({
   return (
     <div className="flex items-center gap-2">
       {availableTypes.length > 1 && (
-        <Select
+        <NativeSelect
           className="h-auto w-auto px-2 py-1"
           value={selectedType}
           onChange={(e) => {
@@ -204,7 +204,7 @@ export function EntitySelector({
               {t(`entityTypes.${type}`)}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>

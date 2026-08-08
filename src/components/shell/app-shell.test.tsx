@@ -37,12 +37,17 @@ describe("AppShell", () => {
 
   it("renders the navigation sidebar", () => {
     renderWithProviders(<AppShell>content</AppShell>);
-    expect(screen.getByRole("navigation")).toBeInTheDocument();
+    // AppShell now renders both Sidebar and BottomTabBar, each with a nav landmark
+    const navs = screen.getAllByRole("navigation");
+    expect(navs.length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders nav items in the sidebar", () => {
     renderWithProviders(<AppShell>content</AppShell>);
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Personen")).toBeInTheDocument();
+    // "Dashboard" appears in both Sidebar and BottomTabBar — use getAllByText
+    const dashboardItems = screen.getAllByText("Dashboard");
+    expect(dashboardItems.length).toBeGreaterThanOrEqual(1);
+    const personItems = screen.getAllByText("Personen");
+    expect(personItems.length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -99,6 +99,18 @@ Edit-mode assertions are a third mandatory category: open an existing record for
 
 ---
 
+### 12. `tsc --noEmit` fails with ~1,519 pre-existing `TS2349` errors in test files
+
+**Location:** All test files that import `expect` from `"vitest"` (or use it as a global), across `src/app/api/**/*.test.ts`, `src/components/**/*.test.tsx`, `src/lib/**/*.test.ts`, `src/test/**/*.test.ts`.
+
+**Problem:** `ExpectStatic` (vitest's `expect` type) extends `Chai.ExpectStatic`, which provides the main call signature `(value: any) => Assertion`. The `Chai` global namespace is declared in `@types/chai`. With pnpm's virtual store, `@types/chai` is a transitive dependency of vitest but is **not** symlinked into `node_modules/@types/` (only direct devDependencies are). TypeScript's default `typeRoots` only searches `node_modules/@types/`, so `Chai.ExpectStatic` is unresolvable, and `ExpectStatic` loses its call signature — causing `TS2349: This expression is not callable` on every `expect(...)` call.
+
+**Baseline:** 1,851 errors before the design-system branch. Reduced to 1,519 after fixing the design-system-specific errors (ISSUE-02). The `TS2349` errors are entirely in test infrastructure and do not affect runtime or the vitest test runner (all 1,129 tests pass).
+
+**Recommendation:** Install `@types/chai` as an explicit devDependency (`pnpm add -D @types/chai`). pnpm will then symlink it into `node_modules/@types/chai`, making it visible to TypeScript's default typeRoots. This single change should resolve all ~1,519 remaining `TS2349` errors and allow `pnpm tsc --noEmit` to pass cleanly. Verify no version conflict with the `@types/chai` that vitest bundles transitively (currently `5.2.3`).
+
+---
+
 ## Low priority / Nice to have
 
 ### 5. ActivityLog has no real-time updates

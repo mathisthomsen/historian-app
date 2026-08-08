@@ -6,8 +6,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { EvidenceForm } from "@/components/relations/EvidenceForm";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PropertyEvidenceItem } from "@/types/relations";
+
+type BadgeVariant = BadgeProps["variant"];
 
 interface EvidenceListProps {
   items: PropertyEvidenceItem[];
@@ -25,6 +28,7 @@ interface EvidenceListProps {
 
 export function EvidenceList({ items, projectId, onAdd, onDelete, loading }: EvidenceListProps) {
   const t = useTranslations("propertyEvidence");
+  const tCertainty = useTranslations("relations.certainties");
   const [showForm, setShowForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -73,7 +77,9 @@ export function EvidenceList({ items, projectId, onAdd, onDelete, loading }: Evi
               {item.quote && (
                 <p className="text-muted-foreground italic">&ldquo;{item.quote}&rdquo;</p>
               )}
-              <p className="text-muted-foreground text-xs">{item.confidence}</p>
+              <Badge variant={item.confidence.toLowerCase() as BadgeVariant}>
+                {tCertainty(item.confidence)}
+              </Badge>
             </div>
             <Button
               type="button"
