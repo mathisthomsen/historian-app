@@ -26,7 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { render, screen } from "../render";
+// DataTable/DataTablePagination call useTranslations, so they need the
+// NextIntlClientProvider wrapper rather than bare RTL render.
+import { renderWithProviders as render, screen } from "../render";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -286,7 +288,7 @@ describe("DataTable — sort icons (AC-DT-16 to AC-DT-18)", () => {
         onSelectionChange={vi.fn()}
       />,
     );
-    const sortButtons = document.querySelectorAll("thead button");
+    const sortButtons = document.querySelectorAll('thead button:not([role="checkbox"])');
     expect(sortButtons.length).toBeGreaterThan(0);
     for (const btn of sortButtons) {
       const classes = getClasses(btn as HTMLElement);
@@ -306,7 +308,7 @@ describe("DataTable — sort icons (AC-DT-16 to AC-DT-18)", () => {
       />,
     );
     // The inactive sort icon svg should have opacity-30
-    const sortButton = document.querySelector("thead button");
+    const sortButton = document.querySelector('thead button:not([role="checkbox"])');
     expect(sortButton).not.toBeNull();
     const svg = sortButton!.querySelector("svg");
     expect(svg).not.toBeNull();
@@ -322,7 +324,7 @@ describe("DataTable — sort icons (AC-DT-16 to AC-DT-18)", () => {
         onSelectionChange={vi.fn()}
       />,
     );
-    const sortButton = document.querySelector("thead button");
+    const sortButton = document.querySelector('thead button:not([role="checkbox"])');
     expect(sortButton).not.toBeNull();
     const svg = sortButton!.querySelector("svg");
     expect(svg).not.toBeNull();
@@ -399,10 +401,11 @@ describe("DataTablePagination (AC-DT-21 to AC-DT-22)", () => {
   });
 
   it("returns null when totalPages <= 1", () => {
-    const { container } = render(
-      <DataTablePagination page={1} totalPages={1} onPageChange={vi.fn()} />,
-    );
-    expect(container.firstChild).toBeNull();
+    render(<DataTablePagination page={1} totalPages={1} onPageChange={vi.fn()} />);
+    // The provider wrapper injects a theme <script>, so an empty container is no
+    // longer the signal — assert the component itself rendered no controls.
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText(/Seite/)).toBeNull();
   });
 
   it("prev button is disabled on first page", () => {
@@ -438,7 +441,7 @@ describe("DataTable — accessibility (AC-DT-23 to AC-DT-26)", () => {
         onSelectionChange={vi.fn()}
       />,
     );
-    const sortButtons = document.querySelectorAll("thead button");
+    const sortButtons = document.querySelectorAll('thead button:not([role="checkbox"])');
     for (const btn of sortButtons) {
       // Not disabled and no tabIndex=-1 means keyboard focusable
       expect((btn as HTMLButtonElement).disabled).toBe(false);

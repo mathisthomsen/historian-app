@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 
-import { Select } from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
 describe("Textarea", () => {
@@ -34,13 +34,13 @@ describe("Textarea", () => {
   });
 });
 
-describe("Select", () => {
+describe("NativeSelect", () => {
   it("renders a native select with its options", () => {
     render(
-      <Select aria-label="Type">
+      <NativeSelect aria-label="Type">
         <option value="a">Alpha</option>
         <option value="b">Beta</option>
-      </Select>,
+      </NativeSelect>,
     );
     const el = screen.getByLabelText("Type");
     expect(el.tagName).toBe("SELECT");
@@ -49,10 +49,10 @@ describe("Select", () => {
 
   it("honours value and disabled", () => {
     render(
-      <Select aria-label="Type" defaultValue="b" disabled>
+      <NativeSelect aria-label="Type" defaultValue="b" disabled>
         <option value="a">Alpha</option>
         <option value="b">Beta</option>
-      </Select>,
+      </NativeSelect>,
     );
     const el = screen.getByLabelText("Type");
     expect(el).toHaveValue("b");
@@ -60,7 +60,7 @@ describe("Select", () => {
   });
 
   it("merges caller classes", () => {
-    render(<Select aria-label="Type" className="w-auto" />);
+    render(<NativeSelect aria-label="Type" className="w-auto" />);
     const cls = screen.getByLabelText("Type").className;
     expect(cls).toContain("w-auto");
     expect(cls).toContain("border-input");
@@ -68,7 +68,7 @@ describe("Select", () => {
 
   it("forwards a ref", () => {
     const ref = createRef<HTMLSelectElement>();
-    render(<Select aria-label="Type" ref={ref} />);
+    render(<NativeSelect aria-label="Type" ref={ref} />);
     expect(ref.current).toBeInstanceOf(HTMLSelectElement);
   });
 });

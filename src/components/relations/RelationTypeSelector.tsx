@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { Select } from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import type { RelationTypeItem } from "@/types/relations";
 
 interface RelationTypeSelectorProps {
@@ -51,7 +51,7 @@ export function RelationTypeSelector({
   }
 
   return (
-    <Select
+    <NativeSelect
       className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || null)}
@@ -64,6 +64,6 @@ export function RelationTypeSelector({
           {rt.inverse_name ? ` / ${rt.inverse_name}` : ""}
         </option>
       ))}
-    </Select>
+    </NativeSelect>
   );
 }

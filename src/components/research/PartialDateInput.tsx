@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 
 interface PartialDateInputProps {
   yearValue: number | null;
@@ -90,7 +90,7 @@ export function PartialDateInput({
           <Label htmlFor={`${label}-month`} className="text-muted-foreground text-xs">
             {t("month")}
           </Label>
-          <Select
+          <NativeSelect
             id={`${label}-month`}
             value={monthValue ?? ""}
             onChange={handleMonthChange}
@@ -103,7 +103,7 @@ export function PartialDateInput({
                 {t(`months.${m}`)}
               </option>
             ))}
-          </Select>
+          </NativeSelect>
         </div>
         <div className="flex-1 space-y-1">
           <Label htmlFor={`${label}-day`} className="text-muted-foreground text-xs">

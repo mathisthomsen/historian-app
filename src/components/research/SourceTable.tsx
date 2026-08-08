@@ -2,9 +2,9 @@
 
 import { Pencil } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { BulkDeleteDialog } from "@/components/research/BulkDeleteDialog";
@@ -14,7 +14,6 @@ import { DataTableSearch } from "@/components/research/DataTableSearch";
 import { DeleteSourceButton } from "@/components/research/DeleteSourceButton";
 import { ReliabilityBadge } from "@/components/research/ReliabilityBadge";
 import { Button } from "@/components/ui/button";
-import { useListUrlState } from "@/hooks/use-list-url-state";
 import {
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useListUrlState } from "@/hooks/use-list-url-state";
 import { SOURCE_TYPE_SUGGESTIONS } from "@/lib/source-types";
 import type { SourceReliability, SourceSummary } from "@/types/source";
 
@@ -56,7 +56,6 @@ export function SourceTable({
 }: SourceTableProps) {
   const t = useTranslations("sources");
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
