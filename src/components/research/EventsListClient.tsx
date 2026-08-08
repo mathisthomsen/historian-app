@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { BulkDeleteDialog } from "@/components/research/BulkDeleteDialog";
@@ -12,6 +12,7 @@ import { DataTablePagination } from "@/components/research/DataTablePagination";
 import { DataTableSearch } from "@/components/research/DataTableSearch";
 import { EventFilters } from "@/components/research/EventFilters";
 import { Button } from "@/components/ui/button";
+import { useListUrlState } from "@/hooks/use-list-url-state";
 import { formatPartialDate } from "@/lib/date";
 import type { EventFilterState, EventSummary } from "@/types/event";
 import type { EventType } from "@/types/event-type";
@@ -51,39 +52,14 @@ export function EventsListClient({
 }: EventsListClientProps) {
   const t = useTranslations("events");
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
-  function buildUrl(params: Record<string, string>) {
-    const current = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(params)) {
-      if (value) {
-        current.set(key, value);
-      } else {
-        current.delete(key);
-      }
-    }
-    return `?${current.toString()}`;
-  }
-
-  const handleSearch = useCallback(
-    (value: string) => {
-      router.push(buildUrl({ search: value, page: "1" }));
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [router, searchParams],
-  );
-
-  function handleSort(key: string) {
-    const newOrder = sort === key && order === "asc" ? "desc" : "asc";
-    router.push(buildUrl({ sort: key, order: newOrder, page: "1" }));
-  }
-
-  function handlePageChange(newPage: number) {
-    router.push(buildUrl({ page: String(newPage) }));
-  }
+  const { buildUrl, handleSearch, handleSort, handlePageChange } = useListUrlState({
+    sort,
+    order,
+  });
 
   function handleFiltersChange(filters: EventFilterState) {
     const params: Record<string, string> = { page: "1" };
