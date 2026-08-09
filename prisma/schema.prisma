@@ -231,6 +231,10 @@ model Person {
   death_location Location?    @relation("PersonDeathLocation", fields: [death_location_id], references: [id], onDelete: SetNull)
 
   @@index([project_id])
+  // Postgres does not auto-index the referencing side of a FK. Both are scanned
+  // on every Location delete (Epic 3.2) and by location-filtered lists (D-H4).
+  @@index([birth_location_id])
+  @@index([death_location_id])
   @@map("persons")
 }
 
@@ -304,6 +308,12 @@ model Event {
   event_type   EventType? @relation(fields: [event_type_id], references: [id], onDelete: Restrict)
 
   @@index([project_id])
+  // Unindexed FK referencing sides (D-H4): event_type_id backs the type-count
+  // queries, parent_id backs `topLevelOnly` and the sub-event delete guard, and
+  // location_id is scanned on every Location delete (Epic 3.2).
+  @@index([event_type_id])
+  @@index([parent_id])
+  @@index([location_id])
   @@map("events")
 }
 
@@ -456,6 +466,9 @@ model Relation {
   @@index([project_id])
   @@index([from_type, from_id])
   @@index([to_type, to_id])
+  // Unindexed FK referencing side (D-H4): backs the per-type relation counts and
+  // the `onDelete: Restrict` check run on every RelationType delete.
+  @@index([relation_type_id])
   @@map("relations")
 }
 
@@ -475,7 +488,10 @@ model RelationEvidence {
   relation Relation @relation(fields: [relation_id], references: [id], onDelete: Cascade)
   source   Source   @relation(fields: [source_id], references: [id], onDelete: Cascade)
 
+  // The composite unique already indexes relation_id as its leading column, but
+  // leaves source_id unindexed — it is scanned on every Source delete (D-H4).
   @@unique([relation_id, source_id])
+  @@index([source_id])
   @@map("relation_evidence")
 }
 
@@ -509,6 +525,8 @@ model PropertyEvidence {
 
   @@index([project_id])
   @@index([entity_type, entity_id])
+  // Unindexed FK referencing side (D-H4): scanned on every Source delete.
+  @@index([source_id])
   @@map("property_evidence")
 }
 
