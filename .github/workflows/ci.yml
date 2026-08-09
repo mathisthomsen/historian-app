@@ -89,6 +89,14 @@ jobs:
       # project id — without this, a previous run's cached list response could be
       # served against a database that never held those rows. See src/lib/cache.ts.
       CACHE_NAMESPACE: ci-${{ github.run_id }}-${{ github.run_attempt }}
+      # Same reasoning for rate-limit buckets, but this one is a security fix
+      # rather than a correctness one: resetRateLimits() runs in every beforeEach
+      # and deletes under this prefix. Unnamespaced it matched the bare
+      # `@upstash/ratelimit:*`, i.e. production's own brute-force counters on the
+      # shared Upstash instance. src/lib/rate-limit-key.ts refuses to build a
+      # purge target when this is unset, so dropping it fails the run rather than
+      # silently widening the blast radius again.
+      RATELIMIT_NAMESPACE: ci-${{ github.run_id }}-${{ github.run_attempt }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       AUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"

@@ -10,6 +10,14 @@ if (existsSync(envLocalPath)) {
   process.loadEnvFile(envLocalPath);
 }
 
+// Namespace every rate-limit key this run touches. Upstash is shared with
+// production even when the database is not, and resetRateLimits() deletes under
+// this prefix on every beforeEach — unnamespaced, that deletes production's
+// brute-force counters. CI sets a per-run value; this default covers local runs
+// so no one has to remember. Both the runner and the server it spawns must
+// agree, hence the explicit hand-off in webServer.env below.
+process.env["RATELIMIT_NAMESPACE"] ??= "local-e2e";
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -38,7 +46,13 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     port: 3000,
+    // NOTE: with reuseExistingServer, an already-running dev server keeps its
+    // own env. If it was started without RATELIMIT_NAMESPACE it writes buckets
+    // under the bare prefix, resetRateLimits() clears a namespace nothing is
+    // writing to, and the suite dies on rate limits instead. Restart the dev
+    // server if auth specs start timing out.
     reuseExistingServer: true,
     timeout: 120000,
+    env: { RATELIMIT_NAMESPACE: process.env["RATELIMIT_NAMESPACE"] ?? "local-e2e" },
   },
 });

@@ -3,6 +3,10 @@ import { createHash, randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { Client } from "pg";
 
+// Relative, not the "@/" alias: Playwright transpiles this file outside the
+// Next build, so tsconfig path mapping is not guaranteed to apply here.
+import { purgeablePrefix } from "../../src/lib/rate-limit-key";
+
 function getClient(): Client {
   const connectionString = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? "";
   return new Client({ connectionString });
@@ -117,9 +121,7 @@ export async function insertTestResetToken(email: string): Promise<string> {
 }
 
 /**
- * Clears all Upstash rate-limit counters for auth endpoints.
- * Uses a single SCAN pass for all keys created by our rate limiters
- * (@upstash/ratelimit prefix), regardless of which AUTH_SECRET created them.
+ * Clears this run's Upstash rate-limit counters for auth endpoints.
  *
  * Credentials resolve the same way the app does (src/lib/env.ts): the Vercel
  * integration's KV_REST_API_* pair first, then the legacy UPSTASH_* one.
@@ -128,8 +130,18 @@ export async function insertTestResetToken(email: string): Promise<string> {
  * real failure: the login limiter allows 5 attempts per 15 minutes per IP+email
  * and every spec logs in as the same seeded admin from the same CI IP, so once
  * this stops clearing counters the whole suite dies of "login just times out".
+ *
+ * Scoped by RATELIMIT_NAMESPACE, and refuses to run without one. That pair of
+ * facts is the safety property: KV_REST_API_* is the Vercel integration's
+ * instance — the same Redis production uses — and this function runs in
+ * beforeEach. Matching the bare `@upstash/ratelimit:*` prefix, as it once did,
+ * deleted production's live buckets several hundred times per run, resetting
+ * the brute-force counters that protect login and password reset.
  */
 export async function resetRateLimits(): Promise<void> {
+  // First, so a missing namespace fails before any network call is made.
+  const prefix = purgeablePrefix();
+
   const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) {
@@ -142,12 +154,13 @@ export async function resetRateLimits(): Promise<void> {
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-  // Single SCAN pass — clears all sliding-window keys for every auth action/IP.
-  // Keys are stored as: @upstash/ratelimit:{action}:{anonIp}[:{email}]:{windowBucket}
+  // Single SCAN pass — clears this namespace's sliding-window keys for every
+  // auth action/IP. Keys are stored as:
+  //   {prefix}:{action}:{anonIp}[:{email}]:{windowBucket}
   let cursor = "0";
   do {
     const scanUrl = new URL(`${url}/scan/${cursor}`);
-    scanUrl.searchParams.set("match", "@upstash/ratelimit:*");
+    scanUrl.searchParams.set("match", `${prefix}:*`);
     scanUrl.searchParams.set("count", "100");
 
     const scanRes = await fetch(scanUrl, { headers });
