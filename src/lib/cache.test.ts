@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mock for redis module — must be declared before the cache import
 const mockGet = vi.fn();
@@ -118,5 +118,48 @@ describe("cache.invalidateByPrefix", () => {
   it("is silent when redis throws", async () => {
     mockScan.mockRejectedValue(new Error("Redis down"));
     await expect(cache.invalidateByPrefix("any:")).resolves.toBeUndefined();
+  });
+});
+
+describe("cache key namespace", () => {
+  const ORIGINAL = process.env["CACHE_NAMESPACE"];
+
+  afterEach(() => {
+    if (ORIGINAL === undefined) delete process.env["CACHE_NAMESPACE"];
+    else process.env["CACHE_NAMESPACE"] = ORIGINAL;
+    vi.resetModules();
+  });
+
+  it("leaves keys unchanged when CACHE_NAMESPACE is unset, as in dev and production", async () => {
+    vi.resetAllMocks();
+    delete process.env["CACHE_NAMESPACE"];
+    vi.resetModules();
+    const { cache: unnamespaced } = await import("@/lib/cache");
+    mockGet.mockResolvedValue(null);
+    await unnamespaced.get("person-list:seed-project-demo:1:25");
+    expect(mockGet).toHaveBeenCalledWith("cache:person-list:seed-project-demo:1:25");
+  });
+
+  // Cache keys are built from the seed project id, which is fixed. Two CI runs
+  // less than the 60s TTL apart would otherwise serve run N's cached rows
+  // against run N+1's database — each run now has a fresh Neon branch but they
+  // still share one Upstash instance.
+  it("scopes keys to the namespace when CACHE_NAMESPACE is set", async () => {
+    vi.resetAllMocks();
+    process.env["CACHE_NAMESPACE"] = "ci-42-1";
+    vi.resetModules();
+    const { cache: namespaced } = await import("@/lib/cache");
+    mockGet.mockResolvedValue(null);
+    await namespaced.get("person-list:seed-project-demo:1:25");
+    expect(mockGet).toHaveBeenCalledWith("cache:ci-42-1:person-list:seed-project-demo:1:25");
+  });
+
+  it("applies the namespace to writes as well as reads", async () => {
+    vi.resetAllMocks();
+    process.env["CACHE_NAMESPACE"] = "ci-42-1";
+    vi.resetModules();
+    const { cache: namespaced } = await import("@/lib/cache");
+    await namespaced.set("k", { v: 1 }, 60);
+    expect(mockSet).toHaveBeenCalledWith("cache:ci-42-1:k", { v: 1 }, { ex: 60 });
   });
 });
