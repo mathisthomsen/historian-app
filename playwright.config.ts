@@ -25,7 +25,10 @@ export default defineConfig({
   retries: process.env["CI"] ? 2 : 0,
   // One worker everywhere. These specs share a single database and a single
   // Redis, so parallel files interfere: every beforeEach calls resetRateLimits(),
-  // which clears *all* buckets and would wipe SEC-05's counter mid-test.
+  // which clears every bucket *in this run's namespace* and would wipe SEC-05's
+  // counter mid-test. RATELIMIT_NAMESPACE does not help here — it isolates runs
+  // from each other and from production, but all workers in a run share one
+  // namespace because they share one server process.
   // CI already ran with 1; matching it locally keeps local reproducible.
   workers: 1,
   reporter: "html",
