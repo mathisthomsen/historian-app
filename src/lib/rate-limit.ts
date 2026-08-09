@@ -1,6 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import type { NextResponse } from "next/server";
 
+import { rateLimitPrefix } from "./rate-limit-key";
 import { redis } from "./redis";
 
 export interface RateLimitResult {
@@ -45,7 +46,7 @@ export function createRedisRateLimiter(): RateLimiter {
         const limiter = new Ratelimit({
           redis,
           limiter: Ratelimit.slidingWindow(limit, msToDuration(windowMs)),
-          prefix: "@upstash/ratelimit",
+          prefix: rateLimitPrefix(),
         });
         const { success, remaining, reset } = await limiter.limit(key);
         return { allowed: success, remaining, resetAt: new Date(reset), degraded: false };

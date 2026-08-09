@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mock — must be before any import that resolves the rate-limit module
 const mockLimit = vi.fn();
@@ -150,5 +150,41 @@ describe("msToDuration (via limiter call args)", () => {
       typeof vi.fn
     >;
     expect(sw).toHaveBeenCalledWith(5, "15 m");
+  });
+});
+
+describe("rate-limit key namespace", () => {
+  const ORIGINAL = process.env["RATELIMIT_NAMESPACE"];
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    (MockRatelimit as unknown as Record<string, unknown>).slidingWindow = vi
+      .fn()
+      .mockReturnValue("window");
+    MockRatelimit.mockImplementation(() => ({ limit: mockLimit }));
+    mockLimit.mockResolvedValue({ success: true, remaining: 1, reset: Date.now() + 1_000 });
+  });
+
+  afterEach(() => {
+    if (ORIGINAL === undefined) delete process.env["RATELIMIT_NAMESPACE"];
+    else process.env["RATELIMIT_NAMESPACE"] = ORIGINAL;
+  });
+
+  it("writes under the bare prefix when no namespace is configured", async () => {
+    delete process.env["RATELIMIT_NAMESPACE"];
+    await createRedisRateLimiter().check("k", 5, 60_000);
+    expect(MockRatelimit).toHaveBeenCalledWith(
+      expect.objectContaining({ prefix: "@upstash/ratelimit" }),
+    );
+  });
+
+  // Without this, a CI run and production share bucket keys on the one Upstash
+  // instance — which is what let the E2E reset clear production's buckets.
+  it("writes under a namespaced prefix when RATELIMIT_NAMESPACE is set", async () => {
+    process.env["RATELIMIT_NAMESPACE"] = "ci-42-1";
+    await createRedisRateLimiter().check("k", 5, 60_000);
+    expect(MockRatelimit).toHaveBeenCalledWith(
+      expect.objectContaining({ prefix: "@upstash/ratelimit:ci-42-1" }),
+    );
   });
 });
