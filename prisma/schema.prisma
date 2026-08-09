@@ -63,10 +63,10 @@ enum ActivityAction {
   CREATE
   UPDATE
   DELETE
-  MERGE   // reserved: future duplicate-merge workflow
+  MERGE // reserved: future duplicate-merge workflow
   SUGGEST // reserved: Epic 6.0 agent suggestions
-  ACCEPT  // reserved: Epic 6.0 suggestion accept
-  REJECT  // reserved: Epic 6.0 suggestion reject
+  ACCEPT // reserved: Epic 6.0 suggestion accept
+  REJECT // reserved: Epic 6.0 suggestion reject
 }
 
 // ---------------------------------------------------------------------------
@@ -78,25 +78,25 @@ model User {
   email      String   @unique
   name       String?
   role       UserRole @default(USER)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  updated_at DateTime @updatedAt @db.Timestamptz(3)
 
   // Epic 1.3 additions:
-  password_hash      String?   // null = no password (future OAuth support)
-  email_verified_at  DateTime? // null = not yet verified
-  last_login_at      DateTime? // updated on every successful login
+  password_hash      String? // null = no password (future OAuth support)
+  email_verified_at  DateTime? @db.Timestamptz(3) // null = not yet verified
+  last_login_at      DateTime? @db.Timestamptz(3) // updated on every successful login
   failed_login_count Int       @default(0) // consecutive failures; reset on success
-  locked_until       DateTime? // non-null = account temporarily locked
+  locked_until       DateTime? @db.Timestamptz(3) // non-null = account temporarily locked
 
   user_projects       UserProject[]
-  persons             Person[]          @relation("PersonCreatedBy")
-  events              Event[]           @relation("EventCreatedBy")
-  sources             Source[]          @relation("SourceCreatedBy")
-  relations           Relation[]        @relation("RelationCreatedBy")
+  persons             Person[]            @relation("PersonCreatedBy")
+  events              Event[]             @relation("EventCreatedBy")
+  sources             Source[]            @relation("SourceCreatedBy")
+  relations           Relation[]          @relation("RelationCreatedBy")
   email_confirmations EmailConfirmation[]
   password_resets     PasswordReset[]
   auth_audit_logs     AuthAuditLog[]
-  entity_activity     EntityActivity[]  @relation("EntityActivityUser")
+  entity_activity     EntityActivity[]    @relation("EntityActivityUser")
 
   @@map("users")
 }
@@ -107,9 +107,9 @@ model EmailConfirmation {
   id         String    @id @default(cuid())
   user_id    String
   token_hash String    @unique // SHA-256(rawToken)
-  expires_at DateTime          // created_at + 24 hours
-  used_at    DateTime?         // null = still valid; set on redemption
-  created_at DateTime  @default(now())
+  expires_at DateTime  @db.Timestamptz(3) // created_at + 24 hours
+  used_at    DateTime? @db.Timestamptz(3) // null = still valid; set on redemption
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -123,9 +123,9 @@ model PasswordReset {
   id         String    @id @default(cuid())
   user_id    String
   token_hash String    @unique // SHA-256(rawToken)
-  expires_at DateTime          // created_at + 1 hour
-  used_at    DateTime?         // null = still valid; set on redemption
-  created_at DateTime  @default(now())
+  expires_at DateTime  @db.Timestamptz(3) // created_at + 1 hour
+  used_at    DateTime? @db.Timestamptz(3) // null = still valid; set on redemption
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -136,12 +136,12 @@ model PasswordReset {
 /// Append-only auth event log. user_id nullable for pre-auth failures.
 model AuthAuditLog {
   id         String      @id @default(cuid())
-  user_id    String?     // null for unknown-email login attempts
+  user_id    String? // null for unknown-email login attempts
   action     AuditAction
-  ip_address String?     // GDPR-anonymized: last IPv4 octet zeroed
-  user_agent String?     // truncated to 512 chars
-  metadata   Json?       // event-specific: { reason, token_type, email, ... }
-  created_at DateTime    @default(now())
+  ip_address String? // GDPR-anonymized: last IPv4 octet zeroed
+  user_agent String? // truncated to 512 chars
+  metadata   Json? // event-specific: { reason, token_type, email, ... }
+  created_at DateTime    @default(now()) @db.Timestamptz(3)
 
   user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
 
@@ -154,9 +154,9 @@ model Project {
   id          String    @id @default(cuid())
   name        String
   description String?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  deleted_at  DateTime? // soft-delete; Epic 3.1 adds recovery UI
+  created_at  DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at  DateTime  @updatedAt @db.Timestamptz(3)
+  deleted_at  DateTime? @db.Timestamptz(3) // soft-delete; Epic 3.1 adds recovery UI
 
   user_projects     UserProject[]
   persons           Person[]
@@ -178,7 +178,7 @@ model UserProject {
   user_id    String
   project_id String
   role       ProjectRole @default(VIEWER)
-  created_at DateTime    @default(now())
+  created_at DateTime    @default(now()) @db.Timestamptz(3)
 
   user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
@@ -192,7 +192,7 @@ model UserProject {
 // ---------------------------------------------------------------------------
 
 model Person {
-  id            String    @id @default(cuid())
+  id            String  @id @default(cuid())
   project_id    String
   created_by_id String?
 
@@ -220,9 +220,9 @@ model Person {
   birth_location_id String?
   death_location_id String?
 
-  deleted_at DateTime?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  deleted_at DateTime? @db.Timestamptz(3)
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at DateTime  @updatedAt @db.Timestamptz(3)
 
   project        Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
   created_by     User?        @relation("PersonCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
@@ -231,6 +231,10 @@ model Person {
   death_location Location?    @relation("PersonDeathLocation", fields: [death_location_id], references: [id], onDelete: SetNull)
 
   @@index([project_id])
+  // Postgres does not auto-index the referencing side of a FK. Both are scanned
+  // on every Location delete (Epic 3.2) and by location-filtered lists (D-H4).
+  @@index([birth_location_id])
+  @@index([death_location_id])
   @@map("persons")
 }
 
@@ -242,7 +246,7 @@ model PersonName {
   name       String
   language   String?
   is_primary Boolean  @default(false)
-  created_at DateTime @default(now())
+  created_at DateTime @default(now()) @db.Timestamptz(3)
 
   person Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
 
@@ -256,10 +260,10 @@ model EventType {
   name       String
   color      String? // one of the 12 predefined palette hex values
   icon       String? // Lucide icon name (optional)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  updated_at DateTime @updatedAt @db.Timestamptz(3)
 
-  project Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
   events  Event[]
 
   @@unique([project_id, name]) // no duplicate names within a project
@@ -268,7 +272,7 @@ model EventType {
 }
 
 model Event {
-  id            String    @id @default(cuid())
+  id            String  @id @default(cuid())
   project_id    String
   created_by_id String?
   parent_id     String? // self-referential for sub-events
@@ -292,9 +296,9 @@ model Event {
   location    String? // free-text fallback; populated by UI until location_id is set
 
   notes      String?
-  deleted_at DateTime?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  deleted_at DateTime? @db.Timestamptz(3)
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at DateTime  @updatedAt @db.Timestamptz(3)
 
   project      Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
   created_by   User?      @relation("EventCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
@@ -304,11 +308,17 @@ model Event {
   event_type   EventType? @relation(fields: [event_type_id], references: [id], onDelete: Restrict)
 
   @@index([project_id])
+  // Unindexed FK referencing sides (D-H4): event_type_id backs the type-count
+  // queries, parent_id backs `topLevelOnly` and the sub-event delete guard, and
+  // location_id is scanned on every Location delete (Epic 3.2).
+  @@index([event_type_id])
+  @@index([parent_id])
+  @@index([location_id])
   @@map("events")
 }
 
 model Source {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   project_id    String
   created_by_id String?
 
@@ -324,9 +334,9 @@ model Source {
   reliability SourceReliability @default(UNKNOWN)
   notes       String?
 
-  deleted_at DateTime?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  deleted_at DateTime? @db.Timestamptz(3)
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at DateTime  @updatedAt @db.Timestamptz(3)
 
   project           Project            @relation(fields: [project_id], references: [id], onDelete: Cascade)
   created_by        User?              @relation("SourceCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
@@ -350,8 +360,8 @@ model Location {
   lng     Float?
   // geocoded_at and geocoding metadata added in Epic 3.2
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  updated_at DateTime @updatedAt @db.Timestamptz(3)
 
   project       Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
   persons_birth Person[] @relation("PersonBirthLocation")
@@ -374,8 +384,8 @@ model Literature {
   // type, publisher, doi, isbn etc. added in Epic 3.3
   notes  String?
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  updated_at DateTime @updatedAt @db.Timestamptz(3)
 
   project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
@@ -403,8 +413,8 @@ model RelationType {
   valid_from_types EntityType[]
   valid_to_types   EntityType[]
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  updated_at DateTime @updatedAt @db.Timestamptz(3)
 
   project   Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
   relations Relation[]
@@ -443,9 +453,9 @@ model Relation {
   valid_to_month   Int?
   valid_to_cert    Certainty @default(UNKNOWN)
 
-  deleted_at DateTime?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  deleted_at DateTime? @db.Timestamptz(3)
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at DateTime  @updatedAt @db.Timestamptz(3)
 
   project       Project            @relation(fields: [project_id], references: [id], onDelete: Cascade)
   created_by    User?              @relation("RelationCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
@@ -456,6 +466,9 @@ model Relation {
   @@index([project_id])
   @@index([from_type, from_id])
   @@index([to_type, to_id])
+  // Unindexed FK referencing side (D-H4): backs the per-type relation counts and
+  // the `onDelete: Restrict` check run on every RelationType delete.
+  @@index([relation_type_id])
   @@map("relations")
 }
 
@@ -470,12 +483,15 @@ model RelationEvidence {
   page_reference String? // e.g. "S. 47", "fol. 12r", "col. 3"
   quote          String? // direct transcript excerpt from the source
   confidence     Certainty @default(UNKNOWN)
-  created_at     DateTime  @default(now())
+  created_at     DateTime  @default(now()) @db.Timestamptz(3)
 
   relation Relation @relation(fields: [relation_id], references: [id], onDelete: Cascade)
   source   Source   @relation(fields: [source_id], references: [id], onDelete: Cascade)
 
+  // The composite unique already indexes relation_id as its leading column, but
+  // leaves source_id unindexed — it is scanned on every Source delete (D-H4).
   @@unique([relation_id, source_id])
+  @@index([source_id])
   @@map("relation_evidence")
 }
 
@@ -494,21 +510,23 @@ model PropertyEvidence {
   id                String     @id @default(cuid())
   project_id        String
   entity_type       EntityType
-  entity_id         String     // no DB FK — polymorphic; app-layer integrity
-  property          String     // field name this evidence supports
+  entity_id         String // no DB FK — polymorphic; app-layer integrity
+  property          String // field name this evidence supports
   source_id         String
   notes             String?
   page_reference    String?
-  quote             String?    // normalized/interpreted excerpt (Epic 2.4)
-  raw_transcription String?    // verbatim diplomatic transcription (Epic 2.4)
+  quote             String? // normalized/interpreted excerpt (Epic 2.4)
+  raw_transcription String? // verbatim diplomatic transcription (Epic 2.4)
   confidence        Certainty  @default(UNKNOWN) // per-evidence confidence (Epic 2.4)
-  created_at        DateTime   @default(now())
+  created_at        DateTime   @default(now()) @db.Timestamptz(3)
 
   project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
   source  Source  @relation("PropertyEvidenceSource", fields: [source_id], references: [id], onDelete: Cascade)
 
   @@index([project_id])
   @@index([entity_type, entity_id])
+  // Unindexed FK referencing side (D-H4): scanned on every Source delete.
+  @@index([source_id])
   @@map("property_evidence")
 }
 
@@ -528,16 +546,16 @@ model EntityActivity {
   id          String         @id @default(cuid())
   project_id  String
   entity_type EntityType
-  entity_id   String         // no DB FK — polymorphic; app-layer integrity
-  user_id     String?        // null when action is from agent (future)
-  agent_name  String?        // null when action is from human
+  entity_id   String // no DB FK — polymorphic; app-layer integrity
+  user_id     String? // null when action is from agent (future)
+  agent_name  String? // null when action is from human
   action      ActivityAction
-  field_path  String?        // e.g. "birth_year"; null for CREATE/DELETE
-  old_value   Json?          // previous value snapshot; null for CREATE
-  new_value   Json?          // new value snapshot; null for DELETE
-  reason      String?        // optional human-entered note on why
-  source_id   String?        // grounding reference (reserved for agents)
-  created_at  DateTime       @default(now())
+  field_path  String? // e.g. "birth_year"; null for CREATE/DELETE
+  old_value   Json? // previous value snapshot; null for CREATE
+  new_value   Json? // new value snapshot; null for DELETE
+  reason      String? // optional human-entered note on why
+  source_id   String? // grounding reference (reserved for agents)
+  created_at  DateTime       @default(now()) @db.Timestamptz(3)
 
   project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
   user    User?   @relation("EntityActivityUser", fields: [user_id], references: [id], onDelete: SetNull)

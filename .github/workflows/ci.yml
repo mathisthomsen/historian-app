@@ -62,13 +62,33 @@ jobs:
     name: Build → E2E → Deploy
     needs: [lint, typecheck, unit-tests]
     runs-on: ubuntu-latest
+    # Load-bearing for the branch reaper below, not just a runaway-cost guard.
+    # The reaper deletes any `ci-run-*` branch older than 3h; without a timeout a
+    # job could exceed that (GitHub's default is 6h) and have a concurrently
+    # starting run delete the branch out from under it. Capping the job well
+    # under the reaper cutoff makes that impossible. A normal run takes ~15min.
+    timeout-minutes: 45
     env:
-      # DATABASE_URL / DATABASE_URL_UNPOOLED point at the disposable Neon *ci*
-      # branch. Nothing in this job may touch production: E2E creates hundreds of
-      # users per run and the fixture purges delete rows. Production is migrated
-      # by its own step below, immediately before the deploy.
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+      # DATABASE_URL / DATABASE_URL_UNPOOLED are deliberately NOT set here. The
+      # "Create ephemeral Neon branch" step below writes them into $GITHUB_ENV,
+      # pointing at a Neon branch created for this run alone and deleted when the
+      # job ends. Do not add them back as job-level env: job-level env wins over
+      # $GITHUB_ENV and would silently send E2E at a shared database again.
+      #
+      # Nothing in this job may touch production. E2E creates hundreds of users
+      # per run; production is migrated by its own step below, immediately before
+      # the deploy, from PRODUCTION_DATABASE_URL only.
+      NEON_API: "https://console.neon.tech/api/v2"
+      NEON_PROJECT_ID: "quiet-fog-92876233"
+      # `ci-base` — an empty root branch (no parent, no data, no schema). Every
+      # run branches from it, so `prisma migrate deploy` builds the schema from
+      # zero and CI never sees a copy of production or of another run's rows.
+      NEON_CI_BASE_BRANCH_ID: "br-morning-band-a9yuaa6k"
+      # Namespaces this run's app-level cache keys. The database is fresh each
+      # run but Upstash is shared, and cache keys are built from the fixed seed
+      # project id — without this, a previous run's cached list response could be
+      # served against a database that never held those rows. See src/lib/cache.ts.
+      CACHE_NAMESPACE: ci-${{ github.run_id }}-${{ github.run_attempt }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       AUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
@@ -86,6 +106,97 @@ jobs:
         with: { node-version: "22", cache: "pnpm" }
       - run: pnpm install --frozen-lockfile
 
+      # Neon's free plan caps the project at 10 branches, so a run cancelled
+      # between "create" and "delete" below can eventually block every later run.
+      # Branches also carry an expires_at (see below) as the real safety net;
+      # this step just keeps the branch list tidy sooner. Matching is anchored on
+      # the `ci-run-` prefix so the long-lived `ci`, `ci-base`, `dev` and
+      # `production` branches can never be selected.
+      - name: Reap leaked ephemeral Neon branches
+        continue-on-error: true
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '-3 hours' +%Y-%m-%dT%H:%M:%SZ)"
+          stale="$(curl -sS --fail-with-body \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            "$NEON_API/projects/$NEON_PROJECT_ID/branches" \
+            | jq -r --arg cutoff "$cutoff" '
+                .branches[]
+                | select(.name | startswith("ci-run-"))
+                | select(.created_at < $cutoff)
+                | "\(.id) \(.name)"')"
+          if [ -z "$stale" ]; then echo "No leaked ci-run-* branches."; exit 0; fi
+          echo "$stale" | while read -r id name; do
+            echo "Reaping $name ($id)"
+            curl -sS -o /dev/null -w "  -> HTTP %{http_code}\n" -X DELETE \
+              -H "Authorization: Bearer $NEON_API_KEY" \
+              "$NEON_API/projects/$NEON_PROJECT_ID/branches/$id"
+          done
+
+      # One database per run, thrown away at the end. Branch creation is
+      # copy-on-write and takes ~1s. Because the parent is empty, `migrate
+      # deploy` below replays every migration from zero — which is also the only
+      # place that gets tested.
+      - name: Create ephemeral Neon branch
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          set -euo pipefail
+          name="ci-run-${{ github.run_id }}-${{ github.run_attempt }}"
+          expires_at="$(date -u -d '+6 hours' +%Y-%m-%dT%H:%M:%SZ)"
+
+          created="$(curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -nc \
+                   --arg name "$name" \
+                   --arg parent "$NEON_CI_BASE_BRANCH_ID" \
+                   --arg expires "$expires_at" \
+                   '{branch:{name:$name,parent_id:$parent,expires_at:$expires},
+                     endpoints:[{type:"read_write"}]}')" \
+            "$NEON_API/projects/$NEON_PROJECT_ID/branches")"
+
+          branch_id="$(jq -r '.branch.id' <<<"$created")"
+          database="$(jq -r '.databases[0].name // "neondb"' <<<"$created")"
+          role="$(jq -r '.roles[0].name // "neondb_owner"' <<<"$created")"
+          # Export before waiting for readiness, so the always() cleanup step can
+          # still delete the branch if it never comes up.
+          echo "NEON_CI_BRANCH_ID=$branch_id" >> "$GITHUB_ENV"
+          echo "Created $name ($branch_id) from $NEON_CI_BASE_BRANCH_ID, expires $expires_at"
+
+          state=""
+          for _ in $(seq 1 60); do
+            state="$(curl -sS -H "Authorization: Bearer $NEON_API_KEY" \
+              "$NEON_API/projects/$NEON_PROJECT_ID/branches/$branch_id" \
+              | jq -r '.branch.current_state')"
+            [ "$state" = "ready" ] && break
+            sleep 2
+          done
+          [ "$state" = "ready" ] || { echo "Branch stuck in state '$state'"; exit 1; }
+
+          uri() {
+            curl -sS --fail-with-body -G \
+              -H "Authorization: Bearer $NEON_API_KEY" \
+              --data-urlencode "branch_id=$branch_id" \
+              --data-urlencode "database_name=$database" \
+              --data-urlencode "role_name=$role" \
+              --data-urlencode "pooled=$1" \
+              "$NEON_API/projects/$NEON_PROJECT_ID/connection_uri" | jq -r '.uri'
+          }
+          pooled="$(uri true)"
+          direct="$(uri false)"
+
+          # These carry the role password — mask the password and both URIs
+          # before they can reach the log through any later step.
+          password="${pooled#*://*:}"; password="${password%%@*}"
+          echo "::add-mask::$password"
+          echo "::add-mask::$pooled"
+          echo "::add-mask::$direct"
+          echo "DATABASE_URL=$pooled" >> "$GITHUB_ENV"
+          echo "DATABASE_URL_UNPOOLED=$direct" >> "$GITHUB_ENV"
+
       - name: Generate Prisma Client
         run: pnpm prisma generate
         env:
@@ -93,21 +204,19 @@ jobs:
           DATABASE_URL: "postgresql://placeholder:placeholder@localhost/placeholder"
           DATABASE_URL_UNPOOLED: "postgresql://placeholder:placeholder@localhost/placeholder"
 
+      # Migrations require a direct (non-pooled) connection for both vars.
+      # DATABASE_URL_UNPOOLED comes from $GITHUB_ENV (this run's branch); it is
+      # referenced as a shell variable rather than a ${{ }} expression so the
+      # value can only ever be the one the create step exported.
       - name: Run DB migrations
-        run: pnpm prisma migrate deploy
-        env:
-          # Migrations require a direct (non-pooled) connection for both vars
-          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
-          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: DATABASE_URL="$DATABASE_URL_UNPOOLED" pnpm prisma migrate deploy
 
       - name: Build
         run: pnpm build
 
       - name: Seed database
-        run: pnpm prisma db seed
+        run: DATABASE_URL="$DATABASE_URL_UNPOOLED" pnpm prisma db seed
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
-          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
           SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
 
       - name: Install Playwright browsers
@@ -138,11 +247,13 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
-      # CI's migrate step above runs against the ci branch, so production would
-      # otherwise never receive migrations — Vercel's build only runs
-      # `prisma generate && next build`. This is the only step in the workflow
-      # that touches the production database, and it deliberately does not seed:
-      # seeding production is what put a known admin credential there (audit C2).
+      # CI's migrate step above runs against this run's throwaway branch, so
+      # production would otherwise never receive migrations — Vercel's build only
+      # runs `prisma generate && next build`. This is the only step in the
+      # workflow that touches the production database, and it deliberately does
+      # not seed: seeding production is what put a known admin credential there
+      # (audit C2). It reads PRODUCTION_DATABASE_URL directly and never the
+      # DATABASE_URL* pair, which by this point points at the ephemeral branch.
       - name: Migrate production database
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: pnpm prisma migrate deploy
@@ -156,3 +267,18 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      # always(): a failed or cancelled-mid-job run must not leak the branch.
+      # A cancellation that kills the runner outright still leaks one — that is
+      # what expires_at and the reaper step at the top of the job are for.
+      - name: Delete ephemeral Neon branch
+        if: always() && env.NEON_CI_BRANCH_ID != ''
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            "$NEON_API/projects/$NEON_PROJECT_ID/branches/$NEON_CI_BRANCH_ID")"
+          echo "DELETE $NEON_CI_BRANCH_ID -> HTTP $code"
+          case "$code" in 200|404) ;; *) exit 1 ;; esac

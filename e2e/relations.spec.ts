@@ -1,12 +1,10 @@
 import { type Page, expect, test } from "@playwright/test";
 
-import { deleteNonSeedRelations, resetRateLimits } from "./helpers/db";
+import { resetRateLimits } from "./helpers/db";
 
 // ---------------------------------------------------------------------------
 // Seed IDs (deterministic — from prisma/seed.ts)
 // ---------------------------------------------------------------------------
-
-const SEED_PROJECT = "seed-project-demo";
 
 const SEED = {
   person: {
@@ -23,13 +21,12 @@ const SEED = {
 const ADMIN_EMAIL = "admin@evidoxa.dev";
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
 
-// Relation specs create relations and never remove them, so they accumulate in
-// the shared demo project across runs and eventually push the seeded relations
-// off the first page of the list (see deleteNonSeedRelations). Start from a
-// known state instead of inheriting every previous run's leftovers.
-test.beforeAll(async () => {
-  await deleteNonSeedRelations(SEED_PROJECT);
-});
+// Relation specs create relations and never remove them, so anything they leave
+// behind stays for the rest of the run. That is fine because the run owns its
+// database: CI creates a fresh, empty Neon branch per run and deletes it
+// afterwards, so nothing is inherited from a previous run. Locally, re-run
+// `pnpm prisma migrate reset` if leftovers ever push the seeded relations off
+// page one of the list.
 
 // ---------------------------------------------------------------------------
 // Helpers

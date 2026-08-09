@@ -1,6 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
 
-import { deleteNonSeedRows, resetRateLimits } from "./helpers/db";
+import { resetRateLimits } from "./helpers/db";
 
 // Tests share state — created sources are used in later tests
 test.describe.configure({ mode: "serial" });
@@ -21,14 +21,12 @@ async function loginAsAdmin(page: Page) {
   await page.waitForURL(/\/de\/dashboard/, { timeout: 15_000 });
 }
 
-const SEED_PROJECT = "seed-project-demo";
-
-// These specs create sources and never remove them, so they accumulate in the
-// shared demo project across runs until the seeded fixtures fall off page one
-// of every list. Start from a known state (see deleteNonSeedRows).
-test.beforeAll(async () => {
-  await deleteNonSeedRows("sources", SEED_PROJECT);
-});
+// These specs create sources and never remove them, so anything they leave
+// behind stays for the rest of the run. That is fine because the run owns its
+// database: CI creates a fresh, empty Neon branch per run and deletes it
+// afterwards, so nothing is inherited from a previous run. Locally, re-run
+// `pnpm prisma migrate reset` if leftovers ever push the seeded fixtures off
+// page one of a list.
 
 test.beforeEach(async ({ context, page }) => {
   await resetRateLimits();
