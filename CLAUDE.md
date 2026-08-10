@@ -1,3 +1,9 @@
+## Active platform
+
+UX skill overlay: `skills/platforms/evidoxa.md`. Load it whenever running the UX review/audit
+skills (`ux`, `ux-audit`, `ux-mr`, `ux-reviewer`, etc.) against this repo — it supplies the
+user-type vocabulary, mental-model rules, brand voice, and stack adapter specific to Evidoxa.
+
 ## Context efficiency
 
 Be conservative with tool output.
@@ -80,3 +86,37 @@ against what is now known, and merge duplicates. Report what changed and why.
 
 Prefer splitting an issue that has grown several independent parts — progress on
 one should be visible without waiting for the rest.
+
+## Measure, don't infer
+
+When a claim can be tested, test it before acting on it, writing it into an issue,
+or reporting it as fact.
+
+Three wrong conclusions in one session, each a reasonable inference from real
+evidence, each wrong:
+
+- A `Windows NT 10.0` user-agent in the audit log was read as proof of a Windows
+  machine. It is Playwright's default and appears identically from macOS — the
+  same value was sitting in the dev database from a local run.
+- `vercel env ls` showing "154d ago" was read as "not rotated". That column is
+  **created**, not updated. Acting on it overwrote a production credential.
+- Code reading the leftmost `X-Forwarded-For` was written up as a live,
+  exploitable rate-limit bypass. Vercel overwrites that header; two requests and
+  a hash comparison disproved it in a minute, after the issue was already filed.
+
+What to do instead:
+
+- **Ask the system, not the name.** Branch identity comes from
+  `SELECT current_setting('neon.branch_id')` — never a hostname, env var name, or
+  row count. Endpoint names in this project are actively misleading.
+- **Run the experiment.** Send the two requests and compare. Mutate the
+  implementation and confirm the test fails. Point the guard at the thing it is
+  meant to refuse and watch it refuse.
+- **Check what a field means** before trusting it — created vs. updated, local vs.
+  UTC, default vs. host-derived.
+- For anything security-relevant, destructive, or headed for production,
+  measurement is required rather than preferred.
+
+Say which claims were measured and which were inferred. An inference must never
+reach an issue, a commit message, or a production action wearing the confidence of
+a measurement.
