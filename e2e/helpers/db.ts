@@ -7,6 +7,34 @@ import { Client } from "pg";
 // Next build, so tsconfig path mapping is not guaranteed to apply here.
 import { purgeablePrefix } from "../../src/lib/rate-limit-key";
 
+import { assertNotProductionBranch } from "./guard";
+
+/**
+ * Every branch identity check the suite needs, done once per process.
+ *
+ * `current_setting(..., true)` returns NULL instead of erroring when the
+ * setting is absent, so a non-Neon connection reaches the guard as "unknown"
+ * and is refused there rather than throwing something opaque here.
+ */
+let branchChecked = false;
+
+async function connectGuarded(client: Client): Promise<void> {
+  await client.connect();
+  if (branchChecked) return;
+  try {
+    const res = await client.query<{ branch: string | null }>(
+      "SELECT current_setting('neon.branch_id', true) AS branch",
+    );
+    assertNotProductionBranch(res.rows[0]?.branch);
+    branchChecked = true;
+  } catch (err) {
+    // Callers connect *before* their try/finally, so without this the socket
+    // stays open when the guard refuses and the runner hangs instead of failing.
+    await client.end().catch(() => {});
+    throw err;
+  }
+}
+
 function getClient(): Client {
   const connectionString = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? "";
   return new Client({ connectionString });
@@ -15,7 +43,7 @@ function getClient(): Client {
 /** Returns the raw token for the most recent email verification for a given email. */
 export async function getLatestVerificationToken(email: string): Promise<string> {
   const client = getClient();
-  await client.connect();
+  await connectGuarded(client);
   try {
     const result = await client.query<{ token_hash: string }>(
       `SELECT ec.token_hash
@@ -43,7 +71,7 @@ export async function getLatestVerificationToken(email: string): Promise<string>
  *  or use the insertTestResetToken helper below. */
 export async function getLatestResetTokenHash(email: string): Promise<string> {
   const client = getClient();
-  await client.connect();
+  await connectGuarded(client);
   try {
     const result = await client.query<{ token_hash: string }>(
       `SELECT pr.token_hash
@@ -67,7 +95,7 @@ export async function insertTestVerificationToken(email: string): Promise<string
   const rawToken = "a".repeat(64); // deterministic test token
   const tokenHash = createHash("sha256").update(rawToken).digest("hex");
   const client = getClient();
-  await client.connect();
+  await connectGuarded(client);
   try {
     // Delete any existing tokens for this user
     await client.query(
@@ -102,7 +130,7 @@ export async function insertTestResetToken(email: string): Promise<string> {
   const rawToken = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(rawToken).digest("hex");
   const client = getClient();
-  await client.connect();
+  await connectGuarded(client);
   try {
     await client.query(
       `DELETE FROM password_resets
@@ -187,7 +215,7 @@ export async function resetRateLimits(): Promise<void> {
 export async function createTestUser(email: string, password: string): Promise<void> {
   const password_hash = await bcrypt.hash(password, 10);
   const client = getClient();
-  await client.connect();
+  await connectGuarded(client);
   try {
     await client.query("DELETE FROM users WHERE email = $1", [email.toLowerCase()]);
     await client.query(
@@ -203,7 +231,7 @@ export async function createTestUser(email: string, password: string): Promise<v
 /** Deletes a test user by email (for cleanup after registration tests). */
 export async function deleteTestUser(email: string): Promise<void> {
   const client = getClient();
-  await client.connect();
+  await connectGuarded(client);
   try {
     await client.query("DELETE FROM users WHERE email = $1", [email.toLowerCase()]);
   } finally {
@@ -214,7 +242,7 @@ export async function deleteTestUser(email: string): Promise<void> {
 /** Marks a user's email as verified (for login tests). */
 export async function verifyUserEmail(email: string): Promise<void> {
   const client = getClient();
-  await client.connect();
+  await connectGuarded(client);
   try {
     await client.query("UPDATE users SET email_verified_at = NOW() WHERE email = $1", [
       email.toLowerCase(),

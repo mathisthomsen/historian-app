@@ -20,6 +20,10 @@ process.env["RATELIMIT_NAMESPACE"] ??= "local-e2e";
 
 export default defineConfig({
   testDir: "./e2e",
+  // Refuses to start against the production database. Runs before any spec,
+  // because the per-connection guard in helpers/db.ts cannot cover specs that
+  // never touch Postgres — see e2e/global-setup.ts.
+  globalSetup: "./e2e/global-setup.ts",
   fullyParallel: true,
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 2 : 0,
