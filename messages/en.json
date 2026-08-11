@@ -15,7 +15,11 @@
     "year_format": "YYYY",
     "select_all_on_page": "Select all on this page",
     "loadFailed": "Could not load this data.",
-    "evidenceCountFailed": "Could not load evidence"
+    "evidenceCountFailed": "Could not load evidence",
+    "unsavedTitle": "Discard unsaved changes?",
+    "unsavedBody": "What you entered on this page will be lost. This cannot be undone.",
+    "discardChanges": "Discard changes",
+    "keepEditing": "Keep editing"
   },
   "shell": {
     "nav": {

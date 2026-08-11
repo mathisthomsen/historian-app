@@ -20,10 +20,21 @@ export function EditEventClient({ event, projectId, locale }: EditEventClientPro
     router.push(`/${locale}/events/${updated.id}`);
   }
 
+  // Explicit destination rather than router.back() (issue #42).
+  function handleCancel() {
+    router.push(`/${locale}/events/${event.id}`);
+  }
+
   return (
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="mb-6 text-2xl font-bold">{t("edit_title")}</h1>
-      <EventForm mode="edit" initial={event} projectId={projectId} onSuccess={handleSuccess} />
+      <EventForm
+        mode="edit"
+        initial={event}
+        projectId={projectId}
+        onSuccess={handleSuccess}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

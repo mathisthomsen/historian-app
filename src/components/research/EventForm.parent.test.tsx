@@ -30,7 +30,13 @@ function routedFetch(byId: unknown) {
 
 function renderWithSeededParent(parentId: string) {
   renderWithProviders(
-    <EventForm mode="create" projectId="p1" defaultParentId={parentId} onSuccess={vi.fn()} />,
+    <EventForm
+      mode="create"
+      projectId="p1"
+      defaultParentId={parentId}
+      onSuccess={vi.fn()}
+      onCancel={vi.fn()}
+    />,
   );
 }
 
@@ -104,7 +110,9 @@ describe("EventForm parent picker", () => {
   it("says no parent when none is seeded", async () => {
     vi.stubGlobal("fetch", routedFetch({ ok: true, status: 200, json: async () => ({}) }));
 
-    renderWithProviders(<EventForm mode="create" projectId="p1" onSuccess={vi.fn()} />);
+    renderWithProviders(
+      <EventForm mode="create" projectId="p1" onSuccess={vi.fn()} onCancel={vi.fn()} />,
+    );
 
     await waitFor(() =>
       expect(screen.getByText("Kein übergeordnetes Ereignis")).toBeInTheDocument(),
@@ -117,7 +125,9 @@ describe("EventForm parent picker", () => {
     const fetchMock = routedFetch({ ok: true, status: 200, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
 
-    renderWithProviders(<EventForm mode="create" projectId="p1" onSuccess={vi.fn()} />);
+    renderWithProviders(
+      <EventForm mode="create" projectId="p1" onSuccess={vi.fn()} onCancel={vi.fn()} />,
+    );
 
     // The list request is debounced, so wait for it specifically.
     await waitFor(() =>

@@ -100,7 +100,9 @@ describe("form validation messages are translated", () => {
       vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [] }) }),
     );
 
-    renderWithProviders(<EventForm mode="create" projectId="p1" onSuccess={vi.fn()} />);
+    renderWithProviders(
+      <EventForm mode="create" projectId="p1" onSuccess={vi.fn()} onCancel={vi.fn()} />,
+    );
 
     await userEvent.click(screen.getByRole("button", { name: "Ereignis speichern" }));
 

@@ -15,7 +15,11 @@
     "year_format": "JJJJ",
     "select_all_on_page": "Alle auf dieser Seite auswählen",
     "loadFailed": "Daten konnten nicht geladen werden.",
-    "evidenceCountFailed": "Nachweise konnten nicht geladen werden"
+    "evidenceCountFailed": "Nachweise konnten nicht geladen werden",
+    "unsavedTitle": "Ungespeicherte Änderungen verwerfen?",
+    "unsavedBody": "Deine Eingaben auf dieser Seite gehen verloren. Dieser Schritt lässt sich nicht rückgängig machen.",
+    "discardChanges": "Änderungen verwerfen",
+    "keepEditing": "Weiter bearbeiten"
   },
   "shell": {
     "nav": {

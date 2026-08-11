@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -25,6 +24,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { errorCode } from "@/lib/api-error";
 import type { EventDetail, EventSummary } from "@/types/event";
 
@@ -116,6 +117,13 @@ interface EventFormProps {
   projectId: string;
   defaultParentId?: string | undefined;
   onSuccess: (event: EventDetail) => void;
+  /**
+   * Explicit destination for Cancel. This used to be `router.back()`, which
+   * returns to whatever preceded in history — the list when arriving via a link,
+   * but outside the application entirely when the edit URL was opened directly,
+   * bookmarked, shared or restored in a new tab (issue #42).
+   */
+  onCancel: () => void;
 }
 
 export function EventForm({
@@ -124,9 +132,9 @@ export function EventForm({
   projectId,
   defaultParentId,
   onSuccess,
+  onCancel,
 }: EventFormProps) {
   const t = useTranslations("events");
-  const router = useRouter();
 
   const [parentEvents, setParentEvents] = useState<EventSummary[]>([]);
   const [parentOpen, setParentOpen] = useState(false);
@@ -153,7 +161,7 @@ export function EventForm({
     setValue,
     watch,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -175,6 +183,7 @@ export function EventForm({
   });
 
   const parentIdValue = watch("parent_id");
+  const unsaved = useUnsavedChanges(isDirty && !isSubmitting);
 
   useEffect(() => {
     // Server-side search. The endpoint caps pageSize at 100, so client-side
@@ -527,7 +536,7 @@ export function EventForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.back()}
+          onClick={() => unsaved.guard(onCancel)}
           disabled={isSubmitting}
         >
           {t("cancel")}
@@ -537,6 +546,12 @@ export function EventForm({
           {t("save")}
         </Button>
       </div>
+
+      <UnsavedChangesDialog
+        isConfirming={unsaved.isConfirming}
+        confirmDiscard={unsaved.confirmDiscard}
+        setConfirming={unsaved.setConfirming}
+      />
     </form>
   );
 }
