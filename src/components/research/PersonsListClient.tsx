@@ -160,6 +160,7 @@ export function PersonsListClient({
       </div>
 
       <BulkDeleteDialog
+        namespace="persons.bulk"
         count={selectedIds.length}
         open={bulkDeleteOpen}
         onConfirm={handleBulkDelete}

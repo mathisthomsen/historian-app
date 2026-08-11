@@ -366,7 +366,6 @@
     "edit_title": "Edit Source",
     "delete": "Delete Source",
     "delete_confirm": "Really delete this source?",
-    "bulk_delete_confirm": "Delete {count} source(s)?",
     "search_placeholder": "Search by title or author…",
     "empty_state": "No sources yet.",
     "empty_action": "Create first source",
@@ -414,7 +413,9 @@
     "bulk": {
       "selected": "{count} selected",
       "delete_button": "Delete",
-      "deleted_toast": "{count} source(s) deleted."
+      "deleted_toast": "{count} source(s) deleted.",
+      "confirm_title": "Delete {count} sources?",
+      "confirm_body": "This will delete {count} sources. Contact an administrator to restore them."
     },
     "errors": {
       "title_required": "Title is required.",

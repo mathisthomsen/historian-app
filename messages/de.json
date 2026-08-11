@@ -366,7 +366,6 @@
     "edit_title": "Quelle bearbeiten",
     "delete": "Quelle löschen",
     "delete_confirm": "Diese Quelle wirklich löschen?",
-    "bulk_delete_confirm": "{count} Quelle(n) löschen?",
     "search_placeholder": "Titel oder Autor suchen…",
     "empty_state": "Noch keine Quellen angelegt.",
     "empty_action": "Erste Quelle erstellen",
@@ -414,7 +413,9 @@
     "bulk": {
       "selected": "{count} ausgewählt",
       "delete_button": "Löschen",
-      "deleted_toast": "{count} Quelle(n) gelöscht."
+      "deleted_toast": "{count} Quelle(n) gelöscht.",
+      "confirm_title": "{count} Quellen löschen?",
+      "confirm_body": "Diese Aktion löscht {count} Quellen. Kontaktieren Sie den Administrator zur Wiederherstellung."
     },
     "errors": {
       "title_required": "Titel ist erforderlich.",

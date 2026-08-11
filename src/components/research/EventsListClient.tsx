@@ -236,6 +236,7 @@ export function EventsListClient({
       </div>
 
       <BulkDeleteDialog
+        namespace="events.bulk"
         count={selectedIds.length}
         open={bulkDeleteOpen}
         onConfirm={handleBulkDelete}

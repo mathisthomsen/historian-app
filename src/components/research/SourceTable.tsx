@@ -251,11 +251,11 @@ export function SourceTable({
       </div>
 
       <BulkDeleteDialog
+        namespace="sources.bulk"
         count={selectedIds.length}
         open={bulkDeleteOpen}
         onConfirm={handleBulkDelete}
         onCancel={() => setBulkDeleteOpen(false)}
-        title={t("bulk_delete_confirm", { count: selectedIds.length })}
       />
     </div>
   );
