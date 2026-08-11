@@ -102,5 +102,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     },
   });
 
-  return NextResponse.json({ message: "auth.register.verificationSent" }, { status: 201 });
+  // The success screen used to assert a mail was on its way in exactly the case
+  // where it was not. Report what actually happened so the client can offer a
+  // resend instead of a false reassurance (issue #43).
+  return NextResponse.json(
+    { message: "auth.register.verificationSent", email_sent: emailError === null },
+    { status: 201 },
+  );
 }

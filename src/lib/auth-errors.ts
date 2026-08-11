@@ -43,6 +43,7 @@ export const REGISTER_RATE_LIMIT_MINUTES = 60;
 export const FORGOT_PASSWORD_RATE_LIMIT_MINUTES = 60;
 export const RESET_PASSWORD_RATE_LIMIT_MINUTES = 15;
 export const VERIFY_EMAIL_RATE_LIMIT_MINUTES = 15;
+export const RESEND_VERIFICATION_RATE_LIMIT_MINUTES = 60;
 
 /** Lockout duration, in minutes. Shared so copy cannot drift from `auth.ts`. */
 export const ACCOUNT_LOCKOUT_MINUTES = 30;

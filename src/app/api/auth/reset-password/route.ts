@@ -70,12 +70,24 @@ export async function POST(request: Request): Promise<NextResponse> {
     return jsonError(400, "TOKEN_INVALID");
   }
 
-  if (resetRow.used_at !== null || resetRow.expires_at <= new Date()) {
+  // Same collapse as verify-email: a link already used is not an expired one,
+  // and the recovery advice for the two differs (issue #43).
+  if (resetRow.used_at !== null) {
     await writeAuditLog({
       action: "INVALID_TOKEN",
       userId: resetRow.user_id,
       request,
-      metadata: { token_type: "password_reset", reason: resetRow.used_at ? "used" : "expired" },
+      metadata: { token_type: "password_reset", reason: "used" },
+    });
+    return jsonError(400, "TOKEN_ALREADY_USED");
+  }
+
+  if (resetRow.expires_at <= new Date()) {
+    await writeAuditLog({
+      action: "INVALID_TOKEN",
+      userId: resetRow.user_id,
+      request,
+      metadata: { token_type: "password_reset", reason: "expired" },
     });
     return jsonError(400, "TOKEN_EXPIRED");
   }

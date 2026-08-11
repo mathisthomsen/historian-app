@@ -58,7 +58,10 @@
       "namePlaceholder": "Vollständiger Name",
       "alreadyHaveAccount": "Bereits registriert?",
       "login": "Anmelden",
-      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfe dein Postfach."
+      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfe dein Postfach.",
+      "emailNotSentTitle": "Konto erstellt — E-Mail konnte nicht zugestellt werden",
+      "emailNotSentMessage": "Dein Konto besteht, aber die Bestätigungs-E-Mail ist nicht rausgegangen. Fordere unten einen neuen Link an.",
+      "backToLogin": "Zur Anmeldung"
     },
     "verify": {
       "title": "E-Mail bestätigen",
@@ -71,7 +74,14 @@
       "noTokenMessage": "Diese Seite braucht den Link aus deiner Bestätigungs-E-Mail. Öffne den Link direkt aus der E-Mail.",
       "failedTitle": "Bestätigung fehlgeschlagen",
       "linkInvalidTitle": "Link ungültig",
-      "retry": "Erneut versuchen"
+      "retry": "Erneut versuchen",
+      "alreadyVerifiedTitle": "Bereits bestätigt",
+      "alreadyVerifiedMessage": "Diese E-Mail-Adresse wurde schon bestätigt. Du kannst dich anmelden.",
+      "resendSent": "Wenn für diese Adresse eine Bestätigung aussteht, ist ein neuer Link unterwegs.",
+      "resendAction": "Neuen Bestätigungslink senden",
+      "resendSending": "Wird gesendet…",
+      "resendEmailLabel": "E-Mail-Adresse",
+      "expiredHint": "Bestätigungslinks sind 24 Stunden gültig."
     },
     "forgot": {
       "title": "Passwort vergessen?",
@@ -130,7 +140,8 @@
       "accountLocked": "Zu viele Fehlversuche. Das Konto ist für {minutes} Minuten gesperrt.",
       "loginRateLimited": "Zu viele Anmeldeversuche. Bitte warte bis zu {minutes} Minuten.",
       "tokenMalformed": "Dieser Link ist unvollständig. E-Mail-Programme brechen lange Links manchmal um — bitte den vollständigen Link kopieren oder einen neuen anfordern.",
-      "networkError": "Keine Verbindung zum Server. Bitte Internetverbindung prüfen und erneut versuchen."
+      "networkError": "Keine Verbindung zum Server. Bitte Internetverbindung prüfen und erneut versuchen.",
+      "tokenAlreadyUsed": "Dieser Link wurde bereits verwendet. Dein Passwort ist gesetzt — du kannst dich anmelden."
     },
     "invalidLink": "Ungültiger Link",
     "invalidLinkMessage": "Kein Verifizierungstoken gefunden."

@@ -58,7 +58,10 @@
       "namePlaceholder": "Full name",
       "alreadyHaveAccount": "Already have an account?",
       "login": "Sign in",
-      "verificationSent": "Verification email sent. Please check your inbox."
+      "verificationSent": "Verification email sent. Please check your inbox.",
+      "emailNotSentTitle": "Account created — the email could not be delivered",
+      "emailNotSentMessage": "Your account exists, but the confirmation email did not go out. Request a new link below.",
+      "backToLogin": "Go to sign-in"
     },
     "verify": {
       "title": "Confirm email",
@@ -71,7 +74,14 @@
       "noTokenMessage": "This page needs the link from your confirmation email. Open the link directly from that email.",
       "failedTitle": "Confirmation failed",
       "linkInvalidTitle": "Invalid link",
-      "retry": "Try again"
+      "retry": "Try again",
+      "alreadyVerifiedTitle": "Already confirmed",
+      "alreadyVerifiedMessage": "This email address is already confirmed. You can sign in.",
+      "resendSent": "If a confirmation is pending for this address, a new link is on its way.",
+      "resendAction": "Send a new confirmation link",
+      "resendSending": "Sending…",
+      "resendEmailLabel": "Email address",
+      "expiredHint": "Confirmation links are valid for 24 hours."
     },
     "forgot": {
       "title": "Forgot password?",
@@ -130,7 +140,8 @@
       "accountLocked": "Too many failed attempts. This account is locked for {minutes} minutes.",
       "loginRateLimited": "Too many sign-in attempts. Please wait up to {minutes} minutes.",
       "tokenMalformed": "This link is incomplete. Email clients sometimes wrap long links — copy the whole link, or request a new one.",
-      "networkError": "Could not reach the server. Check your connection and try again."
+      "networkError": "Could not reach the server. Check your connection and try again.",
+      "tokenAlreadyUsed": "This link has already been used. Your password is set — you can sign in."
     },
     "invalidLink": "Invalid link",
     "invalidLinkMessage": "No verification token found."

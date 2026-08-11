@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { ResendVerification } from "@/components/auth/ResendVerification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,12 @@ export function LoginForm() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * The address to offer a resend for. LoginForm previously told an unverified
+   * user to confirm their address and gave them no way to obtain a new link
+   * (issue #43).
+   */
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Built inside the component so t() is in scope — see issue #41.
@@ -51,6 +58,7 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginFormValues) {
     setError(null);
+    setUnverifiedEmail(null);
     setIsSubmitting(true);
     try {
       const result = await signIn("credentials", {
@@ -67,6 +75,7 @@ export function LoginForm() {
         switch (result.code) {
           case SIGN_IN_CODES.emailNotVerified:
             setError(t("errors.emailNotVerified"));
+            setUnverifiedEmail(values.email);
             break;
           case SIGN_IN_CODES.rateLimited:
             setError(t("errors.loginRateLimited", { minutes: LOGIN_RATE_LIMIT_MINUTES }));
@@ -109,6 +118,7 @@ export function LoginForm() {
           {error}
         </div>
       )}
+      {unverifiedEmail && <ResendVerification email={unverifiedEmail} />}
       <div className="space-y-1">
         <Label htmlFor="email">{t("fields.email")}</Label>
         <Input

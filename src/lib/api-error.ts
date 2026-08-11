@@ -30,7 +30,13 @@ export function errorDetails<T = unknown>(body: unknown): T | undefined {
 
 /** Reads the response body without throwing on a non-JSON payload. */
 export async function readErrorBody(res: Response): Promise<unknown> {
-  return res.json().catch(() => ({}));
+  // `res.json()` can throw synchronously (a body-less response object), which a
+  // trailing .catch() would not intercept.
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
 }
 
 /**

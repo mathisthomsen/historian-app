@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
+import { ResendVerification } from "@/components/auth/ResendVerification";
 import { Button } from "@/components/ui/button";
 import { errorCode, readErrorBody, retryAfterMinutes } from "@/lib/api-error";
 import { VERIFY_EMAIL_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
@@ -13,7 +14,13 @@ interface VerifyEmailCardProps {
   token: string | null;
 }
 
-type VerifyState = "pending" | "success" | "noToken" | "linkRejected" | "requestFailed";
+type VerifyState =
+  | "pending"
+  | "success"
+  | "alreadyVerified"
+  | "noToken"
+  | "linkRejected"
+  | "requestFailed";
 
 export function VerifyEmailCard({ token }: VerifyEmailCardProps) {
   const t = useTranslations("auth");
@@ -54,6 +61,11 @@ export function VerifyEmailCard({ token }: VerifyEmailCardProps) {
       }
 
       const code = errorCode(await readErrorBody(res));
+      if (code === "TOKEN_ALREADY_USED") {
+        // Reopening the mail on a second device, or refreshing after success.
+        setState("alreadyVerified");
+        return;
+      }
       setDetail(t(code === "TOKEN_EXPIRED" ? "errors.tokenExpired" : "errors.tokenInvalid"));
       setState("linkRejected");
     } catch {
@@ -71,6 +83,21 @@ export function VerifyEmailCard({ token }: VerifyEmailCardProps) {
       <div className="text-muted-foreground flex items-center gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span>{t("verify.verifying")}</span>
+      </div>
+    );
+  }
+
+  if (state === "alreadyVerified") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-green-600">
+          <CheckCircle className="h-5 w-5" />
+          <span className="font-medium">{t("verify.alreadyVerifiedTitle")}</span>
+        </div>
+        <p className="text-muted-foreground text-sm">{t("verify.alreadyVerifiedMessage")}</p>
+        <Link href="/auth/login" className="text-primary text-sm hover:underline">
+          {t("verify.loginNow")} →
+        </Link>
       </div>
     );
   }
@@ -131,8 +158,10 @@ export function VerifyEmailCard({ token }: VerifyEmailCardProps) {
         <span className="font-medium">{t("verify.linkInvalidTitle")}</span>
       </div>
       <p className="text-muted-foreground text-sm">{detail}</p>
-      <Link href="/auth/forgot-password" className="text-primary text-sm hover:underline">
-        {t("verify.requestNew")} →
+      <p className="text-muted-foreground text-xs">{t("verify.expiredHint")}</p>
+      <ResendVerification />
+      <Link href="/auth/login" className="text-primary text-sm hover:underline">
+        {t("verify.loginNow")} →
       </Link>
     </div>
   );

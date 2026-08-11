@@ -9,10 +9,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { ResendVerification } from "@/components/auth/ResendVerification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { retryAfterMinutes } from "@/lib/api-error";
+import { readErrorBody, retryAfterMinutes } from "@/lib/api-error";
 import { REGISTER_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 
 // Schema keys used as placeholders — translated inside the component.
@@ -28,6 +29,9 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  /** Whether the verification mail actually went out — the route now says. */
+  const [emailSent, setEmailSent] = useState(true);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   // Build schema with translated messages so field errors render correctly.
   const registerSchema = z
@@ -96,6 +100,11 @@ export function RegisterForm() {
         setServerError(t("errors.serverError"));
         return;
       }
+      // Only `email_sent: false` is a claim of failure; a body we cannot read
+      // must not be treated as one.
+      const data = (await readErrorBody(res)) as { email_sent?: boolean };
+      setEmailSent(data?.email_sent !== false);
+      setRegisteredEmail(values.email);
       setSuccess(true);
     } catch {
       setServerError(t("errors.networkError"));
@@ -103,9 +112,38 @@ export function RegisterForm() {
   }
 
   if (success) {
+    // register/route.ts deliberately swallows a failed sendVerificationEmail and
+    // still returns 201. The success screen used to assert the mail was on its
+    // way in exactly the case where it was not, with no resend and no way out
+    // (issue #43).
+    if (!emailSent) {
+      return (
+        <div className="space-y-3">
+          <div
+            role="alert"
+            className="bg-destructive/10 text-destructive space-y-1 rounded-md p-4 text-sm"
+          >
+            <p className="font-medium">{t("register.emailNotSentTitle")}</p>
+            <p>{t("register.emailNotSentMessage")}</p>
+          </div>
+          <ResendVerification email={registeredEmail} />
+          <Link href="/auth/login" className="text-primary block text-sm hover:underline">
+            {t("register.backToLogin")} →
+          </Link>
+        </div>
+      );
+    }
+
     return (
-      <div className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
-        {t("register.verificationSent")}
+      <div className="space-y-3">
+        <div className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
+          {t("register.verificationSent")}
+        </div>
+        <p className="text-muted-foreground text-xs">{t("verify.expiredHint")}</p>
+        <ResendVerification email={registeredEmail} />
+        <Link href="/auth/login" className="text-primary block text-sm hover:underline">
+          {t("register.backToLogin")} →
+        </Link>
       </div>
     );
   }

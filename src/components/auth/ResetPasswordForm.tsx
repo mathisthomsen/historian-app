@@ -98,6 +98,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             {
               TOKEN_EXPIRED: "errors.tokenExpired",
               TOKEN_INVALID: "errors.tokenInvalid",
+              // A link already used is not an expired one: the password is set
+              // and the user should sign in, not request another (issue #43).
+              TOKEN_ALREADY_USED: "errors.tokenAlreadyUsed",
               // The server requires exactly 64 lowercase hex while the page accepts
               // any non-empty string, so a line-wrapped link from an email client
               // lands here — and read as a transient server fault.
