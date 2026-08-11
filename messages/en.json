@@ -165,7 +165,13 @@
       "parent": "Parent Event",
       "notes": "Notes",
       "created_at": "Created at",
-      "created_by": "Created by"
+      "created_by": "Created by",
+      "parent_none": "No parent event",
+      "parent_loading": "Loading…",
+      "parent_unresolved": "The parent event could not be loaded.",
+      "parent_not_eligible": "“{title}” is itself a sub-event and cannot serve as a parent event.",
+      "parent_no_results": "No matches.",
+      "parent_search_placeholder": "Search by title…"
     },
     "date": {
       "year": "Year",

@@ -165,7 +165,13 @@
       "parent": "Übergeordnetes Ereignis",
       "notes": "Notizen",
       "created_at": "Erstellt am",
-      "created_by": "Erstellt von"
+      "created_by": "Erstellt von",
+      "parent_none": "Kein übergeordnetes Ereignis",
+      "parent_loading": "Wird geladen…",
+      "parent_unresolved": "Übergeordnetes Ereignis konnte nicht geladen werden.",
+      "parent_not_eligible": "„{title}“ ist selbst ein Unterereignis und kann nicht als übergeordnetes Ereignis dienen.",
+      "parent_no_results": "Keine Treffer.",
+      "parent_search_placeholder": "Nach Titel suchen…"
     },
     "date": {
       "year": "Jahr",
