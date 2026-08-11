@@ -102,6 +102,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
 
   return (
     <aside
+      id="app-sidebar"
       className={cn(
         "border-sidebar-border bg-sidebar fixed top-14 bottom-0 left-0 z-40 hidden flex-col border-r",
         "overflow-hidden transition-[width] duration-[var(--duration-normal)] ease-[var(--ease-move)]",
