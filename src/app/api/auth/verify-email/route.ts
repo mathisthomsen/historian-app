@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
+import { VERIFY_EMAIL_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { anonymizeIp, hashToken } from "@/lib/security";
@@ -21,7 +22,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     "127.0.0.1";
   const ip = anonymizeIp(ipRaw);
 
-  const rateLimitResponse = await checkRateLimit(`verify:${ip}`, 5, 15 * 60 * 1000);
+  const rateLimitResponse = await checkRateLimit(
+    `verify:${ip}`,
+    5,
+    VERIFY_EMAIL_RATE_LIMIT_MINUTES * 60 * 1000,
+  );
   if (rateLimitResponse) return rateLimitResponse;
 
   let body: unknown;

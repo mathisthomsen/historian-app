@@ -66,7 +66,12 @@
       "success": "E-Mail bestätigt",
       "successMessage": "Dein Konto ist aktiv.",
       "loginNow": "Jetzt anmelden",
-      "requestNew": "Neuen Link anfordern"
+      "requestNew": "Neuen Link anfordern",
+      "noTokenTitle": "Kein Bestätigungslink",
+      "noTokenMessage": "Diese Seite braucht den Link aus deiner Bestätigungs-E-Mail. Öffne den Link direkt aus der E-Mail.",
+      "failedTitle": "Bestätigung fehlgeschlagen",
+      "linkInvalidTitle": "Link ungültig",
+      "retry": "Erneut versuchen"
     },
     "forgot": {
       "title": "Passwort vergessen?",
@@ -121,7 +126,11 @@
       "emailTooLong": "E-Mail-Adresse ist zu lang (höchstens 254 Zeichen).",
       "nameRequired": "Bitte einen Namen eingeben.",
       "nameTooLong": "Name ist zu lang (höchstens 100 Zeichen).",
-      "passwordRequired": "Bitte ein Passwort eingeben."
+      "passwordRequired": "Bitte ein Passwort eingeben.",
+      "accountLocked": "Zu viele Fehlversuche. Das Konto ist für {minutes} Minuten gesperrt.",
+      "loginRateLimited": "Zu viele Anmeldeversuche. Bitte warte bis zu {minutes} Minuten.",
+      "tokenMalformed": "Dieser Link ist unvollständig. E-Mail-Programme brechen lange Links manchmal um — bitte den vollständigen Link kopieren oder einen neuen anfordern.",
+      "networkError": "Keine Verbindung zum Server. Bitte Internetverbindung prüfen und erneut versuchen."
     },
     "invalidLink": "Ungültiger Link",
     "invalidLinkMessage": "Kein Verifizierungstoken gefunden."

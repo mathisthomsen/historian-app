@@ -12,7 +12,8 @@ import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthInd
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { errorCode, readErrorBody, translateErrorCode } from "@/lib/api-error";
+import { errorCode, readErrorBody, retryAfterMinutes, translateErrorCode } from "@/lib/api-error";
+import { RESET_PASSWORD_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 
 type ResetFormValues = {
   password: string;
@@ -73,6 +74,21 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           passwordConfirm: values.passwordConfirm,
         }),
       });
+      if (res.status === 429) {
+        // The route allows 5 attempts / 15 min and returns Retry-After; this used
+        // to fall through to the generic "an error occurred, try again" after the
+        // user had typed a password twice (issue #48).
+        setServerError(
+          t("errors.rateLimited", {
+            minutes: retryAfterMinutes(res, RESET_PASSWORD_RATE_LIMIT_MINUTES),
+          }),
+        );
+        return;
+      }
+      if (res.status === 503) {
+        setServerError(t("errors.serviceUnavailable"));
+        return;
+      }
       if (res.status === 400) {
         const code = errorCode(await readErrorBody(res));
         setServerError(
@@ -82,6 +98,10 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             {
               TOKEN_EXPIRED: "errors.tokenExpired",
               TOKEN_INVALID: "errors.tokenInvalid",
+              // The server requires exactly 64 lowercase hex while the page accepts
+              // any non-empty string, so a line-wrapped link from an email client
+              // lands here — and read as a transient server fault.
+              VALIDATION_FAILED: "errors.tokenMalformed",
             },
             "errors.serverError",
           ),
@@ -94,7 +114,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       }
       router.push("/auth/login?reset=1");
     } catch {
-      setServerError(t("errors.serverError"));
+      setServerError(t("errors.networkError"));
     } finally {
       setIsSubmitting(false);
     }

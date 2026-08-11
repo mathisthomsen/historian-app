@@ -66,7 +66,12 @@
       "success": "Email confirmed",
       "successMessage": "Your account is active.",
       "loginNow": "Sign in now",
-      "requestNew": "Request new link"
+      "requestNew": "Request new link",
+      "noTokenTitle": "No confirmation link",
+      "noTokenMessage": "This page needs the link from your confirmation email. Open the link directly from that email.",
+      "failedTitle": "Confirmation failed",
+      "linkInvalidTitle": "Invalid link",
+      "retry": "Try again"
     },
     "forgot": {
       "title": "Forgot password?",
@@ -121,7 +126,11 @@
       "emailTooLong": "Email address is too long (254 characters maximum).",
       "nameRequired": "Enter a name.",
       "nameTooLong": "Name is too long (100 characters maximum).",
-      "passwordRequired": "Enter a password."
+      "passwordRequired": "Enter a password.",
+      "accountLocked": "Too many failed attempts. This account is locked for {minutes} minutes.",
+      "loginRateLimited": "Too many sign-in attempts. Please wait up to {minutes} minutes.",
+      "tokenMalformed": "This link is incomplete. Email clients sometimes wrap long links — copy the whole link, or request a new one.",
+      "networkError": "Could not reach the server. Check your connection and try again."
     },
     "invalidLink": "Invalid link",
     "invalidLinkMessage": "No verification token found."

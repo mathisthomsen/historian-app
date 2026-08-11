@@ -26,10 +26,7 @@ describe("ForgotPasswordForm", () => {
   });
 
   it("shows success state after fetch resolves", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValueOnce({ ok: true, status: 200 } as Response),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce({ ok: true, status: 200 } as Response));
 
     renderWithProviders(<ForgotPasswordForm />);
 
@@ -45,10 +42,38 @@ describe("ForgotPasswordForm", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows success state even if fetch throws (no enumeration)", async () => {
+  // Rewritten for issue #48. This used to assert the opposite — that a thrown
+  // fetch still rendered "you will receive a link". Enumeration is closed
+  // server-side (the route returns an identical 200 either way), so suppressing
+  // client failures protected nothing and told a user a mail was on its way when
+  // none had been requested.
+  it("reports a network failure instead of claiming a mail was sent", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new Error("Network error")));
+
+    renderWithProviders(<ForgotPasswordForm />);
+
+    fireEvent.change(screen.getByLabelText(/fields\.email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /forgot\.submit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toBeDefined();
+    });
+    expect(screen.queryByText("forgot.emailSentMessage")).toBeNull();
+
+    vi.unstubAllGlobals();
+  });
+
+  it("reports being throttled instead of claiming a mail was sent", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockRejectedValueOnce(new Error("Network error")),
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        headers: { get: () => "3600" },
+        json: async () => ({ error: { code: "RATE_LIMITED" } }),
+      } as unknown as Response),
     );
 
     renderWithProviders(<ForgotPasswordForm />);
@@ -59,8 +84,9 @@ describe("ForgotPasswordForm", () => {
     fireEvent.click(screen.getByRole("button", { name: /forgot\.submit/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("forgot.emailSentMessage")).toBeDefined();
+      expect(screen.getByRole("alert")).toBeDefined();
     });
+    expect(screen.queryByText("forgot.emailSentMessage")).toBeNull();
 
     vi.unstubAllGlobals();
   });

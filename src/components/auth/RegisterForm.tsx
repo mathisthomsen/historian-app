@@ -12,6 +12,8 @@ import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthInd
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { retryAfterMinutes } from "@/lib/api-error";
+import { REGISTER_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 
 // Schema keys used as placeholders — translated inside the component.
 type RegisterFormValues = {
@@ -74,7 +76,20 @@ export function RegisterForm() {
         return;
       }
       if (res.status === 429) {
-        setServerError(t("errors.rateLimited", { minutes: "15" }));
+        // Was hardcoded to "15" against a 60-minute window, so a user who waited
+        // exactly as long as they were told was still blocked (issue #48). The
+        // limiter already emits an accurate Retry-After.
+        setServerError(
+          t("errors.rateLimited", {
+            minutes: retryAfterMinutes(res, REGISTER_RATE_LIMIT_MINUTES),
+          }),
+        );
+        return;
+      }
+      if (res.status === 503) {
+        // Emitted when Redis is degraded; this used to collapse into "try again",
+        // which invites an immediate retry that cannot work.
+        setServerError(t("errors.serviceUnavailable"));
         return;
       }
       if (!res.ok) {
@@ -83,7 +98,7 @@ export function RegisterForm() {
       }
       setSuccess(true);
     } catch {
-      setServerError(t("errors.serverError"));
+      setServerError(t("errors.networkError"));
     }
   }
 

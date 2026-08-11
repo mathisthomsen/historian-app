@@ -11,6 +11,8 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { retryAfterMinutes } from "@/lib/api-error";
+import { FORGOT_PASSWORD_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 
 type ForgotFormValues = {
   email: string;
@@ -19,6 +21,7 @@ type ForgotFormValues = {
 export function ForgotPasswordForm() {
   const t = useTranslations("auth");
   const [submitted, setSubmitted] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Built inside the component so t() is in scope — at module scope zod falls back
@@ -37,15 +40,37 @@ export function ForgotPasswordForm() {
 
   async function onSubmit(values: ForgotFormValues) {
     setIsSubmitting(true);
+    setServerError(null);
     try {
-      await fetch("/api/auth/forgot-password", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: values.email }),
       });
+
+      // Enumeration is closed server-side: the route returns an identical 200
+      // whether or not the address exists. Suppressing client-side failures on
+      // top of that protected nothing and only misled — a throttled user who
+      // got no mail was told a second time that one was on its way (issue #48).
+      if (res.status === 429) {
+        setServerError(
+          t("errors.rateLimited", {
+            minutes: retryAfterMinutes(res, FORGOT_PASSWORD_RATE_LIMIT_MINUTES),
+          }),
+        );
+        return;
+      }
+      if (res.status === 503) {
+        setServerError(t("errors.serviceUnavailable"));
+        return;
+      }
+      if (!res.ok) {
+        setServerError(t("errors.serverError"));
+        return;
+      }
       setSubmitted(true);
     } catch {
-      setSubmitted(true); // Always show success to prevent enumeration
+      setServerError(t("errors.networkError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -61,6 +86,11 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {serverError && (
+        <div role="alert" className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+          {serverError}
+        </div>
+      )}
       <p className="text-muted-foreground text-sm">{t("forgot.description")}</p>
       <div className="space-y-1">
         <Label htmlFor="email">{t("fields.email")}</Label>

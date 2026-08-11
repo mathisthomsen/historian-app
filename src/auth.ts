@@ -1,14 +1,31 @@
 import bcrypt from "bcryptjs";
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 
 import { writeAuditLog } from "@/lib/audit";
+import { ACCOUNT_LOCKOUT_MINUTES, SIGN_IN_CODES, type SignInCode } from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
 import { rateLimiter } from "@/lib/rate-limit";
 import { anonymizeIp } from "@/lib/security";
 
 import { authConfig } from "./auth.config";
+
+/**
+ * Carries a distinguishable reason to the client as `signIn(...).code`.
+ * Defined here rather than in `@/lib/auth-errors` so that module stays free of
+ * the `next-auth` import, which the client components also depend on.
+ */
+class SignInFailure extends CredentialsSignin {
+  constructor(public override code: SignInCode) {
+    super(code);
+  }
+}
+
+const invalidCredentials = () => new SignInFailure(SIGN_IN_CODES.invalidCredentials);
+const loginRateLimited = () => new SignInFailure(SIGN_IN_CODES.rateLimited);
+const accountLocked = () => new SignInFailure(SIGN_IN_CODES.accountLocked);
+const emailNotVerified = () => new SignInFailure(SIGN_IN_CODES.emailNotVerified);
 
 // A valid bcrypt hash at cost 12 for timing normalization on unknown-email logins
 const DUMMY_HASH = "$2a$12$dummyhashfortimingnormalization.000000000000000000000000";
@@ -24,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       async authorize(credentials, request) {
         const parsed = credentialsSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+        if (!parsed.success) throw invalidCredentials();
         const { email, password } = parsed.data;
 
         const ipRaw =
@@ -36,7 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Rate limit per IP + email
         const rlKey = `login:${ip}:${email}`;
         const rl = await rateLimiter.check(rlKey, 5, 15 * 60 * 1000);
-        if (!rl.allowed) return null;
+        if (!rl.allowed) throw loginRateLimited();
 
         const user = await prisma.user.findUnique({ where: { email } });
 
@@ -49,7 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             request,
             metadata: { reason: "user_not_found", email },
           });
-          return null;
+          throw invalidCredentials();
         }
 
         // Account locked check
@@ -60,7 +77,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             request,
             metadata: { reason: "account_locked" },
           });
-          return null;
+          throw accountLocked();
         }
 
         const passwordMatch = await bcrypt.compare(password, user.password_hash);
@@ -71,7 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             failed_login_count: newCount,
           };
           if (newCount >= 10) {
-            updates.locked_until = new Date(Date.now() + 30 * 60 * 1000);
+            updates.locked_until = new Date(Date.now() + ACCOUNT_LOCKOUT_MINUTES * 60 * 1000);
             await writeAuditLog({
               action: "ACCOUNT_LOCKED",
               userId: user.id,
@@ -86,7 +103,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             request,
             metadata: { reason: "wrong_password" },
           });
-          return null;
+          if (newCount >= 10) throw accountLocked();
+          throw invalidCredentials();
         }
 
         if (!user.email_verified_at) {
@@ -96,8 +114,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             request,
             metadata: { reason: "email_not_verified" },
           });
-          // Return a custom error string that LoginForm can detect
-          throw new Error("email_not_verified");
+          // A plain Error here was wrapped as a non-client-safe CallbackRouteError,
+          // so the client only ever saw "Configuration" (issue #48).
+          throw emailNotVerified();
         }
 
         // Success

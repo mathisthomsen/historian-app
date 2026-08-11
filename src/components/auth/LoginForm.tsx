@@ -13,6 +13,11 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  ACCOUNT_LOCKOUT_MINUTES,
+  LOGIN_RATE_LIMIT_MINUTES,
+  SIGN_IN_CODES,
+} from "@/lib/auth-errors";
 
 type LoginFormValues = {
   email: string;
@@ -55,10 +60,27 @@ export function LoginForm() {
       });
 
       if (result?.error) {
-        if (result.error === "email_not_verified" || result.error.includes("email_not_verified")) {
-          setError(t("errors.emailNotVerified"));
-        } else {
-          setError(t("errors.invalidCredentials"));
+        // `code` comes from the CredentialsSignin subclass thrown in authorize().
+        // Before that every cause collapsed into "invalid credentials" — including
+        // the 15-minute rate limit and the 30-minute lockout, neither of which a
+        // user can escape by re-checking their password (issue #48).
+        switch (result.code) {
+          case SIGN_IN_CODES.emailNotVerified:
+            setError(t("errors.emailNotVerified"));
+            break;
+          case SIGN_IN_CODES.rateLimited:
+            setError(t("errors.loginRateLimited", { minutes: LOGIN_RATE_LIMIT_MINUTES }));
+            break;
+          case SIGN_IN_CODES.accountLocked:
+            setError(t("errors.accountLocked", { minutes: ACCOUNT_LOCKOUT_MINUTES }));
+            break;
+          case SIGN_IN_CODES.invalidCredentials:
+            setError(t("errors.invalidCredentials"));
+            break;
+          default:
+            // An unrecognised code is not something authorize() classified — a
+            // server or configuration fault, not bad input.
+            setError(t("errors.serverError"));
         }
         return;
       }

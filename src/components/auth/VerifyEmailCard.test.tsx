@@ -19,12 +19,15 @@ vi.mock("next-intl", async (importOriginal) => {
 });
 
 describe("VerifyEmailCard", () => {
-  it("renders error state immediately when token is null (no fetch call)", () => {
+  // Arriving with no ?token is not a broken link. This used to render
+  // "errors.tokenInvalid" as both headline and body (issue #48).
+  it("renders a distinct no-token state, not 'invalid link' (no fetch call)", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     renderWithProviders(<VerifyEmailCard token={null} />);
 
-    // Should show error state with tokenInvalid message (appears in heading + body)
-    expect(screen.getAllByText("errors.tokenInvalid").length).toBeGreaterThan(0);
+    expect(screen.getByText("verify.noTokenTitle")).toBeDefined();
+    expect(screen.getByText("verify.noTokenMessage")).toBeDefined();
+    expect(screen.queryByText("errors.tokenInvalid")).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
