@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -28,39 +28,87 @@ import { Textarea } from "@/components/ui/textarea";
 import { errorCode } from "@/lib/api-error";
 import type { EventDetail, EventSummary } from "@/types/event";
 
-const formSchema = z
-  .object({
-    title: z.string().min(1),
-    description: z.string().optional().nullable(),
-    event_type_id: z.string().cuid().optional().nullable(),
-    start_year: z.number().int().min(1).max(2100).optional().nullable(),
-    start_month: z.number().int().min(1).max(12).optional().nullable(),
-    start_day: z.number().int().min(1).max(31).optional().nullable(),
-    start_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).default("UNKNOWN"),
-    end_year: z.number().int().min(1).max(2100).optional().nullable(),
-    end_month: z.number().int().min(1).max(12).optional().nullable(),
-    end_day: z.number().int().min(1).max(31).optional().nullable(),
-    end_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).default("UNKNOWN"),
-    location: z.string().optional().nullable(),
-    parent_id: z.string().cuid().optional().nullable(),
-    notes: z.string().optional().nullable(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.start_month && !data.start_year) {
-      ctx.addIssue({ code: "custom", path: ["start_month"], message: "month_requires_year" });
-    }
-    if (data.start_day && !data.start_month) {
-      ctx.addIssue({ code: "custom", path: ["start_day"], message: "day_requires_month" });
-    }
-    if (data.end_month && !data.end_year) {
-      ctx.addIssue({ code: "custom", path: ["end_month"], message: "month_requires_year" });
-    }
-    if (data.end_day && !data.end_month) {
-      ctx.addIssue({ code: "custom", path: ["end_day"], message: "day_requires_month" });
-    }
-  });
+/**
+ * Built per-render inside the component so `t()` is in scope. At module scope zod
+ * fell back to its English defaults ("String must contain at least 1 character(s)")
+ * and the `superRefine` messages reached the user as the raw keys
+ * `month_requires_year` / `day_requires_month` — see issue #41.
+ */
+function buildFormSchema(t: (key: string) => string) {
+  return z
+    .object({
+      title: z.string().min(1, t("errors.title_required")),
+      description: z.string().optional().nullable(),
+      event_type_id: z.string().cuid().optional().nullable(),
+      start_year: z
+        .number()
+        .int()
+        .min(1, t("errors.invalid_year"))
+        .max(2100, t("errors.invalid_year"))
+        .optional()
+        .nullable(),
+      start_month: z
+        .number()
+        .int()
+        .min(1, t("errors.invalid_month"))
+        .max(12, t("errors.invalid_month"))
+        .optional()
+        .nullable(),
+      start_day: z
+        .number()
+        .int()
+        .min(1, t("errors.invalid_day"))
+        .max(31, t("errors.invalid_day"))
+        .optional()
+        .nullable(),
+      start_date_certainty: z
+        .enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"])
+        .default("UNKNOWN"),
+      end_year: z
+        .number()
+        .int()
+        .min(1, t("errors.invalid_year"))
+        .max(2100, t("errors.invalid_year"))
+        .optional()
+        .nullable(),
+      end_month: z
+        .number()
+        .int()
+        .min(1, t("errors.invalid_month"))
+        .max(12, t("errors.invalid_month"))
+        .optional()
+        .nullable(),
+      end_day: z
+        .number()
+        .int()
+        .min(1, t("errors.invalid_day"))
+        .max(31, t("errors.invalid_day"))
+        .optional()
+        .nullable(),
+      end_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).default("UNKNOWN"),
+      location: z.string().optional().nullable(),
+      parent_id: z.string().cuid().optional().nullable(),
+      notes: z.string().optional().nullable(),
+    })
+    .superRefine((data, ctx) => {
+      const monthRequiresYear = t("errors.month_requires_year");
+      const dayRequiresMonth = t("errors.day_requires_month");
+      if (data.start_month && !data.start_year) {
+        ctx.addIssue({ code: "custom", path: ["start_month"], message: monthRequiresYear });
+      }
+      if (data.start_day && !data.start_month) {
+        ctx.addIssue({ code: "custom", path: ["start_day"], message: dayRequiresMonth });
+      }
+      if (data.end_month && !data.end_year) {
+        ctx.addIssue({ code: "custom", path: ["end_month"], message: monthRequiresYear });
+      }
+      if (data.end_day && !data.end_month) {
+        ctx.addIssue({ code: "custom", path: ["end_day"], message: dayRequiresMonth });
+      }
+    });
+}
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<ReturnType<typeof buildFormSchema>>;
 
 interface EventFormProps {
   mode: "create" | "edit";
@@ -83,6 +131,8 @@ export function EventForm({
   const [parentEvents, setParentEvents] = useState<EventSummary[]>([]);
   const [parentOpen, setParentOpen] = useState(false);
   const [parentSearch, setParentSearch] = useState("");
+
+  const formSchema = useMemo(() => buildFormSchema(t), [t]);
 
   const {
     register,

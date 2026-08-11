@@ -30,8 +30,8 @@ export function RegisterForm() {
   // Build schema with translated messages so field errors render correctly.
   const registerSchema = z
     .object({
-      name: z.string().min(1).max(100).trim(),
-      email: z.string().email().max(254),
+      name: z.string().trim().min(1, t("errors.nameRequired")).max(100, t("errors.nameTooLong")),
+      email: z.string().email(t("errors.emailInvalid")).max(254, t("errors.emailTooLong")),
       password: z
         .string()
         .min(8, t("errors.passwordTooShort"))
@@ -98,7 +98,7 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {serverError && (
-        <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+        <div role="alert" className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
           {serverError}
         </div>
       )}
@@ -112,7 +112,7 @@ export function RegisterForm() {
           {...register("name")}
           aria-invalid={!!errors.name}
         />
-        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+        {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
       </div>
       <div className="space-y-1">
         <Label htmlFor="email">{t("fields.email")}</Label>
@@ -123,7 +123,7 @@ export function RegisterForm() {
           {...register("email")}
           aria-invalid={!!errors.email}
         />
-        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+        {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
       </div>
       <div className="space-y-1">
         <Label htmlFor="password">{t("fields.password")}</Label>
@@ -138,14 +138,14 @@ export function RegisterForm() {
           />
           <button
             type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2"
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+        {errors.password && <p className="text-destructive text-xs">{errors.password.message}</p>}
         <PasswordStrengthIndicator password={password} />
       </div>
       <div className="space-y-1">
@@ -158,7 +158,7 @@ export function RegisterForm() {
           aria-invalid={!!errors.passwordConfirm}
         />
         {errors.passwordConfirm && (
-          <p className="text-xs text-destructive">{errors.passwordConfirm.message}</p>
+          <p className="text-destructive text-xs">{errors.passwordConfirm.message}</p>
         )}
       </div>
       <Button type="submit" className="w-full">

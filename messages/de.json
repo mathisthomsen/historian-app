@@ -114,7 +114,12 @@
       "passwordNeedsSpecial": "Mindestens ein Sonderzeichen.",
       "passwordMismatch": "Passwörter stimmen nicht überein.",
       "serverError": "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
-      "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut."
+      "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut.",
+      "emailInvalid": "Bitte eine gültige E-Mail-Adresse eingeben.",
+      "emailTooLong": "E-Mail-Adresse ist zu lang (höchstens 254 Zeichen).",
+      "nameRequired": "Bitte einen Namen eingeben.",
+      "nameTooLong": "Name ist zu lang (höchstens 100 Zeichen).",
+      "passwordRequired": "Bitte ein Passwort eingeben."
     },
     "invalidLink": "Ungültiger Link",
     "invalidLinkMessage": "Kein Verifizierungstoken gefunden."
@@ -234,7 +239,8 @@
       "depth_limit": "Ereignis '{parent_title}' ist selbst ein Unterereignis und kann keine eigenen Unterereignisse haben. Bitte ein anderes Ereignis wählen.",
       "not_found": "Ereignis nicht gefunden.",
       "save_failed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
-      "delete_has_sub_events": "Hat {count} Unterereignisse"
+      "delete_has_sub_events": "Hat {count} Unterereignisse",
+      "invalid_year": "Ungültiges Jahr (1–2100)."
     }
   },
   "event_types": {

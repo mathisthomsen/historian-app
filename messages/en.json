@@ -114,7 +114,12 @@
       "passwordNeedsSpecial": "At least one special character.",
       "passwordMismatch": "Passwords do not match.",
       "serverError": "An error occurred. Please try again.",
-      "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly."
+      "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly.",
+      "emailInvalid": "Enter a valid email address.",
+      "emailTooLong": "Email address is too long (254 characters maximum).",
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "Name is too long (100 characters maximum).",
+      "passwordRequired": "Enter a password."
     },
     "invalidLink": "Invalid link",
     "invalidLinkMessage": "No verification token found."
@@ -234,7 +239,8 @@
       "depth_limit": "Event '{parent_title}' is itself a sub-event and cannot have its own sub-events. Please choose a different event.",
       "not_found": "Event not found.",
       "save_failed": "Failed to save. Please try again.",
-      "delete_has_sub_events": "Has {count} sub-events"
+      "delete_has_sub_events": "Has {count} sub-events",
+      "invalid_year": "Invalid year (1–2100)."
     }
   },
   "event_types": {

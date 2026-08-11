@@ -12,16 +12,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const forgotSchema = z.object({
-  email: z.string().email(),
-});
-
-type ForgotFormValues = z.infer<typeof forgotSchema>;
+type ForgotFormValues = {
+  email: string;
+};
 
 export function ForgotPasswordForm() {
   const t = useTranslations("auth");
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Built inside the component so t() is in scope — at module scope zod falls back
+  // to its English defaults, which then reach a German-default UI (issue #41).
+  const forgotSchema = z.object({
+    email: z.string().email(t("errors.emailInvalid")),
+  });
 
   const {
     register,
@@ -57,7 +61,7 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <p className="text-sm text-muted-foreground">{t("forgot.description")}</p>
+      <p className="text-muted-foreground text-sm">{t("forgot.description")}</p>
       <div className="space-y-1">
         <Label htmlFor="email">{t("fields.email")}</Label>
         <Input
@@ -67,7 +71,7 @@ export function ForgotPasswordForm() {
           {...register("email")}
           aria-invalid={!!errors.email}
         />
-        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+        {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

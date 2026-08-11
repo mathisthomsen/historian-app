@@ -14,23 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { errorCode, readErrorBody, translateErrorCode } from "@/lib/api-error";
 
-const resetSchema = z
-  .object({
-    password: z
-      .string()
-      .min(8)
-      .regex(/[A-Z]/)
-      .regex(/[a-z]/)
-      .regex(/[0-9]/)
-      .regex(/[^A-Za-z0-9]/),
-    passwordConfirm: z.string(),
-  })
-  .refine((d) => d.password === d.passwordConfirm, {
-    message: "auth.errors.passwordMismatch",
-    path: ["passwordConfirm"],
-  });
-
-type ResetFormValues = z.infer<typeof resetSchema>;
+type ResetFormValues = {
+  password: string;
+  passwordConfirm: string;
+};
 
 interface ResetPasswordFormProps {
   token: string;
@@ -42,6 +29,25 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Built inside the component so t() is in scope. At module scope this rendered
+  // zod's English defaults and the literal key "auth.errors.passwordMismatch" to
+  // German users (issue #41); RegisterForm already used this convention.
+  const resetSchema = z
+    .object({
+      password: z
+        .string()
+        .min(8, t("errors.passwordTooShort"))
+        .regex(/[A-Z]/, t("errors.passwordNeedsUpper"))
+        .regex(/[a-z]/, t("errors.passwordNeedsLower"))
+        .regex(/[0-9]/, t("errors.passwordNeedsNumber"))
+        .regex(/[^A-Za-z0-9]/, t("errors.passwordNeedsSpecial")),
+      passwordConfirm: z.string(),
+    })
+    .refine((d) => d.password === d.passwordConfirm, {
+      message: t("errors.passwordMismatch"),
+      path: ["passwordConfirm"],
+    });
 
   const {
     register,
