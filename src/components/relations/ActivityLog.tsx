@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { LoadError } from "@/components/ui/load-error";
 import type { ActivityEntry } from "@/types/relations";
 
 interface ActivityLogProps {
@@ -46,32 +47,39 @@ export function ActivityLog({ projectId, entityType, entityId, refreshKey }: Act
   const t = useTranslations("entityActivity");
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
   const load = useCallback(
     async (p: number) => {
       setLoading(true);
+      setFailed(false);
       try {
         const res = await fetch(
           `/api/entities/${entityType.toLowerCase()}/${entityId}/activity?projectId=${encodeURIComponent(projectId)}&page=${p}&pageSize=${PAGE_SIZE}`,
         );
-        if (res.ok) {
-          const data = (await res.json()) as {
-            data?: ActivityEntry[];
-            pagination?: { page: number; totalPages: number };
-          };
-          const items = data.data ?? [];
-          if (p === 1) {
-            setEntries(items);
-          } else {
-            setEntries((prev) => [...prev, ...items]);
-          }
-          // The endpoint never returned `hasMore`; the old fallback guessed from
-          // page length and was wrong when the last page was exactly PAGE_SIZE.
-          const pagination = data.pagination;
-          setHasMore(pagination ? pagination.page < pagination.totalPages : false);
+        if (!res.ok) {
+          setFailed(true);
+          return;
         }
+        const data = (await res.json()) as {
+          data?: ActivityEntry[];
+          pagination?: { page: number; totalPages: number };
+        };
+        const items = data.data ?? [];
+        if (p === 1) {
+          setEntries(items);
+        } else {
+          setEntries((prev) => [...prev, ...items]);
+        }
+        // The endpoint never returned `hasMore`; the old fallback guessed from
+        // page length and was wrong when the last page was exactly PAGE_SIZE.
+        const pagination = data.pagination;
+        setHasMore(pagination ? pagination.page < pagination.totalPages : false);
+      } catch {
+        // A rejected fetch must not resolve to "no history" (issue #34).
+        setFailed(true);
       } finally {
         setLoading(false);
       }
@@ -96,6 +104,10 @@ export function ActivityLog({ projectId, entityType, entityId, refreshKey }: Act
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
+  }
+
+  if (failed && entries.length === 0) {
+    return <LoadError onRetry={() => void load(1)} />;
   }
 
   if (!loading && entries.length === 0) {
@@ -130,7 +142,9 @@ export function ActivityLog({ projectId, entityType, entityId, refreshKey }: Act
         );
       })}
 
-      {hasMore && (
+      {failed && <LoadError onRetry={() => void load(page)} />}
+
+      {hasMore && !failed && (
         <Button type="button" variant="outline" size="sm" onClick={loadMore} disabled={loading}>
           {loading && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
           Mehr laden

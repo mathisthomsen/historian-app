@@ -13,7 +13,9 @@
     "delete": "Delete",
     "main_navigation": "Main navigation",
     "year_format": "YYYY",
-    "select_all_on_page": "Select all on this page"
+    "select_all_on_page": "Select all on this page",
+    "loadFailed": "Could not load this data.",
+    "evidenceCountFailed": "Could not load evidence"
   },
   "shell": {
     "nav": {

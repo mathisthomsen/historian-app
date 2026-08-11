@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { LoadError } from "@/components/ui/load-error";
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
   const t = useTranslations("relationTypes");
   const [types, setTypes] = useState<RelationTypeItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingType, setEditingType] = useState<RelationTypeItem | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<RelationTypeItem | null>(null);
@@ -42,16 +44,22 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
 
   async function loadTypes() {
     setLoading(true);
+    setFailed(false);
     try {
       const res = await fetch(`/api/relation-types?projectId=${encodeURIComponent(projectId)}`);
-      if (res.ok) {
-        const data = (await res.json()) as RelationTypeItem[] | { data?: RelationTypeItem[] };
-        if (Array.isArray(data)) {
-          setTypes(data);
-        } else if (data && Array.isArray((data as { data?: RelationTypeItem[] }).data)) {
-          setTypes((data as { data: RelationTypeItem[] }).data);
-        }
+      if (!res.ok) {
+        setFailed(true);
+        return;
       }
+      const data = (await res.json()) as RelationTypeItem[] | { data?: RelationTypeItem[] };
+      if (Array.isArray(data)) {
+        setTypes(data);
+      } else if (data && Array.isArray((data as { data?: RelationTypeItem[] }).data)) {
+        setTypes((data as { data: RelationTypeItem[] }).data);
+      }
+    } catch {
+      // "No relation types" on an authority table invites duplicates (issue #34).
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -87,6 +95,10 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
         }
         setDeleteTarget(null);
       }
+    } catch {
+      // A rejected fetch previously cleared the pending flag and nothing else — no
+      // toast, no row change, an unhandled rejection (issue #34).
+      toast.error(t("delete_failed"));
     } finally {
       setDeleting(false);
     }
@@ -98,6 +110,10 @@ export function RelationTypesTable({ projectId }: RelationTypesTableProps) {
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
+  }
+
+  if (failed) {
+    return <LoadError onRetry={() => void loadTypes()} />;
   }
 
   return (

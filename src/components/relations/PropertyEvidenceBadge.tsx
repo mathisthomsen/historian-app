@@ -26,23 +26,48 @@ export function PropertyEvidenceBadge({
   hasCertainty = false,
 }: PropertyEvidenceBadgeProps) {
   const t = useTranslations("propertyEvidence");
+  const tCommon = useTranslations("common");
   const [count, setCount] = useState<number | null>(null);
+  const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const loadCount = useCallback(async () => {
-    const res = await fetch(
-      `/api/property-evidence?projectId=${encodeURIComponent(projectId)}&entityType=${entityType}&entityId=${encodeURIComponent(entityId)}&property=${encodeURIComponent(property)}`,
-    );
-    if (res.ok) {
+    setFailed(false);
+    try {
+      const res = await fetch(
+        `/api/property-evidence?projectId=${encodeURIComponent(projectId)}&entityType=${entityType}&entityId=${encodeURIComponent(entityId)}&property=${encodeURIComponent(property)}`,
+      );
+      if (!res.ok) {
+        setFailed(true);
+        return;
+      }
       const data = (await res.json()) as { data?: unknown[] };
       setCount(data.data?.length ?? 0);
+    } catch {
+      setFailed(true);
     }
   }, [projectId, entityType, entityId, property]);
 
   useEffect(() => {
     void loadCount();
   }, [loadCount, refreshKey]);
+
+  // A failed load previously left `count` null, so the badge vanished — silently
+  // removing the unevidenced warning and upgrading an unevidenced claim's
+  // appearance. Say the count is unknown instead (issue #34).
+  if (failed) {
+    return (
+      <button
+        type="button"
+        onClick={() => void loadCount()}
+        aria-label={`${fieldLabel}: ${tCommon("evidenceCountFailed")}. ${tCommon("tryAgain")}`}
+        className="border-destructive/50 text-destructive hover:bg-destructive/10 inline-flex cursor-pointer items-center rounded-full border border-dashed px-1.5 py-0.5 font-mono text-xs transition-colors"
+      >
+        ?
+      </button>
+    );
+  }
 
   // Still loading — render nothing
   if (count === null) return null;
