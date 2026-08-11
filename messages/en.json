@@ -8,12 +8,12 @@
     "notFoundDescription": "The requested page does not exist.",
     "cancel": "Cancel",
     "unexpectedError": "An unexpected error occurred.",
-    "select_all": "Select all",
     "select_row": "Select row",
     "edit": "Edit",
     "delete": "Delete",
     "main_navigation": "Main navigation",
-    "year_format": "YYYY"
+    "year_format": "YYYY",
+    "select_all_on_page": "Select all on this page"
   },
   "shell": {
     "nav": {

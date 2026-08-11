@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useListUrlState } from "@/hooks/use-list-url-state";
+import { useRowSelection } from "@/hooks/use-row-selection";
 import { SOURCE_TYPE_SUGGESTIONS } from "@/lib/source-types";
 import type { SourceReliability, SourceSummary } from "@/types/source";
 
@@ -57,7 +58,7 @@ export function SourceTable({
   const t = useTranslations("sources");
   const router = useRouter();
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useRowSelection();
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { buildUrl, handleSearch, handleSort, handlePageChange } = useListUrlState({

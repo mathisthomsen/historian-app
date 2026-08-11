@@ -13,6 +13,7 @@ import { DataTableSearch } from "@/components/research/DataTableSearch";
 import { EventFilters } from "@/components/research/EventFilters";
 import { Button } from "@/components/ui/button";
 import { useListUrlState } from "@/hooks/use-list-url-state";
+import { useRowSelection } from "@/hooks/use-row-selection";
 import { formatPartialDate } from "@/lib/date";
 import type { EventFilterState, EventSummary } from "@/types/event";
 import type { EventType } from "@/types/event-type";
@@ -53,7 +54,7 @@ export function EventsListClient({
   const t = useTranslations("events");
   const router = useRouter();
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useRowSelection();
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { buildUrl, handleSearch, handleSort, handlePageChange } = useListUrlState({

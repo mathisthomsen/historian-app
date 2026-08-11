@@ -8,12 +8,12 @@
     "notFoundDescription": "Die angeforderte Seite existiert nicht.",
     "cancel": "Abbrechen",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten.",
-    "select_all": "Alle auswählen",
     "select_row": "Zeile auswählen",
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "main_navigation": "Hauptnavigation",
-    "year_format": "JJJJ"
+    "year_format": "JJJJ",
+    "select_all_on_page": "Alle auf dieser Seite auswählen"
   },
   "shell": {
     "nav": {

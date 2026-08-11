@@ -43,11 +43,14 @@ export function DataTable<TData extends { id: string }>({
   const allSelected = data.length > 0 && data.every((row) => selectedIds.includes(row.id));
   const someSelected = data.some((row) => selectedIds.includes(row.id));
 
+  // Both branches are scoped to the visible page: the header checkbox reports on
+  // `data` only, so it must not add or clear ids the user cannot see (issue #39).
   function handleSelectAll(checked: boolean | "indeterminate") {
+    const pageIds = data.map((row) => row.id);
     if (checked === true) {
-      onSelectionChange(data.map((row) => row.id));
+      onSelectionChange([...selectedIds, ...pageIds.filter((id) => !selectedIds.includes(id))]);
     } else {
-      onSelectionChange([]);
+      onSelectionChange(selectedIds.filter((id) => !pageIds.includes(id)));
     }
   }
 
@@ -67,7 +70,7 @@ export function DataTable<TData extends { id: string }>({
             <Checkbox
               checked={allSelected ? true : someSelected && !allSelected ? "indeterminate" : false}
               onCheckedChange={handleSelectAll}
-              aria-label={t("select_all")}
+              aria-label={t("select_all_on_page")}
             />
           </TableHead>
           {columns.map((col) => (
@@ -109,7 +112,11 @@ export function DataTable<TData extends { id: string }>({
                     // Superset of both branches: 2.5's Radix checkbox uses role="checkbox",
                     // and F-H6 needs links/buttons exempt so a row click does not
                     // fire on the edit/delete button padding.
-                    if (!target.closest('a, button, input, label, select, textarea, [role="checkbox"]')) {
+                    if (
+                      !target.closest(
+                        'a, button, input, label, select, textarea, [role="checkbox"]',
+                      )
+                    ) {
                       onRowClick(row.id);
                     }
                   }

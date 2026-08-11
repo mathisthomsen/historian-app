@@ -12,6 +12,7 @@ import { DataTablePagination } from "@/components/research/DataTablePagination";
 import { DataTableSearch } from "@/components/research/DataTableSearch";
 import { Button } from "@/components/ui/button";
 import { useListUrlState } from "@/hooks/use-list-url-state";
+import { useRowSelection } from "@/hooks/use-row-selection";
 import { formatPartialDate } from "@/lib/date";
 import type { PersonSummary } from "@/types/person";
 
@@ -41,7 +42,7 @@ export function PersonsListClient({
   const t = useTranslations("persons");
   const router = useRouter();
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useRowSelection();
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { handleSearch, handleSort, handlePageChange } = useListUrlState({
