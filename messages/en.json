@@ -512,7 +512,11 @@
     "save_failed": "Relation could not be saved.",
     "delete_failed": "Relation could not be deleted.",
     "year_placeholder": "Year",
-    "month_placeholder": "Month"
+    "month_placeholder": "Month",
+    "evidence_attach_failed": "The relation was saved, but the evidence could not be attached. Your source and quote are still below — please attach them again.",
+    "evidence_retry": "Attach evidence again",
+    "evidence_attached_toast": "Evidence attached.",
+    "saved_without_evidence_toast": "Relation saved — without evidence."
   },
   "relationTypes": {
     "title": "Relation types",
