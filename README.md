@@ -185,6 +185,11 @@ Every user-data table carries `project_id`, and access runs through `UserProject
 `OWNER` / `EDITOR` / `VIEWER` roles. Retrofitting tenancy is notoriously error-prone; it was
 designed in from the first migration.
 
+Because every write needs a project, one is provisioned on first sign-in and the user is made
+its `OWNER` (`src/lib/project.ts`). The active project is then the user's first `OWNER`/`EDITOR`
+membership, carried in the session — a stopgap until the project switcher replaces it, and the
+reason there is no "no project" state to design around.
+
 ---
 
 ## Relationship to CIDOC CRM
