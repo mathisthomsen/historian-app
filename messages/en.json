@@ -8,12 +8,25 @@
     "notFoundDescription": "The requested page does not exist.",
     "cancel": "Cancel",
     "unexpectedError": "An unexpected error occurred.",
-    "select_all": "Select all",
     "select_row": "Select row",
     "edit": "Edit",
     "delete": "Delete",
     "main_navigation": "Main navigation",
-    "year_format": "YYYY"
+    "year_format": "YYYY",
+    "select_all_on_page": "Select all on this page",
+    "loadFailed": "Could not load this data.",
+    "evidenceCountFailed": "Could not load evidence",
+    "unsavedTitle": "Discard unsaved changes?",
+    "unsavedBody": "What you entered on this page will be lost. This cannot be undone.",
+    "discardChanges": "Discard changes",
+    "keepEditing": "Keep editing",
+    "certainty": {
+      "CERTAIN": "Certain",
+      "PROBABLE": "Probable",
+      "POSSIBLE": "Possible",
+      "UNKNOWN": "Unknown"
+    },
+    "certaintyLabel": "Certainty: {level}"
   },
   "shell": {
     "nav": {
@@ -56,7 +69,10 @@
       "namePlaceholder": "Full name",
       "alreadyHaveAccount": "Already have an account?",
       "login": "Sign in",
-      "verificationSent": "Verification email sent. Please check your inbox."
+      "verificationSent": "Verification email sent. Please check your inbox.",
+      "emailNotSentTitle": "Account created — the email could not be delivered",
+      "emailNotSentMessage": "Your account exists, but the confirmation email did not go out. Request a new link below.",
+      "backToLogin": "Go to sign-in"
     },
     "verify": {
       "title": "Confirm email",
@@ -64,7 +80,19 @@
       "success": "Email confirmed",
       "successMessage": "Your account is active.",
       "loginNow": "Sign in now",
-      "requestNew": "Request new link"
+      "requestNew": "Request new link",
+      "noTokenTitle": "No confirmation link",
+      "noTokenMessage": "This page needs the link from your confirmation email. Open the link directly from that email.",
+      "failedTitle": "Confirmation failed",
+      "linkInvalidTitle": "Invalid link",
+      "retry": "Try again",
+      "alreadyVerifiedTitle": "Already confirmed",
+      "alreadyVerifiedMessage": "This email address is already confirmed. You can sign in.",
+      "resendSent": "If a confirmation is pending for this address, a new link is on its way.",
+      "resendAction": "Send a new confirmation link",
+      "resendSending": "Sending…",
+      "resendEmailLabel": "Email address",
+      "expiredHint": "Confirmation links are valid for 24 hours."
     },
     "forgot": {
       "title": "Forgot password?",
@@ -114,7 +142,17 @@
       "passwordNeedsSpecial": "At least one special character.",
       "passwordMismatch": "Passwords do not match.",
       "serverError": "An error occurred. Please try again.",
-      "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly."
+      "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly.",
+      "emailInvalid": "Enter a valid email address.",
+      "emailTooLong": "Email address is too long (254 characters maximum).",
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "Name is too long (100 characters maximum).",
+      "passwordRequired": "Enter a password.",
+      "accountLocked": "Too many failed attempts. This account is locked for {minutes} minutes.",
+      "loginRateLimited": "Too many sign-in attempts. Please wait up to {minutes} minutes.",
+      "tokenMalformed": "This link is incomplete. Email clients sometimes wrap long links — copy the whole link, or request a new one.",
+      "networkError": "Could not reach the server. Check your connection and try again.",
+      "tokenAlreadyUsed": "This link has already been used. Your password is set — you can sign in."
     },
     "invalidLink": "Invalid link",
     "invalidLinkMessage": "No verification token found."
@@ -158,7 +196,13 @@
       "parent": "Parent Event",
       "notes": "Notes",
       "created_at": "Created at",
-      "created_by": "Created by"
+      "created_by": "Created by",
+      "parent_none": "No parent event",
+      "parent_loading": "Loading…",
+      "parent_unresolved": "The parent event could not be loaded.",
+      "parent_not_eligible": "“{title}” is itself a sub-event and cannot serve as a parent event.",
+      "parent_no_results": "No matches.",
+      "parent_search_placeholder": "Search by title…"
     },
     "date": {
       "year": "Year",
@@ -234,7 +278,8 @@
       "depth_limit": "Event '{parent_title}' is itself a sub-event and cannot have its own sub-events. Please choose a different event.",
       "not_found": "Event not found.",
       "save_failed": "Failed to save. Please try again.",
-      "delete_has_sub_events": "Has {count} sub-events"
+      "delete_has_sub_events": "Has {count} sub-events",
+      "invalid_year": "Invalid year (1–2100)."
     }
   },
   "event_types": {
@@ -366,7 +411,6 @@
     "edit_title": "Edit Source",
     "delete": "Delete Source",
     "delete_confirm": "Really delete this source?",
-    "bulk_delete_confirm": "Delete {count} source(s)?",
     "search_placeholder": "Search by title or author…",
     "empty_state": "No sources yet.",
     "empty_action": "Create first source",
@@ -414,7 +458,9 @@
     "bulk": {
       "selected": "{count} selected",
       "delete_button": "Delete",
-      "deleted_toast": "{count} source(s) deleted."
+      "deleted_toast": "{count} source(s) deleted.",
+      "confirm_title": "Delete {count} sources?",
+      "confirm_body": "This will delete {count} sources. Contact an administrator to restore them."
     },
     "errors": {
       "title_required": "Title is required.",
@@ -503,7 +549,11 @@
     "save_failed": "Relation could not be saved.",
     "delete_failed": "Relation could not be deleted.",
     "year_placeholder": "Year",
-    "month_placeholder": "Month"
+    "month_placeholder": "Month",
+    "evidence_attach_failed": "The relation was saved, but the evidence could not be attached. Your source and quote are still below — please attach them again.",
+    "evidence_retry": "Attach evidence again",
+    "evidence_attached_toast": "Evidence attached.",
+    "saved_without_evidence_toast": "Relation saved — without evidence."
   },
   "relationTypes": {
     "title": "Relation types",
@@ -558,7 +608,10 @@
     "save_failed": "Could not be saved.",
     "search_source": "Search source…",
     "page_reference_placeholder": "e.g. p. 42, fol. 3v",
-    "quote_placeholder": "Relevant quotation"
+    "quote_placeholder": "Relevant quotation",
+    "unevidenced": "Unevidenced",
+    "unevidencedLabel": "{field}: assessed as {level} but has no evidence",
+    "noEvidenceYet": "No evidence yet"
   },
   "entityActivity": {
     "title": "Activity",

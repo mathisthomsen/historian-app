@@ -18,6 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import type { RelationTypeItem } from "@/types/relations";
 
 interface RelationTypeFormDialogProps {
@@ -29,6 +31,11 @@ interface RelationTypeFormDialogProps {
 }
 
 const ENTITY_TYPES: EntityType[] = ["PERSON", "EVENT", "SOURCE", "LOCATION", "LITERATURE"];
+
+/** Order-insensitive comparison for the entity-type checkbox groups. */
+function sameTypes(a: EntityType[], b: EntityType[]): boolean {
+  return a.length === b.length && a.every((t) => b.includes(t));
+}
 
 export function RelationTypeFormDialog({
   open,
@@ -50,6 +57,22 @@ export function RelationTypeFormDialog({
   );
   const [validToTypes, setValidToTypes] = useState<EntityType[]>(editType?.valid_to_types ?? []);
   const [saving, setSaving] = useState(false);
+
+  /**
+   * The reset effect below keys on [editType, open], so Radix's default Escape /
+   * outside-click dismissal wiped all seven fields with no confirmation
+   * (issue #42). Compare against the values the dialog opened with.
+   */
+  const isDirty =
+    name !== (editType?.name ?? "") ||
+    inverseName !== (editType?.inverse_name ?? "") ||
+    description !== (editType?.description ?? "") ||
+    color !== (editType?.color ?? "") ||
+    icon !== (editType?.icon ?? "") ||
+    !sameTypes(validFromTypes, editType?.valid_from_types ?? []) ||
+    !sameTypes(validToTypes, editType?.valid_to_types ?? []);
+
+  const unsaved = useUnsavedChanges(isDirty && !saving && open);
 
   // Reset when editType changes
   useEffect(() => {
@@ -112,7 +135,21 @@ export function RelationTypeFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent
+        className="max-w-lg"
+        onEscapeKeyDown={(event) => {
+          if (isDirty) {
+            event.preventDefault();
+            unsaved.guard(() => onOpenChange(false));
+          }
+        }}
+        onInteractOutside={(event) => {
+          if (isDirty) {
+            event.preventDefault();
+            unsaved.guard(() => onOpenChange(false));
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{isEdit ? t("edit") : t("add")}</DialogTitle>
         </DialogHeader>
@@ -209,7 +246,7 @@ export function RelationTypeFormDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => unsaved.guard(() => onOpenChange(false))}
               disabled={saving}
             >
               {t("cancel")}
@@ -220,6 +257,12 @@ export function RelationTypeFormDialog({
             </Button>
           </DialogFooter>
         </form>
+
+        <UnsavedChangesDialog
+          isConfirming={unsaved.isConfirming}
+          confirmDiscard={unsaved.confirmDiscard}
+          setConfirming={unsaved.setConfirming}
+        />
       </DialogContent>
     </Dialog>
   );

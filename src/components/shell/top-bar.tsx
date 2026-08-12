@@ -13,9 +13,10 @@ import { ThemeToggle } from "./theme-toggle";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
+  sidebarOpen: boolean;
 }
 
-export function TopBar({ onToggleSidebar }: TopBarProps) {
+export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
   const t = useTranslations("shell.topbar");
 
   return (
@@ -23,12 +24,19 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
       className="border-border bg-card fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-3 border-b px-4"
       role="banner"
     >
+      {/* Hidden below lg, matching the <aside> it controls (`hidden lg:flex`).
+          It used to render at every width, where pressing it only swapped the
+          phantom 224px/48px gutter and shifted the page sideways for no reason
+          the user could name (issue #32). */}
       <Button
         variant="ghost"
         size="icon"
         onClick={onToggleSidebar}
         aria-label={t("toggleSidebar")}
+        aria-expanded={sidebarOpen}
+        aria-controls="app-sidebar"
         data-testid="sidebar-toggle"
+        className="hidden lg:inline-flex"
       >
         <Menu className="h-5 w-5" />
       </Button>

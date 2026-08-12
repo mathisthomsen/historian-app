@@ -22,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { SOURCE_TYPE_SUGGESTIONS } from "@/lib/source-types";
 import type { SourceDetail, SourceReliability } from "@/types/source";
 
@@ -54,6 +56,13 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
   const t = useTranslations("sources");
   const router = useRouter();
 
+  // Explicit destination rather than router.back(), which returns to whatever
+  // preceded in history — outside the application entirely when this URL was
+  // opened directly, bookmarked, shared or restored in a new tab (issue #42).
+  // SourceForm is rendered from server components, so it resolves this itself
+  // rather than taking a callback prop.
+  const cancelHref = initial ? `/${locale}/sources/${initial.id}` : `/${locale}/sources`;
+
   const [typeOpen, setTypeOpen] = useState(false);
   const [typeSearch, setTypeSearch] = useState("");
 
@@ -63,7 +72,7 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -78,6 +87,8 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
       notes: initial?.notes ?? "",
     },
   });
+
+  const unsaved = useUnsavedChanges(isDirty && !isSubmitting);
 
   function safeTypeLabel(value: string): string {
     const key = `type_${value}` as const;
@@ -315,7 +326,7 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.back()}
+          onClick={() => unsaved.guard(() => router.push(cancelHref))}
           disabled={isSubmitting}
         >
           {t("cancel")}
@@ -325,6 +336,12 @@ export function SourceForm({ projectId, locale, initial }: SourceFormProps) {
           {mode === "create" ? t("save") : t("save_changes")}
         </Button>
       </div>
+
+      <UnsavedChangesDialog
+        isConfirming={unsaved.isConfirming}
+        confirmDiscard={unsaved.confirmDiscard}
+        setConfirming={unsaved.setConfirming}
+      />
     </form>
   );
 }

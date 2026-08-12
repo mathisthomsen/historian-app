@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
+import { REGISTER_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
 import { sendVerificationEmail } from "@/lib/email";
 import { env } from "@/lib/env";
@@ -30,7 +31,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     "127.0.0.1";
   const ip = anonymizeIp(ipRaw);
 
-  const rateLimitResponse = await checkRateLimit(`register:${ip}`, 10, 60 * 60 * 1000);
+  const rateLimitResponse = await checkRateLimit(
+    `register:${ip}`,
+    10,
+    REGISTER_RATE_LIMIT_MINUTES * 60 * 1000,
+  );
   if (rateLimitResponse) return rateLimitResponse;
 
   let body: unknown;
@@ -97,5 +102,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     },
   });
 
-  return NextResponse.json({ message: "auth.register.verificationSent" }, { status: 201 });
+  // The success screen used to assert a mail was on its way in exactly the case
+  // where it was not. Report what actually happened so the client can offer a
+  // resend instead of a false reassurance (issue #43).
+  return NextResponse.json(
+    { message: "auth.register.verificationSent", email_sent: emailError === null },
+    { status: 201 },
+  );
 }

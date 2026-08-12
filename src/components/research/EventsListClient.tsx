@@ -10,9 +10,11 @@ import { BulkDeleteDialog } from "@/components/research/BulkDeleteDialog";
 import { DataTable } from "@/components/research/DataTable";
 import { DataTablePagination } from "@/components/research/DataTablePagination";
 import { DataTableSearch } from "@/components/research/DataTableSearch";
+import { DatedCell } from "@/components/research/DatedCell";
 import { EventFilters } from "@/components/research/EventFilters";
 import { Button } from "@/components/ui/button";
 import { useListUrlState } from "@/hooks/use-list-url-state";
+import { useRowSelection } from "@/hooks/use-row-selection";
 import { formatPartialDate } from "@/lib/date";
 import type { EventFilterState, EventSummary } from "@/types/event";
 import type { EventType } from "@/types/event-type";
@@ -53,7 +55,7 @@ export function EventsListClient({
   const t = useTranslations("events");
   const router = useRouter();
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useRowSelection();
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { buildUrl, handleSearch, handleSort, handlePageChange } = useListUrlState({
@@ -135,8 +137,12 @@ export function EventsListClient({
     {
       key: "start_date",
       header: t("list.columns.start_date"),
-      cell: (row: EventSummary) =>
-        formatPartialDate(row.start_year, row.start_month, row.start_day, locale),
+      cell: (row: EventSummary) => (
+        <DatedCell
+          text={formatPartialDate(row.start_year, row.start_month, row.start_day, locale)}
+          certainty={row.start_date_certainty}
+        />
+      ),
       sortable: true,
       currentSort: sort,
       currentOrder: order as "asc" | "desc",
@@ -145,8 +151,12 @@ export function EventsListClient({
     {
       key: "end_date",
       header: t("list.columns.end_date"),
-      cell: (row: EventSummary) =>
-        formatPartialDate(row.end_year, row.end_month, row.end_day, locale),
+      cell: (row: EventSummary) => (
+        <DatedCell
+          text={formatPartialDate(row.end_year, row.end_month, row.end_day, locale)}
+          certainty={row.end_date_certainty}
+        />
+      ),
     },
     {
       key: "parent",
@@ -236,6 +246,7 @@ export function EventsListClient({
       </div>
 
       <BulkDeleteDialog
+        namespace="events.bulk"
         count={selectedIds.length}
         open={bulkDeleteOpen}
         onConfirm={handleBulkDelete}

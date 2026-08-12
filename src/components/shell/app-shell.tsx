@@ -18,12 +18,12 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="bg-background min-h-screen">
-      <TopBar onToggleSidebar={toggle} />
+      <TopBar onToggleSidebar={toggle} sidebarOpen={isOpen} />
       <Sidebar isOpen={isOpen} />
       <main
         aria-label="Main content"
         className={cn(
-          "topbar-inset transition-[padding-left] duration-[var(--duration-normal)]",
+          "topbar-inset bottombar-inset transition-[padding-left] duration-[var(--duration-normal)]",
           isOpen ? "sidebar-inset" : "sidebar-inset-collapsed",
         )}
       >

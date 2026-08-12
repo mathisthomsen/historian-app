@@ -14,24 +14,30 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+/**
+ * The `*.bulk` message namespace of the surface being deleted from. Required so the
+ * confirmation names the entity actually at risk — see issue #38, where every surface
+ * confirmed with person wording.
+ */
+type BulkNamespace = "persons.bulk" | "events.bulk" | "sources.bulk";
+
 interface BulkDeleteDialogProps {
+  namespace: BulkNamespace;
   count: number;
   open: boolean;
   onConfirm: () => Promise<void>;
   onCancel: () => void;
-  title?: string;
-  description?: string;
 }
 
 export function BulkDeleteDialog({
+  namespace,
   count,
   open,
   onConfirm,
   onCancel,
-  title,
-  description,
 }: BulkDeleteDialogProps) {
-  const t = useTranslations("persons.bulk");
+  const t = useTranslations(namespace);
+  const tCommon = useTranslations("common");
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleConfirm() {
@@ -52,12 +58,12 @@ export function BulkDeleteDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{title ?? t("confirm_title", { count })}</DialogTitle>
-          <DialogDescription>{description ?? t("confirm_body", { count })}</DialogDescription>
+          <DialogTitle>{t("confirm_title", { count })}</DialogTitle>
+          <DialogDescription>{t("confirm_body", { count })}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onCancel} disabled={isLoading}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button variant="destructive" onClick={handleConfirm} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

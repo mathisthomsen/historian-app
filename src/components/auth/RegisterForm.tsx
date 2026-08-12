@@ -9,9 +9,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { ResendVerification } from "@/components/auth/ResendVerification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { readErrorBody, retryAfterMinutes } from "@/lib/api-error";
+import { REGISTER_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 
 // Schema keys used as placeholders — translated inside the component.
 type RegisterFormValues = {
@@ -26,12 +29,15 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  /** Whether the verification mail actually went out — the route now says. */
+  const [emailSent, setEmailSent] = useState(true);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   // Build schema with translated messages so field errors render correctly.
   const registerSchema = z
     .object({
-      name: z.string().min(1).max(100).trim(),
-      email: z.string().email().max(254),
+      name: z.string().trim().min(1, t("errors.nameRequired")).max(100, t("errors.nameTooLong")),
+      email: z.string().email(t("errors.emailInvalid")).max(254, t("errors.emailTooLong")),
       password: z
         .string()
         .min(8, t("errors.passwordTooShort"))
@@ -74,23 +80,70 @@ export function RegisterForm() {
         return;
       }
       if (res.status === 429) {
-        setServerError(t("errors.rateLimited", { minutes: "15" }));
+        // Was hardcoded to "15" against a 60-minute window, so a user who waited
+        // exactly as long as they were told was still blocked (issue #48). The
+        // limiter already emits an accurate Retry-After.
+        setServerError(
+          t("errors.rateLimited", {
+            minutes: retryAfterMinutes(res, REGISTER_RATE_LIMIT_MINUTES),
+          }),
+        );
+        return;
+      }
+      if (res.status === 503) {
+        // Emitted when Redis is degraded; this used to collapse into "try again",
+        // which invites an immediate retry that cannot work.
+        setServerError(t("errors.serviceUnavailable"));
         return;
       }
       if (!res.ok) {
         setServerError(t("errors.serverError"));
         return;
       }
+      // Only `email_sent: false` is a claim of failure; a body we cannot read
+      // must not be treated as one.
+      const data = (await readErrorBody(res)) as { email_sent?: boolean };
+      setEmailSent(data?.email_sent !== false);
+      setRegisteredEmail(values.email);
       setSuccess(true);
     } catch {
-      setServerError(t("errors.serverError"));
+      setServerError(t("errors.networkError"));
     }
   }
 
   if (success) {
+    // register/route.ts deliberately swallows a failed sendVerificationEmail and
+    // still returns 201. The success screen used to assert the mail was on its
+    // way in exactly the case where it was not, with no resend and no way out
+    // (issue #43).
+    if (!emailSent) {
+      return (
+        <div className="space-y-3">
+          <div
+            role="alert"
+            className="bg-destructive/10 text-destructive space-y-1 rounded-md p-4 text-sm"
+          >
+            <p className="font-medium">{t("register.emailNotSentTitle")}</p>
+            <p>{t("register.emailNotSentMessage")}</p>
+          </div>
+          <ResendVerification email={registeredEmail} />
+          <Link href="/auth/login" className="text-primary block text-sm hover:underline">
+            {t("register.backToLogin")} →
+          </Link>
+        </div>
+      );
+    }
+
     return (
-      <div className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
-        {t("register.verificationSent")}
+      <div className="space-y-3">
+        <div className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
+          {t("register.verificationSent")}
+        </div>
+        <p className="text-muted-foreground text-xs">{t("verify.expiredHint")}</p>
+        <ResendVerification email={registeredEmail} />
+        <Link href="/auth/login" className="text-primary block text-sm hover:underline">
+          {t("register.backToLogin")} →
+        </Link>
       </div>
     );
   }
@@ -98,7 +151,7 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {serverError && (
-        <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+        <div role="alert" className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
           {serverError}
         </div>
       )}
@@ -112,7 +165,7 @@ export function RegisterForm() {
           {...register("name")}
           aria-invalid={!!errors.name}
         />
-        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+        {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
       </div>
       <div className="space-y-1">
         <Label htmlFor="email">{t("fields.email")}</Label>
@@ -123,7 +176,7 @@ export function RegisterForm() {
           {...register("email")}
           aria-invalid={!!errors.email}
         />
-        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+        {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
       </div>
       <div className="space-y-1">
         <Label htmlFor="password">{t("fields.password")}</Label>
@@ -138,14 +191,14 @@ export function RegisterForm() {
           />
           <button
             type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2"
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+        {errors.password && <p className="text-destructive text-xs">{errors.password.message}</p>}
         <PasswordStrengthIndicator password={password} />
       </div>
       <div className="space-y-1">
@@ -158,7 +211,7 @@ export function RegisterForm() {
           aria-invalid={!!errors.passwordConfirm}
         />
         {errors.passwordConfirm && (
-          <p className="text-xs text-destructive">{errors.passwordConfirm.message}</p>
+          <p className="text-destructive text-xs">{errors.passwordConfirm.message}</p>
         )}
       </div>
       <Button type="submit" className="w-full">

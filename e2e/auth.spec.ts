@@ -158,16 +158,20 @@ test.describe("TC-AUTH-06: Valid email verification token", () => {
 // TC-AUTH-07: Email verification — expired/invalid token
 // ---------------------------------------------------------------------------
 test.describe("TC-AUTH-07: Invalid verification token", () => {
-  test("invalid token shows error state", async ({ page }) => {
+  test("invalid token shows error state and a real resend path", async ({ page }) => {
     await page.goto("/de/auth/verify?token=" + "0".repeat(64));
-    // VerifyEmailCard shows error text (may appear twice — use first)
     await expect(page.getByText(/Ungültiger Link/i).first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Neuen Link anfordern")).toBeVisible();
+    // Was "Neuen Link anfordern", pointing at /auth/forgot-password — a password
+    // reset, not a verification resend (issue #43).
+    await expect(page.getByRole("button", { name: "Neuen Bestätigungslink senden" })).toBeVisible();
   });
 
-  test("no token shows error state immediately", async ({ page }) => {
+  test("no token shows a distinct state, not 'invalid link'", async ({ page }) => {
     await page.goto("/de/auth/verify");
-    await expect(page.getByText(/Ungültiger Link/i).first()).toBeVisible();
+    // Arriving without a token is not a broken link; it used to render the same
+    // string as both headline and body (issue #48).
+    await expect(page.getByText("Kein Bestätigungslink")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Ungültiger Link/i)).toHaveCount(0);
   });
 });
 

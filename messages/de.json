@@ -8,12 +8,25 @@
     "notFoundDescription": "Die angeforderte Seite existiert nicht.",
     "cancel": "Abbrechen",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten.",
-    "select_all": "Alle auswählen",
     "select_row": "Zeile auswählen",
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "main_navigation": "Hauptnavigation",
-    "year_format": "JJJJ"
+    "year_format": "JJJJ",
+    "select_all_on_page": "Alle auf dieser Seite auswählen",
+    "loadFailed": "Daten konnten nicht geladen werden.",
+    "evidenceCountFailed": "Nachweise konnten nicht geladen werden",
+    "unsavedTitle": "Ungespeicherte Änderungen verwerfen?",
+    "unsavedBody": "Deine Eingaben auf dieser Seite gehen verloren. Dieser Schritt lässt sich nicht rückgängig machen.",
+    "discardChanges": "Änderungen verwerfen",
+    "keepEditing": "Weiter bearbeiten",
+    "certainty": {
+      "CERTAIN": "Sicher",
+      "PROBABLE": "Wahrscheinlich",
+      "POSSIBLE": "Möglich",
+      "UNKNOWN": "Unbekannt"
+    },
+    "certaintyLabel": "Gewissheit: {level}"
   },
   "shell": {
     "nav": {
@@ -56,7 +69,10 @@
       "namePlaceholder": "Vollständiger Name",
       "alreadyHaveAccount": "Bereits registriert?",
       "login": "Anmelden",
-      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfe dein Postfach."
+      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfe dein Postfach.",
+      "emailNotSentTitle": "Konto erstellt — E-Mail konnte nicht zugestellt werden",
+      "emailNotSentMessage": "Dein Konto besteht, aber die Bestätigungs-E-Mail ist nicht rausgegangen. Fordere unten einen neuen Link an.",
+      "backToLogin": "Zur Anmeldung"
     },
     "verify": {
       "title": "E-Mail bestätigen",
@@ -64,7 +80,19 @@
       "success": "E-Mail bestätigt",
       "successMessage": "Dein Konto ist aktiv.",
       "loginNow": "Jetzt anmelden",
-      "requestNew": "Neuen Link anfordern"
+      "requestNew": "Neuen Link anfordern",
+      "noTokenTitle": "Kein Bestätigungslink",
+      "noTokenMessage": "Diese Seite braucht den Link aus deiner Bestätigungs-E-Mail. Öffne den Link direkt aus der E-Mail.",
+      "failedTitle": "Bestätigung fehlgeschlagen",
+      "linkInvalidTitle": "Link ungültig",
+      "retry": "Erneut versuchen",
+      "alreadyVerifiedTitle": "Bereits bestätigt",
+      "alreadyVerifiedMessage": "Diese E-Mail-Adresse wurde schon bestätigt. Du kannst dich anmelden.",
+      "resendSent": "Wenn für diese Adresse eine Bestätigung aussteht, ist ein neuer Link unterwegs.",
+      "resendAction": "Neuen Bestätigungslink senden",
+      "resendSending": "Wird gesendet…",
+      "resendEmailLabel": "E-Mail-Adresse",
+      "expiredHint": "Bestätigungslinks sind 24 Stunden gültig."
     },
     "forgot": {
       "title": "Passwort vergessen?",
@@ -114,7 +142,17 @@
       "passwordNeedsSpecial": "Mindestens ein Sonderzeichen.",
       "passwordMismatch": "Passwörter stimmen nicht überein.",
       "serverError": "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
-      "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut."
+      "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut.",
+      "emailInvalid": "Bitte eine gültige E-Mail-Adresse eingeben.",
+      "emailTooLong": "E-Mail-Adresse ist zu lang (höchstens 254 Zeichen).",
+      "nameRequired": "Bitte einen Namen eingeben.",
+      "nameTooLong": "Name ist zu lang (höchstens 100 Zeichen).",
+      "passwordRequired": "Bitte ein Passwort eingeben.",
+      "accountLocked": "Zu viele Fehlversuche. Das Konto ist für {minutes} Minuten gesperrt.",
+      "loginRateLimited": "Zu viele Anmeldeversuche. Bitte warte bis zu {minutes} Minuten.",
+      "tokenMalformed": "Dieser Link ist unvollständig. E-Mail-Programme brechen lange Links manchmal um — bitte den vollständigen Link kopieren oder einen neuen anfordern.",
+      "networkError": "Keine Verbindung zum Server. Bitte Internetverbindung prüfen und erneut versuchen.",
+      "tokenAlreadyUsed": "Dieser Link wurde bereits verwendet. Dein Passwort ist gesetzt — du kannst dich anmelden."
     },
     "invalidLink": "Ungültiger Link",
     "invalidLinkMessage": "Kein Verifizierungstoken gefunden."
@@ -158,7 +196,13 @@
       "parent": "Übergeordnetes Ereignis",
       "notes": "Notizen",
       "created_at": "Erstellt am",
-      "created_by": "Erstellt von"
+      "created_by": "Erstellt von",
+      "parent_none": "Kein übergeordnetes Ereignis",
+      "parent_loading": "Wird geladen…",
+      "parent_unresolved": "Übergeordnetes Ereignis konnte nicht geladen werden.",
+      "parent_not_eligible": "„{title}“ ist selbst ein Unterereignis und kann nicht als übergeordnetes Ereignis dienen.",
+      "parent_no_results": "Keine Treffer.",
+      "parent_search_placeholder": "Nach Titel suchen…"
     },
     "date": {
       "year": "Jahr",
@@ -234,7 +278,8 @@
       "depth_limit": "Ereignis '{parent_title}' ist selbst ein Unterereignis und kann keine eigenen Unterereignisse haben. Bitte ein anderes Ereignis wählen.",
       "not_found": "Ereignis nicht gefunden.",
       "save_failed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
-      "delete_has_sub_events": "Hat {count} Unterereignisse"
+      "delete_has_sub_events": "Hat {count} Unterereignisse",
+      "invalid_year": "Ungültiges Jahr (1–2100)."
     }
   },
   "event_types": {
@@ -366,7 +411,6 @@
     "edit_title": "Quelle bearbeiten",
     "delete": "Quelle löschen",
     "delete_confirm": "Diese Quelle wirklich löschen?",
-    "bulk_delete_confirm": "{count} Quelle(n) löschen?",
     "search_placeholder": "Titel oder Autor suchen…",
     "empty_state": "Noch keine Quellen angelegt.",
     "empty_action": "Erste Quelle erstellen",
@@ -414,7 +458,9 @@
     "bulk": {
       "selected": "{count} ausgewählt",
       "delete_button": "Löschen",
-      "deleted_toast": "{count} Quelle(n) gelöscht."
+      "deleted_toast": "{count} Quelle(n) gelöscht.",
+      "confirm_title": "{count} Quellen löschen?",
+      "confirm_body": "Diese Aktion löscht {count} Quellen. Kontaktieren Sie den Administrator zur Wiederherstellung."
     },
     "errors": {
       "title_required": "Titel ist erforderlich.",
@@ -503,7 +549,11 @@
     "save_failed": "Relation konnte nicht gespeichert werden.",
     "delete_failed": "Relation konnte nicht gelöscht werden.",
     "year_placeholder": "Jahr",
-    "month_placeholder": "Monat"
+    "month_placeholder": "Monat",
+    "evidence_attach_failed": "Die Beziehung wurde gespeichert, der Nachweis konnte aber nicht angehängt werden. Deine Quelle und dein Zitat stehen noch unten — bitte erneut anhängen.",
+    "evidence_retry": "Nachweis erneut anhängen",
+    "evidence_attached_toast": "Nachweis angehängt.",
+    "saved_without_evidence_toast": "Relation gespeichert — ohne Nachweis."
   },
   "relationTypes": {
     "title": "Relationstypen",
@@ -558,7 +608,10 @@
     "save_failed": "Konnte nicht gespeichert werden.",
     "search_source": "Quelle suchen…",
     "page_reference_placeholder": "z. B. S. 42, fol. 3v",
-    "quote_placeholder": "Relevantes Zitat"
+    "quote_placeholder": "Relevantes Zitat",
+    "unevidenced": "Unbelegt",
+    "unevidencedLabel": "{field}: als {level} bewertet, aber ohne Beleg",
+    "noEvidenceYet": "Noch kein Beleg"
   },
   "entityActivity": {
     "title": "Verlauf",

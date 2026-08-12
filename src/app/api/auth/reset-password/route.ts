@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
+import { RESET_PASSWORD_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -49,7 +50,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { token, password } = parsed.data;
 
-  const rateLimitResponse = await checkRateLimit(`reset:${token.slice(0, 8)}`, 5, 15 * 60 * 1000);
+  const rateLimitResponse = await checkRateLimit(
+    `reset:${token.slice(0, 8)}`,
+    5,
+    RESET_PASSWORD_RATE_LIMIT_MINUTES * 60 * 1000,
+  );
   if (rateLimitResponse) return rateLimitResponse;
 
   const tokenHash = hashToken(token);
@@ -65,12 +70,24 @@ export async function POST(request: Request): Promise<NextResponse> {
     return jsonError(400, "TOKEN_INVALID");
   }
 
-  if (resetRow.used_at !== null || resetRow.expires_at <= new Date()) {
+  // Same collapse as verify-email: a link already used is not an expired one,
+  // and the recovery advice for the two differs (issue #43).
+  if (resetRow.used_at !== null) {
     await writeAuditLog({
       action: "INVALID_TOKEN",
       userId: resetRow.user_id,
       request,
-      metadata: { token_type: "password_reset", reason: resetRow.used_at ? "used" : "expired" },
+      metadata: { token_type: "password_reset", reason: "used" },
+    });
+    return jsonError(400, "TOKEN_ALREADY_USED");
+  }
+
+  if (resetRow.expires_at <= new Date()) {
+    await writeAuditLog({
+      action: "INVALID_TOKEN",
+      userId: resetRow.user_id,
+      request,
+      metadata: { token_type: "password_reset", reason: "expired" },
     });
     return jsonError(400, "TOKEN_EXPIRED");
   }

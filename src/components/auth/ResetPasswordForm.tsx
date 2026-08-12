@@ -12,25 +12,13 @@ import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthInd
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { errorCode, readErrorBody, translateErrorCode } from "@/lib/api-error";
+import { errorCode, readErrorBody, retryAfterMinutes, translateErrorCode } from "@/lib/api-error";
+import { RESET_PASSWORD_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 
-const resetSchema = z
-  .object({
-    password: z
-      .string()
-      .min(8)
-      .regex(/[A-Z]/)
-      .regex(/[a-z]/)
-      .regex(/[0-9]/)
-      .regex(/[^A-Za-z0-9]/),
-    passwordConfirm: z.string(),
-  })
-  .refine((d) => d.password === d.passwordConfirm, {
-    message: "auth.errors.passwordMismatch",
-    path: ["passwordConfirm"],
-  });
-
-type ResetFormValues = z.infer<typeof resetSchema>;
+type ResetFormValues = {
+  password: string;
+  passwordConfirm: string;
+};
 
 interface ResetPasswordFormProps {
   token: string;
@@ -42,6 +30,25 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Built inside the component so t() is in scope. At module scope this rendered
+  // zod's English defaults and the literal key "auth.errors.passwordMismatch" to
+  // German users (issue #41); RegisterForm already used this convention.
+  const resetSchema = z
+    .object({
+      password: z
+        .string()
+        .min(8, t("errors.passwordTooShort"))
+        .regex(/[A-Z]/, t("errors.passwordNeedsUpper"))
+        .regex(/[a-z]/, t("errors.passwordNeedsLower"))
+        .regex(/[0-9]/, t("errors.passwordNeedsNumber"))
+        .regex(/[^A-Za-z0-9]/, t("errors.passwordNeedsSpecial")),
+      passwordConfirm: z.string(),
+    })
+    .refine((d) => d.password === d.passwordConfirm, {
+      message: t("errors.passwordMismatch"),
+      path: ["passwordConfirm"],
+    });
 
   const {
     register,
@@ -67,6 +74,21 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           passwordConfirm: values.passwordConfirm,
         }),
       });
+      if (res.status === 429) {
+        // The route allows 5 attempts / 15 min and returns Retry-After; this used
+        // to fall through to the generic "an error occurred, try again" after the
+        // user had typed a password twice (issue #48).
+        setServerError(
+          t("errors.rateLimited", {
+            minutes: retryAfterMinutes(res, RESET_PASSWORD_RATE_LIMIT_MINUTES),
+          }),
+        );
+        return;
+      }
+      if (res.status === 503) {
+        setServerError(t("errors.serviceUnavailable"));
+        return;
+      }
       if (res.status === 400) {
         const code = errorCode(await readErrorBody(res));
         setServerError(
@@ -76,6 +98,13 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             {
               TOKEN_EXPIRED: "errors.tokenExpired",
               TOKEN_INVALID: "errors.tokenInvalid",
+              // A link already used is not an expired one: the password is set
+              // and the user should sign in, not request another (issue #43).
+              TOKEN_ALREADY_USED: "errors.tokenAlreadyUsed",
+              // The server requires exactly 64 lowercase hex while the page accepts
+              // any non-empty string, so a line-wrapped link from an email client
+              // lands here — and read as a transient server fault.
+              VALIDATION_FAILED: "errors.tokenMalformed",
             },
             "errors.serverError",
           ),
@@ -88,7 +117,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       }
       router.push("/auth/login?reset=1");
     } catch {
-      setServerError(t("errors.serverError"));
+      setServerError(t("errors.networkError"));
     } finally {
       setIsSubmitting(false);
     }

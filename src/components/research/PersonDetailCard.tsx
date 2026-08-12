@@ -69,7 +69,7 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
                   entityId={person.id}
                   property="birth_year"
                   fieldLabel={t("birth_date")}
-                  hasCertainty={hasBirthDate}
+                  certainty={person.birth_date_certainty}
                 />
               </TooltipTrigger>
               <TooltipContent className="text-center">{tShell("nav.sources")}</TooltipContent>
@@ -105,7 +105,7 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
             entityId={person.id}
             property="death_year"
             fieldLabel={t("death_date")}
-            hasCertainty={hasDeathDate}
+            certainty={person.death_date_certainty}
           />
         </dd>
       </div>

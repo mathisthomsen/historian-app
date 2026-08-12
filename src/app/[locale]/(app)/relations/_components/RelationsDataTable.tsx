@@ -8,6 +8,7 @@ import { RelationFormDialog } from "@/components/relations/RelationFormDialog";
 import { RelationRow } from "@/components/relations/RelationRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadError } from "@/components/ui/load-error";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
   const t = useTranslations("relations");
   const [relations, setRelations] = useState<RelationWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -43,6 +45,7 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setFailed(false);
     try {
       const params = new URLSearchParams({
         projectId,
@@ -54,14 +57,19 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
       if (relationTypeFilter) params.set("relationTypeId", relationTypeFilter);
       if (certaintyFilter) params.set("certainty", certaintyFilter);
       const res = await fetch(`/api/relations?${params.toString()}`);
-      if (res.ok) {
-        const data = (await res.json()) as {
-          data?: RelationWithDetails[];
-          pagination?: { total: number };
-        };
-        setRelations(data.data ?? []);
-        setTotal(data.pagination?.total ?? 0);
+      if (!res.ok) {
+        setFailed(true);
+        return;
       }
+      const data = (await res.json()) as {
+        data?: RelationWithDetails[];
+        pagination?: { total: number };
+      };
+      setRelations(data.data ?? []);
+      setTotal(data.pagination?.total ?? 0);
+    } catch {
+      // "Noch keine Relationen." must not stand in for a failed request (issue #34).
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -166,6 +174,8 @@ export function RelationsDataTable({ projectId }: RelationsDataTableProps) {
         <div className="text-muted-foreground flex items-center gap-2 py-8">
           <Loader2 className="h-4 w-4 animate-spin" />
         </div>
+      ) : failed ? (
+        <LoadError onRetry={() => void load()} className="justify-center" />
       ) : relations.length === 0 ? (
         <p className="text-muted-foreground py-8 text-center text-sm">{t("noRelations")}</p>
       ) : (

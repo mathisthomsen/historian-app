@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
+import { FORGOT_PASSWORD_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -38,7 +39,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { email } = parsed.data;
 
-  const rateLimitResponse = await checkRateLimit(`forgot:${ip}:${email}`, 3, 60 * 60 * 1000);
+  const rateLimitResponse = await checkRateLimit(
+    `forgot:${ip}:${email}`,
+    3,
+    FORGOT_PASSWORD_RATE_LIMIT_MINUTES * 60 * 1000,
+  );
   if (rateLimitResponse) return rateLimitResponse;
 
   const user = await prisma.user.findUnique({ where: { email } });

@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { type PersonFormValues, buildPersonFormSchema } from "@/lib/schemas/person";
 import type { PersonDetail } from "@/types/person";
 
@@ -26,6 +28,9 @@ interface PersonFormProps {
 
 export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: PersonFormProps) {
   const t = useTranslations("persons");
+  // Was a hardcoded English "Cancel" on a German-default surface (issue #40's
+  // class of defect, fixed here because this line is being rewritten anyway).
+  const tCommon = useTranslations("common");
   const [serverError, setServerError] = useState<string | null>(null);
 
   // Built inside the component so Zod messages resolve through t() — the same
@@ -36,7 +41,7 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<PersonFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -56,6 +61,8 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
       names: initial?.names ?? [],
     },
   });
+
+  const unsaved = useUnsavedChanges(isDirty && !isSubmitting);
 
   async function onSubmit(values: PersonFormValues) {
     setServerError(null);
@@ -258,8 +265,13 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
       {/* Actions */}
       <div className="flex justify-end gap-3">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => unsaved.guard(onCancel)}
+            disabled={isSubmitting}
+          >
+            {tCommon("cancel")}
           </Button>
         )}
         <Button type="submit" disabled={isSubmitting}>
@@ -267,6 +279,12 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
           {t("save")}
         </Button>
       </div>
+
+      <UnsavedChangesDialog
+        isConfirming={unsaved.isConfirming}
+        confirmDiscard={unsaved.confirmDiscard}
+        setConfirming={unsaved.setConfirming}
+      />
     </form>
   );
 }

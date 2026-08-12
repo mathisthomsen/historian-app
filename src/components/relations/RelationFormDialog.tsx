@@ -91,8 +91,53 @@ export function RelationFormDialog({
   const [evidenceQuote, setEvidenceQuote] = useState("");
   const [evidenceConfidence, setEvidenceConfidence] = useState<Certainty>("UNKNOWN");
   const [showEvidence, setShowEvidence] = useState(false);
+  /**
+   * Set when the relation was created but its evidence POST failed. Holding the id
+   * lets the retry re-send only the evidence, so retrying cannot create a second
+   * relation — see issue #46, where the evidence response went unchecked and the
+   * user was toasted "saved" while their source and quote were discarded.
+   */
+  const [orphanedRelationId, setOrphanedRelationId] = useState<string | null>(null);
 
   const isEdit = !!editRelation;
+
+  /** POSTs the entered evidence to `relationId`. Returns whether it was stored. */
+  async function attachEvidence(relationId: string): Promise<boolean> {
+    if (!evidenceSourceId) return true;
+    try {
+      const res = await fetch(`/api/relations/${relationId}/evidence`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source_id: evidenceSourceId,
+          quote: evidenceQuote || null,
+          notes: null,
+          confidence: evidenceConfidence,
+          page_reference: null,
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function handleRetryEvidence() {
+    if (!orphanedRelationId) return;
+    setSaving(true);
+    try {
+      if (await attachEvidence(orphanedRelationId)) {
+        setOrphanedRelationId(null);
+        toast.success(t("evidence_attached_toast"));
+        onSuccess();
+        onOpenChange(false);
+      } else {
+        toast.error(t("evidence_attach_failed"));
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -125,27 +170,31 @@ export function RelationFormDialog({
         body: JSON.stringify(body),
       });
 
-      if (res.ok) {
-        if (!isEdit && evidenceSourceId) {
-          const created = (await res.json()) as { id: string };
-          await fetch(`/api/relations/${created.id}/evidence`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              source_id: evidenceSourceId,
-              quote: evidenceQuote || null,
-              notes: null,
-              confidence: evidenceConfidence,
-              page_reference: null,
-            }),
-          });
-        }
-        toast.success(t("saved_toast"));
-        onSuccess();
-        onOpenChange(false);
-      } else {
+      if (!res.ok) {
         toast.error(t("save_failed"));
+        return;
       }
+
+      if (!isEdit && evidenceSourceId) {
+        const created = (await res.json()) as { id: string };
+        if (!(await attachEvidence(created.id))) {
+          // The relation exists but its evidence does not. Reporting success here
+          // would leave the relation asserting a claim with no backing source —
+          // an unevidenced claim the user did not intend to make. Keep the dialog
+          // open with the source and quote intact and say what failed (issue #46).
+          setOrphanedRelationId(created.id);
+          setShowEvidence(true);
+          toast.error(t("saved_without_evidence_toast"));
+          onSuccess();
+          return;
+        }
+      }
+
+      toast.success(t("saved_toast"));
+      onSuccess();
+      onOpenChange(false);
+    } catch {
+      toast.error(t("save_failed"));
     } finally {
       setSaving(false);
     }
@@ -158,6 +207,12 @@ export function RelationFormDialog({
           <DialogTitle>{isEdit ? t("edit") : t("add")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          {orphanedRelationId && (
+            <div role="alert" className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+              {t("evidence_attach_failed")}
+            </div>
+          )}
+
           {/* From entity */}
           <div className="space-y-1">
             <Label>{t("fields.fromEntity")}</Label>
@@ -339,10 +394,21 @@ export function RelationFormDialog({
             >
               {t("cancel")}
             </Button>
-            <Button type="submit" disabled={saving || !fromEntity || !toEntity || !relationTypeId}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEdit ? t("save") : t("create")}
-            </Button>
+            {orphanedRelationId ? (
+              // Re-sends only the evidence, so retrying cannot create a second relation.
+              <Button type="button" onClick={() => void handleRetryEvidence()} disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t("evidence_retry")}
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={saving || !fromEntity || !toEntity || !relationTypeId}
+              >
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEdit ? t("save") : t("create")}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

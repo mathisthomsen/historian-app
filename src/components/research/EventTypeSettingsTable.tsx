@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadError } from "@/components/ui/load-error";
 import {
   Table,
   TableBody,
@@ -45,6 +46,7 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
 
   const [types, setTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [editState, setEditState] = useState<EditState>(null);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<EventType | null>(null);
@@ -61,16 +63,23 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
 
   async function loadTypes() {
     setLoading(true);
+    setFailed(false);
     try {
       const res = await fetch(`/api/event-types?projectId=${projectId}`);
-      if (res.ok) {
-        const data = (await res.json()) as { data?: EventType[] } | EventType[];
-        if (Array.isArray(data)) {
-          setTypes(data);
-        } else if ((data as { data?: EventType[] }).data) {
-          setTypes((data as { data: EventType[] }).data);
-        }
+      if (!res.ok) {
+        setFailed(true);
+        return;
       }
+      const data = (await res.json()) as { data?: EventType[] } | EventType[];
+      if (Array.isArray(data)) {
+        setTypes(data);
+      } else if ((data as { data?: EventType[] }).data) {
+        setTypes((data as { data: EventType[] }).data);
+      }
+    } catch {
+      // Rendering the empty row here reads as "no event types exist" and invites
+      // the archivist to re-create terms that are already there (issue #34).
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -94,6 +103,10 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         const code = errorCode(await readErrorBody(res));
         toast.error(code === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
       }
+    } catch {
+      // Without this, a rejected fetch only cleared the pending flag: no toast, no
+      // row change, and an unhandled rejection in the console (issue #34).
+      toast.error(t("save_failed"));
     } finally {
       setSaving(false);
     }
@@ -132,6 +145,8 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
             : t("delete_failed"),
         );
       }
+    } catch {
+      toast.error(t("delete_failed"));
     } finally {
       setDeleting(false);
     }
@@ -157,6 +172,8 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         const code = errorCode(await readErrorBody(res));
         toast.error(code === "DUPLICATE_NAME" ? t("duplicate_error") : t("save_failed"));
       }
+    } catch {
+      toast.error(t("save_failed"));
     } finally {
       setSavingNew(false);
     }
@@ -168,6 +185,10 @@ export function EventTypeSettingsTable({ projectId }: EventTypeSettingsTableProp
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
+  }
+
+  if (failed) {
+    return <LoadError onRetry={() => void loadTypes()} />;
   }
 
   return (

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { jsonError } from "@/lib/api";
 import { writeAuditLog } from "@/lib/audit";
+import { VERIFY_EMAIL_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { anonymizeIp, hashToken } from "@/lib/security";
@@ -21,7 +22,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     "127.0.0.1";
   const ip = anonymizeIp(ipRaw);
 
-  const rateLimitResponse = await checkRateLimit(`verify:${ip}`, 5, 15 * 60 * 1000);
+  const rateLimitResponse = await checkRateLimit(
+    `verify:${ip}`,
+    5,
+    VERIFY_EMAIL_RATE_LIMIT_MINUTES * 60 * 1000,
+  );
   if (rateLimitResponse) return rateLimitResponse;
 
   let body: unknown;
@@ -51,15 +56,26 @@ export async function POST(request: Request): Promise<NextResponse> {
     return jsonError(400, "TOKEN_INVALID");
   }
 
-  if (confirmation.used_at !== null || confirmation.expires_at <= new Date()) {
+  // An already-redeemed link is a *success* the user is repeating — reopening the
+  // mail on a second device, or refreshing after it worked. Reporting it as
+  // TOKEN_EXPIRED told them their link had expired and pushed them towards
+  // recovery they did not need (issue #43).
+  if (confirmation.used_at !== null) {
     await writeAuditLog({
       action: "INVALID_TOKEN",
       userId: confirmation.user_id,
       request,
-      metadata: {
-        token_type: "email_confirmation",
-        reason: confirmation.used_at ? "used" : "expired",
-      },
+      metadata: { token_type: "email_confirmation", reason: "used" },
+    });
+    return jsonError(400, "TOKEN_ALREADY_USED");
+  }
+
+  if (confirmation.expires_at <= new Date()) {
+    await writeAuditLog({
+      action: "INVALID_TOKEN",
+      userId: confirmation.user_id,
+      request,
+      metadata: { token_type: "email_confirmation", reason: "expired" },
     });
     return jsonError(400, "TOKEN_EXPIRED");
   }

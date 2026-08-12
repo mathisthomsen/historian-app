@@ -20,6 +20,13 @@ export function NewEventClient({ projectId, locale, defaultParentId }: NewEventC
     router.push(`/${locale}/events/${event.id}`);
   }
 
+  // Explicit destination rather than router.back(), which leaves the application
+  // entirely when this URL was opened directly (issue #42). A sub-event returns
+  // to the parent it was being added to.
+  function handleCancel() {
+    router.push(defaultParentId ? `/${locale}/events/${defaultParentId}` : `/${locale}/events`);
+  }
+
   return (
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="mb-6 text-2xl font-bold">{t("create_title")}</h1>
@@ -28,6 +35,7 @@ export function NewEventClient({ projectId, locale, defaultParentId }: NewEventC
         projectId={projectId}
         defaultParentId={defaultParentId}
         onSuccess={handleSuccess}
+        onCancel={handleCancel}
       />
     </div>
   );

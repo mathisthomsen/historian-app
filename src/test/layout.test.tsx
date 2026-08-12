@@ -256,7 +256,7 @@ describe("Sidebar — Design System", () => {
 describe("TopBar — Design System", () => {
   describe("DS-LAYOUT-21: Token classes", () => {
     it("uses bg-card on the header element (not bg-background)", () => {
-      const { container } = renderWithProviders(<TopBar onToggleSidebar={vi.fn()} />);
+      const { container } = renderWithProviders(<TopBar onToggleSidebar={vi.fn()} sidebarOpen />);
       const header = container.querySelector("header");
       expect(header).not.toBeNull();
       expect(header!.className).toContain("bg-card");
@@ -264,19 +264,19 @@ describe("TopBar — Design System", () => {
     });
 
     it("DS-LAYOUT-22: header has border-b class", () => {
-      const { container } = renderWithProviders(<TopBar onToggleSidebar={vi.fn()} />);
+      const { container } = renderWithProviders(<TopBar onToggleSidebar={vi.fn()} sidebarOpen />);
       const header = container.querySelector("header");
       expect(header!.className).toContain("border-b");
     });
 
     it("DS-LAYOUT-23: header has h-14 class", () => {
-      const { container } = renderWithProviders(<TopBar onToggleSidebar={vi.fn()} />);
+      const { container } = renderWithProviders(<TopBar onToggleSidebar={vi.fn()} sidebarOpen />);
       const header = container.querySelector("header");
       expect(header!.className).toContain("h-14");
     });
 
     it("DS-LAYOUT-24: header has z-50 class", () => {
-      const { container } = renderWithProviders(<TopBar onToggleSidebar={vi.fn()} />);
+      const { container } = renderWithProviders(<TopBar onToggleSidebar={vi.fn()} sidebarOpen />);
       const header = container.querySelector("header");
       expect(header!.className).toContain("z-50");
     });
@@ -284,14 +284,14 @@ describe("TopBar — Design System", () => {
 
   describe("DS-LAYOUT-25: Landmark role", () => {
     it("header renders as banner landmark", () => {
-      renderWithProviders(<TopBar onToggleSidebar={vi.fn()} />);
+      renderWithProviders(<TopBar onToggleSidebar={vi.fn()} sidebarOpen />);
       expect(screen.getByRole("banner")).toBeInTheDocument();
     });
   });
 
   describe("DS-LAYOUT-26: Sidebar toggle ARIA", () => {
     it("sidebar toggle button has aria-label", () => {
-      renderWithProviders(<TopBar onToggleSidebar={vi.fn()} />);
+      renderWithProviders(<TopBar onToggleSidebar={vi.fn()} sidebarOpen />);
       const toggleBtn = screen.getByTestId("sidebar-toggle");
       expect(toggleBtn).toHaveAttribute("aria-label");
     });
@@ -299,7 +299,7 @@ describe("TopBar — Design System", () => {
 
   describe("DS-LAYOUT-27: Brand text", () => {
     it("renders brand name 'Evidoxa'", () => {
-      renderWithProviders(<TopBar onToggleSidebar={vi.fn()} />);
+      renderWithProviders(<TopBar onToggleSidebar={vi.fn()} sidebarOpen />);
       expect(screen.getByText("Evidoxa")).toBeInTheDocument();
     });
   });

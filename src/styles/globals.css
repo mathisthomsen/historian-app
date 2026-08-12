@@ -970,16 +970,43 @@
   }
 
   /* Sidebar inset: push main content right of the sidebar.
-     Used on the body's main content area. */
-  .sidebar-inset {
-    padding-left: var(--sidebar-width-open);
-    transition-property: padding-left;
-    transition-duration: var(--duration-normal);
-    transition-timing-function: var(--ease-in-out);
+     Used on the body's main content area.
+
+     Gated at the same breakpoint as the sidebar itself (`hidden lg:flex`).
+     Ungated, this reserved 224px on every viewport while no sidebar was there
+     to fill it: measured 2026-08-11 on /de/persons, usable content width was
+     151px at 375px and 166px at 390px, and the document overflowed to 455px —
+     a WCAG 1.4.10 reflow failure. The 768px iPad was affected too (issue #32). */
+  .sidebar-inset,
+  .sidebar-inset-collapsed {
+    padding-left: 0;
   }
 
-  .sidebar-inset-collapsed {
-    padding-left: var(--sidebar-width-collapsed);
+  @media (min-width: 64rem) {
+    .sidebar-inset {
+      padding-left: var(--sidebar-width-open);
+      transition-property: padding-left;
+      transition-duration: var(--duration-normal);
+      transition-timing-function: var(--ease-in-out);
+    }
+
+    .sidebar-inset-collapsed {
+      padding-left: var(--sidebar-width-collapsed);
+    }
+  }
+
+  /* Bottom-bar inset: clear the fixed BottomTabBar (h-16, lg:hidden).
+     Without it, 63.5px of <main> sat under the bar and could not be scrolled
+     clear even at full scroll — on the list surfaces that strip is the result
+     count and the pagination control (measured 2026-08-11). */
+  .bottombar-inset {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 64rem) {
+    .bottombar-inset {
+      padding-bottom: 0;
+    }
   }
 
   /* Topbar inset: push page content below the fixed TopBar */

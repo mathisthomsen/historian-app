@@ -48,8 +48,11 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
 
   const hasStartDate = startDate !== "—";
   const hasEndDate = endDate !== "—";
-  const showStartCertainty = hasStartDate && event.start_date_certainty !== "UNKNOWN";
-  const showEndCertainty = hasEndDate && event.end_date_certainty !== "UNKNOWN";
+  // UNKNOWN used to be suppressed, so a date explicitly assessed as uncertain
+  // looked exactly like one nobody had assessed — the opposite of what a
+  // four-value scale exists for (issue #37).
+  const showStartCertainty = hasStartDate;
+  const showEndCertainty = hasEndDate;
 
   return (
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -81,7 +84,7 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
             entityId={event.id}
             property="start_year"
             fieldLabel={t("start_date")}
-            hasCertainty={hasStartDate}
+            certainty={event.start_date_certainty}
           />
         </dd>
       </div>
@@ -99,7 +102,7 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
             entityId={event.id}
             property="end_year"
             fieldLabel={t("end_date")}
-            hasCertainty={hasEndDate}
+            certainty={event.end_date_certainty}
           />
         </dd>
       </div>

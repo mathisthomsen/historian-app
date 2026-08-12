@@ -110,6 +110,12 @@ export const ERROR_CODES = [
   // auth flows
   "TOKEN_EXPIRED",
   "TOKEN_INVALID",
+  /**
+   * The token was already redeemed successfully. Distinct from TOKEN_EXPIRED so
+   * reopening a verification mail on a second device, or refreshing after
+   * success, does not tell the user their link expired (issue #43).
+   */
+  "TOKEN_ALREADY_USED",
   "EMAIL_TAKEN",
 ] as const;
 

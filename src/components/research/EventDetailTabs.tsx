@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { ActivityLog } from "@/components/relations/ActivityLog";
 import { RelationsTab } from "@/components/relations/RelationsTab";
+import { DatedCell } from "@/components/research/DatedCell";
 import { EntityEvidenceTab } from "@/components/research/EntityEvidenceTab";
 import { EventDetailCard } from "@/components/research/EventDetailCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,7 +28,7 @@ interface EventDetailTabsProps {
 function CountBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
-    <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs font-normal tabular-nums">
+    <span className="bg-muted ml-1.5 rounded-full px-1.5 py-0.5 text-xs font-normal tabular-nums">
       {count}
     </span>
   );
@@ -64,7 +65,7 @@ export function EventDetailTabs({ event, locale, projectId, tabCounts }: EventDe
     return (
       <tr key={sub.id} className="border-b">
         <td className="py-2 pr-4">
-          <Link href={`/${locale}/events/${sub.id}`} className="underline hover:text-foreground">
+          <Link href={`/${locale}/events/${sub.id}`} className="hover:text-foreground underline">
             {sub.title}
           </Link>
         </td>
@@ -83,9 +84,18 @@ export function EventDetailTabs({ event, locale, projectId, tabCounts }: EventDe
             "—"
           )}
         </td>
-        <td className="py-2 pr-4 text-sm text-muted-foreground">
-          {start !== "—" ? start : "—"}
-          {end !== "—" && ` – ${end}`}
+        <td className="text-muted-foreground py-2 pr-4 text-sm">
+          {/* Certainty was dropped here too, so sub-events read as unqualified
+              facts regardless of how they were assessed (issue #37). */}
+          <span className="inline-flex items-center gap-2">
+            <DatedCell text={start} certainty={sub.start_date_certainty} />
+            {end !== "—" && (
+              <>
+                <span aria-hidden="true">–</span>
+                <DatedCell text={end} certainty={sub.end_date_certainty} />
+              </>
+            )}
+          </span>
         </td>
       </tr>
     );
@@ -123,7 +133,7 @@ export function EventDetailTabs({ event, locale, projectId, tabCounts }: EventDe
           <div className="flex justify-end">
             <Link
               href={`/${locale}/events/new?parentId=${event.id}`}
-              className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium"
             >
               {t("add_sub_event")}
             </Link>
@@ -135,7 +145,7 @@ export function EventDetailTabs({ event, locale, projectId, tabCounts }: EventDe
               </table>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">{t("sub_events_empty")}</p>
+            <p className="text-muted-foreground text-sm">{t("sub_events_empty")}</p>
           )}
         </div>
       </TabsContent>

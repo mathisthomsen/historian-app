@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
+import { LoadError } from "@/components/ui/load-error";
 import type { PropertyEvidenceItem } from "@/types/relations";
 
 interface EntityEvidenceTabProps {
@@ -40,25 +41,33 @@ export function EntityEvidenceTab({
   const t = useTranslations("persons.fields");
   const [items, setItems] = useState<PropertyEvidenceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setFailed(false);
     try {
       const res = await fetch(
         `/api/property-evidence?projectId=${encodeURIComponent(projectId)}&entityType=${entityType}&entityId=${encodeURIComponent(entityId)}`,
       );
-      if (res.ok) {
-        const data = (await res.json()) as {
-          data?: (PropertyEvidenceItem & { source?: { title?: string } })[];
-        };
-        const raw = data.data ?? [];
-        setItems(
-          raw.map((r) => {
-            const title = r.source?.title ?? r.source_title;
-            return title !== undefined ? { ...r, source_title: title } : { ...r };
-          }),
-        );
+      if (!res.ok) {
+        setFailed(true);
+        return;
       }
+      const data = (await res.json()) as {
+        data?: (PropertyEvidenceItem & { source?: { title?: string } })[];
+      };
+      const raw = data.data ?? [];
+      setItems(
+        raw.map((r) => {
+          const title = r.source?.title ?? r.source_title;
+          return title !== undefined ? { ...r, source_title: title } : { ...r };
+        }),
+      );
+    } catch {
+      // "The evidence request failed" must never render as "this record has no
+      // evidence" — that is a correctness-of-record defect here (issue #34).
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -70,14 +79,18 @@ export function EntityEvidenceTab({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-2 py-8">
         <Loader2 className="h-4 w-4 animate-spin" />
       </div>
     );
   }
 
+  if (failed) {
+    return <LoadError onRetry={() => void load()} />;
+  }
+
   if (items.length === 0) {
-    return <p className="text-sm text-muted-foreground">Keine Nachweise vorhanden.</p>;
+    return <p className="text-muted-foreground text-sm">Keine Nachweise vorhanden.</p>;
   }
 
   // Group by property
@@ -100,7 +113,7 @@ export function EntityEvidenceTab({
 
         return (
           <div key={property} className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               {label}
             </p>
             <div className="space-y-2">
@@ -111,9 +124,9 @@ export function EntityEvidenceTab({
                     <p className="text-muted-foreground">{item.page_reference}</p>
                   )}
                   {item.quote && (
-                    <p className="italic text-muted-foreground">&ldquo;{item.quote}&rdquo;</p>
+                    <p className="text-muted-foreground italic">&ldquo;{item.quote}&rdquo;</p>
                   )}
-                  <p className="mt-1 text-xs text-muted-foreground">{item.confidence}</p>
+                  <p className="text-muted-foreground mt-1 text-xs">{item.confidence}</p>
                 </div>
               ))}
             </div>

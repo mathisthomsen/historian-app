@@ -10,8 +10,10 @@ import { BulkDeleteDialog } from "@/components/research/BulkDeleteDialog";
 import { DataTable } from "@/components/research/DataTable";
 import { DataTablePagination } from "@/components/research/DataTablePagination";
 import { DataTableSearch } from "@/components/research/DataTableSearch";
+import { DatedCell } from "@/components/research/DatedCell";
 import { Button } from "@/components/ui/button";
 import { useListUrlState } from "@/hooks/use-list-url-state";
+import { useRowSelection } from "@/hooks/use-row-selection";
 import { formatPartialDate } from "@/lib/date";
 import type { PersonSummary } from "@/types/person";
 
@@ -41,7 +43,7 @@ export function PersonsListClient({
   const t = useTranslations("persons");
   const router = useRouter();
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useRowSelection();
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const { handleSearch, handleSort, handlePageChange } = useListUrlState({
@@ -95,14 +97,24 @@ export function PersonsListClient({
     {
       key: "birth_date",
       header: t("list.columns.birth_date"),
-      cell: (row: PersonSummary) =>
-        formatPartialDate(row.birth_year, row.birth_month, row.birth_day, locale),
+      // The certainty was already fetched into PersonSummary and then dropped, so
+      // a Possible birth year and a Certain one were pixel-identical (issue #37).
+      cell: (row: PersonSummary) => (
+        <DatedCell
+          text={formatPartialDate(row.birth_year, row.birth_month, row.birth_day, locale)}
+          certainty={row.birth_date_certainty}
+        />
+      ),
     },
     {
       key: "death_date",
       header: t("list.columns.death_date"),
-      cell: (row: PersonSummary) =>
-        formatPartialDate(row.death_year, row.death_month, row.death_day, locale),
+      cell: (row: PersonSummary) => (
+        <DatedCell
+          text={formatPartialDate(row.death_year, row.death_month, row.death_day, locale)}
+          certainty={row.death_date_certainty}
+        />
+      ),
     },
   ];
 
@@ -160,6 +172,7 @@ export function PersonsListClient({
       </div>
 
       <BulkDeleteDialog
+        namespace="persons.bulk"
         count={selectedIds.length}
         open={bulkDeleteOpen}
         onConfirm={handleBulkDelete}

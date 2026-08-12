@@ -30,7 +30,13 @@ export function errorDetails<T = unknown>(body: unknown): T | undefined {
 
 /** Reads the response body without throwing on a non-JSON payload. */
 export async function readErrorBody(res: Response): Promise<unknown> {
-  return res.json().catch(() => ({}));
+  // `res.json()` can throw synchronously (a body-less response object), which a
+  // trailing .catch() would not intercept.
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -39,6 +45,20 @@ export async function readErrorBody(res: Response): Promise<unknown> {
  * `map` gives a caller-specific code -> translation-key mapping; anything
  * unmapped falls back to `fallbackKey` so a user never sees a raw code.
  */
+/**
+ * Minutes the caller must wait, read from the response's `Retry-After` header.
+ *
+ * The rate limiters already emit an accurate `Retry-After`; RegisterForm used to
+ * hardcode "15" against a 60-minute window, so a user who waited the stated time
+ * was still blocked (issue #48). Rounds up, and never returns less than 1.
+ */
+export function retryAfterMinutes(res: Response, fallbackMinutes: number): number {
+  const header = res.headers?.get?.("Retry-After");
+  const seconds = header ? Number.parseInt(header, 10) : Number.NaN;
+  if (!Number.isFinite(seconds) || seconds <= 0) return fallbackMinutes;
+  return Math.max(1, Math.ceil(seconds / 60));
+}
+
 export function translateErrorCode(
   code: string | undefined,
   t: (key: string) => string,
