@@ -6,6 +6,7 @@ import { z } from "zod";
 import { writeAuditLog } from "@/lib/audit";
 import { ACCOUNT_LOCKOUT_MINUTES, SIGN_IN_CODES, type SignInCode } from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
+import { attachProjectId, ensureDefaultProject } from "@/lib/project";
 import { rateLimiter } from "@/lib/rate-limit";
 import { anonymizeIp } from "@/lib/security";
 
@@ -127,22 +128,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await writeAuditLog({ action: "LOGIN_SUCCESS", userId: user.id, request });
 
         // TODO: Epic 3.1 — replace with project switcher
-        const userProject = await prisma.userProject.findFirst({
-          where: {
-            user_id: user.id,
-            role: { in: ["OWNER", "EDITOR"] },
-          },
-          orderBy: { created_at: "asc" },
-        });
+        const projectId = await ensureDefaultProject(user.id);
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
-          ...(userProject?.project_id ? { projectId: userProject.project_id } : {}),
+          ...(projectId ? { projectId } : {}),
         };
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    // Sessions minted before default-project provisioning existed carry no
+    // projectId, and the JWT lasts 30 days — without this those users stay
+    // unable to create anything until they happen to sign out (#64).
+    //
+    // This has to be the `session` callback, not `jwt`: measured on 2026-08-12,
+    // `jwt` runs only on sign-in and on `updateAge` rotation, so a backfill
+    // there never executed on an ordinary page request. `session` runs on every
+    // `auth()` call. Node-side config only — `auth.config.ts` must stay
+    // Prisma-free for the Edge middleware.
+    async session(params) {
+      const session = (await authConfig.callbacks?.session?.(params)) ?? params.session;
+      await attachProjectId(session);
+      return session;
+    },
+  },
 });
