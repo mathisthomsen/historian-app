@@ -19,7 +19,14 @@
     "unsavedTitle": "Discard unsaved changes?",
     "unsavedBody": "What you entered on this page will be lost. This cannot be undone.",
     "discardChanges": "Discard changes",
-    "keepEditing": "Keep editing"
+    "keepEditing": "Keep editing",
+    "certainty": {
+      "CERTAIN": "Certain",
+      "PROBABLE": "Probable",
+      "POSSIBLE": "Possible",
+      "UNKNOWN": "Unknown"
+    },
+    "certaintyLabel": "Certainty: {level}"
   },
   "shell": {
     "nav": {
@@ -601,7 +608,10 @@
     "save_failed": "Could not be saved.",
     "search_source": "Search source…",
     "page_reference_placeholder": "e.g. p. 42, fol. 3v",
-    "quote_placeholder": "Relevant quotation"
+    "quote_placeholder": "Relevant quotation",
+    "unevidenced": "Unevidenced",
+    "unevidencedLabel": "{field}: assessed as {level} but has no evidence",
+    "noEvidenceYet": "No evidence yet"
   },
   "entityActivity": {
     "title": "Activity",

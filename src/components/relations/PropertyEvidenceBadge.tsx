@@ -1,6 +1,7 @@
 "use client";
 
-import type { EntityType } from "@prisma/client";
+import type { Certainty, EntityType } from "@prisma/client";
+import { AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -13,8 +14,21 @@ interface PropertyEvidenceBadgeProps {
   entityId: string;
   property: string;
   fieldLabel: string;
-  /** Pass true when this field has a certainty claim — shows warning state when count is 0. */
-  hasCertainty?: boolean;
+  /**
+   * The certainty this field is asserted with, when it carries one.
+   *
+   * Replaces the old `hasCertainty` boolean, which callers passed as
+   * `hasStartDate` — so the warning fired whenever *a date existed*, never
+   * consulting the level. An honest UNKNOWN non-claim was flagged as a problem,
+   * diluting the signal that should mark a high-certainty claim with no
+   * evidence (issue #37).
+   */
+  certainty?: Certainty | undefined;
+}
+
+/** Only an actual claim can be "unevidenced". UNKNOWN/POSSIBLE assert little. */
+function isClaim(certainty: Certainty | undefined): boolean {
+  return certainty === "CERTAIN" || certainty === "PROBABLE";
 }
 
 export function PropertyEvidenceBadge({
@@ -23,7 +37,7 @@ export function PropertyEvidenceBadge({
   entityId,
   property,
   fieldLabel,
-  hasCertainty = false,
+  certainty,
 }: PropertyEvidenceBadgeProps) {
   const t = useTranslations("propertyEvidence");
   const tCommon = useTranslations("common");
@@ -72,28 +86,48 @@ export function PropertyEvidenceBadge({
   // Still loading — render nothing
   if (count === null) return null;
 
-  // No evidence and no certainty claim — don't render at all
-  if (count === 0 && !hasCertainty) return null;
-
-  const isWarning = count === 0 && hasCertainty;
+  // The badge used to return null at count 0 without a certainty claim, so on a
+  // freshly catalogued record every field rendered no badge — and the popover it
+  // triggers is the only add-evidence control on the surface, making it
+  // unreachable (issue #37). It now always renders once the count is known.
+  const isWarning = count === 0 && isClaim(certainty);
   const countLabel =
     count === 1 ? t("badgeLabel_one", { count }) : t("badgeLabel_other", { count });
+  const label = isWarning
+    ? t("unevidencedLabel", {
+        field: fieldLabel,
+        level: tCommon(`certainty.${certainty as Certainty}`),
+      })
+    : `${fieldLabel}: ${count === 0 ? t("noEvidenceYet") : countLabel}`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`${fieldLabel}: ${countLabel}`}
+          aria-label={label}
+          title={label}
           aria-haspopup="dialog"
           aria-expanded={open}
           className={
             isWarning
-              ? "inline-flex cursor-pointer items-center rounded-full border border-dashed border-[var(--color-warning-border)] bg-[var(--color-warning-background)] px-1.5 py-0.5 font-mono text-xs text-[var(--color-warning-foreground)] tabular-nums"
+              ? // The design system already ships this state as a badge variant with
+                // a full token family; the component used to hand-roll warning
+                // classnames and the variant was referenced by nothing.
+                "certainty-unevidenced inline-flex cursor-pointer items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs font-semibold"
               : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex cursor-pointer items-center rounded-full px-1.5 py-0.5 font-mono text-xs tabular-nums transition-colors"
           }
         >
-          {count}
+          {isWarning ? (
+            // The warning state's entire content used to be the digit 0, and the
+            // word "Unbelegt" appeared in no message file.
+            <>
+              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+              {t("unevidenced")}
+            </>
+          ) : (
+            count
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-3" align="start">

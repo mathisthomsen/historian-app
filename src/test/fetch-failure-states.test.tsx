@@ -86,7 +86,7 @@ describe("failed loads do not render as empty states", () => {
           entityId="e1"
           property="birth_year"
           fieldLabel="Geburtsdatum"
-          hasCertainty
+          certainty="CERTAIN"
         />,
       );
 

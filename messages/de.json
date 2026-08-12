@@ -19,7 +19,14 @@
     "unsavedTitle": "Ungespeicherte Änderungen verwerfen?",
     "unsavedBody": "Deine Eingaben auf dieser Seite gehen verloren. Dieser Schritt lässt sich nicht rückgängig machen.",
     "discardChanges": "Änderungen verwerfen",
-    "keepEditing": "Weiter bearbeiten"
+    "keepEditing": "Weiter bearbeiten",
+    "certainty": {
+      "CERTAIN": "Sicher",
+      "PROBABLE": "Wahrscheinlich",
+      "POSSIBLE": "Möglich",
+      "UNKNOWN": "Unbekannt"
+    },
+    "certaintyLabel": "Gewissheit: {level}"
   },
   "shell": {
     "nav": {
@@ -601,7 +608,10 @@
     "save_failed": "Konnte nicht gespeichert werden.",
     "search_source": "Quelle suchen…",
     "page_reference_placeholder": "z. B. S. 42, fol. 3v",
-    "quote_placeholder": "Relevantes Zitat"
+    "quote_placeholder": "Relevantes Zitat",
+    "unevidenced": "Unbelegt",
+    "unevidencedLabel": "{field}: als {level} bewertet, aber ohne Beleg",
+    "noEvidenceYet": "Noch kein Beleg"
   },
   "entityActivity": {
     "title": "Verlauf",

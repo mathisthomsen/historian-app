@@ -10,6 +10,7 @@ import { BulkDeleteDialog } from "@/components/research/BulkDeleteDialog";
 import { DataTable } from "@/components/research/DataTable";
 import { DataTablePagination } from "@/components/research/DataTablePagination";
 import { DataTableSearch } from "@/components/research/DataTableSearch";
+import { DatedCell } from "@/components/research/DatedCell";
 import { EventFilters } from "@/components/research/EventFilters";
 import { Button } from "@/components/ui/button";
 import { useListUrlState } from "@/hooks/use-list-url-state";
@@ -136,8 +137,12 @@ export function EventsListClient({
     {
       key: "start_date",
       header: t("list.columns.start_date"),
-      cell: (row: EventSummary) =>
-        formatPartialDate(row.start_year, row.start_month, row.start_day, locale),
+      cell: (row: EventSummary) => (
+        <DatedCell
+          text={formatPartialDate(row.start_year, row.start_month, row.start_day, locale)}
+          certainty={row.start_date_certainty}
+        />
+      ),
       sortable: true,
       currentSort: sort,
       currentOrder: order as "asc" | "desc",
@@ -146,8 +151,12 @@ export function EventsListClient({
     {
       key: "end_date",
       header: t("list.columns.end_date"),
-      cell: (row: EventSummary) =>
-        formatPartialDate(row.end_year, row.end_month, row.end_day, locale),
+      cell: (row: EventSummary) => (
+        <DatedCell
+          text={formatPartialDate(row.end_year, row.end_month, row.end_day, locale)}
+          certainty={row.end_date_certainty}
+        />
+      ),
     },
     {
       key: "parent",
