@@ -1,8 +1,56 @@
-import { Resend } from "resend";
+import { Resend, type CreateEmailOptions } from "resend";
 
 import { env } from "@/lib/env";
 
-const resend = new Resend(env.RESEND_API_KEY);
+const EMAIL_SEND_TIMEOUT_MS = 5_000;
+
+let resend: Resend | undefined;
+
+function getResend(): Resend {
+  resend ??= new Resend(env.RESEND_API_KEY);
+  return resend;
+}
+
+function assertStubIsSafe(): void {
+  const hostname = new URL(env.AUTH_URL).hostname;
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+
+  if (process.env.VERCEL || !isLocalhost) {
+    throw new Error("The email transport stub is only permitted for local development.");
+  }
+}
+
+// Resend v4 does not expose an AbortSignal on emails.send. This bounds how long
+// the caller waits; the provider request can still complete after the deadline.
+async function withDeadline<T>(operation: Promise<T>): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timeout = setTimeout(
+      () => reject(new Error("Email delivery request timed out.")),
+      EMAIL_SEND_TIMEOUT_MS,
+    );
+  });
+
+  try {
+    return await Promise.race([operation, deadline]);
+  } finally {
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+async function sendEmail(message: CreateEmailOptions): Promise<void> {
+  if (env.EMAIL_TRANSPORT === "stub") {
+    assertStubIsSafe();
+    return;
+  }
+
+  const result = await withDeadline(getResend().emails.send(message));
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+}
 
 export async function sendVerificationEmail(params: {
   to: string;
@@ -32,7 +80,7 @@ export async function sendVerificationEmail(params: {
 
   const text = `${greeting}\n\n${body}\n\n${ctaUrl}\n\n${expiry}`;
 
-  await resend.emails.send({ from: env.RESEND_FROM_EMAIL, to, subject, html, text });
+  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html, text });
 }
 
 export async function sendPasswordResetEmail(params: {
@@ -63,5 +111,5 @@ export async function sendPasswordResetEmail(params: {
 
   const text = `${greeting}\n\n${body}\n\n${ctaUrl}\n\n${expiry}`;
 
-  await resend.emails.send({ from: env.RESEND_FROM_EMAIL, to, subject, html, text });
+  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html, text });
 }

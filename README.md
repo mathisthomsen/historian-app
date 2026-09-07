@@ -50,6 +50,14 @@ pnpm dev
 > Prisma CLI reads `.env`, not `.env.local`. Pass the vars explicitly when needed:
 > `DATABASE_URL="…" DATABASE_URL_UNPOOLED="…" pnpm prisma migrate dev`
 
+`pnpm test:e2e` starts and owns its own app server (`pnpm dev` locally and
+`pnpm start` after CI builds). It always uses the local-only `stub` email
+transport with placeholder Resend values, binds Auth.js to
+`http://localhost:3000`, and passes dedicated cache and rate-limit namespaces.
+It refuses to reuse an already-running server so that its database and email
+configuration cannot be mistaken for the test configuration. `EMAIL_TRANSPORT`
+defaults to `resend`; use `stub` only for this local E2E workflow.
+
 ---
 
 ## Scientific Background — Why the Data Model Looks Like This

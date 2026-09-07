@@ -13,6 +13,9 @@ const server = z.object({
   BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
 
   // Epic 1.3 — Email
+  // Transactional mail uses Resend by default. The E2E-only stub is guarded
+  // again at the send boundary so a deployed process cannot select it.
+  EMAIL_TRANSPORT: z.enum(["resend", "stub"]).default("resend"),
   RESEND_API_KEY: z.string().min(1),
   RESEND_FROM_EMAIL: z.string().email(),
 
