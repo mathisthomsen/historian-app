@@ -102,8 +102,12 @@ jobs:
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       KV_REST_API_URL: ${{ secrets.KV_REST_API_URL }}
       KV_REST_API_TOKEN: ${{ secrets.KV_REST_API_TOKEN }}
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+      # E2E uses the local-only stub transport. Keep placeholders so env.ts
+      # still exercises its production-shaped configuration contract without
+      # granting this workflow access to Resend credentials.
+      EMAIL_TRANSPORT: "stub"
+      RESEND_API_KEY: "re_e2e_dummy_key"
+      RESEND_FROM_EMAIL: "e2e@evidoxa.test"
       # E2E runs against a production build on localhost, which is not a
       # deployment. Opt in to the dev-only routes the smoke suite exercises.
       E2E_ALLOW_DEV_ROUTES: "true"
@@ -229,12 +233,6 @@ jobs:
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium firefox
-
-      - name: Start server
-        run: pnpm start &
-
-      - name: Wait for server
-        run: pnpm exec wait-on http://localhost:3000 --timeout 30000
 
       - name: Run E2E tests
         run: pnpm test:e2e
