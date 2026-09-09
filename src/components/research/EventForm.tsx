@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { errorCode } from "@/lib/api-error";
+import { errorCode, errorDetails, readErrorBody } from "@/lib/api-error";
 import type { EventDetail, EventSummary } from "@/types/event";
 
 /**
@@ -278,18 +278,12 @@ export function EventForm({
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: {
-            code?: string;
-            details?: { parent_title?: string };
-          };
-        };
+        const data = await readErrorBody(res);
         if (errorCode(data) === "DEPTH_LIMIT_EXCEEDED") {
+          const details = errorDetails<{ parent_title?: string }>(data);
           setError("parent_id", {
             type: "manual",
-            message: t("errors.depth_limit", {
-              parent_title: data.error?.details?.parent_title ?? "",
-            }),
+            message: t("errors.depth_limit", { parent_title: details?.parent_title ?? "" }),
           });
           return;
         }
