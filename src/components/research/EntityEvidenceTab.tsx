@@ -24,11 +24,13 @@ const FIELD_LABEL_KEYS: Record<string, string> = {
   birth_day: "birth_date",
   birth_place: "birth_place",
   birth_date_certainty: "birth_date_certainty",
+  birth_place_certainty: "birth_place_certainty",
   death_year: "death_date",
   death_month: "death_date",
   death_day: "death_date",
   death_place: "death_place",
   death_date_certainty: "death_date_certainty",
+  death_place_certainty: "death_place_certainty",
   notes: "notes",
 };
 
