@@ -79,7 +79,12 @@ export function PersonsListClient({
           // (issue #71). Underline now tracks the affordance: on ROW hover via
           // `group-hover/row` (DataTable puts `group/row` on TableRow) and on
           // focus-visible for keyboard users, who cannot hover the row.
-          className="text-foreground font-medium group-hover/row:underline focus-visible:underline"
+          //
+          // `no-underline` is load-bearing: globals.css underlines every `a` in
+          // the base layer, so dropping Tailwind's `underline` utility alone
+          // left the link looking exactly as it did before (verified by
+          // screenshot, which is how this was caught).
+          className="text-foreground font-medium no-underline group-hover/row:underline focus-visible:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {row.last_name ?? row.first_name ?? "—"}
