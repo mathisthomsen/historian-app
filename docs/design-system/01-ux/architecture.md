@@ -724,7 +724,7 @@ Used by: `/persons`, `/events`, `/sources`, `/relations`
 ```
 +--------------------------------------------------+
 | PageHeader                                        |
-|   h1: "Johann von Dalberg"    [Edit] [Delete]     |
+|   h1: "Johann von Dalberg"            [Edit]      |
 |   Breadcrumb: Persons > Johann von Dalberg        |
 +--------------------------------------------------+
 | AttributesCard                                    |
@@ -737,9 +737,22 @@ Used by: `/persons`, `/events`, `/sources`, `/relations`
 | TabContent                                        |
 |   (depends on active tab)                         |
 +--------------------------------------------------+
+| DeleteSection (border-t, low-emphasis)             |
+|   "This person is marked as deleted..."  [Delete] |
++--------------------------------------------------+
 ```
 
 Used by: `/persons/[id]`, `/events/[id]`, `/sources/[id]`
+
+`Delete` does not sit in the PageHeader next to `Edit`. A solid destructive
+button at that spot competes for attention with the page's primary action
+(issue #70) — Edit is what most visits to a detail page are for; Delete is
+rare and consequential enough that reaching it should take a deliberate
+scroll, not a stray click next to Edit. It lives in its own separated
+region below the tab content instead, as a low-emphasis (outline/ghost)
+destructive control with a short muted explanation beside it. It stays
+reachable — this is not the "bury it in a settings submenu" pattern — just
+no longer first in the header's visual hierarchy.
 
 On wide screens (>=1280px), consider a two-column variant where the AttributesCard occupies the left column and the tabbed panel occupies the right column, reducing vertical scrolling for data-dense entities (Research Principle 3.7).
 
