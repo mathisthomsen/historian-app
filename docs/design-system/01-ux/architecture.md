@@ -737,8 +737,8 @@ Used by: `/persons`, `/events`, `/sources`, `/relations`
 | TabContent                                        |
 |   (depends on active tab)                         |
 +--------------------------------------------------+
-| DeleteSection (border-t, low-emphasis)             |
-|   "This person is marked as deleted..."  [Delete] |
+| DeleteSection (border-t, low-emphasis)            |
+|   "...marked as deleted..."          [Delete]     |
 +--------------------------------------------------+
 ```
 
