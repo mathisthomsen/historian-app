@@ -223,15 +223,41 @@ test.describe("TC-AUTH-12: Authenticated dashboard", () => {
 
 // ---------------------------------------------------------------------------
 // TC-AUTH-13: Logout
+//
+// Flaked once in CI: /de/dashboard was served fully rendered and
+// authenticated after logout, and it was never root-caused whether the
+// session survived signOut (a security bug) or the redirect was just slow
+// (test robustness) (issue #27). The cookie assertion below runs at the one
+// point that can tell the two apart; a failure there means the session
+// survived signOut, while a failure of the final URL assertion (with the
+// cookie already confirmed gone) means the redirect was just slow.
 // ---------------------------------------------------------------------------
 test.describe("TC-AUTH-13: Logout", () => {
   test("clears session and redirects to login", async ({ page }) => {
     await loginAsAdmin(page);
     await page.getByRole("button", { name: "Abmelden" }).click();
     await page.waitForURL(/\/auth\/login/, { timeout: 10_000 });
-    // Verify session cleared
+    // Verify session cleared: no next-auth session cookie under either name
+    // (unprefixed "authjs.session-token" locally over http, "__Secure-"
+    // prefixed in production over https). A failure here means the session
+    // survived signOut — a security bug, not a redirect timing issue
+    // (issue #27).
+    const cookies = await page.context().cookies();
+    const sessionCookie = cookies.find((cookie) =>
+      /^(__Secure-)?(authjs|next-auth)\.session-token$/.test(cookie.name),
+    );
+    expect(
+      sessionCookie,
+      "issue #27: session cookie survived signOut — this points at a security bug, not a slow redirect",
+    ).toBeUndefined();
     await page.goto("/de/dashboard");
-    await expect(page).toHaveURL(/\/auth\/login/);
+    // The unauthenticated redirect is not an HTTP 307 — it's a 200 carrying
+    // http-equiv="refresh" plus a NEXT_REDIRECT marker, so it depends on the
+    // browser executing a meta refresh and is load-sensitive. TC-AUTH-11
+    // already carries the same explicit timeout for the same redirect. With
+    // the cookie already confirmed gone above, a failure here means the
+    // redirect was just slow, not that the session survived (issue #27).
+    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 10_000 });
   });
 });
 
