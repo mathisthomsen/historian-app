@@ -202,17 +202,19 @@ model Person {
 
   // Partial date support: store year/month/day separately.
   // All three nullable; year-only is valid (month/day null).
-  birth_year           Int?
-  birth_month          Int?
-  birth_day            Int?
-  birth_date_certainty Certainty @default(UNKNOWN)
-  birth_place          String?
+  birth_year            Int?
+  birth_month           Int?
+  birth_day             Int?
+  birth_date_certainty  Certainty @default(UNKNOWN)
+  birth_place           String?
+  birth_place_certainty Certainty @default(UNKNOWN)
 
-  death_year           Int?
-  death_month          Int?
-  death_day            Int?
-  death_date_certainty Certainty @default(UNKNOWN)
-  death_place          String?
+  death_year            Int?
+  death_month           Int?
+  death_day             Int?
+  death_date_certainty  Certainty @default(UNKNOWN)
+  death_place           String?
+  death_place_certainty Certainty @default(UNKNOWN)
 
   notes String?
 
