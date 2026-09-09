@@ -316,3 +316,41 @@ test.describe("TC-P-12: Weitere Namen tab", () => {
     await expect(nameVariantRow.locator("..").getByText("la")).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// TC-P-13: Set birth place certainty through the form, see it on the detail
+// page — and see the unevidenced warning, since a CERTAIN claim with zero
+// evidence must be visibly flagged (issue #78).
+// ---------------------------------------------------------------------------
+test.describe("TC-P-13: Birth place certainty", () => {
+  test("creates a person with a CERTAIN birth place and shows the certainty badge plus unevidenced warning", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto("/de/persons/new");
+
+    await page.getByLabel("Nachname").fill("Kant");
+    await page.getByLabel("Geburtsort", { exact: true }).fill("Königsberg");
+
+    // The birth-place CertaintySelector is its own radiogroup, distinct from
+    // the birth-date one right above it.
+    await page
+      .getByRole("radiogroup", { name: "Sicherheit Geburtsort" })
+      .getByRole("radio", { name: "Sicher" })
+      .click();
+
+    await page.getByRole("button", { name: "Person speichern" }).click();
+    await page.waitForURL(/\/de\/persons\/(?!new$)[^/]+$/, { timeout: 10_000 });
+
+    await expect(page.getByRole("heading", { name: /Kant/ })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Königsberg")).toBeVisible();
+
+    // The certainty badge sits next to the place value.
+    const placeRow = page.getByText("Königsberg").locator("..");
+    await expect(placeRow.getByText("Sicher")).toBeVisible();
+
+    // No evidence has been attached, so a CERTAIN claim must show the
+    // unevidenced warning — unreachable for place fields before issue #78.
+    await expect(placeRow.getByText("Unbelegt")).toBeVisible();
+  });
+});
