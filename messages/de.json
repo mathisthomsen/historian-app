@@ -321,9 +321,11 @@
       "birth_date": "Geburtsdatum",
       "birth_date_certainty": "Sicherheit Geburtsdatum",
       "birth_place": "Geburtsort",
+      "birth_place_certainty": "Sicherheit Geburtsort",
       "death_date": "Sterbedatum",
       "death_date_certainty": "Sicherheit Sterbedatum",
       "death_place": "Sterbeort",
+      "death_place_certainty": "Sicherheit Sterbeort",
       "notes": "Notizen",
       "created_at": "Erstellt am",
       "created_by": "Erstellt von"

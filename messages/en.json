@@ -321,9 +321,11 @@
       "birth_date": "Birth Date",
       "birth_date_certainty": "Birth Date Certainty",
       "birth_place": "Birth Place",
+      "birth_place_certainty": "Birth Place Certainty",
       "death_date": "Death Date",
       "death_date_certainty": "Death Date Certainty",
       "death_place": "Death Place",
+      "death_place_certainty": "Death Place Certainty",
       "notes": "Notes",
       "created_at": "Created at",
       "created_by": "Created by"

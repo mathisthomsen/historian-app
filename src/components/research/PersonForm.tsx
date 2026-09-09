@@ -52,11 +52,13 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
       birth_day: initial?.birth_day ?? null,
       birth_date_certainty: initial?.birth_date_certainty ?? "UNKNOWN",
       birth_place: initial?.birth_place ?? "",
+      birth_place_certainty: initial?.birth_place_certainty ?? "UNKNOWN",
       death_year: initial?.death_year ?? null,
       death_month: initial?.death_month ?? null,
       death_day: initial?.death_day ?? null,
       death_date_certainty: initial?.death_date_certainty ?? "UNKNOWN",
       death_place: initial?.death_place ?? "",
+      death_place_certainty: initial?.death_place_certainty ?? "UNKNOWN",
       notes: initial?.notes ?? "",
       names: initial?.names ?? [],
     },
@@ -187,6 +189,18 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
             disabled={isSubmitting}
           />
         </div>
+        <Controller
+          control={control}
+          name="birth_place_certainty"
+          render={({ field }) => (
+            <CertaintySelector
+              label={t("fields.birth_place_certainty")}
+              value={field.value}
+              onChange={field.onChange}
+              disabled={isSubmitting}
+            />
+          )}
+        />
       </div>
 
       {/* Death date */}
@@ -241,6 +255,18 @@ export function PersonForm({ mode, initial, projectId, onSuccess, onCancel }: Pe
             disabled={isSubmitting}
           />
         </div>
+        <Controller
+          control={control}
+          name="death_place_certainty"
+          render={({ field }) => (
+            <CertaintySelector
+              label={t("fields.death_place_certainty")}
+              value={field.value}
+              onChange={field.onChange}
+              disabled={isSubmitting}
+            />
+          )}
+        />
       </div>
 
       {/* Name variants */}
