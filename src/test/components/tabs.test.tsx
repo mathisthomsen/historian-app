@@ -76,6 +76,29 @@ describe("Tabs — TabsList classes", () => {
 });
 
 // ---------------------------------------------------------------------------
+// AC-TABS-29..30: overflow behaviour (issue #70) — the tab strip must scroll
+// within itself instead of widening the page around it.
+// ---------------------------------------------------------------------------
+
+describe("Tabs — overflow behaviour (issue #70)", () => {
+  it("AC-TABS-29: TabsList scrolls within itself instead of the page", () => {
+    renderTabs();
+    const list = screen.getByRole("tablist");
+    const classes = getClasses(list);
+    expect(classes).toContain("overflow-x-auto");
+    expect(classes).toContain("max-w-full");
+    expect(classes).toContain("overscroll-x-contain");
+    expect(classes).toContain("scrollbar-none");
+  });
+
+  it("AC-TABS-30: TabsTrigger is never compressed to fit the strip", () => {
+    renderTabs();
+    const tab = screen.getAllByRole("tab")[0]!;
+    expect(getClasses(tab)).toContain("shrink-0");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // AC-TABS-05..08: TabsTrigger state classes
 // ---------------------------------------------------------------------------
 

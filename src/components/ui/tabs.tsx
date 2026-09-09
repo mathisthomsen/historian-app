@@ -14,7 +14,14 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "border-border text-muted-foreground inline-flex h-10 w-full items-center justify-start border-b",
+      // `overflow-x-auto` makes the strip scroll WITHIN itself instead of the
+      // page widening around it (issue #70). `max-w-full` stops it from ever
+      // claiming more than its container even before it has scrolled.
+      // `overscroll-x-contain` keeps a swipe past the strip's own scroll end
+      // from chaining into a page-level rubber-band scroll.
+      // `scrollbar-none` hides the scrollbar chrome (see globals.css) — the
+      // scroll affordance here is the swipe itself, per architecture.md.
+      "border-border text-muted-foreground scrollbar-none inline-flex h-10 w-full max-w-full items-center justify-start overflow-x-auto overscroll-x-contain border-b",
       className,
     )}
     {...props}
@@ -29,7 +36,10 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "text-muted-foreground hover:text-foreground focus-visible:ring-ring data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px inline-flex items-center justify-center border-b-2 border-transparent px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+      // `shrink-0` keeps every trigger at its natural width inside the now-
+      // scrollable TabsList — without it, flex would compress triggers to fit
+      // the container instead of letting the strip overflow and scroll.
+      "text-muted-foreground hover:text-foreground focus-visible:ring-ring data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px inline-flex shrink-0 items-center justify-center border-b-2 border-transparent px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
       className,
     )}
     {...props}

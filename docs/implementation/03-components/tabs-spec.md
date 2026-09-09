@@ -40,6 +40,29 @@ Used for primary entity detail navigation (Attributes, Names, Relations, Evidenc
 | Hover                    | `--color-foreground`       | `hover:text-foreground`                                             |
 | Typography               | —                          | `text-sm font-medium`                                               |
 
+##### Overflow behaviour (issue #70)
+
+`TabsList` is itself the horizontal scroll container — not the page. At narrow
+viewports (entity detail pages render up to eight triggers) the strip scrolls
+within its own box; the page must never widen to accommodate it.
+
+| Part                            | Token | Tailwind class                          |
+| ------------------------------- | ----- | --------------------------------------- |
+| TabsList scroll container       | —     | `w-full max-w-full overflow-x-auto`     |
+| TabsList overscroll containment | —     | `overscroll-x-contain`                  |
+| TabsList scrollbar chrome       | —     | `scrollbar-none` (utility, globals.css) |
+| TabsTrigger sizing              | —     | `shrink-0` (never compressed to fit)    |
+
+`overflow-x-auto` forces `overflow-y` to compute to `auto` as well (CSS
+overflow computed-value rule), which can clip the active trigger's `-mb-px`
+underline if the trigger's border-box is taller than the `h-10` row. The
+trigger's `py-2.5` + `border-b-2` + `-mb-px` combination is tuned to fit
+inside `h-10` without vertical overflow — verified in Playwright at a 390px
+viewport (`e2e/persons.spec.ts`, TC-P-13). `border-b` on `TabsList` itself
+spans the full container width (not the scrolled content width) because CSS
+borders belong to the element's own box, so the underline of the strip is
+unaffected by scroll position or overflow.
+
 #### Count badge (inside trigger)
 
 | State    | Tailwind class                                                                                    |
@@ -169,3 +192,6 @@ Apply `variant="underline"` (or a className override) to `TabsList` and matching
 | AC-TABS-26 | `TabsTrigger` has `py-1.5` class                                                           | Unit     |
 | AC-TABS-27 | `TabsTrigger` has `px-3` class                                                             | Unit     |
 | AC-TABS-28 | `TabsTrigger` has `rounded-md` class                                                       | Unit     |
+| AC-TABS-29 | `TabsList` has `overflow-x-auto` class (scrolls within itself, not the page)               | Unit     |
+| AC-TABS-30 | `TabsTrigger` has `shrink-0` class (never compressed to fit the strip)                     | Unit     |
+| AC-TABS-31 | At a 390px viewport, the page does not scroll horizontally while the tab strip does        | E2E      |
