@@ -24,7 +24,9 @@ export interface PersonSummary {
 
 export interface PersonDetail extends PersonSummary {
   birth_place: string | null;
+  birth_place_certainty: Certainty;
   death_place: string | null;
+  death_place_certainty: Certainty;
   notes: string | null;
   created_by_id: string | null;
   updated_at: string;
@@ -43,11 +45,13 @@ export interface CreatePersonInput {
   birth_day?: number;
   birth_date_certainty?: Certainty;
   birth_place?: string;
+  birth_place_certainty?: Certainty;
   death_year?: number;
   death_month?: number;
   death_day?: number;
   death_date_certainty?: Certainty;
   death_place?: string;
+  death_place_certainty?: Certainty;
   notes?: string;
   names?: { name: string; language?: string; is_primary?: boolean }[];
 }
