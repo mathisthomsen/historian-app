@@ -612,7 +612,6 @@
     "search_source": "Search source…",
     "page_reference_placeholder": "e.g. p. 42, fol. 3v",
     "quote_placeholder": "Relevant quotation",
-    "unevidenced": "Unevidenced",
     "unevidencedLabel": "{field}: assessed as {level} but has no evidence",
     "noEvidenceYet": "No evidence yet"
   },

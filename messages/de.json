@@ -612,7 +612,6 @@
     "search_source": "Quelle suchen…",
     "page_reference_placeholder": "z. B. S. 42, fol. 3v",
     "quote_placeholder": "Relevantes Zitat",
-    "unevidenced": "Unbelegt",
     "unevidencedLabel": "{field}: als {level} bewertet, aber ohne Beleg",
     "noEvidenceYet": "Noch kein Beleg"
   },

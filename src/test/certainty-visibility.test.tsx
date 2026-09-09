@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { PropertyEvidenceBadge } from "@/components/relations/PropertyEvidenceBadge";
 import { DatedCell } from "@/components/research/DatedCell";
 import { PersonsListClient } from "@/components/research/PersonsListClient";
-import { renderWithProviders, screen, waitFor } from "@/test/render";
+import { renderWithProviders, screen, waitFor, within } from "@/test/render";
 import type { PersonSummary } from "@/types/person";
 
 vi.mock("next/navigation", () => ({
@@ -102,12 +102,15 @@ describe("the unevidenced warning keys on the certainty level", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(evidenceResponse(0)));
     renderBadge("CERTAIN");
 
-    // The warning state's entire content used to be the digit 0, and the word
-    // "Unbelegt" appeared in no message file.
-    await waitFor(() => expect(screen.getByText("Unbelegt")).toBeInTheDocument());
-    expect(screen.getByRole("button")).toHaveAccessibleName(
-      "Startdatum: als Sicher bewertet, aber ohne Beleg",
-    );
+    // The warning is an AFFORDANCE (icon + dashed-border warning tokens), not
+    // a different word — every field reads as a number at a glance (issue
+    // #70/#71). The full sentence still reaches assistive tech via the
+    // accessible name below.
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(within(button).getByText("0")).toBeInTheDocument());
+    expect(button.querySelector("svg")).toHaveClass("lucide-triangle-alert");
+    expect(button).toHaveClass("certainty-unevidenced");
+    expect(button).toHaveAccessibleName("Startdatum: als Sicher bewertet, aber ohne Beleg");
   });
 
   it("does not warn on an honest UNKNOWN non-claim", async () => {
@@ -115,15 +118,31 @@ describe("the unevidenced warning keys on the certainty level", () => {
     renderBadge("UNKNOWN");
 
     // Previously fired whenever a date existed, regardless of level.
-    await waitFor(() => expect(screen.getByRole("button")).toBeInTheDocument());
-    expect(screen.queryByText("Unbelegt")).not.toBeInTheDocument();
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(within(button).getByText("0")).toBeInTheDocument());
+    expect(button).not.toHaveClass("certainty-unevidenced");
+    expect(button.querySelector("svg")).not.toBeInTheDocument();
   });
 
   it("does not warn once the claim has evidence", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(evidenceResponse(2)));
     renderBadge("CERTAIN");
 
-    await waitFor(() => expect(screen.getByText("2")).toBeInTheDocument());
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(within(button).getByText("2")).toBeInTheDocument());
+    expect(button).not.toHaveClass("certainty-unevidenced");
+  });
+
+  it("renders the numeral in the warning state, not a word (issue #70/#71)", async () => {
+    // Regression guard: birth/death place and notes pass no `certainty` today
+    // (issue #72), but a field that DOES carry certainty and has zero
+    // evidence must show "0", not "Unbelegt" — the inconsistency the badge
+    // used to have between date fields (word) and other fields (bare "0").
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(evidenceResponse(0)));
+    renderBadge("PROBABLE");
+
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(within(button).getByText("0")).toBeInTheDocument());
     expect(screen.queryByText("Unbelegt")).not.toBeInTheDocument();
   });
 
