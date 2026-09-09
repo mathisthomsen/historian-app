@@ -318,11 +318,15 @@ test.describe("TC-P-12: Weitere Namen tab", () => {
 });
 
 // ---------------------------------------------------------------------------
-// TC-P-13: Set birth place certainty through the form, see it on the detail
+// TC-P-14: Set birth place certainty through the form, see it on the detail
 // page — and see the unevidenced warning, since a CERTAIN claim with zero
 // evidence must be visibly flagged (issue #78).
+//
+// Numbered 14, not 13: the tab-overflow test on the #70/#71 branch claims
+// TC-P-13. Two specs sharing an ID is a collision waiting to confuse whoever
+// reads a CI failure.
 // ---------------------------------------------------------------------------
-test.describe("TC-P-13: Birth place certainty", () => {
+test.describe("TC-P-14: Birth place certainty", () => {
   test("creates a person with a CERTAIN birth place and shows the certainty badge plus unevidenced warning", async ({
     page,
   }) => {
@@ -351,6 +355,12 @@ test.describe("TC-P-13: Birth place certainty", () => {
 
     // No evidence has been attached, so a CERTAIN claim must show the
     // unevidenced warning — unreachable for place fields before issue #78.
-    await expect(placeRow.getByText("Unbelegt")).toBeVisible();
+    //
+    // Asserted on the accessible name, not on the word "Unbelegt": the #70
+    // branch replaces that word with the evidence count ("⚠ 0") so every field
+    // reads as a number, and a literal-text assertion here would break the
+    // moment these two branches meet. The accessible name is the stable
+    // contract either way.
+    await expect(placeRow.getByRole("button", { name: /Geburtsort:.*ohne Beleg/ })).toBeVisible();
   });
 });

@@ -158,9 +158,11 @@ describe("the unevidenced warning keys on the certainty level", () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByText("Unbelegt")).toBeInTheDocument());
-    expect(screen.getByRole("button")).toHaveAccessibleName(
-      "Geburtsort: als Sicher bewertet, aber ohne Beleg",
-    );
+    // Asserted on the warning affordance rather than the word: the #70 branch
+    // replaces "Unbelegt" with the evidence count so every field reads as a
+    // number, and a literal-text assertion would break when these two meet.
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(button).toHaveClass("certainty-unevidenced"));
+    expect(button).toHaveAccessibleName("Geburtsort: als Sicher bewertet, aber ohne Beleg");
   });
 });

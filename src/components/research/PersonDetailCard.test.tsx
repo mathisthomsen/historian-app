@@ -135,6 +135,14 @@ describe("PersonDetailCard place certainty (issue #78)", () => {
 
     // Before issue #78, place fields never passed a certainty into
     // PropertyEvidenceBadge, so this warning state was unreachable for them.
-    await waitFor(() => expect(screen.getByText("Unbelegt")).toBeInTheDocument());
+    //
+    // Asserted on the accessible name, not the word "Unbelegt": the #70 branch
+    // swaps that word for the evidence count, and this assertion has to survive
+    // the two branches meeting.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Geburtsort: als Sicher bewertet, aber ohne Beleg" }),
+      ).toBeInTheDocument(),
+    );
   });
 });
