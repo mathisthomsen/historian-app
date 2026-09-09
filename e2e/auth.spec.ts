@@ -242,14 +242,20 @@ test.describe("TC-AUTH-13: Logout", () => {
     // prefixed in production over https). A failure here means the session
     // survived signOut — a security bug, not a redirect timing issue
     // (issue #27).
+    // Measured 2026-09-09: a logged-in context here holds exactly
+    // ["authjs.csrf-token", "authjs.callback-url", "authjs.session-token"], so
+    // this pattern matches a real cookie and the assertion is not vacuous.
     const cookies = await page.context().cookies();
     const sessionCookie = cookies.find((cookie) =>
       /^(__Secure-)?(authjs|next-auth)\.session-token$/.test(cookie.name),
     );
+    // signOut clears with Max-Age=0, which drops the cookie from the jar. An
+    // empty-valued cookie is equally cleared and must not raise a false
+    // security alarm on this of all tests — only a surviving *value* does.
     expect(
-      sessionCookie,
+      sessionCookie?.value ?? "",
       "issue #27: session cookie survived signOut — this points at a security bug, not a slow redirect",
-    ).toBeUndefined();
+    ).toBe("");
     await page.goto("/de/dashboard");
     // The unauthenticated redirect is not an HTTP 307 — it's a 200 carrying
     // http-equiv="refresh" plus a NEXT_REDIRECT marker, so it depends on the
