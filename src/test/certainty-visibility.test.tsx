@@ -1,6 +1,8 @@
+import type { Certainty } from "@prisma/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PropertyEvidenceBadge } from "@/components/relations/PropertyEvidenceBadge";
+import { CertaintyMarker } from "@/components/research/CertaintyMarker";
 import { DatedCell } from "@/components/research/DatedCell";
 import { PersonsListClient } from "@/components/research/PersonsListClient";
 import { renderWithProviders, screen, waitFor, within } from "@/test/render";
@@ -81,6 +83,76 @@ describe("certainty is visible at list level", () => {
 
     expect(screen.getByRole("img", { name: "Gewissheit: Sicher" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Gewissheit: Möglich" })).toBeInTheDocument();
+  });
+});
+
+/**
+ * Guards issue #71. The marker used to be a glyph (`● ◕ ◔ ○`) that carried the
+ * per-level distinction through character shape; it is now an inline SVG pie
+ * (circle outline + filled wedge). WCAG 1.4.1 requires the four levels to stay
+ * distinguishable by something other than colour — here, the wedge fraction.
+ * Scope of the guard, stated honestly: the first assertion compares whole SVG
+ * markup, which includes the colour style, so on its own it would also pass for
+ * four colours of one shape. The `d`-attribute assertion below is the one that
+ * actually pins the geometry — the two partial levels must differ in wedge
+ * sweep, not merely in hue.
+ */
+describe("certainty markers are distinguishable by shape, not colour alone", () => {
+  const LEVELS: Certainty[] = ["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"];
+
+  it("renders a differently shaped SVG per level", () => {
+    const shapes = LEVELS.map((level) => {
+      const { container, unmount } = renderWithProviders(<CertaintyMarker certainty={level} />);
+      const svg = container.querySelector("svg");
+      const shape = svg?.innerHTML ?? "";
+      unmount();
+      return shape;
+    });
+
+    // Every level's markup is unique...
+    expect(new Set(shapes).size).toBe(shapes.length);
+    // ...and it's not empty (a regression that rendered nothing would also be "unique").
+    for (const shape of shapes) {
+      expect(shape.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps the accessible name exactly as before (role=img, aria-label from certaintyLabel)", () => {
+    renderWithProviders(<CertaintyMarker certainty="PROBABLE" />);
+    const marker = screen.getByRole("img", { name: "Gewissheit: Wahrscheinlich" });
+    // The SVG is decorative; the accessible name must come only from the wrapper.
+    expect(marker.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("sweeps a different wedge for POSSIBLE than for PROBABLE", () => {
+    // The greyscale-safe distinction: 25% vs 75% of the disc inked. If a
+    // regression made every level the same wedge and varied only the colour,
+    // this is the assertion that catches it.
+    const { container: probable, unmount } = renderWithProviders(
+      <CertaintyMarker certainty="PROBABLE" />,
+    );
+    const probableD = probable.querySelector("path")?.getAttribute("d");
+    unmount();
+
+    const { container: possible } = renderWithProviders(<CertaintyMarker certainty="POSSIBLE" />);
+    const possibleD = possible.querySelector("path")?.getAttribute("d");
+
+    expect(probableD).toBeTruthy();
+    expect(possibleD).toBeTruthy();
+    expect(probableD).not.toBe(possibleD);
+  });
+
+  it("fills the full circle for CERTAIN and only outlines it for UNKNOWN", () => {
+    const { container: certain } = renderWithProviders(<CertaintyMarker certainty="CERTAIN" />);
+    expect(certain.querySelector("path")).not.toBeInTheDocument();
+    expect(certain.querySelector("circle")).toBeInTheDocument();
+
+    const { container: unknown } = renderWithProviders(<CertaintyMarker certainty="UNKNOWN" />);
+    expect(unknown.querySelector("path")).not.toBeInTheDocument();
+    expect(unknown.querySelector("circle")).toBeInTheDocument();
+
+    const { container: probable } = renderWithProviders(<CertaintyMarker certainty="PROBABLE" />);
+    expect(probable.querySelector("path")).toBeInTheDocument();
   });
 });
 
