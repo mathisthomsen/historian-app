@@ -44,11 +44,13 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     birth_day: person.birth_day,
     birth_date_certainty: person.birth_date_certainty,
     birth_place: person.birth_place,
+    birth_place_certainty: person.birth_place_certainty,
     death_year: person.death_year,
     death_month: person.death_month,
     death_day: person.death_day,
     death_date_certainty: person.death_date_certainty,
     death_place: person.death_place,
+    death_place_certainty: person.death_place_certainty,
     notes: person.notes,
     created_by_id: person.created_by_id,
     created_at: person.created_at.toISOString(),
@@ -108,6 +110,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     updateData.birth_date_certainty = data.birth_date_certainty;
   if (data.birth_place !== undefined)
     updateData.birth_place = data.birth_place ? sanitize(data.birth_place) : null;
+  if (data.birth_place_certainty !== undefined)
+    updateData.birth_place_certainty = data.birth_place_certainty;
   if (data.death_year !== undefined) updateData.death_year = data.death_year;
   if (data.death_month !== undefined) updateData.death_month = data.death_month;
   if (data.death_day !== undefined) updateData.death_day = data.death_day;
@@ -115,6 +119,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     updateData.death_date_certainty = data.death_date_certainty;
   if (data.death_place !== undefined)
     updateData.death_place = data.death_place ? sanitize(data.death_place) : null;
+  if (data.death_place_certainty !== undefined)
+    updateData.death_place_certainty = data.death_place_certainty;
   if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
 
   let updatedPerson: {
@@ -126,11 +132,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     birth_day: number | null;
     birth_date_certainty: string;
     birth_place: string | null;
+    birth_place_certainty: string;
     death_year: number | null;
     death_month: number | null;
     death_day: number | null;
     death_date_certainty: string;
     death_place: string | null;
+    death_place_certainty: string;
     notes: string | null;
     created_by_id: string | null;
     created_at: Date;
@@ -174,11 +182,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     "birth_day",
     "birth_place",
     "birth_date_certainty",
+    "birth_place_certainty",
     "death_year",
     "death_month",
     "death_day",
     "death_place",
     "death_date_certainty",
+    "death_place_certainty",
     "notes",
   ] as const;
 
@@ -211,11 +221,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     birth_day: updatedPerson.birth_day,
     birth_date_certainty: updatedPerson.birth_date_certainty,
     birth_place: updatedPerson.birth_place,
+    birth_place_certainty: updatedPerson.birth_place_certainty,
     death_year: updatedPerson.death_year,
     death_month: updatedPerson.death_month,
     death_day: updatedPerson.death_day,
     death_date_certainty: updatedPerson.death_date_certainty,
     death_place: updatedPerson.death_place,
+    death_place_certainty: updatedPerson.death_place_certainty,
     notes: updatedPerson.notes,
     created_by_id: updatedPerson.created_by_id,
     created_at: updatedPerson.created_at.toISOString(),
