@@ -279,13 +279,17 @@ export function EventForm({
 
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          parent_title?: string;
+          error?: {
+            code?: string;
+            details?: { parent_title?: string };
+          };
         };
         if (errorCode(data) === "DEPTH_LIMIT_EXCEEDED") {
           setError("parent_id", {
             type: "manual",
-            message: t("errors.depth_limit", { parent_title: data.parent_title ?? "" }),
+            message: t("errors.depth_limit", {
+              parent_title: data.error?.details?.parent_title ?? "",
+            }),
           });
           return;
         }

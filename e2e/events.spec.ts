@@ -632,12 +632,23 @@ test.describe("TC-E-16: Depth limit error inline", () => {
 
     await page.getByLabel("Titel").fill("Invalid Parent Test");
 
+    const responsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/events") && response.request().method() === "POST",
+    );
     await page.getByRole("button", { name: "Ereignis speichern" }).click();
+    const response = await responsePromise;
+    expect(response.status()).toBe(400);
+    const body = (await response.json()) as {
+      error: { code: string; details: { parent_title: string } };
+    };
+    expect(body.error.code).toBe("DEPTH_LIMIT_EXCEEDED");
+    expect(body.error.details.parent_title).toBe("Depth Limit Test Sub");
 
     // Should show depth limit error
-    await expect(page.getByText(/Unterereignis|sub-event|anderes Ereignis wählen/i)).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(
+      page.getByText("ist selbst ein Unterereignis und kann keine eigenen Unterereignisse haben"),
+    ).toBeVisible();
 
     // Form should still be open (no redirect)
     await expect(page).toHaveURL(/\/de\/events\/new/);
