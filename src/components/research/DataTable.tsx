@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React from "react";
 
@@ -97,6 +97,14 @@ export function DataTable<TData extends { id: string }>({
               )}
             </TableHead>
           ))}
+          {onRowClick && (
+            // Decorative trailing column carrying the row-click affordance
+            // (ChevronRight). Kept as a real <th> so header/body column counts
+            // stay equal — an unbalanced table is an accessibility defect — but
+            // aria-hidden since it names no column and conveys nothing beyond
+            // what the row's own link already provides.
+            <TableHead aria-hidden="true" className="w-8" />
+          )}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -104,7 +112,7 @@ export function DataTable<TData extends { id: string }>({
           <TableRow
             key={row.id}
             data-state={selectedIds.includes(row.id) ? "selected" : undefined}
-            className={onRowClick ? "cursor-pointer" : undefined}
+            className={onRowClick ? "group/row cursor-pointer" : undefined}
             onClick={
               onRowClick
                 ? (e) => {
@@ -134,6 +142,11 @@ export function DataTable<TData extends { id: string }>({
             {columns.map((col) => (
               <TableCell key={col.key}>{col.cell(row)}</TableCell>
             ))}
+            {onRowClick && (
+              <TableCell aria-hidden="true" className="text-muted-foreground w-8">
+                <ChevronRight className="h-4 w-4" />
+              </TableCell>
+            )}
           </TableRow>
         ))}
       </TableBody>

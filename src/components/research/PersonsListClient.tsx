@@ -74,7 +74,12 @@ export function PersonsListClient({
       cell: (row: PersonSummary) => (
         <Link
           href={`/${locale}/persons/${row.id}`}
-          className="hover:text-foreground underline"
+          // The whole row navigates (DataTable's onRowClick), so a standalone
+          // `underline` here claimed an affordance only this cell actually had
+          // (issue #71). Underline now tracks the affordance: on ROW hover via
+          // `group-hover/row` (DataTable puts `group/row` on TableRow) and on
+          // focus-visible for keyboard users, who cannot hover the row.
+          className="text-foreground font-medium group-hover/row:underline focus-visible:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {row.last_name ?? row.first_name ?? "—"}
