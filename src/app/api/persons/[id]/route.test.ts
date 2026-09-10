@@ -145,9 +145,17 @@ describe("PUT /api/persons/[id] — place certainty round-trip (issue #78)", () 
   });
 
   it("logs an activity entry when birth_place_certainty changes", async () => {
-    const existing = makeExistingPerson({ birth_place_certainty: "UNKNOWN" });
+    // A birth place must be present: with none, the real PUT path normalises a
+    // certainty-only CERTAIN back to UNKNOWN, and a mock returning CERTAIN
+    // would let this pass while asserting behaviour the route never produces.
+    const existing = makeExistingPerson({
+      birth_place: "London",
+      birth_place_certainty: "UNKNOWN",
+    });
     mockPersonFindFirst.mockResolvedValue(existing);
-    mockPersonUpdate.mockResolvedValue(makeExistingPerson({ birth_place_certainty: "CERTAIN" }));
+    mockPersonUpdate.mockResolvedValue(
+      makeExistingPerson({ birth_place: "London", birth_place_certainty: "CERTAIN" }),
+    );
 
     const req = makeRequest("http://localhost/api/persons/person-1", {
       method: "PUT",

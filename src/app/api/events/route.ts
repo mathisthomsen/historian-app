@@ -86,6 +86,7 @@ function buildEventSummary(event: {
   end_day: number | null;
   end_date_certainty: string;
   location: string | null;
+  location_certainty: string;
   parent: { id: string; title: string } | null;
   _count: { sub_events: number };
   created_at: Date;
@@ -105,6 +106,7 @@ function buildEventSummary(event: {
     end_day: event.end_day,
     end_date_certainty: event.end_date_certainty,
     location: event.location,
+    location_certainty: event.location_certainty,
     parent: event.parent ? { id: event.parent.id, title: event.parent.title } : null,
     _count: { sub_events: event._count.sub_events },
     created_at: event.created_at.toISOString(),

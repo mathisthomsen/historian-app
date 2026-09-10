@@ -83,6 +83,7 @@ export default async function EditEventPage({ params }: PageProps) {
         end_day: s.end_day,
         end_date_certainty: s.end_date_certainty as EventSummary["end_date_certainty"],
         location: s.location,
+        location_certainty: s.location_certainty as EventSummary["location_certainty"],
         parent: s.parent ? { id: s.parent.id, title: s.parent.title } : null,
         _count: { sub_events: s._count.sub_events },
         created_at: s.created_at.toISOString(),

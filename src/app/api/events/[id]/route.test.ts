@@ -150,8 +150,15 @@ describe("PUT /api/events/[id] — location certainty round-trip (issue #78)", (
   });
 
   it("logs an activity entry when location_certainty changes", async () => {
-    mockEventFindFirst.mockResolvedValue(makeFullEvent({ location_certainty: "UNKNOWN" }));
-    mockEventUpdate.mockResolvedValue(makeFullEvent({ location_certainty: "CERTAIN" }));
+    mockEventFindFirst.mockResolvedValue(
+      // A location must be present: with none, the real PUT path normalises a
+      // certainty-only CERTAIN back to UNKNOWN, and a mock returning CERTAIN
+      // would let this pass while asserting behaviour the route never produces.
+      makeFullEvent({ location: "Wien", location_certainty: "UNKNOWN" }),
+    );
+    mockEventUpdate.mockResolvedValue(
+      makeFullEvent({ location: "Wien", location_certainty: "CERTAIN" }),
+    );
 
     const req = makeRequest("http://localhost/api/events/evt-1", {
       method: "PUT",

@@ -314,9 +314,11 @@ async function main() {
       birth_year: 1749,
       birth_date_certainty: Certainty.CERTAIN,
       birth_place: "Frankfurt am Main",
+      birth_place_certainty: Certainty.CERTAIN,
       death_year: 1832,
       death_date_certainty: Certainty.CERTAIN,
       death_place: "Weimar",
+      death_place_certainty: Certainty.CERTAIN,
       notes: "Bedeutendster deutschsprachiger Dichter der Klassik",
     },
     create: {
@@ -328,9 +330,11 @@ async function main() {
       birth_year: 1749,
       birth_date_certainty: Certainty.CERTAIN,
       birth_place: "Frankfurt am Main",
+      birth_place_certainty: Certainty.CERTAIN,
       death_year: 1832,
       death_date_certainty: Certainty.CERTAIN,
       death_place: "Weimar",
+      death_place_certainty: Certainty.CERTAIN,
       notes: "Bedeutendster deutschsprachiger Dichter der Klassik",
     },
   });
@@ -345,9 +349,11 @@ async function main() {
       birth_year: 1759,
       birth_date_certainty: Certainty.CERTAIN,
       birth_place: "Marbach am Neckar",
+      birth_place_certainty: Certainty.CERTAIN,
       death_year: 1805,
       death_date_certainty: Certainty.CERTAIN,
       death_place: "Weimar",
+      death_place_certainty: Certainty.CERTAIN,
       notes: "Dichter, Philosoph und Historiker der Weimarer Klassik",
     },
     create: {
@@ -359,9 +365,11 @@ async function main() {
       birth_year: 1759,
       birth_date_certainty: Certainty.CERTAIN,
       birth_place: "Marbach am Neckar",
+      birth_place_certainty: Certainty.CERTAIN,
       death_year: 1805,
       death_date_certainty: Certainty.CERTAIN,
       death_place: "Weimar",
+      death_place_certainty: Certainty.CERTAIN,
       notes: "Dichter, Philosoph und Historiker der Weimarer Klassik",
     },
   });
@@ -376,9 +384,11 @@ async function main() {
       birth_year: 1769,
       birth_date_certainty: Certainty.CERTAIN,
       birth_place: "Berlin",
+      birth_place_certainty: Certainty.CERTAIN,
       death_year: 1859,
       death_date_certainty: Certainty.CERTAIN,
       death_place: "Berlin",
+      death_place_certainty: Certainty.CERTAIN,
       notes: "Naturforscher und Weltreisender, Begründer der modernen Geographie",
     },
     create: {
@@ -390,9 +400,11 @@ async function main() {
       birth_year: 1769,
       birth_date_certainty: Certainty.CERTAIN,
       birth_place: "Berlin",
+      birth_place_certainty: Certainty.CERTAIN,
       death_year: 1859,
       death_date_certainty: Certainty.CERTAIN,
       death_place: "Berlin",
+      death_place_certainty: Certainty.CERTAIN,
       notes: "Naturforscher und Weltreisender, Begründer der modernen Geographie",
     },
   });
@@ -407,9 +419,11 @@ async function main() {
       birth_year: 1766,
       birth_date_certainty: Certainty.CERTAIN,
       birth_place: "Minden",
+      birth_place_certainty: Certainty.CERTAIN,
       death_year: 1829,
       death_date_certainty: Certainty.CERTAIN,
       death_place: "Tegel",
+      death_place_certainty: Certainty.CERTAIN,
       notes: "Ehefrau Wilhelm von Humboldts, Bildungsreformerin",
     },
     create: {
@@ -421,9 +435,11 @@ async function main() {
       birth_year: 1766,
       birth_date_certainty: Certainty.CERTAIN,
       birth_place: "Minden",
+      birth_place_certainty: Certainty.CERTAIN,
       death_year: 1829,
       death_date_certainty: Certainty.CERTAIN,
       death_place: "Tegel",
+      death_place_certainty: Certainty.CERTAIN,
       notes: "Ehefrau Wilhelm von Humboldts, Bildungsreformerin",
     },
   });
@@ -579,6 +595,7 @@ async function main() {
       start_year: 1775,
       start_date_certainty: Certainty.CERTAIN,
       location: "Weimar",
+      location_certainty: Certainty.CERTAIN,
     },
     create: {
       id: IDS.event.weimar,
@@ -589,6 +606,7 @@ async function main() {
       start_year: 1775,
       start_date_certainty: Certainty.CERTAIN,
       location: "Weimar",
+      location_certainty: Certainty.CERTAIN,
     },
   });
 
@@ -604,6 +622,7 @@ async function main() {
       end_year: 1832,
       end_date_certainty: Certainty.PROBABLE,
       location: "Weimar",
+      location_certainty: Certainty.CERTAIN,
     },
     create: {
       id: IDS.event.classicism,
@@ -616,6 +635,7 @@ async function main() {
       end_year: 1832,
       end_date_certainty: Certainty.PROBABLE,
       location: "Weimar",
+      location_certainty: Certainty.CERTAIN,
     },
   });
 
@@ -632,6 +652,7 @@ async function main() {
       end_year: 1805,
       end_date_certainty: Certainty.CERTAIN,
       location: "Weimar / Jena",
+      location_certainty: Certainty.CERTAIN,
     },
     create: {
       id: IDS.event.cosima,
@@ -645,6 +666,7 @@ async function main() {
       end_year: 1805,
       end_date_certainty: Certainty.CERTAIN,
       location: "Weimar / Jena",
+      location_certainty: Certainty.CERTAIN,
     },
   });
 
@@ -660,6 +682,7 @@ async function main() {
       end_year: 1804,
       end_date_certainty: Certainty.CERTAIN,
       location: "Lateinamerika, Vereinigte Staaten",
+      location_certainty: Certainty.CERTAIN,
     },
     create: {
       id: IDS.event.americaExpedition,
@@ -672,6 +695,7 @@ async function main() {
       end_year: 1804,
       end_date_certainty: Certainty.CERTAIN,
       location: "Lateinamerika, Vereinigte Staaten",
+      location_certainty: Certainty.CERTAIN,
     },
   });
 
