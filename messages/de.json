@@ -659,6 +659,12 @@
       "sub": "Eine Forschungsdatenbank, in der Ungewissheit ein Feld ist — kein Kompromiss.",
       "primary": "Konto erstellen",
       "secondary": "Ansehen"
+    },
+    "rail": {
+      "previous": "Zurück",
+      "next": "Weiter",
+      "position": "Panel {current} von {total}",
+      "label": "Was Evidoxa anders macht"
     }
   }
 }

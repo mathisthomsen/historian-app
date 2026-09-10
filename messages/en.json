@@ -659,6 +659,12 @@
       "sub": "A research database where uncertainty is a field, not a compromise.",
       "primary": "Create account",
       "secondary": "Take a look"
+    },
+    "rail": {
+      "previous": "Previous",
+      "next": "Next",
+      "position": "Panel {current} of {total}",
+      "label": "What Evidoxa does differently"
     }
   }
 }
