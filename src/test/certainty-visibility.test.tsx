@@ -165,4 +165,32 @@ describe("the unevidenced warning keys on the certainty level", () => {
     await waitFor(() => expect(button).toHaveClass("certainty-unevidenced"));
     expect(button).toHaveAccessibleName("Geburtsort: als Sicher bewertet, aber ohne Beleg");
   });
+
+  /**
+   * Guards issue #78. Before `location_certainty` existed on Event, the
+   * location field never passed a certainty into PropertyEvidenceBadge, so an
+   * unevidenced CERTAIN location claim could never reach this warning state —
+   * no matter how confidently it was asserted. This proves the event-location
+   * path now reaches it, the same way start_year already could.
+   */
+  it("warns on an unevidenced CERTAIN event location claim — previously unreachable for the location field", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(evidenceResponse(0)));
+    renderWithProviders(
+      <PropertyEvidenceBadge
+        projectId="p1"
+        entityType="EVENT"
+        entityId="event-1"
+        property="location"
+        fieldLabel="Ort"
+        certainty="CERTAIN"
+      />,
+    );
+
+    // Asserted on the warning affordance rather than the word: the #70 branch
+    // replaces "Unbelegt" with the evidence count so every field reads as a
+    // number, and a literal-text assertion would break when these two meet.
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(button).toHaveClass("certainty-unevidenced"));
+    expect(button).toHaveAccessibleName("Ort: als Sicher bewertet, aber ohne Beleg");
+  });
 });

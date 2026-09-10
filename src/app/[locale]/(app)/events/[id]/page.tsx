@@ -97,6 +97,7 @@ export default async function EventDetailPage({ params }: PageProps) {
     end_day: raw.end_day,
     end_date_certainty: raw.end_date_certainty as EventDetail["end_date_certainty"],
     location: raw.location,
+    location_certainty: raw.location_certainty as EventDetail["location_certainty"],
     parent: raw.parent ? { id: raw.parent.id, title: raw.parent.title } : null,
     notes: raw.notes,
     created_by_id: raw.created_by_id,
