@@ -103,7 +103,14 @@ export function DataTable<TData extends { id: string }>({
             // stay equal — an unbalanced table is an accessibility defect — but
             // aria-hidden since it names no column and conveys nothing beyond
             // what the row's own link already provides.
-            <TableHead aria-hidden="true" className="w-8" />
+            //
+            // Pinned to the right edge: the table scrolls horizontally on a
+            // phone (measured at 390px: 558px of content in a 342px box), which
+            // parked the chevron 168px off-screen. That mattered more than it
+            // looks — touch has no hover, so the row's hover underline never
+            // fires either, leaving a fully tappable row with no affordance at
+            // all on exactly the viewport where this was first reported.
+            <TableHead aria-hidden="true" className="bg-background sticky right-0 w-8 border-l-0" />
           )}
         </TableRow>
       </TableHeader>
@@ -143,7 +150,13 @@ export function DataTable<TData extends { id: string }>({
               <TableCell key={col.key}>{col.cell(row)}</TableCell>
             ))}
             {onRowClick && (
-              <TableCell aria-hidden="true" className="text-muted-foreground w-8">
+              // Background mirrors TableRow's own states, since a sticky cell
+              // sits above the scrolling content and would otherwise let rows
+              // slide visibly underneath it.
+              <TableCell
+                aria-hidden="true"
+                className="text-muted-foreground bg-background group-hover/row:bg-muted/30 group-data-[state=selected]/row:bg-primary/10 sticky right-0 w-8"
+              >
                 <ChevronRight className="h-4 w-4" />
               </TableCell>
             )}

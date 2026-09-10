@@ -92,7 +92,7 @@ describe("Tabs — overflow behaviour (issue #70)", () => {
     expect(classes).toContain("scrollbar-none");
   });
 
-  it("AC-TABS-31: the scroll clip leaves room for a trigger's focus ring", () => {
+  it("AC-TABS-32: the scroll clip leaves room for a trigger's focus ring", () => {
     // `overflow-x: auto` forces `overflow-y` to `auto` too, so a scroll
     // container clips vertically whether it wants to or not. The triggers'
     // focus indicator is drawn outside their box (ring-2 + ring-offset-2), so
@@ -106,7 +106,7 @@ describe("Tabs — overflow behaviour (issue #70)", () => {
     expect(classes).toContain("-my-2");
   });
 
-  it("AC-TABS-32: the tablist still fills its container and can outgrow it", () => {
+  it("AC-TABS-33: the tablist still fills its container and can outgrow it", () => {
     renderTabs();
     const classes = getClasses(screen.getByRole("tablist"));
     expect(classes).toContain("w-full");

@@ -42,26 +42,37 @@ Used for primary entity detail navigation (Attributes, Names, Relations, Evidenc
 
 ##### Overflow behaviour (issue #70)
 
-`TabsList` is itself the horizontal scroll container — not the page. At narrow
-viewports (entity detail pages render up to eight triggers) the strip scrolls
-within its own box; the page must never widen to accommodate it.
+At narrow viewports an entity detail page renders up to eight triggers, more
+than fit the screen. The strip scrolls within its own box; the page must never
+widen to accommodate it.
 
-| Part                            | Token | Tailwind class                          |
-| ------------------------------- | ----- | --------------------------------------- |
-| TabsList scroll container       | —     | `w-full max-w-full overflow-x-auto`     |
-| TabsList overscroll containment | —     | `overscroll-x-contain`                  |
-| TabsList scrollbar chrome       | —     | `scrollbar-none` (utility, globals.css) |
-| TabsTrigger sizing              | —     | `shrink-0` (never compressed to fit)    |
+**The scroll container is a wrapper element, not `TabsList` itself.** This is
+load-bearing, not incidental. `overflow-x: auto` forces the computed
+`overflow-y` to `auto` as well (CSS overflow computed-value rule) — one axis
+cannot be clipped without the other. Scrolling `TabsList` directly therefore
+clipped every trigger's focus ring, which is drawn _outside_ the trigger's box
+(`ring-2` + `ring-offset-2`): a keyboard user saw a 2px sliver at one edge
+instead of a ring, failing WCAG 2.4.7.
 
-`overflow-x-auto` forces `overflow-y` to compute to `auto` as well (CSS
-overflow computed-value rule), which can clip the active trigger's `-mb-px`
-underline if the trigger's border-box is taller than the `h-10` row. The
-trigger's `py-2.5` + `border-b-2` + `-mb-px` combination is tuned to fit
-inside `h-10` without vertical overflow — verified in Playwright at a 390px
-viewport (`e2e/persons.spec.ts`, TC-P-13). `border-b` on `TabsList` itself
-spans the full container width (not the scrolled content width) because CSS
-borders belong to the element's own box, so the underline of the strip is
-unaffected by scroll position or overflow.
+Measured at a 390px viewport with focus on the first tab: the clip box was
+212→252, the trigger spans 211→253 (it is 42px tall against the 40px row, so it
+is 1px proud on each edge before the ring is considered), and the ring extends
+to roughly 207→257.
+
+| Part                            | Token | Tailwind class                                                       |
+| ------------------------------- | ----- | -------------------------------------------------------------------- |
+| Scroll wrapper (parent of list) | —     | `max-w-full overflow-x-auto overscroll-x-contain`                    |
+| Scroll wrapper focus headroom   | —     | `-my-2 py-2` (8px of clip headroom; margin cancels the layout shift) |
+| Scroll wrapper scrollbar chrome | —     | `scrollbar-none` (utility, globals.css)                              |
+| TabsList sizing                 | —     | `w-full min-w-max` (fills the wrapper, outgrows it when needed)      |
+| TabsTrigger sizing              | —     | `shrink-0` (never compressed to fit)                                 |
+
+Do not move the overflow classes onto `TabsList` — that is the implementation
+this section replaced, and it reintroduces the focus-ring clipping.
+
+`border-b` stays on `TabsList` rather than the wrapper: the list is
+`w-full min-w-max`, so its border spans the full scrolled content width and the
+strip's underline is continuous at any scroll position.
 
 #### Count badge (inside trigger)
 
@@ -192,6 +203,8 @@ Apply `variant="underline"` (or a className override) to `TabsList` and matching
 | AC-TABS-26 | `TabsTrigger` has `py-1.5` class                                                           | Unit     |
 | AC-TABS-27 | `TabsTrigger` has `px-3` class                                                             | Unit     |
 | AC-TABS-28 | `TabsTrigger` has `rounded-md` class                                                       | Unit     |
-| AC-TABS-29 | `TabsList` has `overflow-x-auto` class (scrolls within itself, not the page)               | Unit     |
+| AC-TABS-29 | The tablist's scroll **wrapper** has `overflow-x-auto` (the strip scrolls, not the page)   | Unit     |
 | AC-TABS-30 | `TabsTrigger` has `shrink-0` class (never compressed to fit the strip)                     | Unit     |
 | AC-TABS-31 | At a 390px viewport, the page does not scroll horizontally while the tab strip does        | E2E      |
+| AC-TABS-32 | The scroll wrapper has `-my-2 py-2`, leaving clip headroom for a trigger's focus ring      | Unit     |
+| AC-TABS-33 | `TabsList` has `w-full min-w-max`, so it fills the wrapper and can outgrow it              | Unit     |
