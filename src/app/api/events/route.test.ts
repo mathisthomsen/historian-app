@@ -238,6 +238,98 @@ describe("POST /api/events", () => {
     expect(body.title).toBe("Neues Ereignis");
   });
 
+  it("round-trips location_certainty (issue #78)", async () => {
+    const createdEvent = {
+      id: "evt-new",
+      title: "Schlacht an der Somme",
+      event_type: null,
+      start_year: 1916,
+      start_month: null,
+      start_day: null,
+      start_date_certainty: "UNKNOWN",
+      end_year: null,
+      end_month: null,
+      end_day: null,
+      end_date_certainty: "UNKNOWN",
+      location: "Somme",
+      location_certainty: "CERTAIN",
+      parent: null,
+      _count: { sub_events: 0 },
+      created_at: new Date("2026-01-01T00:00:00.000Z"),
+      updated_at: new Date("2026-01-01T00:00:00.000Z"),
+      description: null,
+      notes: null,
+      created_by_id: "user-1",
+      sub_events: [],
+    };
+    mockEventCreate.mockResolvedValue(createdEvent);
+
+    const req = makeRequest("http://localhost/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: "proj-1",
+        title: "Schlacht an der Somme",
+        start_year: 1916,
+        location: "Somme",
+        location_certainty: "CERTAIN",
+      }),
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(201);
+    // The DB write must carry the new column, not just the response shape.
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ location_certainty: "CERTAIN" }),
+      }),
+    );
+    const body = (await res.json()) as { location_certainty: string };
+    expect(body.location_certainty).toBe("CERTAIN");
+  });
+
+  it("defaults location_certainty to UNKNOWN when omitted", async () => {
+    const createdEvent = {
+      id: "evt-new",
+      title: "Neues Ereignis",
+      event_type: null,
+      start_year: null,
+      start_month: null,
+      start_day: null,
+      start_date_certainty: "UNKNOWN",
+      end_year: null,
+      end_month: null,
+      end_day: null,
+      end_date_certainty: "UNKNOWN",
+      location: null,
+      location_certainty: "UNKNOWN",
+      parent: null,
+      _count: { sub_events: 0 },
+      created_at: new Date("2026-01-01T00:00:00.000Z"),
+      updated_at: new Date("2026-01-01T00:00:00.000Z"),
+      description: null,
+      notes: null,
+      created_by_id: "user-1",
+      sub_events: [],
+    };
+    mockEventCreate.mockResolvedValue(createdEvent);
+
+    const req = makeRequest("http://localhost/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project_id: "proj-1", title: "Neues Ereignis" }),
+    });
+
+    await POST(req);
+
+    expect(mockEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ location_certainty: "UNKNOWN" }),
+      }),
+    );
+  });
+
   it("returns 400 when title is missing", async () => {
     const req = makeRequest("http://localhost/api/events", {
       method: "POST",

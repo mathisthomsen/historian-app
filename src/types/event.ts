@@ -11,6 +11,10 @@ export interface EventSummary {
   end_day: number | null;
   end_date_certainty: "CERTAIN" | "PROBABLE" | "POSSIBLE" | "UNKNOWN";
   location: string | null;
+  // Lives on the SUMMARY, not only the detail: list responses and nested
+  // sub_events are built from this shape, and exposing a location while
+  // dropping its qualifier is the exact asymmetry issue #37 was filed for.
+  location_certainty: "CERTAIN" | "PROBABLE" | "POSSIBLE" | "UNKNOWN";
   parent: { id: string; title: string } | null;
   _count: { sub_events: number };
   created_at: string;
@@ -43,6 +47,7 @@ export interface CreateEventInput {
   end_day?: number | null;
   end_date_certainty?: "CERTAIN" | "PROBABLE" | "POSSIBLE" | "UNKNOWN";
   location?: string | null;
+  location_certainty?: "CERTAIN" | "PROBABLE" | "POSSIBLE" | "UNKNOWN";
   parent_id?: string | null;
   notes?: string | null;
 }

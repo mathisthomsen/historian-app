@@ -657,3 +657,46 @@ test.describe("TC-E-16: Depth limit error inline", () => {
     await expect(page.getByLabel("Titel")).toHaveValue("Invalid Parent Test");
   });
 });
+
+// ---------------------------------------------------------------------------
+// TC-E-17: Set location certainty through the form, see it on the detail
+// page — and see the unevidenced warning, since a CERTAIN claim with zero
+// evidence must be visibly flagged (issue #78).
+// ---------------------------------------------------------------------------
+test.describe("TC-E-17: Location certainty", () => {
+  test("creates an event with a CERTAIN location and shows the certainty badge plus unevidenced warning", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto("/de/events/new");
+
+    await page.getByLabel("Titel").fill("Schlacht bei Königgrätz");
+    await page.getByLabel("Ort", { exact: true }).fill("Königgrätz");
+
+    // The location CertaintySelector is its own radiogroup, distinct from the
+    // start/end date ones above it.
+    await page
+      .getByRole("radiogroup", { name: "Sicherheit Ort" })
+      .getByRole("radio", { name: "Sicher" })
+      .click();
+
+    await page.getByRole("button", { name: "Ereignis speichern" }).click();
+    await page.waitForURL(/\/de\/events\/(?!new$)[^/]+$/, { timeout: 15_000 });
+
+    await expect(page.getByRole("heading", { name: "Schlacht bei Königgrätz" })).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByText("Königgrätz", { exact: true })).toBeVisible();
+
+    // The certainty badge sits next to the location value.
+    const locationRow = page.getByText("Königgrätz", { exact: true }).locator("..");
+    await expect(locationRow.getByText("Sicher")).toBeVisible();
+
+    // No evidence has been attached, so a CERTAIN claim must show the
+    // unevidenced warning — unreachable for the location field before issue
+    // #78. Asserted on the accessible name, not the word "Unbelegt": a
+    // literal-text assertion would break once PR #77 replaces that word with
+    // the evidence count.
+    await expect(locationRow.getByRole("button", { name: /Ort:.*ohne Beleg/ })).toBeVisible();
+  });
+});

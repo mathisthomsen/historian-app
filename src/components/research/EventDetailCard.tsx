@@ -54,6 +54,14 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
   const showStartCertainty = hasStartDate;
   const showEndCertainty = hasEndDate;
 
+  const locationCertainty = event.location_certainty.toLowerCase() as
+    | "certain"
+    | "probable"
+    | "possible"
+    | "unknown"
+    | "unevidenced";
+  const hasLocation = event.location !== null && event.location !== "";
+
   return (
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {event.event_type && (
@@ -112,12 +120,16 @@ export function EventDetailCard({ event, locale, projectId }: EventDetailCardPro
           <dt className="text-muted-foreground text-xs font-medium">{t("location")}</dt>
           <dd className="flex items-center gap-2 text-sm">
             <span>{event.location}</span>
+            {hasLocation && (
+              <Badge variant={locationCertainty}>{tCertainty(event.location_certainty)}</Badge>
+            )}
             <PropertyEvidenceBadge
               projectId={projectId}
               entityType="EVENT"
               entityId={event.id}
               property="location"
               fieldLabel={t("location")}
+              certainty={event.location_certainty}
             />
           </dd>
         </div>

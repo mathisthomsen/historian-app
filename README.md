@@ -94,14 +94,24 @@ Zod schema rather than the type system, since they are a semantic constraint, no
 enum Certainty { CERTAIN  PROBABLE  POSSIBLE  UNKNOWN }
 ```
 
-Two deliberate choices:
+Four deliberate choices:
 
 - **Categorical, not numeric.** An earlier design used decimal confidence scores. Researchers
   cannot meaningfully distinguish 0.7 from 0.75, and a number implies a statistical basis that
   does not exist. Four named states map onto how historians actually qualify claims.
 - **Per-field, not per-record.** A historian may be certain of a person's name and merely
   guessing at their birth year. Certainty attaches to the individual assertion — birth date,
-  death date, a relation, a single piece of evidence — never to the row as a whole.
+  death date, birth place, death place, an event's location, a relation, a single piece of
+  evidence — never to the row as a whole.
+- **Places carry it too, for the same reason dates do.** A birthplace is often inferred from a
+  parish register that names a region rather than a village, and an event's location from an
+  itinerary or a later account. Recording the place while discarding how firmly it is held would
+  throw away the disagreement between sources that the rest of the model exists to preserve.
+- **A level with nothing to qualify is not stored.** Certainty qualifies an assertion, so when a
+  place is absent — never entered, or cleared — its certainty is normalised to `UNKNOWN` on write.
+  Without that rule the database accumulates confidence attached to an empty field: the UI warns
+  that a claim nobody made lacks evidence, and a value entered later silently inherits a
+  confidence asserted about something else.
 
 ### 3. Evidence is a first-class entity, not a footnote
 

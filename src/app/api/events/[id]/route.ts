@@ -5,8 +5,10 @@ import { logActivity } from "@/lib/activity";
 import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
+import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
+import { certaintySchema } from "@/lib/schemas/person";
 
 const updateEventSchema = z
   .object({
@@ -22,6 +24,7 @@ const updateEventSchema = z
     end_day: z.number().int().min(1).max(31).optional().nullable(),
     end_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
     location: z.string().optional().nullable(),
+    location_certainty: certaintySchema.optional(),
     parent_id: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
   })
@@ -89,6 +92,7 @@ function buildEventSummary(event: {
   end_day: number | null;
   end_date_certainty: string;
   location: string | null;
+  location_certainty: string;
   parent: { id: string; title: string } | null;
   _count: { sub_events: number };
   created_at: Date;
@@ -108,6 +112,7 @@ function buildEventSummary(event: {
     end_day: event.end_day,
     end_date_certainty: event.end_date_certainty,
     location: event.location,
+    location_certainty: event.location_certainty,
     parent: event.parent ? { id: event.parent.id, title: event.parent.title } : null,
     _count: { sub_events: event._count.sub_events },
     created_at: event.created_at.toISOString(),
@@ -157,6 +162,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     end_day: event.end_day,
     end_date_certainty: event.end_date_certainty,
     location: event.location,
+    location_certainty: event.location_certainty,
     parent: event.parent ? { id: event.parent.id, title: event.parent.title } : null,
     _count: {
       sub_events: event._count.sub_events,
@@ -251,6 +257,25 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     updateData.end_date_certainty = data.end_date_certainty;
   if (data.location !== undefined)
     updateData.location = data.location ? sanitize(data.location) : null;
+  if (data.location_certainty !== undefined)
+    updateData.location_certainty = data.location_certainty;
+
+  // The location and its certainty must agree after the merge, not just within
+  // the request: clearing a location while leaving its selector untouched used
+  // to keep the old level, which a location entered later then inherited.
+  {
+    const effectiveLocation =
+      data.location !== undefined ? (updateData.location as string | null) : existing.location;
+    const pending = data.location_certainty ?? existing.location_certainty;
+    const resolved = certaintyForValue(effectiveLocation, pending);
+    // Compared against the pending value, not storage: on an event that
+    // already had no location and UNKNOWN, a PUT sending only
+    // `location_certainty: CERTAIN` normalised to UNKNOWN, which equalled
+    // storage, so the pending CERTAIN was written through.
+    if (resolved !== undefined && resolved !== pending) {
+      updateData.location_certainty = resolved;
+    }
+  }
   if (data.parent_id !== undefined) updateData.parent_id = data.parent_id;
   if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
 
@@ -273,12 +298,17 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     "end_day",
     "end_date_certainty",
     "location",
+    "location_certainty",
     "parent_id",
     "notes",
   ] as const;
 
   for (const field of loggableFields) {
-    if (!(field in data)) continue;
+    // `updateData` as well as `data`: normalisation can change a field the
+    // request never mentioned (clearing a location resets its certainty), and
+    // logging only submitted keys left that derived change out of the audit
+    // trail — the one record a reviewer would look for to explain it.
+    if (!(field in data) && !(field in updateData)) continue;
     const oldVal = existing[field];
     const newVal = updated[field];
     if (oldVal !== newVal) {
@@ -321,6 +351,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     end_day: updated.end_day,
     end_date_certainty: updated.end_date_certainty,
     location: updated.location,
+    location_certainty: updated.location_certainty,
     parent: updated.parent ? { id: updated.parent.id, title: updated.parent.title } : null,
     _count: {
       sub_events: updated._count.sub_events,

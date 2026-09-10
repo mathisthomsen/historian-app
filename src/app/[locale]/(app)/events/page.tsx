@@ -128,6 +128,7 @@ export default async function EventsPage({ params, searchParams }: PageProps) {
       end_day: e.end_day,
       end_date_certainty: e.end_date_certainty as EventSummary["end_date_certainty"],
       location: e.location,
+      location_certainty: e.location_certainty as EventSummary["location_certainty"],
       parent: e.parent ? { id: e.parent.id, title: e.parent.title } : null,
       _count: { sub_events: e._count.sub_events },
       created_at: e.created_at.toISOString(),

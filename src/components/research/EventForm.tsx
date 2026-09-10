@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { errorCode, errorDetails, readErrorBody } from "@/lib/api-error";
+import { certaintySchema } from "@/lib/schemas/person";
 import type { EventDetail, EventSummary } from "@/types/event";
 
 /**
@@ -88,6 +89,7 @@ function buildFormSchema(t: (key: string) => string) {
         .nullable(),
       end_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).default("UNKNOWN"),
       location: z.string().optional().nullable(),
+      location_certainty: certaintySchema.default("UNKNOWN"),
       parent_id: z.string().cuid().optional().nullable(),
       notes: z.string().optional().nullable(),
     })
@@ -177,6 +179,7 @@ export function EventForm({
       end_day: initial?.end_day ?? null,
       end_date_certainty: initial?.end_date_certainty ?? "UNKNOWN",
       location: initial?.location ?? "",
+      location_certainty: initial?.location_certainty ?? "UNKNOWN",
       parent_id: initial?.parent?.id ?? defaultParentId ?? null,
       notes: initial?.notes ?? "",
     },
@@ -446,6 +449,18 @@ export function EventForm({
       <div className="space-y-1">
         <Label htmlFor="location">{t("fields.location")}</Label>
         <Input id="location" type="text" {...register("location")} disabled={isSubmitting} />
+        <Controller
+          control={control}
+          name="location_certainty"
+          render={({ field }) => (
+            <CertaintySelector
+              label={t("fields.location_certainty")}
+              value={field.value}
+              onChange={field.onChange}
+              disabled={isSubmitting}
+            />
+          )}
+        />
       </div>
 
       {/* Parent event */}

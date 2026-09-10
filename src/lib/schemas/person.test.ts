@@ -73,6 +73,27 @@ describe("createPersonSchema", () => {
   });
 });
 
+describe("createPersonSchema — place certainty (issue #78)", () => {
+  it("accepts birth_place_certainty and death_place_certainty", () => {
+    const result = createPersonSchema.safeParse({
+      ...validCreate,
+      birth_place: "London",
+      birth_place_certainty: "CERTAIN",
+      death_place: "Paris",
+      death_place_certainty: "PROBABLE",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an invalid place certainty value", () => {
+    const result = createPersonSchema.safeParse({
+      ...validCreate,
+      birth_place_certainty: "VERY_SURE",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe("updatePersonSchema", () => {
   it("allows an empty patch", () => {
     expect(updatePersonSchema.safeParse({}).success).toBe(true);
@@ -91,6 +112,20 @@ describe("updatePersonSchema", () => {
     expect(result.success).toBe(false);
     expect(messagesFor(result)).toContain("month_requires_year");
   });
+
+  it("accepts a place certainty patch (issue #78)", () => {
+    expect(
+      updatePersonSchema.safeParse({
+        birth_place: "London",
+        birth_place_certainty: "PROBABLE",
+        death_place_certainty: "UNKNOWN",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("does not accept null for a place certainty — unlike birth_place/death_place, it has a default rather than being clearable", () => {
+    expect(updatePersonSchema.safeParse({ birth_place_certainty: null }).success).toBe(false);
+  });
 });
 
 describe("buildPersonFormSchema", () => {
@@ -98,7 +133,9 @@ describe("buildPersonFormSchema", () => {
     const schema = buildPersonFormSchema((key) => `translated:${key}`);
     const result = schema.safeParse({
       birth_date_certainty: "UNKNOWN",
+      birth_place_certainty: "UNKNOWN",
       death_date_certainty: "UNKNOWN",
+      death_place_certainty: "UNKNOWN",
       birth_month: 3,
     });
     expect(result.success).toBe(false);
@@ -121,5 +158,24 @@ describe("buildPersonFormSchema", () => {
   it("requires the certainty selectors the form always supplies", () => {
     const schema = buildPersonFormSchema();
     expect(schema.safeParse({ first_name: "Ada" }).success).toBe(false);
+  });
+
+  it("requires the place certainty selectors too (issue #78)", () => {
+    const schema = buildPersonFormSchema();
+    const missingPlaceCertainty = {
+      first_name: "Ada",
+      birth_date_certainty: "UNKNOWN" as const,
+      death_date_certainty: "UNKNOWN" as const,
+      // birth_place_certainty / death_place_certainty deliberately omitted
+    };
+    expect(schema.safeParse(missingPlaceCertainty).success).toBe(false);
+
+    expect(
+      schema.safeParse({
+        ...missingPlaceCertainty,
+        birth_place_certainty: "UNKNOWN",
+        death_place_certainty: "UNKNOWN",
+      }).success,
+    ).toBe(true);
   });
 });

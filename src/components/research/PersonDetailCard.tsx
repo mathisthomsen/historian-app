@@ -50,6 +50,22 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
   const hasBirthDate = birthDate !== "—";
   const hasDeathDate = deathDate !== "—";
 
+  const birthPlaceCertainty = person.birth_place_certainty.toLowerCase() as
+    | "certain"
+    | "probable"
+    | "possible"
+    | "unknown"
+    | "unevidenced";
+  const deathPlaceCertainty = person.death_place_certainty.toLowerCase() as
+    | "certain"
+    | "probable"
+    | "possible"
+    | "unknown"
+    | "unevidenced";
+
+  const hasBirthPlace = person.birth_place !== null && person.birth_place !== "";
+  const hasDeathPlace = person.death_place !== null && person.death_place !== "";
+
   return (
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="space-y-1">
@@ -82,12 +98,20 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
         <dt className="text-muted-foreground text-xs font-medium">{t("birth_place")}</dt>
         <dd className="flex items-center gap-2 text-sm">
           <span>{person.birth_place ?? "—"}</span>
+          {hasBirthPlace && (
+            <Badge variant={birthPlaceCertainty}>{tCertainty(person.birth_place_certainty)}</Badge>
+          )}
           <PropertyEvidenceBadge
             projectId={projectId}
             entityType="PERSON"
             entityId={person.id}
             property="birth_place"
             fieldLabel={t("birth_place")}
+            // Only pass a level when there is a place to qualify. Rows written
+            // before the API normalised this can still hold a stale CERTAIN on
+            // an empty place, and passing it would warn that a claim nobody
+            // made lacks evidence — beside an em-dash.
+            certainty={hasBirthPlace ? person.birth_place_certainty : undefined}
           />
         </dd>
       </div>
@@ -114,12 +138,20 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
         <dt className="text-muted-foreground text-xs font-medium">{t("death_place")}</dt>
         <dd className="flex items-center gap-2 text-sm">
           <span>{person.death_place ?? "—"}</span>
+          {hasDeathPlace && (
+            <Badge variant={deathPlaceCertainty}>{tCertainty(person.death_place_certainty)}</Badge>
+          )}
           <PropertyEvidenceBadge
             projectId={projectId}
             entityType="PERSON"
             entityId={person.id}
             property="death_place"
             fieldLabel={t("death_place")}
+            // Only pass a level when there is a place to qualify. Rows written
+            // before the API normalised this can still hold a stale CERTAIN on
+            // an empty place, and passing it would warn that a claim nobody
+            // made lacks evidence — beside an em-dash.
+            certainty={hasDeathPlace ? person.death_place_certainty : undefined}
           />
         </dd>
       </div>

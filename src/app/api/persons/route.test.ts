@@ -210,6 +210,153 @@ describe("POST /api/persons", () => {
     expect(body.last_name).toBe("Bismarck");
   });
 
+  it("round-trips birth_place_certainty and death_place_certainty (issue #78)", async () => {
+    const createdPerson = {
+      id: "person-new",
+      first_name: "Otto",
+      last_name: "Bismarck",
+      birth_year: null,
+      birth_month: null,
+      birth_day: null,
+      birth_date_certainty: "UNKNOWN",
+      birth_place: "Schönhausen",
+      birth_place_certainty: "CERTAIN",
+      death_year: null,
+      death_month: null,
+      death_day: null,
+      death_date_certainty: "UNKNOWN",
+      death_place: "Friedrichsruh",
+      death_place_certainty: "PROBABLE",
+      notes: null,
+      created_by_id: "user-1",
+      created_at: new Date("2026-01-01T00:00:00.000Z"),
+      updated_at: new Date("2026-01-01T00:00:00.000Z"),
+      names: [],
+    };
+    mockPersonCreate.mockResolvedValue(createdPerson);
+
+    const req = makeRequest("http://localhost/api/persons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: "proj-1",
+        first_name: "Otto",
+        last_name: "Bismarck",
+        birth_place: "Schönhausen",
+        birth_place_certainty: "CERTAIN",
+        death_place: "Friedrichsruh",
+        death_place_certainty: "PROBABLE",
+      }),
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(201);
+    // The DB write must carry both new columns, not just the response shape.
+    expect(mockPersonCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          birth_place_certainty: "CERTAIN",
+          death_place_certainty: "PROBABLE",
+        }),
+      }),
+    );
+    const body = (await res.json()) as {
+      birth_place_certainty: string;
+      death_place_certainty: string;
+    };
+    expect(body.birth_place_certainty).toBe("CERTAIN");
+    expect(body.death_place_certainty).toBe("PROBABLE");
+  });
+
+  it("defaults birth_place_certainty and death_place_certainty to UNKNOWN when omitted", async () => {
+    const createdPerson = {
+      id: "person-new",
+      first_name: "Otto",
+      last_name: "Bismarck",
+      birth_year: null,
+      birth_month: null,
+      birth_day: null,
+      birth_date_certainty: "UNKNOWN",
+      birth_place: null,
+      birth_place_certainty: "UNKNOWN",
+      death_year: null,
+      death_month: null,
+      death_day: null,
+      death_date_certainty: "UNKNOWN",
+      death_place: null,
+      death_place_certainty: "UNKNOWN",
+      notes: null,
+      created_by_id: "user-1",
+      created_at: new Date("2026-01-01T00:00:00.000Z"),
+      updated_at: new Date("2026-01-01T00:00:00.000Z"),
+      names: [],
+    };
+    mockPersonCreate.mockResolvedValue(createdPerson);
+
+    const req = makeRequest("http://localhost/api/persons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project_id: "proj-1", first_name: "Otto", last_name: "Bismarck" }),
+    });
+
+    await POST(req);
+
+    expect(mockPersonCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          birth_place_certainty: "UNKNOWN",
+          death_place_certainty: "UNKNOWN",
+        }),
+      }),
+    );
+  });
+
+  it("forces place certainty to UNKNOWN when no place is given (issue #78 review)", async () => {
+    // The API accepted `birth_place: null, birth_place_certainty: "CERTAIN"`,
+    // and the detail page then warned that a claim nobody made lacked
+    // evidence. Certainty qualifies an assertion; with none there is nothing
+    // to qualify.
+    mockPersonCreate.mockResolvedValue({
+      id: "person-no-place",
+      first_name: null,
+      last_name: "Ohneort",
+      birth_year: null,
+      birth_month: null,
+      birth_day: null,
+      birth_date_certainty: "UNKNOWN",
+      birth_place: null,
+      birth_place_certainty: "UNKNOWN",
+      death_year: null,
+      death_month: null,
+      death_day: null,
+      death_date_certainty: "UNKNOWN",
+      death_place: null,
+      death_place_certainty: "UNKNOWN",
+      notes: null,
+      created_by_id: "user-1",
+      created_at: new Date("2026-01-01T00:00:00.000Z"),
+      updated_at: new Date("2026-01-01T00:00:00.000Z"),
+      names: [],
+    });
+
+    const req = makeRequest("http://localhost/api/persons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: "proj-1",
+        last_name: "Ohneort",
+        birth_place_certainty: "CERTAIN",
+        death_place_certainty: "PROBABLE",
+      }),
+    });
+    await POST(req);
+
+    const created = mockPersonCreate.mock.calls[0]![0].data;
+    expect(created.birth_place_certainty).toBe("UNKNOWN");
+    expect(created.death_place_certainty).toBe("UNKNOWN");
+  });
+
   it("returns 400 when no name is provided", async () => {
     const req = makeRequest("http://localhost/api/persons", {
       method: "POST",

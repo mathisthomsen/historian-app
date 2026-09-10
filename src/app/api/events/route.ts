@@ -5,8 +5,10 @@ import { z } from "zod";
 import { forbidden, json, jsonError, paginated, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
+import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
+import { certaintySchema } from "@/lib/schemas/person";
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -36,6 +38,7 @@ const createEventSchema = z
     end_day: z.number().int().min(1).max(31).optional().nullable(),
     end_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
     location: z.string().optional().nullable(),
+    location_certainty: certaintySchema.optional(),
     parent_id: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
   })
@@ -83,6 +86,7 @@ function buildEventSummary(event: {
   end_day: number | null;
   end_date_certainty: string;
   location: string | null;
+  location_certainty: string;
   parent: { id: string; title: string } | null;
   _count: { sub_events: number };
   created_at: Date;
@@ -102,6 +106,7 @@ function buildEventSummary(event: {
     end_day: event.end_day,
     end_date_certainty: event.end_date_certainty,
     location: event.location,
+    location_certainty: event.location_certainty,
     parent: event.parent ? { id: event.parent.id, title: event.parent.title } : null,
     _count: { sub_events: event._count.sub_events },
     created_at: event.created_at.toISOString(),
@@ -245,6 +250,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Sanitised once, so the stored value and the value certainty is normalised
+  // against are the same string.
+  const eventLocation = data.location ? sanitize(data.location) : null;
+
   const event = await prisma.event.create({
     data: {
       project_id: data.project_id,
@@ -260,7 +269,12 @@ export async function POST(request: NextRequest) {
       end_month: data.end_month ?? null,
       end_day: data.end_day ?? null,
       end_date_certainty: data.end_date_certainty ?? "UNKNOWN",
-      location: data.location ? sanitize(data.location) : null,
+      location: eventLocation,
+      // Certainty qualifies an assertion; with no location there is nothing to
+      // qualify (see certaintyForValue). Normalised against the SANITISED
+      // value: "<b></b>" is non-empty input that sanitises to "", so the raw
+      // string preserved a CERTAIN against a location that renders as nothing.
+      location_certainty: certaintyForValue(eventLocation, data.location_certainty) ?? "UNKNOWN",
       parent_id: data.parent_id ?? null,
       notes: data.notes ? sanitize(data.notes) : null,
     },
@@ -300,6 +314,7 @@ export async function POST(request: NextRequest) {
     end_day: event.end_day,
     end_date_certainty: event.end_date_certainty,
     location: event.location,
+    location_certainty: event.location_certainty,
     parent: event.parent ? { id: event.parent.id, title: event.parent.title } : null,
     _count: {
       sub_events: event._count.sub_events,

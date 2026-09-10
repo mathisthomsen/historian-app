@@ -53,6 +53,7 @@ export function EventDetailTabs({ event, locale, projectId, tabCounts }: EventDe
     end_month: tFields("end_date"),
     end_day: tFields("end_date"),
     location: tFields("location"),
+    location_certainty: tFields("location_certainty"),
     notes: tFields("notes"),
   };
 
