@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-import { CertaintyMarker } from "@/components/research/CertaintyMarker";
-
 interface OpenDevelopmentProps {
   locale: string;
 }
@@ -20,15 +18,27 @@ export function OpenDevelopment({ locale }: OpenDevelopmentProps) {
         <p className="text-muted-foreground mt-4 max-w-[52ch]">{t("body")}</p>
         <ul className="mt-8 space-y-3">
           <li className="flex items-center gap-3 text-sm">
-            <CertaintyMarker certainty="CERTAIN" />
+            <span
+              aria-hidden="true"
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: "var(--color-certainty-certain)" }}
+            />
             {t("shipped")}
           </li>
           <li className="flex items-center gap-3 text-sm">
-            <CertaintyMarker certainty="PROBABLE" />
+            <span
+              aria-hidden="true"
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: "var(--color-certainty-probable)" }}
+            />
             {t("next")}
           </li>
           <li className="flex items-center gap-3 text-sm">
-            <CertaintyMarker certainty="UNKNOWN" />
+            <span
+              aria-hidden="true"
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: "var(--color-certainty-unknown)" }}
+            />
             {t("planned")}
           </li>
         </ul>
