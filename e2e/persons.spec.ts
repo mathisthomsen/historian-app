@@ -193,14 +193,43 @@ test.describe("TC-P-07: Edit person", () => {
     await loginAsAdmin(page);
     await page.goto(`/de/persons/${createdPersonId}/edit`);
 
-    // In Sterbedaten section, click Sicher (CERTAIN)
-    // The death certainty group is the second CertaintySelector
-    await page.getByText("Sicher").last().click();
+    // Target the group by its label, not by position. This used to be
+    // `getByText("Sicher").last()` with a comment asserting the death-date
+    // group was "the second CertaintySelector" — true when there were two.
+    // Adding the place selectors made four, and measurement confirmed the last
+    // "Sicher" then belonged to "Sicherheit Sterbeort": the test went on
+    // passing while exercising a different field entirely.
+    await page
+      .getByRole("radiogroup", { name: "Sicherheit Sterbedatum" })
+      .getByRole("radio", { name: "Sicher", exact: true })
+      .click();
 
     await page.getByRole("button", { name: "Person speichern" }).click();
     await page.waitForURL(/\/de\/persons\/[^/]+$/, { timeout: 10_000 });
 
     await expect(page.getByText("Person gespeichert.")).toBeVisible();
+
+    // Assert the value that was actually saved, not just that a toast fired —
+    // a toast-only assertion is what let the misdirected click go unnoticed.
+    //
+    // Checked on the reloaded form rather than the detail card: the card hides
+    // a date's certainty badge when there is no date (correctly — a certainty
+    // about nothing is noise), and this fixture has no death date, so the
+    // badge would never appear however the save went.
+    await page.goto(`/de/persons/${createdPersonId}/edit`);
+    await expect(
+      page
+        .getByRole("radiogroup", { name: "Sicherheit Sterbedatum" })
+        .getByRole("radio", { name: "Sicher", exact: true }),
+    ).toHaveAttribute("aria-checked", "true", { timeout: 10_000 });
+
+    // And the neighbouring group must NOT have been touched — this is the
+    // specific confusion the positional selector caused.
+    await expect(
+      page
+        .getByRole("radiogroup", { name: "Sicherheit Sterbeort" })
+        .getByRole("radio", { name: "Sicher", exact: true }),
+    ).toHaveAttribute("aria-checked", "false");
   });
 });
 

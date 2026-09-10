@@ -15,6 +15,7 @@ import {
 } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
+import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
 import { createPersonSchema } from "@/lib/schemas/person";
@@ -142,13 +143,18 @@ export async function POST(request: NextRequest) {
     birth_day: data.birth_day ?? null,
     birth_date_certainty: data.birth_date_certainty ?? "UNKNOWN",
     birth_place: data.birth_place ? sanitize(data.birth_place) : null,
-    birth_place_certainty: data.birth_place_certainty ?? "UNKNOWN",
+    // Certainty qualifies an assertion; with no place there is nothing to
+    // qualify, so it is forced to UNKNOWN rather than stored against an
+    // em-dash (see certaintyForValue).
+    birth_place_certainty:
+      certaintyForValue(data.birth_place, data.birth_place_certainty) ?? "UNKNOWN",
     death_year: data.death_year ?? null,
     death_month: data.death_month ?? null,
     death_day: data.death_day ?? null,
     death_date_certainty: data.death_date_certainty ?? "UNKNOWN",
     death_place: data.death_place ? sanitize(data.death_place) : null,
-    death_place_certainty: data.death_place_certainty ?? "UNKNOWN",
+    death_place_certainty:
+      certaintyForValue(data.death_place, data.death_place_certainty) ?? "UNKNOWN",
     notes: data.notes ? sanitize(data.notes) : null,
   };
 

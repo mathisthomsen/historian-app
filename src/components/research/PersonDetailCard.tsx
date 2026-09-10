@@ -107,7 +107,11 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
             entityId={person.id}
             property="birth_place"
             fieldLabel={t("birth_place")}
-            certainty={person.birth_place_certainty}
+            // Only pass a level when there is a place to qualify. Rows written
+            // before the API normalised this can still hold a stale CERTAIN on
+            // an empty place, and passing it would warn that a claim nobody
+            // made lacks evidence — beside an em-dash.
+            certainty={hasBirthPlace ? person.birth_place_certainty : undefined}
           />
         </dd>
       </div>
@@ -143,7 +147,11 @@ export async function PersonDetailCard({ person, projectId, locale }: PersonDeta
             entityId={person.id}
             property="death_place"
             fieldLabel={t("death_place")}
-            certainty={person.death_place_certainty}
+            // Only pass a level when there is a place to qualify. Rows written
+            // before the API normalised this can still hold a stale CERTAIN on
+            // an empty place, and passing it would warn that a claim nobody
+            // made lacks evidence — beside an em-dash.
+            certainty={hasDeathPlace ? person.death_place_certainty : undefined}
           />
         </dd>
       </div>

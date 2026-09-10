@@ -312,6 +312,51 @@ describe("POST /api/persons", () => {
     );
   });
 
+  it("forces place certainty to UNKNOWN when no place is given (issue #78 review)", async () => {
+    // The API accepted `birth_place: null, birth_place_certainty: "CERTAIN"`,
+    // and the detail page then warned that a claim nobody made lacked
+    // evidence. Certainty qualifies an assertion; with none there is nothing
+    // to qualify.
+    mockPersonCreate.mockResolvedValue({
+      id: "person-no-place",
+      first_name: null,
+      last_name: "Ohneort",
+      birth_year: null,
+      birth_month: null,
+      birth_day: null,
+      birth_date_certainty: "UNKNOWN",
+      birth_place: null,
+      birth_place_certainty: "UNKNOWN",
+      death_year: null,
+      death_month: null,
+      death_day: null,
+      death_date_certainty: "UNKNOWN",
+      death_place: null,
+      death_place_certainty: "UNKNOWN",
+      notes: null,
+      created_by_id: "user-1",
+      created_at: new Date("2026-01-01T00:00:00.000Z"),
+      updated_at: new Date("2026-01-01T00:00:00.000Z"),
+      names: [],
+    });
+
+    const req = makeRequest("http://localhost/api/persons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: "proj-1",
+        last_name: "Ohneort",
+        birth_place_certainty: "CERTAIN",
+        death_place_certainty: "PROBABLE",
+      }),
+    });
+    await POST(req);
+
+    const created = mockPersonCreate.mock.calls[0]![0].data;
+    expect(created.birth_place_certainty).toBe("UNKNOWN");
+    expect(created.death_place_certainty).toBe("UNKNOWN");
+  });
+
   it("returns 400 when no name is provided", async () => {
     const req = makeRequest("http://localhost/api/persons", {
       method: "POST",

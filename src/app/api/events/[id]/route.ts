@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity";
 import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
+import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
 import { certaintySchema } from "@/lib/schemas/person";
@@ -256,6 +257,19 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     updateData.location = data.location ? sanitize(data.location) : null;
   if (data.location_certainty !== undefined)
     updateData.location_certainty = data.location_certainty;
+
+  // The location and its certainty must agree after the merge, not just within
+  // the request: clearing a location while leaving its selector untouched used
+  // to keep the old level, which a location entered later then inherited.
+  {
+    const effectiveLocation =
+      data.location !== undefined ? (updateData.location as string | null) : existing.location;
+    const effectiveCertainty = data.location_certainty ?? existing.location_certainty;
+    const resolved = certaintyForValue(effectiveLocation, effectiveCertainty);
+    if (resolved !== undefined && resolved !== existing.location_certainty) {
+      updateData.location_certainty = resolved;
+    }
+  }
   if (data.parent_id !== undefined) updateData.parent_id = data.parent_id;
   if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
 

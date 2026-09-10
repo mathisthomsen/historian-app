@@ -4,6 +4,7 @@ import { logActivity } from "@/lib/activity";
 import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
+import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
 import { updatePersonSchema } from "@/lib/schemas/person";
@@ -122,6 +123,21 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (data.death_place_certainty !== undefined)
     updateData.death_place_certainty = data.death_place_certainty;
   if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
+
+  // A place and its certainty must agree after the merge, not just within the
+  // request: clearing a place while leaving its selector untouched used to keep
+  // the old level, and a place entered later inherited it. Resolve each pair
+  // against the stored row, then let certaintyForValue decide.
+  for (const field of ["birth_place", "death_place"] as const) {
+    const certaintyField = `${field}_certainty` as const;
+    const effectivePlace =
+      data[field] !== undefined ? (updateData[field] as string | null) : existing[field];
+    const effectiveCertainty = data[certaintyField] ?? existing[certaintyField];
+    const resolved = certaintyForValue(effectivePlace, effectiveCertainty);
+    if (resolved !== undefined && resolved !== existing[certaintyField]) {
+      updateData[certaintyField] = resolved;
+    }
+  }
 
   let updatedPerson: {
     id: string;

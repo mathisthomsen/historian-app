@@ -5,6 +5,7 @@ import { z } from "zod";
 import { forbidden, json, jsonError, paginated, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
+import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
 import { certaintySchema } from "@/lib/schemas/person";
@@ -263,7 +264,9 @@ export async function POST(request: NextRequest) {
       end_day: data.end_day ?? null,
       end_date_certainty: data.end_date_certainty ?? "UNKNOWN",
       location: data.location ? sanitize(data.location) : null,
-      location_certainty: data.location_certainty ?? "UNKNOWN",
+      // Certainty qualifies an assertion; with no location there is nothing to
+      // qualify (see certaintyForValue).
+      location_certainty: certaintyForValue(data.location, data.location_certainty) ?? "UNKNOWN",
       parent_id: data.parent_id ?? null,
       notes: data.notes ? sanitize(data.notes) : null,
     },
