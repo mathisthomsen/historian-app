@@ -193,6 +193,7 @@
       "end_date": "End",
       "end_date_certainty": "End Certainty",
       "location": "Location",
+      "location_certainty": "Location Certainty",
       "parent": "Parent Event",
       "notes": "Notes",
       "created_at": "Created at",

@@ -193,6 +193,7 @@
       "end_date": "Ende",
       "end_date_certainty": "Sicherheit Ende",
       "location": "Ort",
+      "location_certainty": "Sicherheit Ort",
       "parent": "Übergeordnetes Ereignis",
       "notes": "Notizen",
       "created_at": "Erstellt am",
