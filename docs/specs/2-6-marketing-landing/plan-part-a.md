@@ -119,9 +119,11 @@ Add to `src/test/design-system-smoke.test.ts`:
 ```ts
 describe("marketing display tier (Epic 2.6 §8.1)", () => {
   it("defines every display and section-rhythm token", () => {
+    // parseTokens() returns { light: Map<string, string>; dark: Map<string, string> }
+    // — a Map, not a plain object. Index access would be undefined for every key.
     const { light } = parseTokens();
     for (const token of [...REQUIRED_DISPLAY_TOKENS, ...REQUIRED_SECTION_TOKENS]) {
-      expect(light[token], `${token} missing from globals.css @theme`).toBeTruthy();
+      expect(light.get(token), `${token} missing from globals.css @theme`).toBeTruthy();
     }
   });
 
