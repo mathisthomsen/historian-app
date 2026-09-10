@@ -641,7 +641,6 @@
   },
   "marketing": {
     "nav": {
-      "features": "Features",
       "changelog": "Changelog",
       "signIn": "Sign in",
       "register": "Create account",
@@ -654,6 +653,12 @@
       "changelog": "Changelog",
       "github": "GitHub",
       "label": "Footer"
+    },
+    "hero": {
+      "headline": "For everything the source does not say.",
+      "sub": "A research database where uncertainty is a field, not a compromise.",
+      "primary": "Create account",
+      "secondary": "Take a look"
     }
   }
 }

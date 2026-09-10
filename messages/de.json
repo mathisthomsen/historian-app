@@ -641,7 +641,6 @@
   },
   "marketing": {
     "nav": {
-      "features": "Funktionen",
       "changelog": "Changelog",
       "signIn": "Anmelden",
       "register": "Konto erstellen",
@@ -654,6 +653,12 @@
       "changelog": "Changelog",
       "github": "GitHub",
       "label": "Fußzeile"
+    },
+    "hero": {
+      "headline": "Für alles, was die Quelle nicht sagt.",
+      "sub": "Eine Forschungsdatenbank, in der Ungewissheit ein Feld ist — kein Kompromiss.",
+      "primary": "Konto erstellen",
+      "secondary": "Ansehen"
     }
   }
 }
