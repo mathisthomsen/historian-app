@@ -58,13 +58,21 @@ export function HighlightRail({ children }: HighlightRailProps) {
 
   return (
     <section id="highlights" aria-label={t("label")} className="px-4 sm:px-6">
+      {/*
+        Explicit role="list" / role="listitem": Tailwind's preflight sets
+        `list-style: none` on all <ul>/<ol>, and in WebKit specifically that
+        strips the implicit list/listitem accessibility roles (Safari +
+        VoiceOver only — other engines keep the roles regardless of
+        list-style). Do not delete these as "redundant with the tag name".
+      */}
       <ul
         ref={railRef}
+        role="list"
         onScroll={syncFromScroll}
         className="grid snap-x snap-mandatory auto-cols-[86%] grid-flow-col gap-4 overflow-x-auto pb-4 [scrollbar-width:thin] sm:auto-cols-[52%] lg:auto-cols-[30%]"
       >
         {panels.map((panel, index) => (
-          <li key={index} className="snap-start">
+          <li key={index} role="listitem" className="snap-start">
             {panel}
           </li>
         ))}

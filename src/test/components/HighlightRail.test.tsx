@@ -1,5 +1,5 @@
-import { fireEvent, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { HighlightPanel } from "@/components/marketing/HighlightPanel";
 import { HighlightRail } from "@/components/marketing/HighlightRail";
@@ -54,9 +54,18 @@ describe("HighlightRail", () => {
   });
 
   it("never auto-advances", () => {
-    const { container } = renderRail();
-    const before = container.querySelector('[aria-live="polite"]')?.textContent;
-    // No timers are started by this component; nothing may change on its own.
-    expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe(before);
+    vi.useFakeTimers();
+    try {
+      const { container } = renderRail();
+      const before = container.querySelector('[aria-live="polite"]')?.textContent;
+      // If the component ever started a timer to auto-advance, this would
+      // give it every chance to fire before the assertion below.
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
+      expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe(before);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
