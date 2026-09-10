@@ -298,6 +298,11 @@ model Event {
   location_id String?
   location    String? // free-text fallback; populated by UI until location_id is set
 
+  // Place attribution is as uncertain as date attribution — an event's location
+  // is often inferred from an itinerary or a later account. Mirrors the
+  // start/end date certainty columns, and Person's place certainty (issue #78).
+  location_certainty Certainty @default(UNKNOWN)
+
   notes      String?
   deleted_at DateTime? @db.Timestamptz(3)
   created_at DateTime  @default(now()) @db.Timestamptz(3)
