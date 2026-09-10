@@ -22,10 +22,12 @@ import { describe, expect, it, beforeAll } from "vitest";
 import {
   ALL_REQUIRED_TOKENS,
   REQUIRED_COLOR_TOKENS_LIGHT,
+  REQUIRED_DISPLAY_TOKENS,
   REQUIRED_DURATION_TOKENS,
   REQUIRED_EASING_TOKENS,
-  REQUIRED_RADIUS_TOKENS,
   REQUIRED_LAYOUT_TOKENS,
+  REQUIRED_RADIUS_TOKENS,
+  REQUIRED_SECTION_TOKENS,
   parseTokens,
   injectTokensIntoDocument,
   getTokenValue,
@@ -250,5 +252,38 @@ describe("DS-TOK-07: vitest-axe matchers are registered", () => {
       ],
     };
     expect(() => expect(failingResult).toHaveNoViolations()).toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. Marketing display tier
+// ---------------------------------------------------------------------------
+
+describe("marketing display tier (Epic 2.6 §8.1)", () => {
+  it("defines every display and section-rhythm token", () => {
+    const { light } = parseTokens();
+    for (const token of [...REQUIRED_DISPLAY_TOKENS, ...REQUIRED_SECTION_TOKENS]) {
+      expect(light.get(token), `${token} missing from globals.css @theme`).toBeTruthy();
+    }
+  });
+
+  it("sizes every display step with clamp() so it is fluid", () => {
+    for (const token of [
+      "--text-display-sm",
+      "--text-display-md",
+      "--text-display-lg",
+      "--text-display-xl",
+    ]) {
+      expect(getTokenValue(token)).toMatch(/^clamp\(/);
+    }
+  });
+
+  it("does not lower the app's existing --text-4xl ceiling", () => {
+    expect(getTokenValue("--text-4xl")).toBe("2.25rem");
+  });
+
+  it("tightens tracking as display size grows", () => {
+    const track = (t: string) => parseFloat(getTokenValue(t));
+    expect(track("--tracking-display-xl")).toBeLessThan(track("--tracking-display-sm"));
   });
 });

@@ -70,6 +70,33 @@
   --tracking-4xl: -0.025em;
 
   /* --------------------------------------------------------------------------
+     MARKETING DISPLAY TIER (Epic 2.6, spec §8.1)
+     Public marketing pages only. The app's scale is capped at --text-4xl and
+     is deliberately NOT modified here — identity.md's "enduring, not flashy"
+     applies to the product surface; the marketing surface gets a wider range
+     of the same brand, not a different brand.
+
+     Fluid via clamp() because German compounds set the sizing floor: every
+     display string must survive its longest German compound at 320px.
+     -------------------------------------------------------------------------- */
+  --text-display-sm: clamp(2rem, 1.6rem + 2vw, 2.75rem);
+  --text-display-md: clamp(2.5rem, 1.9rem + 3vw, 3.75rem);
+  --text-display-lg: clamp(3rem, 2.1rem + 4.5vw, 5rem);
+  --text-display-xl: clamp(3.5rem, 2.2rem + 6vw, 6.5rem);
+
+  --leading-display: 1.08;
+
+  --tracking-display-sm: -0.025em;
+  --tracking-display-md: -0.03em;
+  --tracking-display-lg: -0.035em;
+  --tracking-display-xl: -0.04em;
+
+  /* Vertical rhythm between marketing bands. */
+  --section-gap-sm: clamp(3rem, 2rem + 5vw, 5rem);
+  --section-gap-md: clamp(4rem, 2.5rem + 7vw, 7.5rem);
+  --section-gap-lg: clamp(5rem, 3rem + 9vw, 10rem);
+
+  /* --------------------------------------------------------------------------
      BORDER RADIUS SCALE
      Source: identity.md Section 5.1
      --radius (bare) is the shadcn/ui canonical variable, set to radius-lg.
