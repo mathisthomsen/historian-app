@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { DeletePersonButton } from "@/components/research/DeletePersonButton";
+import { EntityDeleteSection } from "@/components/research/EntityDeleteSection";
 import { PersonDetailCard } from "@/components/research/PersonDetailCard";
 import { PersonDetailTabs } from "@/components/research/PersonDetailTabs";
 import {
@@ -145,15 +146,12 @@ export default async function PersonDetailPage({ params }: PageProps) {
       </div>
       <div className="flex items-center justify-between">
         <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">{displayName}</h1>
-        <div className="flex gap-2">
-          <Link
-            href={`/${locale}/persons/${id}/edit`}
-            className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
-          >
-            {t("edit_title")}
-          </Link>
-          <DeletePersonButton id={id} locale={locale} label={t("delete")} />
-        </div>
+        <Link
+          href={`/${locale}/persons/${id}/edit`}
+          className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
+        >
+          {t("edit_title")}
+        </Link>
       </div>
       <PersonDetailTabs
         attributesContent={
@@ -165,6 +163,9 @@ export default async function PersonDetailPage({ params }: PageProps) {
         projectId={raw.project_id}
         tabCounts={relationCounts}
       />
+      <EntityDeleteSection description={t("delete_section_description")}>
+        <DeletePersonButton id={id} locale={locale} label={t("delete")} />
+      </EntityDeleteSection>
     </div>
   );
 }

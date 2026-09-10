@@ -87,6 +87,59 @@ against what is now known, and merge duplicates. Report what changed and why.
 Prefer splitting an issue that has grown several independent parts — progress on
 one should be visible without waiting for the rest.
 
+## Responding to code review
+
+Automated review is worth running, but responding to it is not free: every fix
+adds surface for the next round to find. Left unbounded it becomes a treadmill
+where the PR grows faster than it converges.
+
+### Bounded rounds
+
+**Two rounds of review-driven fixes per PR.** After the second round, remaining
+findings are triaged, not implemented in the branch:
+
+- **Fix in-branch:** correctness, security, data integrity, accessibility, and
+  anything that makes a test pass without testing its subject. These are
+  defects; ship the PR with them fixed.
+- **File an issue instead:** documentation drift, naming, structural cleanups,
+  and anything whose absence would not mislead a user or a future reader of the
+  data. Link the issue from the PR and say plainly that it was deferred.
+
+A third round happens only if round two introduced a regression. "The reviewer
+found something real" is not sufficient reason to continue — real findings of
+declining severity are exactly what an unbounded loop produces.
+
+### Sweep before requesting review, not after
+
+Most late-round findings in practice are not new defects; they are _the same
+change, missed in another place_. Adding a field or changing a component
+contract obliges a sweep, and the cheapest sweep is a diff against an existing
+analogue:
+
+```bash
+# Every site that mentions a field of the same kind that already existed...
+grep -rln "birth_date_certainty\|start_date_certainty" src prisma docs e2e | sort > /tmp/tmpl
+# ...against every site that mentions the new one.
+grep -rln "birth_place_certainty\|location_certainty" src prisma docs e2e | sort > /tmp/new
+comm -23 /tmp/tmpl /tmp/new   # sites the new field has not reached yet
+```
+
+Read every line of the output and decide explicitly: needs the field, or does
+not. Historical specs and applied migrations are frozen and stay in the second
+category; seed scripts, summary/detail types, response builders, mapping sites
+and design-system docs are almost always in the first.
+
+Prefer making omissions impossible over remembering to check: a field declared
+**required** on a shared type turns every missed mapping site into a compile
+error, which is a better guardrail than any checklist.
+
+### Do not let a fix grow the PR
+
+A review fix should be the smallest change that removes the defect. Rewriting
+the surrounding code, adding abstractions, or "while I'm here" improvements all
+enlarge the diff and the next review. If a fix wants to be big, that is a
+signal to file it rather than write it.
+
 ## Measure, don't infer
 
 When a claim can be tested, test it before acting on it, writing it into an issue,

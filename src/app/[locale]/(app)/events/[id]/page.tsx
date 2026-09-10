@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { DeleteEventButton } from "@/components/research/DeleteEventButton";
+import { EntityDeleteSection } from "@/components/research/EntityDeleteSection";
 import { EventDetailTabs } from "@/components/research/EventDetailTabs";
 import {
   Breadcrumb,
@@ -147,20 +148,12 @@ export default async function EventDetailPage({ params }: PageProps) {
       </div>
       <div className="flex items-center justify-between">
         <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">{event.title}</h1>
-        <div className="flex gap-2">
-          <Link
-            href={`/${locale}/events/${id}/edit`}
-            className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
-          >
-            {t("edit_title")}
-          </Link>
-          <DeleteEventButton
-            id={id}
-            locale={locale}
-            label={t("delete")}
-            subEventCount={event._count.sub_events}
-          />
-        </div>
+        <Link
+          href={`/${locale}/events/${id}/edit`}
+          className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
+        >
+          {t("edit_title")}
+        </Link>
       </div>
       <EventDetailTabs
         event={event}
@@ -168,6 +161,14 @@ export default async function EventDetailPage({ params }: PageProps) {
         projectId={raw.project_id}
         tabCounts={relationCounts}
       />
+      <EntityDeleteSection description={t("delete_section_description")}>
+        <DeleteEventButton
+          id={id}
+          locale={locale}
+          label={t("delete")}
+          subEventCount={event._count.sub_events}
+        />
+      </EntityDeleteSection>
     </div>
   );
 }

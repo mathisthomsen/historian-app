@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { DeleteSourceButton } from "@/components/research/DeleteSourceButton";
+import { EntityDeleteSection } from "@/components/research/EntityDeleteSection";
 import { SourceDetailTabs } from "@/components/research/SourceDetailTabs";
 import {
   Breadcrumb,
@@ -115,15 +116,12 @@ export default async function SourceDetailPage({ params }: PageProps) {
         <h1 className="text-foreground text-3xl font-semibold tracking-[-0.02em]">
           {source.title}
         </h1>
-        <div className="flex gap-2">
-          <Link
-            href={`/${locale}/sources/${id}/edit`}
-            className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
-          >
-            {t("edit_title")}
-          </Link>
-          <DeleteSourceButton id={id} locale={locale} label={t("delete")} />
-        </div>
+        <Link
+          href={`/${locale}/sources/${id}/edit`}
+          className="hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium"
+        >
+          {t("edit_title")}
+        </Link>
       </div>
       <SourceDetailTabs
         source={source}
@@ -131,6 +129,9 @@ export default async function SourceDetailPage({ params }: PageProps) {
         projectId={raw.project_id}
         tabCounts={relationCounts}
       />
+      <EntityDeleteSection description={t("delete_section_description")}>
+        <DeleteSourceButton id={id} locale={locale} label={t("delete")} />
+      </EntityDeleteSection>
     </div>
   );
 }

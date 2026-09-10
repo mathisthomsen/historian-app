@@ -1,9 +1,11 @@
+import type { Certainty } from "@prisma/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PropertyEvidenceBadge } from "@/components/relations/PropertyEvidenceBadge";
+import { CertaintyMarker } from "@/components/research/CertaintyMarker";
 import { DatedCell } from "@/components/research/DatedCell";
 import { PersonsListClient } from "@/components/research/PersonsListClient";
-import { renderWithProviders, screen, waitFor } from "@/test/render";
+import { renderWithProviders, screen, waitFor, within } from "@/test/render";
 import type { PersonSummary } from "@/types/person";
 
 vi.mock("next/navigation", () => ({
@@ -84,6 +86,91 @@ describe("certainty is visible at list level", () => {
   });
 });
 
+/**
+ * Guards issue #71. The marker used to be a glyph (`● ◕ ◔ ○`) that carried the
+ * per-level distinction through character shape; it is now an inline SVG drawing
+ * four categorical shapes — filled disc, thick ring, thin ring, dashed ring.
+ * WCAG 1.4.1 requires the four levels to stay distinguishable by something other
+ * than colour — here, the shape treatment. Deliberately NOT a proportional fill:
+ * a wedge at 75% asserts a numeric confidence the model does not hold.
+ * Scope of the guard, stated honestly: the first assertion compares whole SVG
+ * markup, which includes the colour style, so on its own it would also pass for
+ * four colours of one shape. The `d`-attribute assertion below is the one that
+ * actually pins the geometry — the two partial levels must differ in wedge
+ * sweep, not merely in hue.
+ */
+describe("certainty markers are distinguishable by shape, not colour alone", () => {
+  const LEVELS: Certainty[] = ["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"];
+
+  it("renders a differently shaped SVG per level", () => {
+    const shapes = LEVELS.map((level) => {
+      const { container, unmount } = renderWithProviders(<CertaintyMarker certainty={level} />);
+      const svg = container.querySelector("svg");
+      const shape = svg?.innerHTML ?? "";
+      unmount();
+      return shape;
+    });
+
+    // Every level's markup is unique...
+    expect(new Set(shapes).size).toBe(shapes.length);
+    // ...and it's not empty (a regression that rendered nothing would also be "unique").
+    for (const shape of shapes) {
+      expect(shape.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps the accessible name exactly as before (role=img, aria-label from certaintyLabel)", () => {
+    renderWithProviders(<CertaintyMarker certainty="PROBABLE" />);
+    const marker = screen.getByRole("img", { name: "Gewissheit: Wahrscheinlich" });
+    // The SVG is decorative; the accessible name must come only from the wrapper.
+    expect(marker.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("gives each level a categorical shape, never a proportional fill", () => {
+    // The greyscale-safe distinction, and the reason it is NOT a pie wedge:
+    // README §2 records that decimal confidence was tried and rejected because
+    // "a number implies a statistical basis that does not exist". A 75% wedge
+    // asserts that basis visually. These four are treatments of one circle —
+    // filled, thick ring, thin ring, dashed ring — so the ordering survives
+    // without a fraction being claimed.
+    const shapes = (["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"] as const).map((level) => {
+      const { container, unmount } = renderWithProviders(<CertaintyMarker certainty={level} />);
+      const svg = container.querySelector("svg")!;
+      const circle = svg.querySelector("circle")!;
+      const shape = {
+        shape: svg.getAttribute("data-shape"),
+        fill: circle.style.fill,
+        strokeWidth: circle.style.strokeWidth,
+        dash: circle.style.strokeDasharray,
+      };
+      unmount();
+      return shape;
+    });
+
+    // No level draws a wedge — a <path> is how a pie is expressed in SVG.
+    expect(shapes.map((s) => s.shape)).toEqual([
+      "filled",
+      "thick-ring",
+      "thin-ring",
+      "dashed-ring",
+    ]);
+    // Only CERTAIN is filled; the rest are rings of differing weight.
+    expect(shapes[0]!.fill).not.toBe("none");
+    expect(shapes[1]!.strokeWidth).not.toBe(shapes[2]!.strokeWidth);
+    // UNKNOWN is the only dashed one, so it is not merely "a thin ring again".
+    expect(shapes[3]!.dash).toBeTruthy();
+    expect(shapes[2]!.dash).toBeFalsy();
+  });
+
+  it("never renders a pie wedge for any level", () => {
+    for (const level of ["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"] as const) {
+      const { container, unmount } = renderWithProviders(<CertaintyMarker certainty={level} />);
+      expect(container.querySelector("path")).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+});
+
 describe("the unevidenced warning keys on the certainty level", () => {
   function renderBadge(certainty: "CERTAIN" | "PROBABLE" | "POSSIBLE" | "UNKNOWN" | undefined) {
     return renderWithProviders(
@@ -102,12 +189,15 @@ describe("the unevidenced warning keys on the certainty level", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(evidenceResponse(0)));
     renderBadge("CERTAIN");
 
-    // The warning state's entire content used to be the digit 0, and the word
-    // "Unbelegt" appeared in no message file.
-    await waitFor(() => expect(screen.getByText("Unbelegt")).toBeInTheDocument());
-    expect(screen.getByRole("button")).toHaveAccessibleName(
-      "Startdatum: als Sicher bewertet, aber ohne Beleg",
-    );
+    // The warning is an AFFORDANCE (icon + dashed-border warning tokens), not
+    // a different word — every field reads as a number at a glance (issue
+    // #70/#71). The full sentence still reaches assistive tech via the
+    // accessible name below.
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(within(button).getByText("0")).toBeInTheDocument());
+    expect(button.querySelector("svg")).toHaveClass("lucide-triangle-alert");
+    expect(button).toHaveClass("certainty-unevidenced");
+    expect(button).toHaveAccessibleName("Startdatum: als Sicher bewertet, aber ohne Beleg");
   });
 
   it("does not warn on an honest UNKNOWN non-claim", async () => {
@@ -115,15 +205,31 @@ describe("the unevidenced warning keys on the certainty level", () => {
     renderBadge("UNKNOWN");
 
     // Previously fired whenever a date existed, regardless of level.
-    await waitFor(() => expect(screen.getByRole("button")).toBeInTheDocument());
-    expect(screen.queryByText("Unbelegt")).not.toBeInTheDocument();
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(within(button).getByText("0")).toBeInTheDocument());
+    expect(button).not.toHaveClass("certainty-unevidenced");
+    expect(button.querySelector("svg")).not.toBeInTheDocument();
   });
 
   it("does not warn once the claim has evidence", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(evidenceResponse(2)));
     renderBadge("CERTAIN");
 
-    await waitFor(() => expect(screen.getByText("2")).toBeInTheDocument());
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(within(button).getByText("2")).toBeInTheDocument());
+    expect(button).not.toHaveClass("certainty-unevidenced");
+  });
+
+  it("renders the numeral in the warning state, not a word (issue #70/#71)", async () => {
+    // Regression guard: birth/death place and notes pass no `certainty` today
+    // (issue #72), but a field that DOES carry certainty and has zero
+    // evidence must show "0", not "Unbelegt" — the inconsistency the badge
+    // used to have between date fields (word) and other fields (bare "0").
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(evidenceResponse(0)));
+    renderBadge("PROBABLE");
+
+    const button = await screen.findByRole("button");
+    await waitFor(() => expect(within(button).getByText("0")).toBeInTheDocument());
     expect(screen.queryByText("Unbelegt")).not.toBeInTheDocument();
   });
 
