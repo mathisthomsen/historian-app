@@ -235,8 +235,20 @@ test.describe("TC-AUTH-12: Authenticated dashboard", () => {
 test.describe("TC-AUTH-13: Logout", () => {
   test("clears session and redirects to login", async ({ page }) => {
     await loginAsAdmin(page);
+    // Synchronise on the sign-out request, not on the navigation it triggers.
+    // If the redirect were the synchronisation point, a logout that never
+    // navigated would throw before the cookie was ever inspected, leaving
+    // exactly the ambiguity this test exists to remove. Measured 2026-09-10:
+    // clicking "Abmelden" issues GET /api/auth/csrf then POST
+    // /api/auth/signout.
+    const signOut = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/auth/signout" &&
+        response.request().method() === "POST",
+      { timeout: 10_000 },
+    );
     await page.getByRole("button", { name: "Abmelden" }).click();
-    await page.waitForURL(/\/auth\/login/, { timeout: 10_000 });
+    await signOut;
     // Verify session cleared: no next-auth session cookie under either name
     // (unprefixed "authjs.session-token" locally over http, "__Secure-"
     // prefixed in production over https). A failure here means the session
@@ -245,17 +257,35 @@ test.describe("TC-AUTH-13: Logout", () => {
     // Measured 2026-09-09: a logged-in context here holds exactly
     // ["authjs.csrf-token", "authjs.callback-url", "authjs.session-token"], so
     // this pattern matches a real cookie and the assertion is not vacuous.
-    const cookies = await page.context().cookies();
-    const sessionCookie = cookies.find((cookie) =>
-      /^(__Secure-)?(authjs|next-auth)\.session-token$/.test(cookie.name),
-    );
+    //
     // signOut clears with Max-Age=0, which drops the cookie from the jar. An
     // empty-valued cookie is equally cleared and must not raise a false
     // security alarm on this of all tests — only a surviving *value* does.
-    expect(
-      sessionCookie?.value ?? "",
-      "issue #27: session cookie survived signOut — this points at a security bug, not a slow redirect",
-    ).toBe("");
+    // Polled rather than read once, for the same reason: the jar is updated as
+    // the response is processed, and a few milliseconds of scheduling slack
+    // must not read as a surviving session. One that genuinely survives still
+    // fails, which is the point.
+    await expect
+      .poll(
+        async () => {
+          const cookies = await page.context().cookies();
+          const sessionCookie = cookies.find((cookie) =>
+            /^(__Secure-)?(authjs|next-auth)\.session-token$/.test(cookie.name),
+          );
+          return sessionCookie?.value ?? "";
+        },
+        {
+          timeout: 5_000,
+          message:
+            "issue #27: session cookie survived signOut — this points at a security bug, not a slow redirect",
+        },
+      )
+      .toBe("");
+
+    // Only now assert the navigation. With the cookie already confirmed gone,
+    // a failure of either URL assertion below means the redirect was slow.
+    await page.waitForURL(/\/auth\/login/, { timeout: 10_000 });
+
     await page.goto("/de/dashboard");
     // The unauthenticated redirect is not an HTTP 307 — it's a 200 carrying
     // http-equiv="refresh" plus a NEXT_REDIRECT marker, so it depends on the
