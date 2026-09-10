@@ -88,9 +88,11 @@ describe("certainty is visible at list level", () => {
 
 /**
  * Guards issue #71. The marker used to be a glyph (`● ◕ ◔ ○`) that carried the
- * per-level distinction through character shape; it is now an inline SVG pie
- * (circle outline + filled wedge). WCAG 1.4.1 requires the four levels to stay
- * distinguishable by something other than colour — here, the wedge fraction.
+ * per-level distinction through character shape; it is now an inline SVG drawing
+ * four categorical shapes — filled disc, thick ring, thin ring, dashed ring.
+ * WCAG 1.4.1 requires the four levels to stay distinguishable by something other
+ * than colour — here, the shape treatment. Deliberately NOT a proportional fill:
+ * a wedge at 75% asserts a numeric confidence the model does not hold.
  * Scope of the guard, stated honestly: the first assertion compares whole SVG
  * markup, which includes the colour style, so on its own it would also pass for
  * four colours of one shape. The `d`-attribute assertion below is the one that

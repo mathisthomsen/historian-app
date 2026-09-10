@@ -563,17 +563,19 @@ Breadcrumbs are generated from the route path using a deterministic mapping.
 
 Evidoxa uses five certainty levels (four explicit states plus the absence-of-evidence state). Each level has a semantic token name that downstream documents must reference instead of raw color values.
 
-| Level       | Semantic token            | Meaning                                               | Visual channels required                           | ARIA label             |
-| ----------- | ------------------------- | ----------------------------------------------------- | -------------------------------------------------- | ---------------------- |
-| Certain     | `--certainty-certain`     | Confirmed by strong primary evidence                  | Color + filled circle icon + text label            | "Certainty: Certain"   |
-| Probable    | `--certainty-probable`    | Supported by evidence but not conclusive              | Color + three-quarter circle icon + text label     | "Certainty: Probable"  |
-| Possible    | `--certainty-possible`    | Plausible but weakly evidenced                        | Color + half circle icon + text label              | "Certainty: Possible"  |
-| Unknown     | `--certainty-unknown`     | No evidence or insufficient evidence to assess        | Color + empty circle icon (ring only) + text label | "Certainty: Unknown"   |
-| Unevidenced | `--certainty-unevidenced` | A claim exists but zero evidence entries are attached | Color + dashed circle icon + text label            | "No evidence attached" |
+| Level       | Semantic token            | Meaning                                               | Visual channels required                | ARIA label             |
+| ----------- | ------------------------- | ----------------------------------------------------- | --------------------------------------- | ---------------------- |
+| Certain     | `--certainty-certain`     | Confirmed by strong primary evidence                  | Color + filled circle icon + text label | "Certainty: Certain"   |
+| Probable    | `--certainty-probable`    | Supported by evidence but not conclusive              | Color + thick ring icon + text label    | "Certainty: Probable"  |
+| Possible    | `--certainty-possible`    | Plausible but weakly evidenced                        | Color + thin ring icon + text label     | "Certainty: Possible"  |
+| Unknown     | `--certainty-unknown`     | No evidence or insufficient evidence to assess        | Color + dashed ring icon + text label   | "Certainty: Unknown"   |
+| Unevidenced | `--certainty-unevidenced` | A claim exists but zero evidence entries are attached | Color + dashed circle icon + text label | "No evidence attached" |
 
 #### Encoding Rules
 
-1. **Dual-channel minimum:** Certainty must NEVER rely on color alone. Every certainty indicator must use at minimum two visual channels: color AND a distinct icon shape. The icon shapes above (filled circle, three-quarter, half, ring, dashed ring) are the canonical set. They form a visual progression from "full" to "empty" that remains distinguishable in grayscale.
+1. **Dual-channel minimum:** Certainty must NEVER rely on color alone. Every certainty indicator must use at minimum two visual channels: color AND a distinct icon shape. The icon shapes above (filled disc, thick ring, thin ring, dashed ring) are the canonical set. They form a visual progression from "full" to "empty" that remains distinguishable in grayscale.
+
+   The shapes are deliberately **categorical, not proportional**. An earlier implementation drew them as pie wedges at 100/75/25/0%, which asserts a numeric confidence the model does not hold — README section 2 records that decimal confidence scores were tried and rejected because "a number implies a statistical basis that does not exist". Do not restore fractional fills: the ordering is real, the fraction is not.
 
 2. **Color direction:** The palette must progress from a "confident" hue (cool or neutral) to an "attention-seeking" hue for Unknown/Unevidenced. Specifically:
    - A green-to-red spectrum is EXCLUDED because it fails under protanopia and deuteranopia.
