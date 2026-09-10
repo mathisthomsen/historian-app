@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
+import { certaintySchema } from "@/lib/schemas/person";
 
 const updateEventSchema = z
   .object({
@@ -22,6 +23,7 @@ const updateEventSchema = z
     end_day: z.number().int().min(1).max(31).optional().nullable(),
     end_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
     location: z.string().optional().nullable(),
+    location_certainty: certaintySchema.optional(),
     parent_id: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
   })
@@ -157,6 +159,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     end_day: event.end_day,
     end_date_certainty: event.end_date_certainty,
     location: event.location,
+    location_certainty: event.location_certainty,
     parent: event.parent ? { id: event.parent.id, title: event.parent.title } : null,
     _count: {
       sub_events: event._count.sub_events,
@@ -251,6 +254,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     updateData.end_date_certainty = data.end_date_certainty;
   if (data.location !== undefined)
     updateData.location = data.location ? sanitize(data.location) : null;
+  if (data.location_certainty !== undefined)
+    updateData.location_certainty = data.location_certainty;
   if (data.parent_id !== undefined) updateData.parent_id = data.parent_id;
   if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
 
@@ -273,6 +278,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     "end_day",
     "end_date_certainty",
     "location",
+    "location_certainty",
     "parent_id",
     "notes",
   ] as const;
@@ -321,6 +327,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     end_day: updated.end_day,
     end_date_certainty: updated.end_date_certainty,
     location: updated.location,
+    location_certainty: updated.location_certainty,
     parent: updated.parent ? { id: updated.parent.id, title: updated.parent.title } : null,
     _count: {
       sub_events: updated._count.sub_events,

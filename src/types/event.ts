@@ -18,6 +18,7 @@ export interface EventSummary {
 
 export interface EventDetail extends EventSummary {
   description: string | null;
+  location_certainty: "CERTAIN" | "PROBABLE" | "POSSIBLE" | "UNKNOWN";
   notes: string | null;
   created_by_id: string | null;
   updated_at: string;
@@ -43,6 +44,7 @@ export interface CreateEventInput {
   end_day?: number | null;
   end_date_certainty?: "CERTAIN" | "PROBABLE" | "POSSIBLE" | "UNKNOWN";
   location?: string | null;
+  location_certainty?: "CERTAIN" | "PROBABLE" | "POSSIBLE" | "UNKNOWN";
   parent_id?: string | null;
   notes?: string | null;
 }

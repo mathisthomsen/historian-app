@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import { sanitize } from "@/lib/sanitize";
+import { certaintySchema } from "@/lib/schemas/person";
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -36,6 +37,7 @@ const createEventSchema = z
     end_day: z.number().int().min(1).max(31).optional().nullable(),
     end_date_certainty: z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]).optional(),
     location: z.string().optional().nullable(),
+    location_certainty: certaintySchema.optional(),
     parent_id: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
   })
@@ -261,6 +263,7 @@ export async function POST(request: NextRequest) {
       end_day: data.end_day ?? null,
       end_date_certainty: data.end_date_certainty ?? "UNKNOWN",
       location: data.location ? sanitize(data.location) : null,
+      location_certainty: data.location_certainty ?? "UNKNOWN",
       parent_id: data.parent_id ?? null,
       notes: data.notes ? sanitize(data.notes) : null,
     },
@@ -300,6 +303,7 @@ export async function POST(request: NextRequest) {
     end_day: event.end_day,
     end_date_certainty: event.end_date_certainty,
     location: event.location,
+    location_certainty: event.location_certainty,
     parent: event.parent ? { id: event.parent.id, title: event.parent.title } : null,
     _count: {
       sub_events: event._count.sub_events,
