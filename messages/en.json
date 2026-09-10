@@ -665,6 +665,35 @@
       "next": "Next",
       "position": "Panel {current} of {total}",
       "label": "What Evidoxa does differently"
+    },
+    "panels": {
+      "certainty": {
+        "kicker": "Certainty",
+        "title": "Four levels, not one assertion.",
+        "body": "Certain, probable, possible, unknown — per field, not per record."
+      },
+      "dates": {
+        "kicker": "Dating",
+        "title": "A year without a month is a complete answer.",
+        "body": "Year, month and day are stored separately. What you do not know, you need not invent."
+      },
+      "evidence": {
+        "kicker": "Evidence",
+        "title": "Every claim points at its source.",
+        "body": "Evidence attaches to the individual field — with page reference, quotation and diplomatic transcription."
+      },
+      "relations": {
+        "kicker": "Relations",
+        "title": "Anything can connect to anything.",
+        "body": "You define the relation types. Every relation carries its own certainty.",
+        "nodes": {
+          "person": "Person",
+          "event": "Event",
+          "place": "Place",
+          "source": "Source",
+          "relation": "attests"
+        }
+      }
     }
   }
 }

@@ -665,6 +665,35 @@
       "next": "Weiter",
       "position": "Panel {current} von {total}",
       "label": "Was Evidoxa anders macht"
+    },
+    "panels": {
+      "certainty": {
+        "kicker": "Gewissheit",
+        "title": "Vier Stufen statt einer Behauptung.",
+        "body": "Gesichert, wahrscheinlich, möglich, unbekannt — pro Feld, nicht pro Datensatz."
+      },
+      "dates": {
+        "kicker": "Datierung",
+        "title": "Ein Jahr ohne Monat ist eine vollständige Antwort.",
+        "body": "Jahr, Monat und Tag werden getrennt gespeichert. Was Sie nicht wissen, müssen Sie nicht erfinden."
+      },
+      "evidence": {
+        "kicker": "Belege",
+        "title": "Jede Aussage zeigt auf ihre Quelle.",
+        "body": "Belege hängen am einzelnen Feld — mit Fundstelle, Zitat und diplomatischer Transkription."
+      },
+      "relations": {
+        "kicker": "Beziehungen",
+        "title": "Alles kann mit allem verbunden sein.",
+        "body": "Beziehungstypen definieren Sie selbst. Jede Beziehung trägt ihre eigene Gewissheit.",
+        "nodes": {
+          "person": "Person",
+          "event": "Ereignis",
+          "place": "Ort",
+          "source": "Quelle",
+          "relation": "bezeugt"
+        }
+      }
     }
   }
 }
