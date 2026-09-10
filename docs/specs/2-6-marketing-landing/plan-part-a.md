@@ -712,8 +712,8 @@ The accessibility-critical task. Read spec §7.2 before starting.
 Create `src/test/components/HighlightRail.test.tsx`:
 
 ```tsx
-import { fireEvent, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { HighlightPanel } from "@/components/marketing/HighlightPanel";
 import { HighlightRail } from "@/components/marketing/HighlightRail";
@@ -768,10 +768,20 @@ describe("HighlightRail", () => {
   });
 
   it("never auto-advances", () => {
-    const { container } = renderRail();
-    const before = container.querySelector('[aria-live="polite"]')?.textContent;
-    // No timers are started by this component; nothing may change on its own.
-    expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe(before);
+    // Fake timers are essential. Reading textContent twice synchronously would
+    // pass even against a component containing
+    // setInterval(() => setActive((a) => a + 1), 3000), because no macrotask
+    // ever runs during a synchronous test body. Time must actually advance.
+    vi.useFakeTimers();
+    try {
+      const { container } = renderRail();
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
+      expect(container.querySelector('[aria-live="polite"]')).toHaveTextContent("1");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 ```
@@ -887,13 +897,22 @@ export function HighlightRail({ children }: HighlightRailProps) {
 
   return (
     <section id="highlights" aria-label={t("label")} className="px-4 sm:px-6">
+      {/*
+        Explicit role="list" / role="listitem" are NOT redundant — do not remove.
+        Tailwind v4 preflight sets `ul, ol, menu { list-style: none }`
+        unconditionally, and WebKit strips a list's implicit accessibility roles
+        when list-style is removed, so VoiceOver users lose the "list, 4 items"
+        context. jsdom cannot catch this: it derives roles from tag names, never
+        from applied CSS, so getByRole("list") passes either way.
+      */}
       <ul
         ref={railRef}
         onScroll={syncFromScroll}
+        role="list"
         className="grid snap-x snap-mandatory auto-cols-[86%] grid-flow-col gap-4 overflow-x-auto pb-4 [scrollbar-width:thin] sm:auto-cols-[52%] lg:auto-cols-[30%]"
       >
         {panels.map((panel, index) => (
-          <li key={index} className="snap-start">
+          <li key={index} role="listitem" className="snap-start">
             {panel}
           </li>
         ))}
