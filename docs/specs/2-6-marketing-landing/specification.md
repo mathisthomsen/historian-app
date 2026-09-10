@@ -455,7 +455,7 @@ user's to supply. Claude will not draft legal text. The privacy page must, at mi
 
 ---
 
-### 11.3 Sequencing — one plan or two?
+### 11.3 Sequencing — RESOLVED: two plans
 
 This spec covers two separable bodies of work: **(A)** the marketing surface (routes, layout, tokens,
 rail, changelog, legal, SEO) and **(B)** access requests plus the invite gate on registration (schema,
@@ -465,23 +465,33 @@ They share only the form component. B touches security-critical code and will at
 of review than A. The bounded-review rule in CLAUDE.md exists precisely to stop one PR growing past
 what a reviewer can hold, and A alone is already a large diff.
 
-**Recommendation: two implementation plans and two PRs**, A then B, with the landing page shipping
-first behind copy that does not yet promise a closed alpha, and B flipping that copy in the same PR
-that closes registration. This also removes the deploy-ordering hazard of a page claiming "geschlossene
-Alpha" while `/auth/register` is still open. To be confirmed before planning starts.
+**Decided (2026-09-10): two implementation plans and two PRs**, A then B.
+
+- **Part A — #82.** The marketing surface. Ships first, with access-form copy that does **not** yet
+  promise a closed alpha, because at that point registration is still open and the claim would be false.
+- **Part B — #29.** Access requests and the invite gate. Flips that copy to "geschlossene Alpha" in the
+  same PR that closes registration, so the page never claims a gate that does not exist.
+
+The copy hand-off between the two is the deploy-ordering hazard here, and it is why the flip lives in
+B's PR rather than A's.
+
+Spec sections by part: **A** = §3, §6, §7, §8; **B** = §4, §5. §9 testing and §10 acceptance criteria
+split accordingly — A takes criteria 1–4 and 9–13, B takes 5–8.
 
 ---
 
-## 12. Issues to File
+## 12. Backlog (filed 2026-09-10)
 
-- **This epic** — implementation tracking issue, `area: frontend`, `priority: medium`, `enhancement`.
-- **In-app feedback channel** (authenticated users → GitHub Discussions or a DB table + Resend, _not_
-  raw Issues — auto-created issues would arrive without the labels, priority and board status CLAUDE.md
-  requires). Deferred; out of scope here.
-- **Automated "coming next"** from the Evidoxa Backlog project board, with the user's rules recorded:
-  separate features from bugs, never surface anything security-labelled. Deferred.
-- **Comment on #29** — this epic implements invite-gated registration; #29 closes on merge.
-- **Comment on #33** — rail paddles implement the 44 × 44 rule locally; the global gap remains.
+All three new issues verified present on the Evidoxa Backlog board with Status `Todo`.
+
+| Issue   | Role                                                                                                                            | State                        |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| **#82** | **Part A** — public landing page, changelog, legal pages                                                                        | Open, `Todo`                 |
+| **#29** | **Part B** — invite-gated registration. Pre-existing issue; commented with the full design rather than opening a near-duplicate | Open, closes on Part B merge |
+| #83     | In-app feedback channel for signed-in users. Deferred, with the reasoning for _not_ auto-creating GitHub Issues recorded        | Open, `Todo`                 |
+| #84     | Automated "coming next" from the project board, with the filtering rules recorded                                               | Open, `Todo`                 |
+| #33     | Commented: the rail paddles implement the 44 × 44 rule in one place; the global gap is unchanged and the issue stays open       | Open                         |
+| #61     | Not modified. Referenced in §9 as the reason local E2E red is a known baseline                                                  | Open                         |
 
 ---
 
