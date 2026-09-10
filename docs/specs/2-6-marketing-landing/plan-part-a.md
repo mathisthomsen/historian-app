@@ -341,7 +341,17 @@ export function PublicNav({ isSignedIn, locale }: PublicNavProps) {
 }
 ```
 
-> If `LocaleSwitcher` or `ThemeToggle` require props or a surrounding context they do not get here, read `src/components/shell/TopBar.tsx` for how the app passes them and mirror it. Do not fork copies of those components.
+> **File naming differs by directory in this repo.** `src/components/shell/` is kebab-case
+> (`locale-switcher.tsx`, `theme-toggle.tsx`, `top-bar.tsx`), while `src/components/research/`
+> and `src/components/relations/` are PascalCase. Import the shell components from their real
+> kebab-case paths. New `src/components/marketing/` files are PascalCase, matching the majority.
+>
+> If `LocaleSwitcher` or `ThemeToggle` need props or context they do not get here, read
+> `src/components/shell/top-bar.tsx` for how the app passes them and mirror it. Do not fork
+> copies of those components.
+>
+> `LocaleSwitcher` uses `next/navigation`, which must be mocked in any test that renders
+> `PublicNav`. Follow the existing mock pattern in `src/components/shell/locale-switcher.test.tsx`.
 
 - [ ] **Step 5: Implement PublicFooter**
 
