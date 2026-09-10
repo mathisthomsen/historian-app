@@ -61,8 +61,9 @@ export function DeleteEventButton({
   if (subEventCount > 0) {
     return (
       <Button
-        variant="destructive"
+        variant="outline"
         size="sm"
+        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={() => toast.error(t("delete_has_sub_events", { count: subEventCount }))}
       >
         {label}
@@ -73,7 +74,11 @@ export function DeleteEventButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive" size="sm">
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
           {label}
         </Button>
       </DialogTrigger>

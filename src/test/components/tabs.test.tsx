@@ -76,6 +76,51 @@ describe("Tabs — TabsList classes", () => {
 });
 
 // ---------------------------------------------------------------------------
+// AC-TABS-29..30: overflow behaviour (issue #70) — the tab strip must scroll
+// within itself instead of widening the page around it.
+// ---------------------------------------------------------------------------
+
+describe("Tabs — overflow behaviour (issue #70)", () => {
+  it("AC-TABS-29: the strip scrolls in a wrapper, not on the tablist itself", () => {
+    renderTabs();
+    const list = screen.getByRole("tablist");
+    const scroller = list.parentElement!;
+    const classes = getClasses(scroller);
+    expect(classes).toContain("overflow-x-auto");
+    expect(classes).toContain("max-w-full");
+    expect(classes).toContain("overscroll-x-contain");
+    expect(classes).toContain("scrollbar-none");
+  });
+
+  it("AC-TABS-32: the scroll clip leaves room for a trigger's focus ring", () => {
+    // `overflow-x: auto` forces `overflow-y` to `auto` too, so a scroll
+    // container clips vertically whether it wants to or not. The triggers'
+    // focus indicator is drawn outside their box (ring-2 + ring-offset-2), so
+    // without headroom a keyboard user sees a clipped sliver instead of a ring
+    // (WCAG 2.4.7). `-my-2 py-2` buys 8px of clip headroom without shifting
+    // layout.
+    renderTabs();
+    const scroller = screen.getByRole("tablist").parentElement!;
+    const classes = getClasses(scroller);
+    expect(classes).toContain("py-2");
+    expect(classes).toContain("-my-2");
+  });
+
+  it("AC-TABS-33: the tablist still fills its container and can outgrow it", () => {
+    renderTabs();
+    const classes = getClasses(screen.getByRole("tablist"));
+    expect(classes).toContain("w-full");
+    expect(classes).toContain("min-w-max");
+  });
+
+  it("AC-TABS-30: TabsTrigger is never compressed to fit the strip", () => {
+    renderTabs();
+    const tab = screen.getAllByRole("tab")[0]!;
+    expect(getClasses(tab)).toContain("shrink-0");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // AC-TABS-05..08: TabsTrigger state classes
 // ---------------------------------------------------------------------------
 

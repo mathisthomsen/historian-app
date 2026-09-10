@@ -120,6 +120,11 @@ app/__todo.txt
 # Claude Code — installed skill packages (cloned git repos, not tracked)
 .claude/skills/resend/
 
+# Claude Code — permission allowlist. Deliberately untracked: it encodes one
+# machine's tolerance for which commands may run without a prompt, which is a
+# personal decision, not a property of the repo.
+.claude/settings.json
+
 # Editor directories and files
 .vscode/
 .idea/

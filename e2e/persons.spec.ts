@@ -347,6 +347,42 @@ test.describe("TC-P-12: Weitere Namen tab", () => {
 });
 
 // ---------------------------------------------------------------------------
+// TC-P-13: Tab strip scrolls within itself at mobile viewport (issue #70)
+// ---------------------------------------------------------------------------
+test.describe("TC-P-13: Tab strip overflow at mobile viewport", () => {
+  test("page does not scroll horizontally while the tab strip does, in de", async ({ page }) => {
+    // German is the default locale and its tab labels are the longest of the
+    // two — checking overflow containment here, not in en, is the honest test.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsAdmin(page);
+    await page.goto("/de/persons/seed-person-goethe");
+    await page.waitForURL(/\/de\/persons\/seed-person-goethe/);
+    await expect(page.getByRole("tablist")).toBeVisible();
+
+    const overflow = await page.evaluate(() => {
+      // The scroll container is the tablist's wrapper, not the tablist itself:
+      // scrolling the tablist directly clipped the triggers' focus ring.
+      const tablist = document.querySelector('[role="tablist"]');
+      const scroller = tablist?.parentElement;
+      return {
+        pageScrollWidth: document.documentElement.scrollWidth,
+        pageClientWidth: document.documentElement.clientWidth,
+        tablistScrollWidth: scroller?.scrollWidth ?? 0,
+        tablistClientWidth: scroller?.clientWidth ?? 0,
+      };
+    });
+
+    // The PAGE must not widen to accommodate the eight-trigger tab strip.
+    expect(overflow.pageScrollWidth).toBeLessThanOrEqual(overflow.pageClientWidth);
+    // The STRIP itself must be the thing that scrolls — otherwise the fix
+    // above would be hiding overflowing content instead of making it
+    // reachable (architecture.md: tabs overflowing the viewport are
+    // accessible by swiping left/right).
+    expect(overflow.tablistScrollWidth).toBeGreaterThan(overflow.tablistClientWidth);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // TC-P-14: Set birth place certainty through the form, see it on the detail
 // page — and see the unevidenced warning, since a CERTAIN claim with zero
 // evidence must be visibly flagged (issue #78).

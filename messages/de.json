@@ -181,6 +181,7 @@
     "delete_confirm_title": "Ereignis löschen?",
     "delete_confirm_body": "Dieses Ereignis wird als gelöscht markiert.",
     "delete_has_sub_events": "Dieses Ereignis hat {count} Unterereignisse. Bitte diese zuerst löschen oder einem anderen Ereignis zuordnen.",
+    "delete_section_description": "Dieses Ereignis wird als gelöscht markiert und verschwindet aus den Listen. Bestehende Verknüpfungen bleiben erhalten.",
     "cancel": "Abbrechen",
     "saved_toast": "Ereignis gespeichert.",
     "deleted_toast": "Ereignis gelöscht.",
@@ -314,6 +315,7 @@
     "delete": "Person löschen",
     "delete_confirm_title": "Person löschen?",
     "delete_confirm_body": "Diese Person wird als gelöscht markiert.",
+    "delete_section_description": "Diese Person wird als gelöscht markiert und verschwindet aus den Listen. Bestehende Verknüpfungen bleiben erhalten.",
     "saved_toast": "Person gespeichert.",
     "deleted_toast": "Person gelöscht.",
     "fields": {
@@ -414,6 +416,7 @@
     "edit_title": "Quelle bearbeiten",
     "delete": "Quelle löschen",
     "delete_confirm": "Diese Quelle wirklich löschen?",
+    "delete_section_description": "Diese Quelle wird als gelöscht markiert und verschwindet aus den Listen. Bestehende Verknüpfungen bleiben erhalten.",
     "search_placeholder": "Titel oder Autor suchen…",
     "empty_state": "Noch keine Quellen angelegt.",
     "empty_action": "Erste Quelle erstellen",
@@ -612,7 +615,6 @@
     "search_source": "Quelle suchen…",
     "page_reference_placeholder": "z. B. S. 42, fol. 3v",
     "quote_placeholder": "Relevantes Zitat",
-    "unevidenced": "Unbelegt",
     "unevidencedLabel": "{field}: als {level} bewertet, aber ohne Beleg",
     "noEvidenceYet": "Noch kein Beleg"
   },

@@ -960,6 +960,23 @@
   }
 
   /* --------------------------------------------------------------------------
+     SCROLL UTILITIES
+     -------------------------------------------------------------------------- */
+
+  /* Hides scrollbar chrome on an internally-scrolling strip (e.g. the entity
+     detail TabsList) without disabling scroll. The strip's own horizontal
+     overscroll IS the affordance (swipe left/right) — a visible scrollbar
+     here is redundant chrome, not the fix for issue #70's page-level
+     overflow, which is `overflow-x-auto` on the element itself. */
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+
+  /* --------------------------------------------------------------------------
      LAYOUT UTILITIES
      -------------------------------------------------------------------------- */
 

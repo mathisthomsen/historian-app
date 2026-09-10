@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React from "react";
 
@@ -97,6 +97,21 @@ export function DataTable<TData extends { id: string }>({
               )}
             </TableHead>
           ))}
+          {onRowClick && (
+            // Decorative trailing column carrying the row-click affordance
+            // (ChevronRight). Kept as a real <th> so header/body column counts
+            // stay equal — an unbalanced table is an accessibility defect — but
+            // aria-hidden since it names no column and conveys nothing beyond
+            // what the row's own link already provides.
+            //
+            // Pinned to the right edge: the table scrolls horizontally on a
+            // phone (measured at 390px: 558px of content in a 342px box), which
+            // parked the chevron 168px off-screen. That mattered more than it
+            // looks — touch has no hover, so the row's hover underline never
+            // fires either, leaving a fully tappable row with no affordance at
+            // all on exactly the viewport where this was first reported.
+            <TableHead aria-hidden="true" className="bg-background sticky right-0 w-8 border-l-0" />
+          )}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -104,7 +119,7 @@ export function DataTable<TData extends { id: string }>({
           <TableRow
             key={row.id}
             data-state={selectedIds.includes(row.id) ? "selected" : undefined}
-            className={onRowClick ? "cursor-pointer" : undefined}
+            className={onRowClick ? "group/row cursor-pointer" : undefined}
             onClick={
               onRowClick
                 ? (e) => {
@@ -134,6 +149,17 @@ export function DataTable<TData extends { id: string }>({
             {columns.map((col) => (
               <TableCell key={col.key}>{col.cell(row)}</TableCell>
             ))}
+            {onRowClick && (
+              // Background mirrors TableRow's own states, since a sticky cell
+              // sits above the scrolling content and would otherwise let rows
+              // slide visibly underneath it.
+              <TableCell
+                aria-hidden="true"
+                className="text-muted-foreground bg-background group-hover/row:bg-muted/30 group-data-[state=selected]/row:bg-primary/10 sticky right-0 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </TableCell>
+            )}
           </TableRow>
         ))}
       </TableBody>

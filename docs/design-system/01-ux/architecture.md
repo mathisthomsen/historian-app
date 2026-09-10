@@ -563,17 +563,19 @@ Breadcrumbs are generated from the route path using a deterministic mapping.
 
 Evidoxa uses five certainty levels (four explicit states plus the absence-of-evidence state). Each level has a semantic token name that downstream documents must reference instead of raw color values.
 
-| Level       | Semantic token            | Meaning                                               | Visual channels required                           | ARIA label             |
-| ----------- | ------------------------- | ----------------------------------------------------- | -------------------------------------------------- | ---------------------- |
-| Certain     | `--certainty-certain`     | Confirmed by strong primary evidence                  | Color + filled circle icon + text label            | "Certainty: Certain"   |
-| Probable    | `--certainty-probable`    | Supported by evidence but not conclusive              | Color + three-quarter circle icon + text label     | "Certainty: Probable"  |
-| Possible    | `--certainty-possible`    | Plausible but weakly evidenced                        | Color + half circle icon + text label              | "Certainty: Possible"  |
-| Unknown     | `--certainty-unknown`     | No evidence or insufficient evidence to assess        | Color + empty circle icon (ring only) + text label | "Certainty: Unknown"   |
-| Unevidenced | `--certainty-unevidenced` | A claim exists but zero evidence entries are attached | Color + dashed circle icon + text label            | "No evidence attached" |
+| Level       | Semantic token            | Meaning                                               | Visual channels required                | ARIA label             |
+| ----------- | ------------------------- | ----------------------------------------------------- | --------------------------------------- | ---------------------- |
+| Certain     | `--certainty-certain`     | Confirmed by strong primary evidence                  | Color + filled circle icon + text label | "Certainty: Certain"   |
+| Probable    | `--certainty-probable`    | Supported by evidence but not conclusive              | Color + thick ring icon + text label    | "Certainty: Probable"  |
+| Possible    | `--certainty-possible`    | Plausible but weakly evidenced                        | Color + thin ring icon + text label     | "Certainty: Possible"  |
+| Unknown     | `--certainty-unknown`     | No evidence or insufficient evidence to assess        | Color + dashed ring icon + text label   | "Certainty: Unknown"   |
+| Unevidenced | `--certainty-unevidenced` | A claim exists but zero evidence entries are attached | Color + dashed circle icon + text label | "No evidence attached" |
 
 #### Encoding Rules
 
-1. **Dual-channel minimum:** Certainty must NEVER rely on color alone. Every certainty indicator must use at minimum two visual channels: color AND a distinct icon shape. The icon shapes above (filled circle, three-quarter, half, ring, dashed ring) are the canonical set. They form a visual progression from "full" to "empty" that remains distinguishable in grayscale.
+1. **Dual-channel minimum:** Certainty must NEVER rely on color alone. Every certainty indicator must use at minimum two visual channels: color AND a distinct icon shape. The icon shapes above (filled disc, thick ring, thin ring, dashed ring) are the canonical set. They form a visual progression from "full" to "empty" that remains distinguishable in grayscale.
+
+   The shapes are deliberately **categorical, not proportional**. An earlier implementation drew them as pie wedges at 100/75/25/0%, which asserts a numeric confidence the model does not hold — README section 2 records that decimal confidence scores were tried and rejected because "a number implies a statistical basis that does not exist". Do not restore fractional fills: the ordering is real, the fraction is not.
 
 2. **Color direction:** The palette must progress from a "confident" hue (cool or neutral) to an "attention-seeking" hue for Unknown/Unevidenced. Specifically:
    - A green-to-red spectrum is EXCLUDED because it fails under protanopia and deuteranopia.
@@ -724,7 +726,7 @@ Used by: `/persons`, `/events`, `/sources`, `/relations`
 ```
 +--------------------------------------------------+
 | PageHeader                                        |
-|   h1: "Johann von Dalberg"    [Edit] [Delete]     |
+|   h1: "Johann von Dalberg"            [Edit]      |
 |   Breadcrumb: Persons > Johann von Dalberg        |
 +--------------------------------------------------+
 | AttributesCard                                    |
@@ -737,9 +739,22 @@ Used by: `/persons`, `/events`, `/sources`, `/relations`
 | TabContent                                        |
 |   (depends on active tab)                         |
 +--------------------------------------------------+
+| DeleteSection (border-t, low-emphasis)            |
+|   "...marked as deleted..."          [Delete]     |
++--------------------------------------------------+
 ```
 
 Used by: `/persons/[id]`, `/events/[id]`, `/sources/[id]`
+
+`Delete` does not sit in the PageHeader next to `Edit`. A solid destructive
+button at that spot competes for attention with the page's primary action
+(issue #70) — Edit is what most visits to a detail page are for; Delete is
+rare and consequential enough that reaching it should take a deliberate
+scroll, not a stray click next to Edit. It lives in its own separated
+region below the tab content instead, as a low-emphasis (outline/ghost)
+destructive control with a short muted explanation beside it. It stays
+reachable — this is not the "bury it in a settings submenu" pattern — just
+no longer first in the header's visual hierarchy.
 
 On wide screens (>=1280px), consider a two-column variant where the AttributesCard occupies the left column and the tabbed panel occupies the right column, reducing vertical scrolling for data-dense entities (Research Principle 3.7).
 

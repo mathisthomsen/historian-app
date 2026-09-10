@@ -119,11 +119,18 @@ export function PropertyEvidenceBadge({
           }
         >
           {isWarning ? (
-            // The warning state's entire content used to be the digit 0, and the
-            // word "Unbelegt" appeared in no message file.
+            // The badge always renders the numeral (0 here, since isWarning only
+            // fires at count === 0) so every field reads as a number at a
+            // glance. The warning state stays visually distinct through the
+            // icon + dashed border/tokens, not by swapping the number out for
+            // the word "Unbelegt" — that word only ever appeared on the DATE
+            // fields (the only callers passing `certainty`), so birth/death
+            // place and notes rendered a bare, unexplained "0" (issue #70/#71).
+            // The full sentence still reaches assistive tech via `label` above
+            // (aria-label/title), unchanged.
             <>
               <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-              {t("unevidenced")}
+              {count}
             </>
           ) : (
             count
