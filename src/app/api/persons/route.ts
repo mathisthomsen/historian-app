@@ -133,6 +133,11 @@ export async function POST(request: NextRequest) {
     return forbidden();
   }
 
+  // Sanitised once, so the stored value and the value certainty is normalised
+  // against are the same string.
+  const birthPlace = data.birth_place ? sanitize(data.birth_place) : null;
+  const deathPlace = data.death_place ? sanitize(data.death_place) : null;
+
   const createData: Prisma.PersonUncheckedCreateInput = {
     project_id: data.project_id,
     created_by_id: user.id,
@@ -142,19 +147,19 @@ export async function POST(request: NextRequest) {
     birth_month: data.birth_month ?? null,
     birth_day: data.birth_day ?? null,
     birth_date_certainty: data.birth_date_certainty ?? "UNKNOWN",
-    birth_place: data.birth_place ? sanitize(data.birth_place) : null,
+    birth_place: birthPlace,
     // Certainty qualifies an assertion; with no place there is nothing to
     // qualify, so it is forced to UNKNOWN rather than stored against an
-    // em-dash (see certaintyForValue).
-    birth_place_certainty:
-      certaintyForValue(data.birth_place, data.birth_place_certainty) ?? "UNKNOWN",
+    // em-dash (see certaintyForValue). Normalised against the SANITISED value:
+    // "<b></b>" is non-empty input that sanitises to "", so passing the raw
+    // string here preserved a CERTAIN against a place that renders as nothing.
+    birth_place_certainty: certaintyForValue(birthPlace, data.birth_place_certainty) ?? "UNKNOWN",
     death_year: data.death_year ?? null,
     death_month: data.death_month ?? null,
     death_day: data.death_day ?? null,
     death_date_certainty: data.death_date_certainty ?? "UNKNOWN",
-    death_place: data.death_place ? sanitize(data.death_place) : null,
-    death_place_certainty:
-      certaintyForValue(data.death_place, data.death_place_certainty) ?? "UNKNOWN",
+    death_place: deathPlace,
+    death_place_certainty: certaintyForValue(deathPlace, data.death_place_certainty) ?? "UNKNOWN",
     notes: data.notes ? sanitize(data.notes) : null,
   };
 

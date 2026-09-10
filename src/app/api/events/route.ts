@@ -248,6 +248,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Sanitised once, so the stored value and the value certainty is normalised
+  // against are the same string.
+  const eventLocation = data.location ? sanitize(data.location) : null;
+
   const event = await prisma.event.create({
     data: {
       project_id: data.project_id,
@@ -263,10 +267,12 @@ export async function POST(request: NextRequest) {
       end_month: data.end_month ?? null,
       end_day: data.end_day ?? null,
       end_date_certainty: data.end_date_certainty ?? "UNKNOWN",
-      location: data.location ? sanitize(data.location) : null,
+      location: eventLocation,
       // Certainty qualifies an assertion; with no location there is nothing to
-      // qualify (see certaintyForValue).
-      location_certainty: certaintyForValue(data.location, data.location_certainty) ?? "UNKNOWN",
+      // qualify (see certaintyForValue). Normalised against the SANITISED
+      // value: "<b></b>" is non-empty input that sanitises to "", so the raw
+      // string preserved a CERTAIN against a location that renders as nothing.
+      location_certainty: certaintyForValue(eventLocation, data.location_certainty) ?? "UNKNOWN",
       parent_id: data.parent_id ?? null,
       notes: data.notes ? sanitize(data.notes) : null,
     },

@@ -264,9 +264,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   {
     const effectiveLocation =
       data.location !== undefined ? (updateData.location as string | null) : existing.location;
-    const effectiveCertainty = data.location_certainty ?? existing.location_certainty;
-    const resolved = certaintyForValue(effectiveLocation, effectiveCertainty);
-    if (resolved !== undefined && resolved !== existing.location_certainty) {
+    const pending = data.location_certainty ?? existing.location_certainty;
+    const resolved = certaintyForValue(effectiveLocation, pending);
+    // Compared against the pending value, not storage: on an event that
+    // already had no location and UNKNOWN, a PUT sending only
+    // `location_certainty: CERTAIN` normalised to UNKNOWN, which equalled
+    // storage, so the pending CERTAIN was written through.
+    if (resolved !== undefined && resolved !== pending) {
       updateData.location_certainty = resolved;
     }
   }
@@ -298,7 +302,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   ] as const;
 
   for (const field of loggableFields) {
-    if (!(field in data)) continue;
+    // `updateData` as well as `data`: normalisation can change a field the
+    // request never mentioned (clearing a location resets its certainty), and
+    // logging only submitted keys left that derived change out of the audit
+    // trail — the one record a reviewer would look for to explain it.
+    if (!(field in data) && !(field in updateData)) continue;
     const oldVal = existing[field];
     const newVal = updated[field];
     if (oldVal !== newVal) {

@@ -132,9 +132,14 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const certaintyField = `${field}_certainty` as const;
     const effectivePlace =
       data[field] !== undefined ? (updateData[field] as string | null) : existing[field];
-    const effectiveCertainty = data[certaintyField] ?? existing[certaintyField];
-    const resolved = certaintyForValue(effectivePlace, effectiveCertainty);
-    if (resolved !== undefined && resolved !== existing[certaintyField]) {
+    const pending = data[certaintyField] ?? existing[certaintyField];
+    const resolved = certaintyForValue(effectivePlace, pending);
+    // Compared against the value the request would otherwise write, not
+    // against the stored one. Comparing to storage left a hole: on a record
+    // that already had no place and UNKNOWN, a PUT sending only
+    // `birth_place_certainty: CERTAIN` normalised to UNKNOWN, which equalled
+    // storage, so the assignment was skipped and the pending CERTAIN survived.
+    if (resolved !== undefined && resolved !== pending) {
       updateData[certaintyField] = resolved;
     }
   }
@@ -209,7 +214,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   ] as const;
 
   for (const field of loggableFields) {
-    if (!(field in data)) continue;
+    // `updateData` as well as `data`: normalisation can change a field the
+    // request never mentioned (clearing a place resets its certainty), and
+    // logging only submitted keys left that derived change out of the audit
+    // trail — the one record a reviewer would look for to explain it.
+    if (!(field in data) && !(field in updateData)) continue;
     const oldVal = existing[field];
     const newVal = updatedPerson[field];
     if (oldVal !== newVal) {
