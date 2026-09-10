@@ -8,6 +8,9 @@ const PUBLIC_PATHS = new Set([
   "/auth/verify",
   "/auth/forgot-password",
   "/auth/reset-password",
+  "/changelog",
+  "/impressum",
+  "/datenschutz",
   "/",
 ]);
 

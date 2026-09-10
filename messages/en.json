@@ -638,5 +638,22 @@
     "previous": "Previous",
     "next": "Next",
     "page": "Page"
+  },
+  "marketing": {
+    "nav": {
+      "features": "Features",
+      "changelog": "Changelog",
+      "signIn": "Sign in",
+      "register": "Create account",
+      "toApp": "Open app",
+      "label": "Main navigation"
+    },
+    "footer": {
+      "imprint": "Imprint",
+      "privacy": "Privacy",
+      "changelog": "Changelog",
+      "github": "GitHub",
+      "label": "Footer"
+    }
   }
 }
