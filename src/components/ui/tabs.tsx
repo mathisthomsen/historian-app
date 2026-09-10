@@ -11,21 +11,29 @@ const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      // `overflow-x-auto` makes the strip scroll WITHIN itself instead of the
-      // page widening around it (issue #70). `max-w-full` stops it from ever
-      // claiming more than its container even before it has scrolled.
-      // `overscroll-x-contain` keeps a swipe past the strip's own scroll end
-      // from chaining into a page-level rubber-band scroll.
-      // `scrollbar-none` hides the scrollbar chrome (see globals.css) — the
-      // scroll affordance here is the swipe itself, per architecture.md.
-      "border-border text-muted-foreground scrollbar-none inline-flex h-10 w-full max-w-full items-center justify-start overflow-x-auto overscroll-x-contain border-b",
-      className,
-    )}
-    {...props}
-  />
+  // The scroll container is a wrapper, not the tablist itself.
+  //
+  // `overflow-x: auto` forces the computed `overflow-y` to `auto` as well —
+  // there is no way to clip one axis and not the other. Scrolling the tablist
+  // directly therefore clipped every trigger's focus ring, which is drawn
+  // OUTSIDE the trigger box (`ring-2` + `ring-offset-2`): a keyboard user saw a
+  // stray 2px line at one edge instead of a ring (WCAG 2.4.7).
+  //
+  // `-my-2 py-2` moves the clip boundary 8px beyond the strip on each side, so
+  // a 4px ring sits comfortably inside it, while the negative margin cancels
+  // the padding's effect on layout. The tablist keeps `w-full min-w-max` so it
+  // fills the wrapper when the triggers fit and overflows it when they do not
+  // (issue #70).
+  <div className="scrollbar-none -my-2 max-w-full overflow-x-auto overscroll-x-contain py-2">
+    <TabsPrimitive.List
+      ref={ref}
+      className={cn(
+        "border-border text-muted-foreground inline-flex h-10 w-full min-w-max items-center justify-start border-b",
+        className,
+      )}
+      {...props}
+    />
+  </div>
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 

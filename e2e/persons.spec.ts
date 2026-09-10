@@ -331,12 +331,15 @@ test.describe("TC-P-13: Tab strip overflow at mobile viewport", () => {
     await expect(page.getByRole("tablist")).toBeVisible();
 
     const overflow = await page.evaluate(() => {
+      // The scroll container is the tablist's wrapper, not the tablist itself:
+      // scrolling the tablist directly clipped the triggers' focus ring.
       const tablist = document.querySelector('[role="tablist"]');
+      const scroller = tablist?.parentElement;
       return {
         pageScrollWidth: document.documentElement.scrollWidth,
         pageClientWidth: document.documentElement.clientWidth,
-        tablistScrollWidth: tablist?.scrollWidth ?? 0,
-        tablistClientWidth: tablist?.clientWidth ?? 0,
+        tablistScrollWidth: scroller?.scrollWidth ?? 0,
+        tablistClientWidth: scroller?.clientWidth ?? 0,
       };
     });
 

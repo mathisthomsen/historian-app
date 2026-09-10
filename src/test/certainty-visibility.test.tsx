@@ -124,35 +124,48 @@ describe("certainty markers are distinguishable by shape, not colour alone", () 
     expect(marker.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("sweeps a different wedge for POSSIBLE than for PROBABLE", () => {
-    // The greyscale-safe distinction: 25% vs 75% of the disc inked. If a
-    // regression made every level the same wedge and varied only the colour,
-    // this is the assertion that catches it.
-    const { container: probable, unmount } = renderWithProviders(
-      <CertaintyMarker certainty="PROBABLE" />,
-    );
-    const probableD = probable.querySelector("path")?.getAttribute("d");
-    unmount();
+  it("gives each level a categorical shape, never a proportional fill", () => {
+    // The greyscale-safe distinction, and the reason it is NOT a pie wedge:
+    // README §2 records that decimal confidence was tried and rejected because
+    // "a number implies a statistical basis that does not exist". A 75% wedge
+    // asserts that basis visually. These four are treatments of one circle —
+    // filled, thick ring, thin ring, dashed ring — so the ordering survives
+    // without a fraction being claimed.
+    const shapes = (["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"] as const).map((level) => {
+      const { container, unmount } = renderWithProviders(<CertaintyMarker certainty={level} />);
+      const svg = container.querySelector("svg")!;
+      const circle = svg.querySelector("circle")!;
+      const shape = {
+        shape: svg.getAttribute("data-shape"),
+        fill: circle.style.fill,
+        strokeWidth: circle.style.strokeWidth,
+        dash: circle.style.strokeDasharray,
+      };
+      unmount();
+      return shape;
+    });
 
-    const { container: possible } = renderWithProviders(<CertaintyMarker certainty="POSSIBLE" />);
-    const possibleD = possible.querySelector("path")?.getAttribute("d");
-
-    expect(probableD).toBeTruthy();
-    expect(possibleD).toBeTruthy();
-    expect(probableD).not.toBe(possibleD);
+    // No level draws a wedge — a <path> is how a pie is expressed in SVG.
+    expect(shapes.map((s) => s.shape)).toEqual([
+      "filled",
+      "thick-ring",
+      "thin-ring",
+      "dashed-ring",
+    ]);
+    // Only CERTAIN is filled; the rest are rings of differing weight.
+    expect(shapes[0]!.fill).not.toBe("none");
+    expect(shapes[1]!.strokeWidth).not.toBe(shapes[2]!.strokeWidth);
+    // UNKNOWN is the only dashed one, so it is not merely "a thin ring again".
+    expect(shapes[3]!.dash).toBeTruthy();
+    expect(shapes[2]!.dash).toBeFalsy();
   });
 
-  it("fills the full circle for CERTAIN and only outlines it for UNKNOWN", () => {
-    const { container: certain } = renderWithProviders(<CertaintyMarker certainty="CERTAIN" />);
-    expect(certain.querySelector("path")).not.toBeInTheDocument();
-    expect(certain.querySelector("circle")).toBeInTheDocument();
-
-    const { container: unknown } = renderWithProviders(<CertaintyMarker certainty="UNKNOWN" />);
-    expect(unknown.querySelector("path")).not.toBeInTheDocument();
-    expect(unknown.querySelector("circle")).toBeInTheDocument();
-
-    const { container: probable } = renderWithProviders(<CertaintyMarker certainty="PROBABLE" />);
-    expect(probable.querySelector("path")).toBeInTheDocument();
+  it("never renders a pie wedge for any level", () => {
+    for (const level of ["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"] as const) {
+      const { container, unmount } = renderWithProviders(<CertaintyMarker certainty={level} />);
+      expect(container.querySelector("path")).not.toBeInTheDocument();
+      unmount();
+    }
   });
 });
 

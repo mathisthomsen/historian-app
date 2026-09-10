@@ -6,16 +6,28 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 /**
- * Fraction of the circle filled per level. This IS the shape distinction
- * (WCAG 1.4.1) — the four levels differ by wedge size, not colour alone, so
- * they stay legible for colour-blind users and in a screenshot desaturated
- * to greyscale.
+ * The shape drawn per level. Each is a distinct *categorical* treatment of one
+ * circle — filled, thick ring, thin ring, dashed ring — not a quantity of it.
+ *
+ * This is deliberately NOT a proportional fill. An earlier version of this
+ * marker drew a pie wedge at 100/75/25/0%, which put a number on the claim that
+ * the model does not contain: README §2 records that decimal confidence scores
+ * were tried and rejected, because "researchers cannot meaningfully distinguish
+ * 0.7 from 0.75, and a number implies a statistical basis that does not exist."
+ * A 75% wedge asserts exactly that basis visually, so it is gone. What survives
+ * is the ordering, which is real — CERTAIN outranks PROBABLE outranks POSSIBLE
+ * — carried as decreasing ink rather than as a measured fraction.
+ *
+ * The four also differ by shape, not colour alone (WCAG 1.4.1), so they stay
+ * readable when desaturated.
  */
-const FRACTIONS: Record<Certainty, number> = {
-  CERTAIN: 1,
-  PROBABLE: 0.75,
-  POSSIBLE: 0.25,
-  UNKNOWN: 0,
+type MarkerShape = "filled" | "thick-ring" | "thin-ring" | "dashed-ring";
+
+const SHAPE: Record<Certainty, MarkerShape> = {
+  CERTAIN: "filled",
+  PROBABLE: "thick-ring",
+  POSSIBLE: "thin-ring",
+  UNKNOWN: "dashed-ring",
 };
 
 /**
@@ -33,23 +45,12 @@ const TOKEN: Record<Certainty, string> = {
 
 const SIZE = 15;
 const CENTER = SIZE / 2;
-const RADIUS = CENTER - 1.1; // leaves room for the outline stroke
-const STROKE_WIDTH = 1.25;
+const THICK_STROKE = 3.5;
+const THIN_STROKE = 1.5;
 
-/** Point on the circle at `angleDeg` clockwise from 12 o'clock. */
-function pointOnCircle(angleDeg: number): readonly [number, number] {
-  const rad = ((angleDeg - 90) * Math.PI) / 180;
-  return [CENTER + RADIUS * Math.cos(rad), CENTER + RADIUS * Math.sin(rad)];
-}
-
-/** SVG path for a pie wedge sweeping clockwise from 12 o'clock, or null for 0%. */
-function wedgePath(fraction: number): string | null {
-  if (fraction <= 0) return null;
-  const endAngle = 360 * fraction;
-  const largeArc = fraction > 0.5 ? 1 : 0;
-  const [sx, sy] = pointOnCircle(0);
-  const [ex, ey] = pointOnCircle(endAngle);
-  return `M ${CENTER} ${CENTER} L ${sx} ${sy} A ${RADIUS} ${RADIUS} 0 ${largeArc} 1 ${ex} ${ey} Z`;
+/** Radius is measured to the stroke's centreline, so it shrinks as the stroke thickens. */
+function radiusFor(strokeWidth: number): number {
+  return CENTER - strokeWidth / 2 - 0.5;
 }
 
 interface CertaintyMarkerProps {
@@ -66,22 +67,21 @@ interface CertaintyMarkerProps {
  * were pixel-identical across 25 rows (issue #37). A full Badge per date is too
  * heavy at list density; this is the same token family at row scale.
  *
- * Originally a glyph (`● ◕ ◔ ○`) in a bordered, filled ring — but a small
- * filled dot inside a larger ring reads as a selected radio button, and at
- * 9.6px `◕` and `◔` are not reliably distinguishable (issue #71). This is a
- * purpose-drawn "pie": a circle outline plus a filled wedge for the level's
- * fraction, no enclosing chip/border/background. Two more reasons beyond the
- * reported symptom: font coverage for `◕`/`◔` is not guaranteed across
- * platforms (an SVG is deterministic where a glyph can fall back to tofu),
- * and the wedge IS the quantity, so the quarter/three-quarter/full reading
- * survives at 14-16px where a centred glyph does not.
+ * Originally a glyph (`● ◕ ◔ ○`) in a bordered, filled ring. That read as a
+ * selected radio button, and at 9.6px `◕` and `◔` were not distinguishable
+ * (issue #71); glyph coverage for them is not guaranteed across platforms
+ * either, so the marker could render as tofu. Drawn as an SVG it is
+ * deterministic — see SHAPE above for why the shapes are categorical rather
+ * than proportional.
  */
 export function CertaintyMarker({ certainty, className }: CertaintyMarkerProps) {
   const t = useTranslations("common");
   const label = t("certaintyLabel", { level: t(`certainty.${certainty}`) });
-  const fraction = FRACTIONS[certainty];
+  const shape = SHAPE[certainty];
   const color = TOKEN[certainty];
-  const path = wedgePath(fraction);
+
+  const strokeWidth = shape === "thick-ring" ? THICK_STROKE : THIN_STROKE;
+  const radius = shape === "filled" ? CENTER - 1 : radiusFor(strokeWidth);
 
   return (
     <span
@@ -96,22 +96,23 @@ export function CertaintyMarker({ certainty, className }: CertaintyMarkerProps) 
         height={SIZE}
         viewBox={`0 0 ${SIZE} ${SIZE}`}
         className="shrink-0"
+        data-shape={shape}
       >
-        {fraction >= 1 ? (
-          // 100%: a full wedge and the outline would coincide, so just fill the disc.
-          <circle cx={CENTER} cy={CENTER} r={RADIUS} style={{ fill: color }} />
-        ) : (
-          <>
-            {path && <path d={path} style={{ fill: color }} />}
-            <circle
-              cx={CENTER}
-              cy={CENTER}
-              r={RADIUS}
-              style={{ stroke: color, fill: "none" }}
-              strokeWidth={STROKE_WIDTH}
-            />
-          </>
-        )}
+        <circle
+          cx={CENTER}
+          cy={CENTER}
+          r={radius}
+          style={
+            shape === "filled"
+              ? { fill: color }
+              : {
+                  stroke: color,
+                  fill: "none",
+                  strokeWidth,
+                  ...(shape === "dashed-ring" ? { strokeDasharray: "2 2" } : {}),
+                }
+          }
+        />
       </svg>
     </span>
   );
