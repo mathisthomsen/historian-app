@@ -1,9 +1,12 @@
 import { getTranslations } from "next-intl/server";
 
+import { CtaBand } from "@/components/marketing/CtaBand";
+import { EditorialPassage } from "@/components/marketing/EditorialPassage";
 import { EvidenceCitation } from "@/components/marketing/EvidenceCitation";
 import { Hero } from "@/components/marketing/Hero";
 import { HighlightPanel } from "@/components/marketing/HighlightPanel";
 import { HighlightRail } from "@/components/marketing/HighlightRail";
+import { OpenDevelopment } from "@/components/marketing/OpenDevelopment";
 import { RelationDiagram } from "@/components/marketing/RelationDiagram";
 import { CertaintyMarker } from "@/components/research/CertaintyMarker";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +18,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   return (
     <>
       <Hero locale={locale} />
+
+      <div className="mt-[var(--section-gap-lg)]">
+        <EditorialPassage />
+      </div>
 
       <div className="mt-[var(--section-gap-lg)]">
         <HighlightRail>
@@ -65,6 +72,14 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             />
           </HighlightPanel>
         </HighlightRail>
+      </div>
+
+      <div className="mt-[var(--section-gap-lg)]">
+        <OpenDevelopment locale={locale} />
+      </div>
+
+      <div className="my-[var(--section-gap-lg)]">
+        <CtaBand locale={locale} />
       </div>
     </>
   );

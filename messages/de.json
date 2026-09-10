@@ -694,6 +694,23 @@
           "relation": "bezeugt"
         }
       }
+    },
+    "editorial": {
+      "body": "Jede Datenbank zwingt Sie irgendwann zu einer Angabe, die Sie nicht belegen können. Ein Datumsfeld will einen Tag. Ein Ortsfeld will einen Ort. Die Fußnote, die das relativiert, steht am Ende in Ihrem Kopf — nicht in Ihren Daten."
+    },
+    "openDev": {
+      "kicker": "Stand der Dinge",
+      "title": "Evidoxa wird an Dissertationen entwickelt, nicht an Personas.",
+      "body": "Was als Nächstes gebaut wird, entscheiden die Historikerinnen und Historiker, die damit arbeiten.",
+      "shipped": "Personen, Ereignisse, Quellen und Beziehungen — nutzbar",
+      "next": "Import und Export — als Nächstes",
+      "planned": "Zusammenarbeit im Team — geplant",
+      "changelogLink": "Vollständiges Changelog"
+    },
+    "cta": {
+      "title": "Fangen Sie mit einer Quelle an.",
+      "body": "Ein Konto genügt. Ihr erstes Projekt wird automatisch angelegt.",
+      "action": "Konto erstellen"
     }
   }
 }

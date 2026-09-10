@@ -694,6 +694,23 @@
           "relation": "attests"
         }
       }
+    },
+    "editorial": {
+      "body": "Every database eventually forces you into a statement you cannot evidence. A date field wants a day. A place field wants a place. The footnote that qualifies it ends up in your head — not in your data."
+    },
+    "openDev": {
+      "kicker": "Where this stands",
+      "title": "Evidoxa is built against dissertations, not personas.",
+      "body": "What gets built next is decided by the historians doing the work.",
+      "shipped": "People, events, sources and relations — usable",
+      "next": "Import and export — next",
+      "planned": "Team collaboration — planned",
+      "changelogLink": "Full changelog"
+    },
+    "cta": {
+      "title": "Start with one source.",
+      "body": "An account is all it takes. Your first project is created automatically.",
+      "action": "Create account"
     }
   }
 }
