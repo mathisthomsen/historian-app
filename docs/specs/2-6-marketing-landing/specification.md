@@ -285,13 +285,27 @@ Three options were considered; the hybrid is chosen.
   no longer has. This is exactly the failure D3 exists to prevent.
 - **(c) Hybrid — chosen.**
 
-**Reused verbatim** (verified as pure, prop-driven, `"use client"` + `useTranslations` only — no data
-fetching, no router, no session, no project context):
+**Reused verbatim** (each re-verified against source, not assumed):
 
-- `src/components/research/CertaintyMarker.tsx`
-- `src/components/research/CertaintySelector.tsx`
-- `src/components/relations/PropertyEvidenceBadge.tsx`
-- `src/components/ui/badge.tsx`
+| Component                                       | Why it is safe on a public page                                                                                                                                                                                                                                |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/research/CertaintyMarker.tsx`   | `"use client"` + `useTranslations("common")`. Props are `{ certainty: Certainty; className?: string }`. Renders an SVG. No fetch, no router, no session. Needs `common.certaintyLabel` and `common.certainty.{LEVEL}`, both already in `messages/{de,en}.json` |
+| `src/components/research/CertaintySelector.tsx` | `"use client"` + `useTranslations`. Props are `{ value, onChange, disabled?, label? }` — fully controlled, no data access                                                                                                                                      |
+| `src/components/ui/badge.tsx`                   | No `"use client"` at all; a `cva` styled `div`. Carries the certainty variants `certain \| probable \| possible \| unknown \| unevidenced`, which map to the `.certainty-*` utilities in `globals.css`                                                         |
+
+> **Correction (2026-09-10).** An earlier revision of this section also listed
+> `src/components/relations/PropertyEvidenceBadge.tsx` as a pure leaf. **It is not.** Source inspection
+> shows `useEffect` + `fetch` against an authenticated evidence-count endpoint, plus popover open state.
+> Rendering it on a public page would fire an authenticated request from a logged-out visitor and
+> display its failure state. It is removed from the reuse list.
+>
+> Panel 3 ("every claim points at its source") instead uses a **marketing-only** static
+> `EvidenceCitation` presentational component composed from `Badge`. This does not betray decision D3:
+> the drift guarantee that matters is over the **certainty visual language**, which `CertaintyMarker`
+> and the `Badge` certainty variants cover completely. An evidence _count affordance_ is not part of
+> that language, and extracting a shared leaf out of `PropertyEvidenceBadge` would push this PR's diff
+> into app code for no correctness gain — which CLAUDE.md's "do not let a fix grow the PR" rule
+> exists to prevent.
 
 **New, marketing-only composition shells** in `src/components/marketing/`:
 
@@ -303,6 +317,7 @@ HeroAppFrame.tsx       cropped app frame; composes reused leaves
 HighlightRail.tsx      scroll-snap container, paddles, live region
 HighlightPanel.tsx
 RelationDiagram.tsx    inline SVG, themed via currentColor + tokens
+EvidenceCitation.tsx   static citation chip for panel 3 (replaces PropertyEvidenceBadge)
 EditorialPassage.tsx
 OpenDevelopment.tsx
 AccessRequestForm.tsx  react-hook-form + Zod, mirrors RegisterForm patterns
@@ -467,10 +482,17 @@ what a reviewer can hold, and A alone is already a large diff.
 
 **Decided (2026-09-10): two implementation plans and two PRs**, A then B.
 
-- **Part A — #82.** The marketing surface. Ships first, with access-form copy that does **not** yet
-  promise a closed alpha, because at that point registration is still open and the claim would be false.
-- **Part B — #29.** Access requests and the invite gate. Flips that copy to "geschlossene Alpha" in the
-  same PR that closes registration, so the page never claims a gate that does not exist.
+- **Part A — #82.** The marketing surface. Band 5 ships as a **plain CTA band** pointing at
+  `/[locale]/auth/register` — honest, because registration is genuinely open at that point. No form,
+  no `AccessRequest` table, no mention of a closed alpha.
+- **Part B — #29.** Access requests and the invite gate. **Replaces** band 5's CTA with the
+  access-request form and flips the copy to "geschlossene Alpha", in the same PR that closes
+  registration — so the page never claims a gate that does not exist, and never offers a signup that
+  no longer works.
+
+> An earlier draft of this section said Part A ships "the access form with different copy". That was
+> ambiguous and unbuildable: the form POSTs to `/api/access-request`, which is Part B. Band 5 in
+> Part A is a CTA, not a form.
 
 The copy hand-off between the two is the deploy-ordering hazard here, and it is why the flip lives in
 B's PR rather than A's.
