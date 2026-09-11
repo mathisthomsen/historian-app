@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Children, useCallback, useRef, useState } from "react";
+import { Children, useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -20,8 +20,26 @@ export function HighlightRail({ children }: HighlightRailProps) {
   const railRef = useRef<HTMLUListElement>(null);
   const [active, setActive] = useState(0);
 
+  // Issue #86: goTo() sets `active` and starts a scroll animation; the same
+  // scroll fires `onScroll` -> syncFromScroll(), which recomputes `active`
+  // from the current (possibly mid-animation, not-yet-settled) scrollLeft
+  // and can clobber the value goTo() just set. This ref suppresses
+  // syncFromScroll for the duration of a paddle-triggered scroll so it can
+  // only take over again once that scroll has actually settled — it must
+  // stay a no-op during native swipe/drag scrolling, which is what keeps the
+  // announcement honest for touch users.
+  const programmaticScrollRef = useRef(false);
+  const scrollEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const panels = Children.toArray(children);
   const total = panels.length;
+
+  const clearScrollEndTimeout = useCallback(() => {
+    if (scrollEndTimeoutRef.current !== null) {
+      clearTimeout(scrollEndTimeoutRef.current);
+      scrollEndTimeoutRef.current = null;
+    }
+  }, []);
 
   const goTo = useCallback(
     (index: number) => {
@@ -30,17 +48,44 @@ export function HighlightRail({ children }: HighlightRailProps) {
       const rail = railRef.current;
       const item = rail?.children[next] as HTMLElement | undefined;
       if (!rail || !item || typeof rail.scrollTo !== "function") return;
+
+      programmaticScrollRef.current = true;
+      clearScrollEndTimeout();
+      // Fallback for browsers without a `scrollend` event (e.g. Safari <
+      // 17.4): release the suppression after a generous timeout so a manual
+      // swipe right after a paddle click is never permanently ignored.
+      scrollEndTimeoutRef.current = setTimeout(() => {
+        programmaticScrollRef.current = false;
+        scrollEndTimeoutRef.current = null;
+      }, 600);
+
       rail.scrollTo({
         left: item.offsetLeft - rail.offsetLeft,
         behavior: prefersReducedMotion() ? "auto" : "smooth",
       });
     },
-    [total],
+    [total, clearScrollEndTimeout],
   );
 
+  const handleScrollEnd = useCallback(() => {
+    programmaticScrollRef.current = false;
+    clearScrollEndTimeout();
+  }, [clearScrollEndTimeout]);
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.addEventListener("scrollend", handleScrollEnd);
+    return () => rail.removeEventListener("scrollend", handleScrollEnd);
+  }, [handleScrollEnd]);
+
+  useEffect(() => clearScrollEndTimeout, [clearScrollEndTimeout]);
+
   // Keeps the announced position honest when the user swipes or drags the
-  // native scroller instead of using the paddles.
+  // native scroller instead of using the paddles. Suppressed while a paddle
+  // click's own scroll is still in flight (see programmaticScrollRef above).
   const syncFromScroll = useCallback(() => {
+    if (programmaticScrollRef.current) return;
     const rail = railRef.current;
     if (!rail) return;
     const items = Array.from(rail.children) as HTMLElement[];
