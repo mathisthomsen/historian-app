@@ -75,3 +75,22 @@ test.describe("marketing landing page", () => {
     expect(overflow).toBe(false);
   });
 });
+
+test.describe("marketing landing page — no JS (F2)", () => {
+  // Regression guard for F2: the only prior protection for the .js reveal
+  // gate was a regex over globals.css (Reveal.test.tsx), which tests the
+  // stylesheet's text, not what a browser actually computes. A visitor with
+  // JS disabled never gets the `.js` class added, so every `.reveal` must
+  // stay at its unhidden, opacity: 1 default.
+  test.use({ javaScriptEnabled: false });
+
+  test("reveals are all visible without JavaScript", async ({ page }) => {
+    await page.goto("/de");
+    const reveals = page.locator(".reveal");
+    const count = await reveals.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      await expect(reveals.nth(i)).toHaveCSS("opacity", "1");
+    }
+  });
+});

@@ -680,7 +680,8 @@
       "evidence": {
         "kicker": "Belege",
         "title": "Jede Aussage zeigt auf ihre Quelle.",
-        "body": "Belege hängen am einzelnen Feld — mit Fundstelle, Zitat und diplomatischer Transkription."
+        "body": "Belege hängen am einzelnen Feld — mit Fundstelle, Zitat und diplomatischer Transkription.",
+        "sourceLabel": "Nürnberger Polizeiakte, 1828"
       },
       "relations": {
         "kicker": "Beziehungen",

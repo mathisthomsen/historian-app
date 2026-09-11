@@ -607,8 +607,12 @@
 
      Content is visible by DEFAULT. Hiding is opt-in, and only once the inline
      script in the marketing layout has proven JS is running — otherwise a
-     no-JS visitor, a crawler, or a failed bundle would see a blank page below
-     the hero, since SSR always emits data-revealed="false". */
+     no-JS visitor or a crawler would see a blank page below the hero, since
+     SSR always emits data-revealed="false". A failed bundle (chunks 404,
+     hydration never happens) is covered too: the same inline script arms a
+     watchdog that strips the .js class again after a grace period unless
+     Reveal's mount effect cancels it first — see the marketing layout and
+     Reveal.tsx. */
   .js .reveal {
     opacity: 0;
     transform: translateY(0.75rem);

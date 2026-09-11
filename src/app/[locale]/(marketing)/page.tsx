@@ -87,7 +87,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
               title={t("evidence.title")}
               body={t("evidence.body")}
             >
-              <EvidenceCitation count={3} sourceLabel="Nürnberger Polizeiakte, 1828" />
+              <EvidenceCitation count={3} sourceLabel={t("evidence.sourceLabel")} />
             </HighlightPanel>
 
             <HighlightPanel

@@ -102,7 +102,17 @@ export function HighlightRail({ children }: HighlightRailProps) {
   }, []);
 
   return (
-    <section id="highlights" aria-label={t("label")} className="px-4 sm:px-6">
+    <section id="highlights" aria-labelledby="highlights-heading" className="px-4 sm:px-6">
+      {/*
+        Visually-hidden heading rather than aria-label: the section has no
+        visible heading of its own, which left the panel <h3>s (rendered by
+        HighlightPanel) skipping a level in the document's heading outline
+        (axe: heading-order). This restores the h2 without changing what's
+        visually on the page.
+      */}
+      <h2 id="highlights-heading" className="sr-only">
+        {t("label")}
+      </h2>
       {/*
         Explicit role="list" / role="listitem": Tailwind's preflight sets
         `list-style: none` on all <ul>/<ol>, and in WebKit specifically that
@@ -113,6 +123,7 @@ export function HighlightRail({ children }: HighlightRailProps) {
       <ul
         ref={railRef}
         role="list"
+        tabIndex={0}
         onScroll={syncFromScroll}
         className="grid snap-x snap-mandatory auto-cols-[86%] grid-flow-col gap-4 overflow-x-auto pb-4 [scrollbar-width:thin] sm:auto-cols-[52%] lg:auto-cols-[30%]"
       >
@@ -123,7 +134,7 @@ export function HighlightRail({ children }: HighlightRailProps) {
         ))}
       </ul>
 
-      <p aria-live="polite" className="sr-only">
+      <p aria-live="polite" aria-atomic="true" className="sr-only">
         {t("position", { current: active + 1, total })}
       </p>
 

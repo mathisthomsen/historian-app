@@ -680,7 +680,8 @@
       "evidence": {
         "kicker": "Evidence",
         "title": "Every claim points at its source.",
-        "body": "Evidence attaches to the individual field — with page reference, quotation and diplomatic transcription."
+        "body": "Evidence attaches to the individual field — with page reference, quotation and diplomatic transcription.",
+        "sourceLabel": "Nürnberger Polizeiakte, 1828"
       },
       "relations": {
         "kicker": "Relations",
