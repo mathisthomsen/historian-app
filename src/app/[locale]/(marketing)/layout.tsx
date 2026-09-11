@@ -14,6 +14,14 @@ export default async function MarketingLayout({
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {/* Blocking, first-in-tree: proves JS is running before any .reveal
+          element below can be painted. See globals.css .js .reveal — without
+          this class, .reveal content stays fully visible (F1). */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.classList.add('js')`,
+        }}
+      />
       <PublicNav isSignedIn={!!session?.user} locale={locale} />
       <main className="flex-1">{children}</main>
       <PublicFooter locale={locale} />

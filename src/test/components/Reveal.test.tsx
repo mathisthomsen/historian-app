@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { Reveal } from "@/components/marketing/Reveal";
@@ -41,6 +44,7 @@ describe("Reveal", () => {
     // is not the Reveal wrapper.
     const { container } = renderWithProviders(<Reveal>content</Reveal>);
     expect(container.querySelector("[data-revealed]")).toHaveAttribute("data-revealed", "false");
+    expect(IntersectionObserver).toHaveBeenCalled();
   });
 
   it("renders already revealed when reduced motion is requested", () => {
@@ -53,5 +57,25 @@ describe("Reveal", () => {
     mockReducedMotion(true);
     renderWithProviders(<Reveal>content</Reveal>);
     expect(IntersectionObserver).not.toHaveBeenCalled();
+  });
+});
+
+describe("Reveal CSS — visible by default for no-JS visitors (F1)", () => {
+  it("does not set opacity: 0 on a bare .reveal selector unscoped by .js", () => {
+    // SSR always emits data-revealed="false" (see prefersReducedMotion() returning
+    // false when `window` is undefined). If the base .reveal rule hides content
+    // unconditionally, then a no-JS visitor, a crawler, or a failed bundle would
+    // see a permanently blank page below the hero — the hiding must be opt-in,
+    // gated on a .js class that only lands once client JS has proven itself
+    // present (see the inline script in the marketing layout).
+    const css = readFileSync(resolve(process.cwd(), "src/styles/globals.css"), "utf-8");
+    const unscopedHidden = /(?<!\.js )\.reveal\s*\{[^}]*opacity:\s*0\b/.exec(css);
+    expect(
+      unscopedHidden,
+      `Found a bare, unscoped ".reveal" rule setting opacity: 0 — this hides content ` +
+        `from any visitor without JS. Scope it under ".js .reveal" instead. Match: ${JSON.stringify(
+          unscopedHidden?.[0],
+        )}`,
+    ).toBeNull();
   });
 });

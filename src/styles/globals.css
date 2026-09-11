@@ -603,8 +603,13 @@
 @layer components {
   /* Marketing scroll-reveal (Epic 2.6, spec §8.2).
      The reduced-motion branch is not merely a shorter transition — it is no
-     transition and no transform at all. */
-  .reveal {
+     transition and no transform at all.
+
+     Content is visible by DEFAULT. Hiding is opt-in, and only once the inline
+     script in the marketing layout has proven JS is running — otherwise a
+     no-JS visitor, a crawler, or a failed bundle would see a blank page below
+     the hero, since SSR always emits data-revealed="false". */
+  .js .reveal {
     opacity: 0;
     transform: translateY(0.75rem);
     transition:
@@ -612,14 +617,14 @@
       transform var(--duration-slow) var(--ease-out);
   }
 
-  .reveal[data-revealed="true"] {
+  .js .reveal[data-revealed="true"] {
     opacity: 1;
     transform: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .reveal,
-    .reveal[data-revealed="true"] {
+    .js .reveal,
+    .js .reveal[data-revealed="true"] {
       opacity: 1;
       transform: none;
       transition: none;
