@@ -596,6 +596,38 @@
 }
 
 /* =============================================================================
+   COMPONENTS LAYER
+   Reusable component-level classes that are more than a one-off utility
+   combination but do not belong in the base element reset.
+   ============================================================================= */
+@layer components {
+  /* Marketing scroll-reveal (Epic 2.6, spec §8.2).
+     The reduced-motion branch is not merely a shorter transition — it is no
+     transition and no transform at all. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(0.75rem);
+    transition:
+      opacity var(--duration-slow) var(--ease-out),
+      transform var(--duration-slow) var(--ease-out);
+  }
+
+  .reveal[data-revealed="true"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .reveal[data-revealed="true"] {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+}
+
+/* =============================================================================
    UTILITY LAYER
    Custom utility classes. All motion utilities include prefers-reduced-motion
    overrides. Typography and certainty badge utilities provide DRY shortcuts
