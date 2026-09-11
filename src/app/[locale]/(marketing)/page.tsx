@@ -12,6 +12,7 @@ import { RelationDiagram } from "@/components/marketing/RelationDiagram";
 import { Reveal } from "@/components/marketing/Reveal";
 import { CertaintyMarker } from "@/components/research/CertaintyMarker";
 import { Badge } from "@/components/ui/badge";
+import { env } from "@/lib/env";
 
 export async function generateMetadata({
   params,
@@ -20,10 +21,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "marketing.hero" });
-  // NEXT_PUBLIC_SITE_URL is not defined anywhere in this repo (checked env.ts,
-  // .env.example, next.config.ts, vercel.json) — this fallback is UNVERIFIED.
-  // Confirm the real production hostname before merging and replace it.
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://evidoxa.com";
+  // Marketing and the authenticated app are served from the same Next
+  // deployment, so the app origin is the site origin. If they are ever split
+  // into separate deployments, this needs its own validated env var.
+  const base = env.NEXT_PUBLIC_APP_URL;
 
   return {
     title: `Evidoxa — ${t("headline")}`,
