@@ -2144,7 +2144,11 @@ const PUBLIC_PATHS = ["", "/changelog", "/impressum", "/datenschutz"] as const;
 const LOCALES = ["de", "en"] as const;
 
 function baseUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://evidoxa.com";
+  // Marketing and app ship from ONE deployment, so the app origin is the site
+  // origin. NEXT_PUBLIC_APP_URL is already required and .url()-validated in
+  // src/lib/env.ts — do not invent a NEXT_PUBLIC_SITE_URL with a guessed
+  // fallback. If the two are ever split, that needs its own variable.
+  return env.NEXT_PUBLIC_APP_URL;
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -2166,14 +2170,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
 ```ts
 import type { MetadataRoute } from "next";
 
+// Every top-level directory under src/app/[locale]/(app)/. The test derives this
+// same set from the filesystem, so a newly added authenticated route fails a test
+// rather than silently becoming crawlable — a hand-written list rots, and did.
+const AUTHENTICATED_SEGMENTS = [
+  "dashboard",
+  "events",
+  "persons",
+  "relations",
+  "settings",
+  "sources",
+];
+const LOCALES = ["de", "en"];
+
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://evidoxa.com";
+  const base = env.NEXT_PUBLIC_APP_URL;
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/de/dashboard", "/en/dashboard", "/de/persons", "/en/persons"],
+        disallow: [
+          "/api/",
+          ...AUTHENTICATED_SEGMENTS.flatMap((seg) => LOCALES.map((l) => `/${l}/${seg}`)),
+        ],
       },
     ],
     sitemap: `${base}/sitemap.xml`,
@@ -2222,7 +2242,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "marketing.hero" });
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://evidoxa.com";
+  const base = env.NEXT_PUBLIC_APP_URL;
 
   return {
     title: `Evidoxa — ${t("headline")}`,
