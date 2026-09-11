@@ -711,6 +711,13 @@
       "title": "Start with one source.",
       "body": "An account is all it takes. Your first project is created automatically.",
       "action": "Create account"
+    },
+    "changelogPage": {
+      "title": "Changelog",
+      "comingNext": "Coming next",
+      "theme1": "Import and export — data should come out as easily as it went in.",
+      "theme2": "Collaboration — several people on one project, with visible attribution.",
+      "theme3": "Historical place names — a place that carries several names over time."
     }
   }
 }

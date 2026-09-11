@@ -711,6 +711,13 @@
       "title": "Fangen Sie mit einer Quelle an.",
       "body": "Ein Konto genügt. Ihr erstes Projekt wird automatisch angelegt.",
       "action": "Konto erstellen"
+    },
+    "changelogPage": {
+      "title": "Changelog",
+      "comingNext": "Als Nächstes",
+      "theme1": "Import und Export — Daten sollen so leicht herauskommen wie hinein.",
+      "theme2": "Zusammenarbeit — mehrere Personen an einem Projekt, mit sichtbarer Zuschreibung.",
+      "theme3": "Historische Ortsnamen — ein Ort, der im Lauf der Zeit mehrere Namen trägt."
     }
   }
 }
