@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 import { CtaBand } from "@/components/marketing/CtaBand";
@@ -11,6 +12,34 @@ import { RelationDiagram } from "@/components/marketing/RelationDiagram";
 import { Reveal } from "@/components/marketing/Reveal";
 import { CertaintyMarker } from "@/components/research/CertaintyMarker";
 import { Badge } from "@/components/ui/badge";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "marketing.hero" });
+  // NEXT_PUBLIC_SITE_URL is not defined anywhere in this repo (checked env.ts,
+  // .env.example, next.config.ts, vercel.json) — this fallback is UNVERIFIED.
+  // Confirm the real production hostname before merging and replace it.
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://evidoxa.com";
+
+  return {
+    title: `Evidoxa — ${t("headline")}`,
+    description: t("sub"),
+    alternates: {
+      canonical: `${base}/${locale}`,
+      languages: { de: `${base}/de`, en: `${base}/en` },
+    },
+    openGraph: {
+      title: `Evidoxa — ${t("headline")}`,
+      description: t("sub"),
+      url: `${base}/${locale}`,
+      type: "website",
+    },
+  };
+}
 
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -90,6 +119,20 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
           <CtaBand locale={locale} />
         </Reveal>
       </div>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "Evidoxa",
+            applicationCategory: "ResearchApplication",
+            operatingSystem: "Web",
+            inLanguage: ["de", "en"],
+          }),
+        }}
+      />
     </>
   );
 }

@@ -718,6 +718,12 @@
       "theme1": "Import und Export — Daten sollen so leicht herauskommen wie hinein.",
       "theme2": "Zusammenarbeit — mehrere Personen an einem Projekt, mit sichtbarer Zuschreibung.",
       "theme3": "Historische Ortsnamen — ein Ort, der im Lauf der Zeit mehrere Namen trägt."
+    },
+    "legal": {
+      "imprintTitle": "Impressum",
+      "imprintBody": "Angaben gemäß § 5 DDG folgen.",
+      "privacyTitle": "Datenschutzerklärung",
+      "privacyBody": "Die Datenschutzerklärung folgt."
     }
   }
 }
