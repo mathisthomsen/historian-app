@@ -1937,10 +1937,30 @@ Create `src/lib/changelog.ts`:
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+// next-mdx-remote is archived upstream as of 2026-03-26 (verified: gh api
+// repos/hashicorp/next-mdx-remote -> archived:true). Deliberately accepted: it is
+// build-time only, pinned, and our entire API surface is this one function, so
+// migration stays cheap. next-mdx-remote-client is the maintained successor.
 import { compileMDX } from "next-mdx-remote/rsc";
 import type { ReactElement } from "react";
 
 const CONTENT_DIR = join(process.cwd(), "content", "changelog");
+
+/**
+ * Newest first. Segment-wise NUMERIC compare — deliberately not `localeCompare`,
+ * which is lexicographic and ranks "0.9.0" above "0.10.0". Export it so it can be
+ * unit-tested directly: with only one release on disk, a sort test over the real
+ * content directory compares a one-element array to itself and cannot fail.
+ */
+export function compareVersionsDesc(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pb[i] ?? 0) - (pa[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
 
 export interface Release {
   version: string;
@@ -1963,7 +1983,9 @@ interface Frontmatter {
  * release history.
  */
 export async function listReleases(locale: string): Promise<Release[]> {
-  const files = await readdir(CONTENT_DIR);
+  // Filter: a stray .DS_Store would otherwise yield a bogus version and reject
+  // the whole Promise.all.
+  const files = (await readdir(CONTENT_DIR)).filter((f) => f.endsWith(".mdx"));
   const versions = [...new Set(files.map((f) => f.split(".").slice(0, 3).join(".")))];
 
   const releases = await Promise.all(
@@ -1972,6 +1994,11 @@ export async function listReleases(locale: string): Promise<Release[]> {
       const fallback = join(CONTENT_DIR, `${version}.de.mdx`);
       const raw = await readFile(preferred, "utf8").catch(() => readFile(fallback, "utf8"));
 
+      // MDX compilation is code execution: compileMDX evaluates compiled MDX via
+      // Reflect.construct(Function, ...). Safe here ONLY because every file under
+      // content/changelog is repo-authored and reviewed pre-merge, and because the
+      // package's blockJS:true default is left untouched. If changelog content ever
+      // comes from a CMS, an upload, or any external source, revisit this loader.
       const { content, frontmatter } = await compileMDX<Frontmatter>({
         source: raw,
         options: { parseFrontmatter: true },
@@ -1986,7 +2013,7 @@ export async function listReleases(locale: string): Promise<Release[]> {
     }),
   );
 
-  return releases.sort((a, b) => b.version.localeCompare(a.version));
+  return releases.sort((a, b) => compareVersionsDesc(a.version, b.version));
 }
 ```
 
