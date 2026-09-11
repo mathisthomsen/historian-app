@@ -1349,6 +1349,9 @@ Create `src/test/components/marketing-bands.test.tsx`:
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import deMessages from "../../../messages/de.json";
+import enMessages from "../../../messages/en.json";
+
 import { CtaBand } from "@/components/marketing/CtaBand";
 import { OpenDevelopment } from "@/components/marketing/OpenDevelopment";
 
@@ -1363,9 +1366,17 @@ describe("CtaBand (Part A)", () => {
     );
   });
 
-  it("does not claim a closed alpha, because registration is open in Part A", () => {
-    const { container } = renderWithProviders(<CtaBand locale="de" />);
-    expect(container.textContent?.toLowerCase()).not.toMatch(/geschlossen|closed alpha|warteliste/);
+  // Asserts BOTH catalogues directly. renderWithProviders hard-codes locale="de",
+  // so a rendered-component test structurally cannot see the English copy — a
+  // guard that is blind in one locale is worst precisely where Part B leans on it.
+  it.each([
+    ["de", deMessages],
+    ["en", enMessages],
+  ])("%s cta copy does not claim a gate that does not exist yet", (_locale, messages) => {
+    const cta = Object.values(messages.marketing.cta).join(" ");
+    expect(cta).not.toMatch(
+      /geschlossen|closed alpha|warteliste|waitlist|invite[- ]only|einladung|nur auf einladung/i,
+    );
   });
 });
 
@@ -1462,8 +1473,6 @@ export function EditorialPassage() {
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-import { CertaintyMarker } from "@/components/research/CertaintyMarker";
-
 interface OpenDevelopmentProps {
   locale: string;
 }
@@ -1479,17 +1488,38 @@ export function OpenDevelopment({ locale }: OpenDevelopmentProps) {
           {t("title")}
         </h2>
         <p className="text-muted-foreground mt-4 max-w-[52ch]">{t("body")}</p>
+        {/*
+          Decorative dots only — aria-hidden, no role, no accessible name.
+          These deliberately do NOT use CertaintyMarker: its label reads
+          "Gewissheit: Sicher" / "Certainty: Certain", so a screen reader would
+          announce evidentiary-certainty language before roadmap text. Certainty
+          is this page's core technical term; spending it on build status both
+          misannounces and dilutes it. Status meaning lives in the visible text
+          ("— nutzbar" / "— als Nächstes" / "— geplant"), never in colour alone.
+        */}
         <ul className="mt-8 space-y-3">
           <li className="flex items-center gap-3 text-sm">
-            <CertaintyMarker certainty="CERTAIN" />
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: "var(--color-certainty-certain)" }}
+            />
             {t("shipped")}
           </li>
           <li className="flex items-center gap-3 text-sm">
-            <CertaintyMarker certainty="PROBABLE" />
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: "var(--color-certainty-probable)" }}
+            />
             {t("next")}
           </li>
           <li className="flex items-center gap-3 text-sm">
-            <CertaintyMarker certainty="UNKNOWN" />
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: "var(--color-certainty-unknown)" }}
+            />
             {t("planned")}
           </li>
         </ul>
