@@ -1639,7 +1639,8 @@ registration stays open until Part B closes it."
 
 - [ ] **Step 1: Write the failing test**
 
-Create `src/test/components/Reveal.test.tsx`:
+Create `src/test/components/Reveal.test.tsx`. Note the selector: `container.firstElementChild`
+resolves to next-themes' injected flash-prevention `<script>`, not the Reveal div.
 
 ```tsx
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -1680,13 +1681,13 @@ describe("Reveal", () => {
   it("starts hidden and observes when motion is allowed", () => {
     mockReducedMotion(false);
     const { container } = renderWithProviders(<Reveal>content</Reveal>);
-    expect(container.firstElementChild).toHaveAttribute("data-revealed", "false");
+    expect(container.querySelector("[data-revealed]")).toHaveAttribute("data-revealed", "false");
   });
 
   it("renders already revealed when reduced motion is requested", () => {
     mockReducedMotion(true);
     const { container } = renderWithProviders(<Reveal>content</Reveal>);
-    expect(container.firstElementChild).toHaveAttribute("data-revealed", "true");
+    expect(container.querySelector("[data-revealed]")).toHaveAttribute("data-revealed", "true");
   });
 
   it("never creates an observer under reduced motion", () => {
@@ -1763,9 +1764,18 @@ In `src/styles/globals.css`, inside the existing `@layer components` block:
 
 ```css
 /* Marketing scroll-reveal (Epic 2.6, spec §8.2).
-     The reduced-motion branch is not merely a shorter transition — it is no
-     transition and no transform at all. */
-.reveal {
+
+   Content is VISIBLE by default. Hiding is opt-in behind a `.js` class set by a
+   blocking inline script — see Step 4b. This ordering is not stylistic:
+   prefersReducedMotion() returns false when `window` is undefined, so SSR always
+   emits data-revealed="false". With an unscoped `.reveal { opacity: 0 }`, a
+   visitor whose JS never runs — disabled, blocked, erroring before hydration, or
+   a non-JS crawler — sees a permanently blank page below the hero. Issue #61
+   records that the local Playwright environment is exactly that condition.
+
+   The reduced-motion branch is not merely a shorter transition — it is no
+   transition and no transform at all. */
+.js .reveal {
   opacity: 0;
   transform: translateY(0.75rem);
   transition:
@@ -1773,20 +1783,45 @@ In `src/styles/globals.css`, inside the existing `@layer components` block:
     transform var(--duration-slow) var(--ease-out);
 }
 
-.reveal[data-revealed="true"] {
+.js .reveal[data-revealed="true"] {
   opacity: 1;
   transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal,
-  .reveal[data-revealed="true"] {
+  .js .reveal,
+  .js .reveal[data-revealed="true"] {
     opacity: 1;
     transform: none;
     transition: none;
   }
 }
 ```
+
+> `src/styles/globals.css` has **no** `@layer components` block yet — create one, preserving the
+> file's layer order `base → components → utilities`.
+
+- [ ] **Step 4b: Set the `.js` class from the marketing layout**
+
+Render this as the FIRST child of the tree returned by `src/app/[locale]/(marketing)/layout.tsx`,
+so it executes before the parser reaches any `.reveal` element:
+
+```tsx
+<script
+  dangerouslySetInnerHTML={{
+    __html: `document.documentElement.classList.add('js')`,
+  }}
+/>
+```
+
+Marketing layout **only** — do not touch `src/app/[locale]/layout.tsx`, which is shared with the
+authenticated app. `next-themes` already injects its own blocking script higher in the tree; the
+two only `classList.add` distinct tokens, so they cannot collide.
+
+Add a test asserting the stylesheet sets no `opacity: 0` on a `.reveal` selector unqualified by
+`.js`, following the CSS-source-scanning pattern in `src/test/motion.test.tsx` (jsdom parses no
+CSS). Mind the whitespace brittleness: a lookbehind like `(?<!\.js )` misses `.js\n.reveal` if a
+formatter ever reflows the file.
 
 > Confirm `--duration-slow` and `--ease-out` exist in `@theme` before using them — `src/test/tokens.ts` lists the real names in `REQUIRED_DURATION_TOKENS` and `REQUIRED_EASING_TOKENS`. Use whatever names are actually defined; do not invent new ones.
 
