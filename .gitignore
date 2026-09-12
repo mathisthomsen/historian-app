@@ -182,3 +182,4 @@ backup-*.json
 
 # Debug artifacts
 *-debug.png
+.superpowers/

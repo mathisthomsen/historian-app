@@ -638,5 +638,119 @@
     "previous": "Zurück",
     "next": "Weiter",
     "page": "Seite"
+  },
+  "marketing": {
+    "nav": {
+      "changelog": "Changelog",
+      "signIn": "Anmelden",
+      "register": "Konto erstellen",
+      "toApp": "Zur App",
+      "label": "Hauptnavigation"
+    },
+    "footer": {
+      "imprint": "Impressum",
+      "privacy": "Datenschutz",
+      "changelog": "Changelog",
+      "github": "GitHub",
+      "label": "Fußzeile"
+    },
+    "hero": {
+      "headline": "Für alles, was die Quelle nicht sagt.",
+      "sub": "Eine Forschungsdatenbank, in der Ungewissheit ein Feld ist — kein Kompromiss.",
+      "primary": "Konto erstellen",
+      "secondary": "Ansehen"
+    },
+    "panels": {
+      "certainty": {
+        "kicker": "Gewissheit",
+        "title": "Vier Stufen statt einer Behauptung.",
+        "body": "Gesichert, wahrscheinlich, möglich, unbekannt — pro Feld, nicht pro Datensatz."
+      },
+      "dates": {
+        "kicker": "Datierung",
+        "title": "Ein Jahr ohne Monat ist eine vollständige Antwort.",
+        "body": "Jahr, Monat und Tag werden getrennt gespeichert. Was Sie nicht wissen, müssen Sie nicht erfinden.",
+        "specimen": {
+          "year": "Jahr",
+          "month": "Monat",
+          "day": "Tag",
+          "unknown": "unbekannt",
+          "dateCertainty": "Gewissheit des Datums"
+        }
+      },
+      "evidence": {
+        "kicker": "Belege",
+        "title": "Jede Aussage zeigt auf ihre Quelle.",
+        "body": "Belege hängen am einzelnen Feld — mit Fundstelle, Zitat und diplomatischer Transkription.",
+        "sourceLabel": "Nürnberger Polizeiakte, 1828",
+        "page": "Bl. 4r",
+        "quote": "ist allhier den 26. Mai unverhofft angekommen",
+        "transcription": "ist alhier den 26. Maii ohnverhofft angekommen",
+        "quoteLabel": "Zitat",
+        "transcriptionLabel": "Transkription",
+        "propertyLabel": "Beleg für",
+        "property": "Geburtsdatum"
+      },
+      "relations": {
+        "kicker": "Beziehungen",
+        "title": "Alles kann mit allem verbunden sein.",
+        "body": "Beziehungstypen definieren Sie selbst. Jede Beziehung trägt ihre eigene Gewissheit.",
+        "nodes": {
+          "person": "Person",
+          "event": "Ereignis",
+          "place": "Ort",
+          "source": "Quelle",
+          "relation": "bezeugt"
+        },
+        "diagramDescription": "Vier Entitätstypen — {person}, {event}, {place} und {source} — sind durch vier Beziehungen verbunden, von denen jede ihre eigene Gewissheit trägt: {person} zu {event} vom selbst definierten Typ „{relation}“, Gewissheit „{probable}“; {person} zu {place}, Gewissheit „{possible}“; {event} zu {source}, Gewissheit „{certain}“; {place} zu {source}, Gewissheit „{unknown}“."
+      }
+    },
+    "editorial": {
+      "kicker": "Das Problem",
+      "lede": "Jede Datenbank zwingt Sie irgendwann zu einer Angabe, die Sie nicht belegen können. Ein Datumsfeld will einen Tag. Ein Ortsfeld will einen Ort.",
+      "punchline": "Die Fußnote, die das relativiert, steht am Ende in Ihrem Kopf — nicht in Ihren Daten."
+    },
+    "openDev": {
+      "kicker": "Stand der Dinge",
+      "title": "Evidoxa wird an Dissertationen entwickelt, nicht an Personas.",
+      "body": "Was als Nächstes gebaut wird, entscheiden die Historikerinnen und Historiker, die damit arbeiten.",
+      "changelogLink": "Vollständiges Changelog",
+      "status": {
+        "shipped": {
+          "label": "Personen, Ereignisse, Quellen und Beziehungen",
+          "state": "nutzbar"
+        },
+        "next": {
+          "label": "Import und Export",
+          "state": "als Nächstes"
+        },
+        "planned": {
+          "label": "Zusammenarbeit im Team",
+          "state": "geplant"
+        }
+      }
+    },
+    "cta": {
+      "title": "Fangen Sie mit einer Quelle an.",
+      "body": "Ein Konto genügt. Ihr erstes Projekt wird automatisch angelegt.",
+      "action": "Konto erstellen"
+    },
+    "changelogPage": {
+      "title": "Changelog",
+      "comingNext": "Als Nächstes",
+      "theme1": "Import und Export — Daten sollen so leicht herauskommen wie hinein.",
+      "theme2": "Zusammenarbeit — mehrere Personen an einem Projekt, mit sichtbarer Zuschreibung.",
+      "theme3": "Historische Ortsnamen — ein Ort, der im Lauf der Zeit mehrere Namen trägt."
+    },
+    "legal": {
+      "imprintTitle": "Impressum",
+      "imprintBody": "Angaben gemäß § 5 DDG folgen.",
+      "privacyTitle": "Datenschutzerklärung",
+      "privacyBody": "Die Datenschutzerklärung folgt."
+    },
+    "stage": {
+      "label": "Was Evidoxa anders macht",
+      "steps": "Themen"
+    }
   }
 }

@@ -638,5 +638,119 @@
     "previous": "Previous",
     "next": "Next",
     "page": "Page"
+  },
+  "marketing": {
+    "nav": {
+      "changelog": "Changelog",
+      "signIn": "Sign in",
+      "register": "Create account",
+      "toApp": "Open app",
+      "label": "Main navigation"
+    },
+    "footer": {
+      "imprint": "Imprint",
+      "privacy": "Privacy",
+      "changelog": "Changelog",
+      "github": "GitHub",
+      "label": "Footer"
+    },
+    "hero": {
+      "headline": "For everything the source does not say.",
+      "sub": "A research database where uncertainty is a field, not a compromise.",
+      "primary": "Create account",
+      "secondary": "Take a look"
+    },
+    "panels": {
+      "certainty": {
+        "kicker": "Certainty",
+        "title": "Four levels, not one assertion.",
+        "body": "Certain, probable, possible, unknown — per field, not per record."
+      },
+      "dates": {
+        "kicker": "Dating",
+        "title": "A year without a month is a complete answer.",
+        "body": "Year, month and day are stored separately. What you do not know, you need not invent.",
+        "specimen": {
+          "year": "Year",
+          "month": "Month",
+          "day": "Day",
+          "unknown": "unknown",
+          "dateCertainty": "Certainty of the date"
+        }
+      },
+      "evidence": {
+        "kicker": "Evidence",
+        "title": "Every claim points at its source.",
+        "body": "Evidence attaches to the individual field — with page reference, quotation and diplomatic transcription.",
+        "sourceLabel": "Nürnberger Polizeiakte, 1828",
+        "page": "fol. 4r",
+        "quote": "ist allhier den 26. Mai unverhofft angekommen",
+        "transcription": "ist alhier den 26. Maii ohnverhofft angekommen",
+        "quoteLabel": "Quotation",
+        "transcriptionLabel": "Transcription",
+        "propertyLabel": "Evidence for",
+        "property": "Date of birth"
+      },
+      "relations": {
+        "kicker": "Relations",
+        "title": "Anything can connect to anything.",
+        "body": "You define the relation types. Every relation carries its own certainty.",
+        "nodes": {
+          "person": "Person",
+          "event": "Event",
+          "place": "Place",
+          "source": "Source",
+          "relation": "attests"
+        },
+        "diagramDescription": "Four entity types — {person}, {event}, {place} and {source} — are joined by four relations, each carrying its own certainty: {person} to {event} of the self-defined type “{relation}”, certainty “{probable}”; {person} to {place}, certainty “{possible}”; {event} to {source}, certainty “{certain}”; {place} to {source}, certainty “{unknown}”."
+      }
+    },
+    "editorial": {
+      "kicker": "The problem",
+      "lede": "Every database eventually forces you into a statement you cannot evidence. A date field wants a day. A place field wants a place.",
+      "punchline": "The footnote that qualifies it ends up in your head — not in your data."
+    },
+    "openDev": {
+      "kicker": "Where this stands",
+      "title": "Evidoxa is built against dissertations, not personas.",
+      "body": "What gets built next is decided by the historians doing the work.",
+      "changelogLink": "Full changelog",
+      "status": {
+        "shipped": {
+          "label": "People, events, sources and relations",
+          "state": "usable"
+        },
+        "next": {
+          "label": "Import and export",
+          "state": "next"
+        },
+        "planned": {
+          "label": "Team collaboration",
+          "state": "planned"
+        }
+      }
+    },
+    "cta": {
+      "title": "Start with one source.",
+      "body": "An account is all it takes. Your first project is created automatically.",
+      "action": "Create account"
+    },
+    "changelogPage": {
+      "title": "Changelog",
+      "comingNext": "Coming next",
+      "theme1": "Import and export — data should come out as easily as it went in.",
+      "theme2": "Collaboration — several people on one project, with visible attribution.",
+      "theme3": "Historical place names — a place that carries several names over time."
+    },
+    "legal": {
+      "imprintTitle": "Legal notice",
+      "imprintBody": "Legal notice to follow.",
+      "privacyTitle": "Privacy policy",
+      "privacyBody": "The privacy policy will follow."
+    },
+    "stage": {
+      "label": "What Evidoxa does differently",
+      "steps": "Topics"
+    }
   }
 }

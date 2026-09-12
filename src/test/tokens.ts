@@ -279,6 +279,32 @@ export const REQUIRED_TYPOGRAPHY_TOKENS = [
   "--text-4xl",
 ] as const;
 
+/**
+ * Marketing-tier display typography (Epic 2.6, spec §8.1).
+ *
+ * Deliberately separate from REQUIRED_TYPOGRAPHY_TOKENS: the app's scale is
+ * capped at --text-4xl and is NOT modified by the marketing surface. These
+ * tokens exist only for the public pages.
+ */
+export const REQUIRED_DISPLAY_TOKENS = [
+  "--text-display-sm",
+  "--text-display-md",
+  "--text-display-lg",
+  "--text-display-xl",
+  "--leading-display",
+  "--tracking-display-sm",
+  "--tracking-display-md",
+  "--tracking-display-lg",
+  "--tracking-display-xl",
+] as const;
+
+/** Vertical rhythm between marketing page bands. */
+export const REQUIRED_SECTION_TOKENS = [
+  "--section-gap-sm",
+  "--section-gap-md",
+  "--section-gap-lg",
+] as const;
+
 /** Border radius scale tokens. */
 export const REQUIRED_RADIUS_TOKENS = [
   "--radius",
@@ -328,6 +354,8 @@ export const ALL_REQUIRED_TOKENS: readonly string[] = [
   ...REQUIRED_CERTAINTY_TOKENS_LIGHT,
   ...REQUIRED_SIDEBAR_TOKENS,
   ...REQUIRED_TYPOGRAPHY_TOKENS,
+  ...REQUIRED_DISPLAY_TOKENS,
+  ...REQUIRED_SECTION_TOKENS,
   ...REQUIRED_RADIUS_TOKENS,
   ...REQUIRED_DURATION_TOKENS,
   ...REQUIRED_EASING_TOKENS,
