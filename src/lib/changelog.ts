@@ -19,6 +19,13 @@ export interface Release {
   date: string;
   title: string;
   body: ReactElement;
+  /**
+   * True when the requested locale had no file and the German one was read
+   * instead. Required, not optional: every construction site has to state
+   * which it is, so a future loader cannot add a path that silently presents
+   * German as though it were the requested language.
+   */
+  localeFallback: boolean;
 }
 
 interface Frontmatter {
@@ -47,7 +54,9 @@ export function compareVersionsDesc(a: string, b: string): number {
  *
  * A release missing the requested locale falls back to the German file rather
  * than being dropped: a missing translation must never silently shorten the
- * release history.
+ * release history. The fallback is reported on the release so the page can say
+ * so — spec §8.3 requires a visible note, and without one `/en/changelog`
+ * renders German text as if it were English.
  */
 export async function listReleases(locale: string): Promise<Release[]> {
   const files = (await readdir(CONTENT_DIR)).filter((f) => f.endsWith(".mdx"));
@@ -57,7 +66,11 @@ export async function listReleases(locale: string): Promise<Release[]> {
     versions.map(async (version) => {
       const preferred = join(CONTENT_DIR, `${version}.${locale}.mdx`);
       const fallback = join(CONTENT_DIR, `${version}.de.mdx`);
-      const raw = await readFile(preferred, "utf8").catch(() => readFile(fallback, "utf8"));
+      let localeFallback = false;
+      const raw = await readFile(preferred, "utf8").catch(() => {
+        localeFallback = true;
+        return readFile(fallback, "utf8");
+      });
 
       // MDX compilation is code execution: `compileMDX` evaluates the
       // compiled module via `Function`/`Reflect.construct`. This is safe only
@@ -77,6 +90,7 @@ export async function listReleases(locale: string): Promise<Release[]> {
         date: frontmatter.date,
         title: frontmatter.title,
         body: content,
+        localeFallback,
       };
     }),
   );

@@ -75,4 +75,19 @@ describe("listReleases", () => {
     const translated = releases.find((r) => r.version === "0.10.0");
     expect(translated?.title).toBe("Ten");
   });
+
+  it("reports which releases fell back, so the page can say so", async () => {
+    // Spec §8.3 requires a *visible note* on a fallback. The loader used to
+    // return German prose with nothing to distinguish it, so /en/changelog
+    // presented it as English — on a product whose argument is that an
+    // unmarked claim about what a text says is the failure to avoid.
+    const releases = await listReleases("en");
+    expect(releases.find((r) => r.version === "0.9.0")?.localeFallback).toBe(true);
+    expect(releases.find((r) => r.version === "0.10.0")?.localeFallback).toBe(false);
+  });
+
+  it("reports no fallback at all in the locale every entry is authored in", async () => {
+    const releases = await listReleases("de");
+    expect(releases.map((r) => r.localeFallback)).not.toContain(true);
+  });
 });

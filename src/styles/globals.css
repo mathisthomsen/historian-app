@@ -798,9 +798,11 @@
   }
 
   /* The fallback keeps the page gutter on each spread, since there is no rail
-     to make room for. */
+     to make room for. The scroll margin clears the sticky PublicNav, which
+     would otherwise cover the top of a panel a deep link jumped to. */
   .stage[data-enhanced="false"] .stage-panel {
     padding-inline: 1rem;
+    scroll-margin-top: 5rem;
   }
 
   @media (min-width: 40rem) {

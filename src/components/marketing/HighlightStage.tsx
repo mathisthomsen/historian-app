@@ -88,10 +88,11 @@ export function HighlightStage({ steps }: HighlightStageProps) {
   // Honour a deep link once the stage exists.
   //
   // The step links put `#highlight-<id>` in the address bar, so those URLs get
-  // shared and reloaded — but the scroll targets are the sentinels, which are
-  // `display: none` until `enhanced` flips after mount. At navigation time the
-  // anchor therefore resolves to nothing and the browser leaves the visitor at
-  // the top of the page, on a panel that is not the one they asked for.
+  // shared and reloaded. The fallback layout needs no help — the id is on the
+  // panel and the browser jumps to it before any JavaScript runs. The enhanced
+  // layout does: the id only moves to the sentinel after `enhanced` flips, by
+  // which point the browser has already resolved the hash against a document
+  // that did not contain it.
   //
   // This is not scroll hijacking (spec §8.2): it performs exactly the jump the
   // browser itself would have made had the layout existed a moment earlier, and
@@ -172,6 +173,14 @@ export function HighlightStage({ steps }: HighlightStageProps) {
             {steps.map((step, index) => (
               <div
                 key={step.id}
+                // The anchor target has to be whichever element is actually on
+                // the page. In the fallback layout the sentinels are
+                // `display: none`, so an id parked on one resolves to nothing
+                // and a shared `#highlight-…` link left the visitor at the top
+                // — measured at 390px: scrollY 0 with the panel 3675px away.
+                // Here it sits on the panel, which exists in every layout, so
+                // the browser honours the link with no JavaScript at all.
+                id={enhanced ? undefined : `highlight-${step.id}`}
                 data-slot="stage-panel"
                 data-active={index === active}
                 className="stage-panel"
@@ -198,7 +207,11 @@ export function HighlightStage({ steps }: HighlightStageProps) {
           {steps.map((step, index) => (
             <div
               key={step.id}
-              id={`highlight-${step.id}`}
+              // Only in the enhanced layout, where the panels are stacked in one
+              // sticky cell and have no distinct scroll positions of their own.
+              // The two ids are mutually exclusive, so the document never holds
+              // a duplicate.
+              id={enhanced ? `highlight-${step.id}` : undefined}
               ref={(node) => {
                 sentinelsRef.current[index] = node;
               }}

@@ -75,6 +75,20 @@ test.describe("marketing landing page", () => {
     );
   });
 
+  test("a deep link to a step lands on that step in the stacked layout too", async ({ page }) => {
+    // The previous version of this coverage tested only 1440x900. Below 64rem
+    // the sentinels carrying the ids are display:none, so the anchor resolved
+    // to nothing: measured at 390px, scrollY stayed 0 with the relations panel
+    // 3675px down the page. The id now lives on the panel in this layout.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/de#highlight-relations");
+    const stage = page.locator("#highlights");
+    await expect(stage).toHaveAttribute("data-enhanced", "false");
+    const panel = stage.locator('[data-slot="stage-panel"]').nth(3);
+    await expect(panel).toContainText("Alles kann mit allem verbunden sein.");
+    await expect(panel).toBeInViewport();
+  });
+
   test("stacks the highlights as readable spreads on a narrow viewport", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/de");
@@ -167,6 +181,16 @@ test.describe("marketing landing page — no JS (F2)", () => {
     for (let i = 0; i < count; i++) {
       await expect(reveals.nth(i)).toHaveCSS("opacity", "1");
     }
+  });
+
+  test("a deep link to a step works with no JavaScript at all", async ({ page }) => {
+    // The fallback id sits on the panel precisely so the browser can honour
+    // the link before any script runs.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/de#highlight-evidence");
+    const panel = page.locator("#highlights [data-slot='stage-panel']").nth(2);
+    await expect(panel).toContainText("Jede Aussage zeigt auf ihre Quelle.");
+    await expect(panel).toBeInViewport();
   });
 
   test("the highlight stage falls back to four readable spreads", async ({ page }) => {

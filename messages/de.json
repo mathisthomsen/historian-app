@@ -740,13 +740,17 @@
       "comingNext": "Als Nächstes",
       "theme1": "Import und Export — Daten sollen so leicht herauskommen wie hinein.",
       "theme2": "Zusammenarbeit — mehrere Personen an einem Projekt, mit sichtbarer Zuschreibung.",
-      "theme3": "Historische Ortsnamen — ein Ort, der im Lauf der Zeit mehrere Namen trägt."
+      "theme3": "Historische Ortsnamen — ein Ort, der im Lauf der Zeit mehrere Namen trägt.",
+      "description": "Jede Veröffentlichung von Evidoxa, mit Datum und Begründung.",
+      "localeFallback": "Dieser Eintrag liegt bisher nur auf Deutsch vor."
     },
     "legal": {
       "imprintTitle": "Impressum",
       "imprintBody": "Angaben gemäß § 5 DDG folgen.",
       "privacyTitle": "Datenschutzerklärung",
-      "privacyBody": "Die Datenschutzerklärung folgt."
+      "privacyBody": "Die Datenschutzerklärung folgt.",
+      "imprintDescription": "Anbieterkennzeichnung und Kontaktangaben zu Evidoxa.",
+      "privacyDescription": "Welche Daten Evidoxa erhebt, wozu und wie lange sie gespeichert werden."
     },
     "stage": {
       "label": "Was Evidoxa anders macht",

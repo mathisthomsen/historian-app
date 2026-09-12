@@ -80,3 +80,70 @@ describe("robots", () => {
     }
   });
 });
+
+/**
+ * Every route the sitemap publishes must carry its own metadata.
+ *
+ * Spec §8.4 requires title, description, canonical and de/en `hreflang` on each
+ * route, but only the landing page had `generateMetadata` — the changelog and
+ * both legal pages were published in the sitemap while inheriting the root
+ * layout's generic title, with no canonical and no alternates between the two
+ * locales. That is duplicate content to a crawler, and it was invisible because
+ * nothing tied "is in the sitemap" to "has metadata".
+ *
+ * This is that tie. The filesystem is the ground truth on both sides, so a new
+ * indexable marketing route fails here until it has metadata of its own.
+ */
+describe("indexable marketing routes carry their own metadata", () => {
+  const MARKETING_DIR = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    "app",
+    "[locale]",
+    "(marketing)",
+  );
+
+  function marketingRoutePages(): { segment: string; file: string }[] {
+    return readdirSync(MARKETING_DIR, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("("))
+      .map((entry) => ({
+        segment: entry.name,
+        file: path.join(MARKETING_DIR, entry.name, "page.tsx"),
+      }))
+      .filter((route) => readdirSync(path.dirname(route.file)).includes("page.tsx"));
+  }
+
+  it("finds the routes it is meant to be checking", () => {
+    // Guards against the test passing because the glob matched nothing.
+    expect(
+      marketingRoutePages()
+        .map((r) => r.segment)
+        .sort(),
+    ).toEqual(["changelog", "datenschutz", "impressum"]);
+  });
+
+  it.each(marketingRoutePages())("$segment exports generateMetadata", async ({ file }) => {
+    const source = await import("node:fs/promises").then((fs) => fs.readFile(file, "utf8"));
+    expect(source).toMatch(/export async function generateMetadata/);
+    expect(source).toMatch(/marketingRouteMetadata/);
+  });
+
+  it("builds a canonical and both hreflang alternates for a route", async () => {
+    const { marketingRouteMetadata } = await import("@/lib/marketing-metadata");
+    const meta = marketingRouteMetadata({
+      locale: "en",
+      path: "changelog",
+      title: "Changelog",
+      description: "Every Evidoxa release.",
+    });
+
+    expect(meta.alternates?.canonical).toBe("http://localhost:3000/en/changelog");
+    expect(meta.alternates?.languages).toEqual({
+      de: "http://localhost:3000/de/changelog",
+      en: "http://localhost:3000/en/changelog",
+    });
+    expect(meta.title).toContain("Changelog");
+    expect(meta.description).toBeTruthy();
+  });
+});

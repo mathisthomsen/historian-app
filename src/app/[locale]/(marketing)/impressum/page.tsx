@@ -1,4 +1,23 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+
+import { marketingRouteMetadata } from "@/lib/marketing-metadata";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "marketing.legal" });
+
+  return marketingRouteMetadata({
+    locale,
+    path: "impressum",
+    title: t("imprintTitle"),
+    description: t("imprintDescription"),
+  });
+}
 
 export default async function ImpressumPage() {
   const t = await getTranslations("marketing.legal");
