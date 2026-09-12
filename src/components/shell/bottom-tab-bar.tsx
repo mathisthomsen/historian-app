@@ -21,7 +21,8 @@ const TAB_ITEMS: TabItem[] = [
     key: "dashboard",
     icon: LayoutDashboard,
     labelKey: "dashboard",
-    href: (locale) => `/${locale}/`,
+    // /{locale} is the public landing page since Epic 2.6, not the dashboard.
+    href: (locale) => `/${locale}/dashboard`,
   },
   {
     key: "persons",
