@@ -674,7 +674,8 @@
           "year": "Year",
           "month": "Month",
           "day": "Day",
-          "unknown": "unknown"
+          "unknown": "unknown",
+          "dateCertainty": "Certainty of the date"
         }
       },
       "evidence": {
@@ -683,7 +684,12 @@
         "body": "Evidence attaches to the individual field — with page reference, quotation and diplomatic transcription.",
         "sourceLabel": "Nürnberger Polizeiakte, 1828",
         "page": "fol. 4r",
-        "quote": "ist alhier den 26. Maii ohnverhofft angekommen"
+        "quote": "ist allhier den 26. Mai unverhofft angekommen",
+        "transcription": "ist alhier den 26. Maii ohnverhofft angekommen",
+        "quoteLabel": "Quotation",
+        "transcriptionLabel": "Transcription",
+        "propertyLabel": "Evidence for",
+        "property": "Date of birth"
       },
       "relations": {
         "kicker": "Relations",
@@ -695,7 +701,8 @@
           "place": "Place",
           "source": "Source",
           "relation": "attests"
-        }
+        },
+        "diagramDescription": "Four entity types — {person}, {event}, {place} and {source} — are joined by four relations, each carrying its own certainty: {person} to {event} of the self-defined type “{relation}”, certainty “{probable}”; {person} to {place}, certainty “{possible}”; {event} to {source}, certainty “{certain}”; {place} to {source}, certainty “{unknown}”."
       }
     },
     "editorial": {

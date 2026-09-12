@@ -11,7 +11,8 @@ export default async function OpengraphImage({ params }: { params: Promise<{ loc
 
   // Token values are inlined rather than referenced: ImageResponse renders in
   // Satori, which has no access to the stylesheet and no CSS custom properties.
-  // If globals.css changes these colours, change them here too.
+  // If globals.css changes these colours, change them here too. The one colour
+  // left is --color-primary, which is brand, not meaning.
   return new ImageResponse(
     <div
       style={{
@@ -38,13 +39,27 @@ export default async function OpengraphImage({ params }: { params: Promise<{ loc
       <div style={{ fontSize: 76, lineHeight: 1.1, marginTop: 32, maxWidth: 900 }}>
         {t("headline")}
       </div>
-      <div style={{ display: "flex", gap: 12, marginTop: 48 }}>
-        {["hsl(180,50%,30%)", "hsl(215,50%,38%)", "hsl(265,35%,45%)", "hsl(38,65%,45%)"].map(
-          (c) => (
-            <div key={c} style={{ width: 120, height: 10, borderRadius: 999, background: c }} />
-          ),
-        )}
-      </div>
+      {/*
+        A rule, not four certainty-coloured bars.
+
+        This previously drew the four `--color-certainty-*` hues as decoration.
+        They annotated nothing — the image has no assertion on it — so the one
+        artefact that represents the product in every shared link, unfurl and
+        search result was spending the scholarly palette on ornament. Same
+        borrowing as the roadmap dots and the diagram's node strokes; widest
+        reach of the three. `src/test/certainty-vocabulary.test.ts` now fails on
+        these literal values as well as on the token names, because inlining
+        them here is exactly what let this one through.
+      */}
+      <div
+        style={{
+          width: 240,
+          height: 4,
+          marginTop: 48,
+          borderRadius: 999,
+          background: "hsl(245,40%,36%)",
+        }}
+      />
     </div>,
     size,
   );

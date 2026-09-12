@@ -59,6 +59,22 @@ test.describe("marketing landing page", () => {
     );
   });
 
+  test("a deep link to a step lands on that step", async ({ page }) => {
+    // The step links put these URLs in the address bar, so they get shared and
+    // reloaded. The scroll targets only exist once the stage has enhanced, so
+    // without an explicit jump the visitor lands on panel 1 instead.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/de#highlight-relations");
+    const stage = page.locator("#highlights");
+    await expect(stage.getByRole("navigation").getByRole("link").nth(3)).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    await expect(stage.locator('[data-slot="stage-panel"][data-active="true"]')).toContainText(
+      "Alles kann mit allem verbunden sein.",
+    );
+  });
+
   test("stacks the highlights as readable spreads on a narrow viewport", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/de");

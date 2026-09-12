@@ -1,10 +1,22 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+/**
+ * Build status is not certainty. These dots were coloured from the
+ * `--color-certainty-*` family, which on this page means one specific thing:
+ * how well evidenced an assertion is. "Shipped" is not a certain claim and
+ * "planned" is not an unknown one — they are project states, and borrowing the
+ * scholarly palette for them teaches a mapping the data model does not have.
+ *
+ * Commit 92e03e0 already caught half of this: `CertaintyMarker` was being used
+ * as the bullet here and announced "Gewissheit: …" before the status text. It
+ * removed the announcement and kept the colours, so the visual half of the same
+ * mistake survived. `src/test/certainty-vocabulary.test.ts` now refuses both.
+ */
 const STATUS_ROWS = [
-  { key: "shipped", color: "var(--color-certainty-certain)" },
-  { key: "next", color: "var(--color-certainty-probable)" },
-  { key: "planned", color: "var(--color-certainty-unknown)" },
+  { key: "shipped", color: "var(--color-success)" },
+  { key: "next", color: "var(--color-info)" },
+  { key: "planned", color: "var(--color-muted-foreground)" },
 ] as const;
 
 interface OpenDevelopmentProps {

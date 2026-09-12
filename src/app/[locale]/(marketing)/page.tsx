@@ -43,6 +43,18 @@ export async function generateMetadata({
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations("marketing.panels");
+  const tCommon = await getTranslations("common");
+
+  // One source for the node labels: they are rendered inside the SVG *and*
+  // interpolated into its accessible description, and a description that names
+  // different nodes than the picture draws is worse than none.
+  const relationLabels = {
+    person: t("relations.nodes.person"),
+    event: t("relations.nodes.event"),
+    place: t("relations.nodes.place"),
+    source: t("relations.nodes.source"),
+    relation: t("relations.nodes.relation"),
+  };
 
   // Declared here rather than inline in the JSX so the stage receives one
   // ordered array: its step navigation, its scroll sentinels and its panels all
@@ -70,9 +82,14 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       body: t("evidence.body"),
       specimen: (
         <EvidenceCitation
+          propertyLabel={t("evidence.propertyLabel")}
+          property={t("evidence.property")}
           sourceLabel={t("evidence.sourceLabel")}
           page={t("evidence.page")}
+          quoteLabel={t("evidence.quoteLabel")}
           quote={t("evidence.quote")}
+          transcriptionLabel={t("evidence.transcriptionLabel")}
+          transcription={t("evidence.transcription")}
         />
       ),
     },
@@ -83,13 +100,14 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       body: t("relations.body"),
       specimen: (
         <RelationDiagram
-          labels={{
-            person: t("relations.nodes.person"),
-            event: t("relations.nodes.event"),
-            place: t("relations.nodes.place"),
-            source: t("relations.nodes.source"),
-            relation: t("relations.nodes.relation"),
-          }}
+          labels={relationLabels}
+          description={t("relations.diagramDescription", {
+            ...relationLabels,
+            certain: tCommon("certainty.CERTAIN"),
+            probable: tCommon("certainty.PROBABLE"),
+            possible: tCommon("certainty.POSSIBLE"),
+            unknown: tCommon("certainty.UNKNOWN"),
+          })}
         />
       ),
     },

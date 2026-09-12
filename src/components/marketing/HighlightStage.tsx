@@ -85,6 +85,28 @@ export function HighlightStage({ steps }: HighlightStageProps) {
     };
   }, []);
 
+  // Honour a deep link once the stage exists.
+  //
+  // The step links put `#highlight-<id>` in the address bar, so those URLs get
+  // shared and reloaded — but the scroll targets are the sentinels, which are
+  // `display: none` until `enhanced` flips after mount. At navigation time the
+  // anchor therefore resolves to nothing and the browser leaves the visitor at
+  // the top of the page, on a panel that is not the one they asked for.
+  //
+  // This is not scroll hijacking (spec §8.2): it performs exactly the jump the
+  // browser itself would have made had the layout existed a moment earlier, and
+  // only for a hash naming one of this stage's own steps. The ref keeps it to
+  // once per page load, so a later resize across the breakpoint cannot yank a
+  // reading visitor back to the hash.
+  const honouredDeepLink = useRef(false);
+  useEffect(() => {
+    if (!enhanced || honouredDeepLink.current) return;
+    honouredDeepLink.current = true;
+    const id = window.location.hash.slice(1);
+    if (!id || !steps.some((step) => `highlight-${step.id}` === id)) return;
+    document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "auto" });
+  }, [enhanced, steps]);
+
   useEffect(() => {
     if (!enhanced || typeof IntersectionObserver === "undefined") return;
     const sentinels = sentinelsRef.current.filter((node): node is HTMLDivElement => node !== null);

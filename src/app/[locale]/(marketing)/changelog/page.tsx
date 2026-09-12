@@ -17,10 +17,14 @@ export default async function ChangelogPage({ params }: { params: Promise<{ loca
         <h2 className="text-muted-foreground text-xs tracking-[0.14em] uppercase">
           {t("comingNext")}
         </h2>
-        <ul className="text-muted-foreground mt-4 space-y-3">
-          <li>{t("theme1")}</li>
-          <li>{t("theme2")}</li>
-          <li>{t("theme3")}</li>
+        {/* Explicit role="list"/"listitem": Tailwind's preflight sets
+            `list-style: none` on every <ul>/<ol>, and in WebKit that strips the
+            implicit roles, leaving these three as unrelated lines of text
+            (issue #90). Enforced by src/test/marketing-list-roles.test.ts. */}
+        <ul role="list" className="text-muted-foreground mt-4 space-y-3">
+          <li role="listitem">{t("theme1")}</li>
+          <li role="listitem">{t("theme2")}</li>
+          <li role="listitem">{t("theme3")}</li>
         </ul>
       </section>
 
