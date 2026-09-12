@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { NextIntlClientProvider } from "next-intl";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { Reveal } from "@/components/marketing/Reveal";
@@ -151,5 +153,46 @@ describe("Reveal CSS — visible by default for no-JS visitors (F1)", () => {
           unscopedHidden?.[0],
         )}`,
     ).toBeNull();
+  });
+});
+
+describe("Reveal — hydration stability", () => {
+  it("renders the same markup before effects run, whatever the motion preference", () => {
+    // The property that matters is that the first render does not depend on
+    // matchMedia. renderToString runs no effects, so it sees exactly what the
+    // server emits — and it must be `false` even with reduced motion on.
+    //
+    // This exists because the whole suite passed against the broken version.
+    // Resolving the preference in the useState initialiser made the server say
+    // "false" and the client's first render say "true", and React keeps the
+    // server's attribute: state and DOM then disagree forever, because the
+    // observer effect returns early on `revealed` and nothing listens for a
+    // change. A visitor who turned reduced motion off mid-visit lost the CSS
+    // branch holding the bands visible and never got them back.
+    mockReducedMotion(true);
+    const reduced = renderToString(
+      <NextIntlClientProvider locale="de" messages={{}}>
+        <Reveal>content</Reveal>
+      </NextIntlClientProvider>,
+    );
+    mockReducedMotion(false);
+    const normal = renderToString(
+      <NextIntlClientProvider locale="de" messages={{}}>
+        <Reveal>content</Reveal>
+      </NextIntlClientProvider>,
+    );
+
+    expect(reduced).toContain('data-revealed="false"');
+    expect(normal).toContain('data-revealed="false"');
+    expect(reduced).toBe(normal);
+  });
+
+  it("still ends up revealed after mount when reduced motion is requested", () => {
+    // The preference is honoured, just one tick later. No flash: the
+    // reduced-motion branch in globals.css forces opacity: 1 on .js .reveal
+    // regardless of data-revealed.
+    mockReducedMotion(true);
+    const { container } = renderWithProviders(<Reveal>content</Reveal>);
+    expect(container.querySelector("[data-revealed]")).toHaveAttribute("data-revealed", "true");
   });
 });

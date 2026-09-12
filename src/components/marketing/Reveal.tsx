@@ -19,10 +19,26 @@ type WindowWithRevealWatchdog = Window & {
 };
 
 export function Reveal({ children, className }: RevealProps) {
-  // Reduced motion is resolved during the first render, not in an effect, so
-  // the element never flashes a hidden state at users who asked for stillness.
-  const [revealed, setRevealed] = useState(() => prefersReducedMotion());
+  // Server-stable initial state, then synchronise the preference after mount.
+  //
+  // This used to resolve reduced motion during the first render — false on the
+  // server, true on the client — so every Reveal hydrated mismatched. React
+  // keeps the server's `data-revealed="false"` (measured in a real browser;
+  // see issue #92), while the component's state says `true`, and nothing can
+  // ever reconcile them: the observer effect returns early on `revealed`, and
+  // there is no listener. A visitor who then turns reduced motion *off* mid-
+  // visit loses the CSS branch forcing `opacity: 1` and every band below the
+  // hero disappears, permanently, with no way back short of a reload.
+  //
+  // Deferring to an effect costs nothing visually: the reduced-motion branch in
+  // globals.css sets `opacity: 1` on `.js .reveal` regardless of
+  // `data-revealed`, so there is no hidden state to flash through.
+  const [revealed, setRevealed] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) setRevealed(true);
+  }, []);
 
   // Cancel the marketing layout's watchdog (see layout.tsx): its inline
   // script strips the .js class after a grace period in case the bundle

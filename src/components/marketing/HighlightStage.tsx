@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { HighlightPanel } from "@/components/marketing/HighlightPanel";
 
@@ -63,6 +63,7 @@ export function HighlightStage({ steps }: HighlightStageProps) {
   const [enhanced, setEnhanced] = useState(false);
   const [active, setActive] = useState(0);
   const sentinelsRef = useRef<Array<HTMLDivElement | null>>([]);
+  const panelsRef = useRef<Array<HTMLDivElement | null>>([]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -75,7 +76,13 @@ export function HighlightStage({ steps }: HighlightStageProps) {
     // `lg` breakpoint while being too short for a spread to fit inside it.
     const wide = window.matchMedia("(min-width: 64rem) and (min-height: 44rem)");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setEnhanced(wide.matches && !reduced.matches);
+    // IntersectionObserver belongs in the gate, not only in the effect that
+    // uses it. Without it the observer effect returns early while `enhanced`
+    // stays true, so the CSS hides every panel but the first and nothing can
+    // ever move `active` — highlights 2-4 become unreachable. `Reveal` guards
+    // the same way for the same reason.
+    const observable = typeof IntersectionObserver !== "undefined";
+    const update = () => setEnhanced(observable && wide.matches && !reduced.matches);
     update();
     wide.addEventListener("change", update);
     reduced.addEventListener("change", update);
@@ -100,13 +107,34 @@ export function HighlightStage({ steps }: HighlightStageProps) {
   // once per page load, so a later resize across the breakpoint cannot yank a
   // reading visitor back to the hash.
   const honouredDeepLink = useRef(false);
+
+  /**
+   * Scroll the enhanced stage to a step and put the reader at its content.
+   *
+   * The anchor names the panel, but in this layout all four panels occupy one
+   * sticky cell, so the browser's own jump would land on whichever of them
+   * happens to be painted. The scroll offset lives on the sentinel; the reading
+   * position lives on the panel. Both have to move, which is why this is a
+   * function rather than a plain href.
+   *
+   * `preventScroll` on the focus call matters: focusing an element scrolls it
+   * into view by default, which would immediately undo the sentinel scroll.
+   */
+  const goToStep = useCallback((index: number, focus: boolean) => {
+    sentinelsRef.current[index]?.scrollIntoView({ block: "start", behavior: "auto" });
+    if (focus) panelsRef.current[index]?.focus({ preventScroll: true });
+  }, []);
+
   useEffect(() => {
     if (!enhanced || honouredDeepLink.current) return;
     honouredDeepLink.current = true;
     const id = window.location.hash.slice(1);
-    if (!id || !steps.some((step) => `highlight-${step.id}` === id)) return;
-    document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "auto" });
-  }, [enhanced, steps]);
+    const index = steps.findIndex((step) => `highlight-${step.id}` === id);
+    if (index === -1) return;
+    // No focus on load: the visitor did not activate anything, and stealing
+    // focus on arrival is its own accessibility problem.
+    goToStep(index, false);
+  }, [enhanced, steps, goToStep]);
 
   useEffect(() => {
     if (!enhanced || typeof IntersectionObserver === "undefined") return;
@@ -159,6 +187,17 @@ export function HighlightStage({ steps }: HighlightStageProps) {
                     <a
                       href={`#highlight-${step.id}`}
                       aria-current={index === active ? "true" : undefined}
+                      onClick={(event) => {
+                        // Only the enhanced layout needs the interception; the
+                        // nav is not rendered in the fallback, where the plain
+                        // anchor already does the right thing.
+                        event.preventDefault();
+                        goToStep(index, true);
+                        // Keep the address bar honest so the URL stays
+                        // shareable, without the navigation the browser would
+                        // otherwise perform.
+                        window.history.replaceState(null, "", `#highlight-${step.id}`);
+                      }}
                     >
                       <span aria-hidden="true" className="stage-steps-tick" />
                       {step.kicker}
@@ -173,14 +212,28 @@ export function HighlightStage({ steps }: HighlightStageProps) {
             {steps.map((step, index) => (
               <div
                 key={step.id}
-                // The anchor target has to be whichever element is actually on
-                // the page. In the fallback layout the sentinels are
-                // `display: none`, so an id parked on one resolves to nothing
-                // and a shared `#highlight-…` link left the visitor at the top
-                // — measured at 390px: scrollY 0 with the panel 3675px away.
-                // Here it sits on the panel, which exists in every layout, so
-                // the browser honours the link with no JavaScript at all.
-                id={enhanced ? undefined : `highlight-${step.id}`}
+                // The anchor target is always the panel, in both layouts.
+                //
+                // It has to be an element that exists: in the fallback the
+                // sentinels are `display: none`, so an id parked on one
+                // resolved to nothing and a shared `#highlight-…` link left the
+                // visitor at the top — measured at 390px, scrollY 0 with the
+                // panel 3675px away. It also has to be an element in the
+                // accessibility tree: the sentinels live in an `aria-hidden`
+                // subtree, so a fragment pointing at one has no destination for
+                // a screen reader, which left the user on the link instead of
+                // at the content they asked for.
+                //
+                // The panel satisfies both. In the fallback the browser honours
+                // the link with no JavaScript at all; in the enhanced layout
+                // the panels share one sticky cell and have no distinct scroll
+                // positions, so `goToStep` below translates the same target
+                // into the right scroll offset and moves focus here.
+                id={`highlight-${step.id}`}
+                ref={(node) => {
+                  panelsRef.current[index] = node;
+                }}
+                tabIndex={-1}
                 data-slot="stage-panel"
                 data-active={index === active}
                 className="stage-panel"
@@ -207,11 +260,9 @@ export function HighlightStage({ steps }: HighlightStageProps) {
           {steps.map((step, index) => (
             <div
               key={step.id}
-              // Only in the enhanced layout, where the panels are stacked in one
-              // sticky cell and have no distinct scroll positions of their own.
-              // The two ids are mutually exclusive, so the document never holds
-              // a duplicate.
-              id={enhanced ? `highlight-${step.id}` : undefined}
+              // No id: these carry scroll extent, not identity. They sit in an
+              // `aria-hidden` subtree, so an anchor pointing here would have no
+              // destination in the accessibility tree.
               ref={(node) => {
                 sentinelsRef.current[index] = node;
               }}

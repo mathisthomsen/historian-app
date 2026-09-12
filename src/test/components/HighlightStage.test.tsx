@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -167,17 +167,44 @@ describe("HighlightStage — enhanced layout (wide viewport, motion allowed)", (
   });
 
   it("marks the first step current and moves aria-current as sentinels are crossed", () => {
-    const { container } = renderStage();
+    renderStage();
     const nav = screen.getByRole("navigation");
     const links = within(nav).getAllByRole("link");
     expect(links[0]).toHaveAttribute("aria-current", "true");
     expect(links[2]).not.toHaveAttribute("aria-current");
 
+    // Entered by observed position, not by id: the ids identify the panels
+    // (which are what a link may point at), while the observer watches the
+    // scroll spacers, which deliberately carry no identity of their own.
     const observer = MockIntersectionObserver.instances.at(-1)!;
-    observer.enter(container.querySelector("#highlight-evidence")!);
+    expect(observer.targets).toHaveLength(STEPS.length);
+    observer.enter(observer.targets[2]!);
 
     expect(links[2]).toHaveAttribute("aria-current", "true");
     expect(links[0]).not.toHaveAttribute("aria-current");
+  });
+
+  it("points every step link at a target that is in the accessibility tree", () => {
+    const { container } = renderStage();
+    const links = within(screen.getByRole("navigation")).getAllByRole("link");
+
+    for (const link of links) {
+      const target = container.querySelector(link.getAttribute("href")!);
+      expect(target).toBeInTheDocument();
+      // The scroll spacers live in an aria-hidden subtree. A fragment pointing
+      // at one scrolls the page but has no destination for a screen reader, so
+      // activating a step left the user on the link. The panel is the target
+      // precisely because it is real content.
+      expect(target!.closest("[aria-hidden='true']")).toBeNull();
+      expect(target).toHaveAttribute("data-slot", "stage-panel");
+    }
+  });
+
+  it("moves focus to the panel when a step is activated", () => {
+    const { container } = renderStage();
+    const links = within(screen.getByRole("navigation")).getAllByRole("link");
+    fireEvent.click(links[2]!);
+    expect(container.querySelector("#highlight-evidence")).toHaveFocus();
   });
 
   it("shows exactly one panel and keeps the rest readable but out of sight", () => {

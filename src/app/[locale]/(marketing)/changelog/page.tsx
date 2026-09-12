@@ -52,7 +52,16 @@ export default async function ChangelogPage({ params }: { params: Promise<{ loca
             <p className="text-muted-foreground font-mono text-sm">
               {release.version} · {release.date}
             </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">{release.title}</h2>
+            <h2
+              className="mt-2 text-2xl font-semibold tracking-tight"
+              // The title comes from the same German file as the body, so it
+              // needs the same language scope. Left off, `/en/changelog` had a
+              // screen reader pronounce a German heading with English
+              // phonetics while only the body switched voice.
+              lang={release.localeFallback ? "de" : undefined}
+            >
+              {release.title}
+            </h2>
             {/*
               Spec §8.3: a release missing the requested locale falls back to
               German *with a visible note*. Without it `/en/changelog` presents
