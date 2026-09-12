@@ -660,12 +660,6 @@
       "primary": "Konto erstellen",
       "secondary": "Ansehen"
     },
-    "rail": {
-      "previous": "Zurück",
-      "next": "Weiter",
-      "position": "Panel {current} von {total}",
-      "label": "Was Evidoxa anders macht"
-    },
     "panels": {
       "certainty": {
         "kicker": "Gewissheit",
@@ -675,13 +669,21 @@
       "dates": {
         "kicker": "Datierung",
         "title": "Ein Jahr ohne Monat ist eine vollständige Antwort.",
-        "body": "Jahr, Monat und Tag werden getrennt gespeichert. Was Sie nicht wissen, müssen Sie nicht erfinden."
+        "body": "Jahr, Monat und Tag werden getrennt gespeichert. Was Sie nicht wissen, müssen Sie nicht erfinden.",
+        "specimen": {
+          "year": "Jahr",
+          "month": "Monat",
+          "day": "Tag",
+          "unknown": "unbekannt"
+        }
       },
       "evidence": {
         "kicker": "Belege",
         "title": "Jede Aussage zeigt auf ihre Quelle.",
         "body": "Belege hängen am einzelnen Feld — mit Fundstelle, Zitat und diplomatischer Transkription.",
-        "sourceLabel": "Nürnberger Polizeiakte, 1828"
+        "sourceLabel": "Nürnberger Polizeiakte, 1828",
+        "page": "Bl. 4r",
+        "quote": "ist alhier den 26. Maii ohnverhofft angekommen"
       },
       "relations": {
         "kicker": "Beziehungen",
@@ -697,16 +699,29 @@
       }
     },
     "editorial": {
-      "body": "Jede Datenbank zwingt Sie irgendwann zu einer Angabe, die Sie nicht belegen können. Ein Datumsfeld will einen Tag. Ein Ortsfeld will einen Ort. Die Fußnote, die das relativiert, steht am Ende in Ihrem Kopf — nicht in Ihren Daten."
+      "kicker": "Das Problem",
+      "lede": "Jede Datenbank zwingt Sie irgendwann zu einer Angabe, die Sie nicht belegen können. Ein Datumsfeld will einen Tag. Ein Ortsfeld will einen Ort.",
+      "punchline": "Die Fußnote, die das relativiert, steht am Ende in Ihrem Kopf — nicht in Ihren Daten."
     },
     "openDev": {
       "kicker": "Stand der Dinge",
       "title": "Evidoxa wird an Dissertationen entwickelt, nicht an Personas.",
       "body": "Was als Nächstes gebaut wird, entscheiden die Historikerinnen und Historiker, die damit arbeiten.",
-      "shipped": "Personen, Ereignisse, Quellen und Beziehungen — nutzbar",
-      "next": "Import und Export — als Nächstes",
-      "planned": "Zusammenarbeit im Team — geplant",
-      "changelogLink": "Vollständiges Changelog"
+      "changelogLink": "Vollständiges Changelog",
+      "status": {
+        "shipped": {
+          "label": "Personen, Ereignisse, Quellen und Beziehungen",
+          "state": "nutzbar"
+        },
+        "next": {
+          "label": "Import und Export",
+          "state": "als Nächstes"
+        },
+        "planned": {
+          "label": "Zusammenarbeit im Team",
+          "state": "geplant"
+        }
+      }
     },
     "cta": {
       "title": "Fangen Sie mit einer Quelle an.",
@@ -725,6 +740,10 @@
       "imprintBody": "Angaben gemäß § 5 DDG folgen.",
       "privacyTitle": "Datenschutzerklärung",
       "privacyBody": "Die Datenschutzerklärung folgt."
+    },
+    "stage": {
+      "label": "Was Evidoxa anders macht",
+      "steps": "Themen"
     }
   }
 }

@@ -19,7 +19,7 @@ export function CtaBand({ locale }: CtaBandProps) {
   return (
     <section className="px-4 sm:px-6">
       <div className="border-border bg-card mx-auto max-w-[var(--content-max-width)] rounded-xl border p-8 text-center sm:p-12">
-        <h2 className="mx-auto max-w-[20ch] leading-tight font-semibold tracking-[var(--tracking-display-sm)] text-balance text-[var(--text-display-sm)]">
+        <h2 className="mx-auto max-w-[20ch] text-[length:var(--text-display-sm)] leading-tight font-semibold tracking-[var(--tracking-display-sm)] text-balance">
           {t("title")}
         </h2>
         <p className="text-muted-foreground mx-auto mt-4 max-w-[46ch]">{t("body")}</p>

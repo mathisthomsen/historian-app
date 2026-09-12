@@ -13,7 +13,7 @@ export function Hero({ locale }: HeroProps) {
 
   return (
     <section className="overflow-hidden px-4 pt-[var(--section-gap-md)] text-center sm:px-6">
-      <h1 className="mx-auto max-w-[16ch] leading-[var(--leading-display)] font-semibold tracking-[var(--tracking-display-lg)] text-balance text-[var(--text-display-lg)]">
+      <h1 className="mx-auto max-w-[16ch] text-[length:var(--text-display-lg)] leading-[var(--leading-display)] font-semibold tracking-[var(--tracking-display-lg)] text-balance">
         {t("headline")}
       </h1>
       <p className="text-muted-foreground mx-auto mt-6 max-w-[46ch] text-lg text-pretty">

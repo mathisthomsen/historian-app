@@ -5,13 +5,11 @@ import { CtaBand } from "@/components/marketing/CtaBand";
 import { EditorialPassage } from "@/components/marketing/EditorialPassage";
 import { EvidenceCitation } from "@/components/marketing/EvidenceCitation";
 import { Hero } from "@/components/marketing/Hero";
-import { HighlightPanel } from "@/components/marketing/HighlightPanel";
-import { HighlightRail } from "@/components/marketing/HighlightRail";
+import { HighlightStage, type StageStep } from "@/components/marketing/HighlightStage";
 import { OpenDevelopment } from "@/components/marketing/OpenDevelopment";
 import { RelationDiagram } from "@/components/marketing/RelationDiagram";
 import { Reveal } from "@/components/marketing/Reveal";
-import { CertaintyMarker } from "@/components/research/CertaintyMarker";
-import { Badge } from "@/components/ui/badge";
+import { CertaintyScale, PartialDateSpecimen } from "@/components/marketing/Specimens";
 import { env } from "@/lib/env";
 
 export async function generateMetadata({
@@ -46,6 +44,57 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const { locale } = await params;
   const t = await getTranslations("marketing.panels");
 
+  // Declared here rather than inline in the JSX so the stage receives one
+  // ordered array: its step navigation, its scroll sentinels and its panels all
+  // have to agree on the same order and the same ids, and a single source makes
+  // that structural rather than something to keep in sync by hand.
+  const steps: StageStep[] = [
+    {
+      id: "certainty",
+      kicker: t("certainty.kicker"),
+      title: t("certainty.title"),
+      body: t("certainty.body"),
+      specimen: <CertaintyScale />,
+    },
+    {
+      id: "dates",
+      kicker: t("dates.kicker"),
+      title: t("dates.title"),
+      body: t("dates.body"),
+      specimen: <PartialDateSpecimen />,
+    },
+    {
+      id: "evidence",
+      kicker: t("evidence.kicker"),
+      title: t("evidence.title"),
+      body: t("evidence.body"),
+      specimen: (
+        <EvidenceCitation
+          sourceLabel={t("evidence.sourceLabel")}
+          page={t("evidence.page")}
+          quote={t("evidence.quote")}
+        />
+      ),
+    },
+    {
+      id: "relations",
+      kicker: t("relations.kicker"),
+      title: t("relations.title"),
+      body: t("relations.body"),
+      specimen: (
+        <RelationDiagram
+          labels={{
+            person: t("relations.nodes.person"),
+            event: t("relations.nodes.event"),
+            place: t("relations.nodes.place"),
+            source: t("relations.nodes.source"),
+            relation: t("relations.nodes.relation"),
+          }}
+        />
+      ),
+    },
+  ];
+
   return (
     <>
       <Hero locale={locale} />
@@ -58,54 +107,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
       <div className="mt-[var(--section-gap-lg)]">
         <Reveal>
-          <HighlightRail>
-            <HighlightPanel
-              kicker={t("certainty.kicker")}
-              title={t("certainty.title")}
-              body={t("certainty.body")}
-            >
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="certain">{t("certainty.kicker")}</Badge>
-                <CertaintyMarker certainty="PROBABLE" />
-                <CertaintyMarker certainty="POSSIBLE" />
-                <CertaintyMarker certainty="UNKNOWN" />
-              </div>
-            </HighlightPanel>
-
-            <HighlightPanel
-              kicker={t("dates.kicker")}
-              title={t("dates.title")}
-              body={t("dates.body")}
-            >
-              <p className="flex items-center gap-2 font-mono text-sm">
-                1740 <CertaintyMarker certainty="POSSIBLE" />
-              </p>
-            </HighlightPanel>
-
-            <HighlightPanel
-              kicker={t("evidence.kicker")}
-              title={t("evidence.title")}
-              body={t("evidence.body")}
-            >
-              <EvidenceCitation count={3} sourceLabel={t("evidence.sourceLabel")} />
-            </HighlightPanel>
-
-            <HighlightPanel
-              kicker={t("relations.kicker")}
-              title={t("relations.title")}
-              body={t("relations.body")}
-            >
-              <RelationDiagram
-                labels={{
-                  person: t("relations.nodes.person"),
-                  event: t("relations.nodes.event"),
-                  place: t("relations.nodes.place"),
-                  source: t("relations.nodes.source"),
-                  relation: t("relations.nodes.relation"),
-                }}
-              />
-            </HighlightPanel>
-          </HighlightRail>
+          <HighlightStage steps={steps} />
         </Reveal>
       </div>
 

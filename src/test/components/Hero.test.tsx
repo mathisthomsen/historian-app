@@ -22,7 +22,11 @@ describe("Hero", () => {
   it("uses the marketing display tier, not the app's text scale", () => {
     renderWithProviders(<Hero locale="de" />);
     const h1 = screen.getByRole("heading", { level: 1 });
-    expect(h1.className).toMatch(/text-\[var\(--text-display-/);
+    // The `length:` hint is the assertion, not decoration. This test used to
+    // match `text-[var(--text-display-`, which is the form Tailwind v4 resolves
+    // as a *colour* — so it passed while the hero rendered at the inherited
+    // 16px. See src/test/display-type.test.ts for the repo-wide guard.
+    expect(h1.className).toMatch(/text-\[length:var\(--text-display-/);
   });
 
   it("hides the decorative app frame from assistive technology", () => {

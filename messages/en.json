@@ -660,12 +660,6 @@
       "primary": "Create account",
       "secondary": "Take a look"
     },
-    "rail": {
-      "previous": "Previous",
-      "next": "Next",
-      "position": "Panel {current} of {total}",
-      "label": "What Evidoxa does differently"
-    },
     "panels": {
       "certainty": {
         "kicker": "Certainty",
@@ -675,13 +669,21 @@
       "dates": {
         "kicker": "Dating",
         "title": "A year without a month is a complete answer.",
-        "body": "Year, month and day are stored separately. What you do not know, you need not invent."
+        "body": "Year, month and day are stored separately. What you do not know, you need not invent.",
+        "specimen": {
+          "year": "Year",
+          "month": "Month",
+          "day": "Day",
+          "unknown": "unknown"
+        }
       },
       "evidence": {
         "kicker": "Evidence",
         "title": "Every claim points at its source.",
         "body": "Evidence attaches to the individual field — with page reference, quotation and diplomatic transcription.",
-        "sourceLabel": "Nürnberger Polizeiakte, 1828"
+        "sourceLabel": "Nürnberger Polizeiakte, 1828",
+        "page": "fol. 4r",
+        "quote": "ist alhier den 26. Maii ohnverhofft angekommen"
       },
       "relations": {
         "kicker": "Relations",
@@ -697,16 +699,29 @@
       }
     },
     "editorial": {
-      "body": "Every database eventually forces you into a statement you cannot evidence. A date field wants a day. A place field wants a place. The footnote that qualifies it ends up in your head — not in your data."
+      "kicker": "The problem",
+      "lede": "Every database eventually forces you into a statement you cannot evidence. A date field wants a day. A place field wants a place.",
+      "punchline": "The footnote that qualifies it ends up in your head — not in your data."
     },
     "openDev": {
       "kicker": "Where this stands",
       "title": "Evidoxa is built against dissertations, not personas.",
       "body": "What gets built next is decided by the historians doing the work.",
-      "shipped": "People, events, sources and relations — usable",
-      "next": "Import and export — next",
-      "planned": "Team collaboration — planned",
-      "changelogLink": "Full changelog"
+      "changelogLink": "Full changelog",
+      "status": {
+        "shipped": {
+          "label": "People, events, sources and relations",
+          "state": "usable"
+        },
+        "next": {
+          "label": "Import and export",
+          "state": "next"
+        },
+        "planned": {
+          "label": "Team collaboration",
+          "state": "planned"
+        }
+      }
     },
     "cta": {
       "title": "Start with one source.",
@@ -725,6 +740,10 @@
       "imprintBody": "Legal notice to follow.",
       "privacyTitle": "Privacy policy",
       "privacyBody": "The privacy policy will follow."
+    },
+    "stage": {
+      "label": "What Evidoxa does differently",
+      "steps": "Topics"
     }
   }
 }

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CtaBand } from "@/components/marketing/CtaBand";
@@ -46,5 +46,25 @@ describe("OpenDevelopment", () => {
   it("lists three status lines", () => {
     renderWithProviders(<OpenDevelopment locale="de" />);
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
+
+  it("renders each status line as a label and a separate state, so the ledger reads as a table", () => {
+    renderWithProviders(<OpenDevelopment locale="de" />);
+    const status = deMessages.marketing.openDev.status;
+    for (const row of [status.shipped, status.next, status.planned]) {
+      const item = screen.getByText(row.label).closest("li");
+      expect(item).not.toBeNull();
+      expect(within(item!).getByText(row.state)).toBeInTheDocument();
+    }
+  });
+
+  it("occupies the second column instead of leaving it empty", () => {
+    // The band used to be a single left-hugging text column inside a max-w-7xl
+    // container, which left roughly 40% of a desktop viewport unclaimed and
+    // read as missing content rather than as deliberate whitespace.
+    const { container } = renderWithProviders(<OpenDevelopment locale="de" />);
+    const grid = container.querySelector(".editorial-grid");
+    expect(grid).toBeInTheDocument();
+    expect(grid!.querySelector("[data-slot='specimen']")).toBeInTheDocument();
   });
 });

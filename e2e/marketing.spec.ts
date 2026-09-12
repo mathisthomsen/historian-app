@@ -16,24 +16,83 @@ test.describe("marketing landing page", () => {
     await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
   });
 
-  test("advances the rail with the next paddle and announces position", async ({ page }) => {
+  test("pins the highlight stage and advances it as the page is scrolled", async ({ page }) => {
+    // The stage only turns on at 64rem with motion allowed; below that the four
+    // spreads stack and there is nothing to advance.
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/de");
-    const next = page.getByRole("button", { name: "Weiter" });
-    await expect(page.getByRole("button", { name: "Zurück" })).toBeDisabled();
-    await next.click();
-    // Scoped to #highlights: the root layout's Sonner <Toaster> also renders
-    // an aria-live="polite" region page-wide, which makes the unscoped
-    // selector a strict-mode violation (two matches) — this is not #61.
-    await expect(page.locator('#highlights [aria-live="polite"]')).toContainText("2");
+
+    const stage = page.locator("#highlights");
+    await expect(stage).toHaveAttribute("data-enhanced", "true");
+
+    const steps = stage.getByRole("navigation").getByRole("link");
+    await expect(steps).toHaveCount(4);
+    // aria-current, not opacity: it is a discrete value that settles with the
+    // IntersectionObserver callback rather than mid-transition, so asserting on
+    // it does not race the cross-fade.
+    await expect(steps.nth(0)).toHaveAttribute("aria-current", "true");
+
+    // Click the step link rather than scrolling to the sentinel: a sentinel is
+    // a full viewport tall, so scrollIntoViewIfNeeded can settle anywhere
+    // inside it (measured: it overshot past the end of the stage entirely).
+    // Following the anchor puts the sentinel's top at the viewport top, which
+    // is both deterministic and what a visitor actually does.
+    await steps.nth(2).click();
+    await expect(steps.nth(2)).toHaveAttribute("aria-current", "true");
+    await expect(steps.nth(0)).not.toHaveAttribute("aria-current", "true");
+    await expect(stage.locator('[data-slot="stage-panel"][data-active="true"]')).toContainText(
+      "Quelle",
+    );
   });
 
-  test("reaches the fourth panel and disables the next paddle there", async ({ page }) => {
+  test("reaches the fourth highlight, which the rail's paddles used to gate", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/de");
-    const next = page.getByRole("button", { name: "Weiter" });
-    await next.click();
-    await next.click();
-    await next.click();
-    await expect(next).toBeDisabled();
+    const stage = page.locator("#highlights");
+    const steps = stage.getByRole("navigation").getByRole("link");
+    await steps.nth(3).click();
+    await expect(steps.nth(3)).toHaveAttribute("aria-current", "true");
+    // The rail's fourth panel used to be the one visitors never reached. Assert
+    // it is genuinely on screen, not merely marked current.
+    await expect(stage.locator('[data-slot="stage-panel"][data-active="true"]')).toContainText(
+      "Alles kann mit allem verbunden sein.",
+    );
+  });
+
+  test("stacks the highlights as readable spreads on a narrow viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/de");
+    const stage = page.locator("#highlights");
+    // No pinned stage on a phone: every panel is in normal flow and visible,
+    // and there is no step navigation to get lost in.
+    await expect(stage).toHaveAttribute("data-enhanced", "false");
+    await expect(stage.getByRole("navigation")).toHaveCount(0);
+    const panels = stage.locator('[data-slot="stage-panel"]');
+    await expect(panels).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
+      await expect(panels.nth(i)).toBeVisible();
+    }
+  });
+
+  test("keeps the highlights stacked when reduced motion is requested", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/de");
+    await expect(page.locator("#highlights")).toHaveAttribute("data-enhanced", "false");
+  });
+
+  test("the open-development band fills both columns on a desktop viewport", async ({ page }) => {
+    // The band used to leave roughly 40% of the viewport empty to the right,
+    // which read as content that had failed to load rather than as whitespace.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/de");
+    const ledger = page.locator('.editorial-grid [data-slot="specimen"]').last();
+    await ledger.scrollIntoViewIfNeeded();
+    const box = await ledger.boundingBox();
+    expect(box).not.toBeNull();
+    // Its left edge sits past the horizontal midpoint: it is genuinely in the
+    // second column, not stacked underneath the prose.
+    expect(box!.x).toBeGreaterThan(1440 / 2 - 100);
   });
 
   test("hero CTA goes to registration", async ({ page }) => {
@@ -91,6 +150,22 @@ test.describe("marketing landing page — no JS (F2)", () => {
     expect(count).toBeGreaterThan(0);
     for (let i = 0; i < count; i++) {
       await expect(reveals.nth(i)).toHaveCSS("opacity", "1");
+    }
+  });
+
+  test("the highlight stage falls back to four readable spreads", async ({ page }) => {
+    // data-enhanced can only become "true" inside a mount effect, so with no
+    // JS the server's value survives and the CSS lays the panels out in normal
+    // flow. Without this the panels would be stacked in one grid cell at
+    // opacity 0, i.e. a blank band.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/de");
+    const stage = page.locator("#highlights");
+    await expect(stage).toHaveAttribute("data-enhanced", "false");
+    const panels = stage.locator('[data-slot="stage-panel"]');
+    await expect(panels).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
+      await expect(panels.nth(i)).toHaveCSS("opacity", "1");
     }
   });
 });

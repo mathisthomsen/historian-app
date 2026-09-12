@@ -14,16 +14,23 @@ const LABELS = {
   relation: "bezeugt",
 };
 
+const CITATION = {
+  sourceLabel: "Nürnberger Polizeiakte, 1828",
+  page: "Bl. 4r",
+  quote: "ist alhier den 26. Maii ohnverhofft angekommen",
+};
+
 describe("EvidenceCitation", () => {
-  it("renders the count and the source label as text", () => {
-    renderWithProviders(<EvidenceCitation count={3} sourceLabel="Nürnberger Polizeiakte, 1828" />);
-    expect(screen.getByText(/3/)).toBeInTheDocument();
+  it("renders the source, the page reference and the quotation", () => {
+    renderWithProviders(<EvidenceCitation {...CITATION} />);
     expect(screen.getByText(/Nürnberger Polizeiakte, 1828/)).toBeInTheDocument();
+    expect(screen.getByText(/Bl\. 4r/)).toBeInTheDocument();
+    expect(screen.getByText(/ohnverhofft angekommen/)).toBeInTheDocument();
   });
 
   it("issues no network request", () => {
     const spy = vi.spyOn(globalThis, "fetch");
-    renderWithProviders(<EvidenceCitation count={3} sourceLabel="x" />);
+    renderWithProviders(<EvidenceCitation {...CITATION} />);
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });

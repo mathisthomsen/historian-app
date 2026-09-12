@@ -637,6 +637,253 @@
 }
 
 /* =============================================================================
+   MARKETING LAYOUT (Epic 2.6)
+   The landing page's shared grammar. Before this existed each band invented its
+   own alignment, so every unclaimed area read as content that had failed to
+   load rather than as composition — most visibly in the open-development band,
+   where prose capped at 52ch inside a 80rem container left roughly 40% of a
+   desktop viewport empty.
+   ============================================================================= */
+@layer components {
+  /* Two columns: prose, and the specimen that argues for it. The 5/6 split is
+     deliberately not 1/1 — the specimen column is the wider of the two so the
+     specimens read as exhibits rather than as illustrations of the text. */
+  .editorial-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 3rem);
+    max-width: var(--content-max-width);
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  @media (min-width: 64rem) {
+    .editorial-grid {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      gap: clamp(2.5rem, 5vw, 5rem);
+      align-items: center;
+    }
+  }
+
+  /* The frame that turns a fragment of real UI into an exhibit. A shared
+     min-height keeps all four the same size so the stage's cross-fade has
+     nothing to jump between. */
+  .specimen {
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-card);
+    padding: clamp(1.5rem, 4vw, 3rem);
+    /* Tall enough to hold the viewport rather than sit in it. At a flat 17rem
+       the exhibit read as a small object adrift in a 900px-tall pinned stage —
+       the same "floating in nothingness" the editorial band suffered from. */
+    min-height: clamp(17rem, 42svh, 27rem);
+  }
+
+  /* The status ledger is a list, not a centred exhibit: its rows want the full
+     width of the frame and a top-down reading order. */
+  .specimen--ledger {
+    display: block;
+    /* `place-items` has to be reset, not just overridden by `display: block`:
+       Chrome applies `justify-items` to block containers as well, so the base
+       rule's `center` shrink-wrapped every row to its own text width and left
+       the ledger a ragged stack of centred lines instead of a table. */
+    place-items: normal;
+    /* The ledger is not part of the stage's cross-fade set, so it has no reason
+       to match the exhibits' shared height — at 27rem it was three rows above
+       200px of empty frame. */
+    min-height: 0;
+    padding-block: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  /* ---------------------------------------------------------------------------
+     BAND 3 — THE HIGHLIGHT STAGE
+     Two layouts from one markup. `data-enhanced` is written by HighlightStage
+     and can only become "true" inside a mount effect, so the fallback below is
+     what the server, a crawler, a no-JS visitor and a failed bundle all get.
+     No content is hidden ahead of JS, so unlike .reveal this needs no watchdog.
+     ------------------------------------------------------------------------- */
+
+  /* Fallback: four spreads in normal flow, the sentinels collapsed away. */
+  .stage[data-enhanced="false"] .stage-sentinels {
+    display: none;
+  }
+
+  .stage[data-enhanced="false"] .stage-panel + .stage-panel {
+    margin-top: var(--section-gap-md);
+  }
+
+  /* Alternate which side the specimen sits on, so four stacked spreads read as
+     a rhythm rather than as four copies of one layout. Only in the fallback:
+     inside the stage the panels cross-fade in place, and text that changed
+     column mid-fade would read as a glitch. */
+  @media (min-width: 64rem) {
+    .stage[data-enhanced="false"] .stage-panel:nth-child(even) .editorial-grid > *:first-child {
+      order: 2;
+    }
+  }
+
+  /* Enhanced: one pinned stage, four viewport-tall sentinels scrolling beneath
+     it. Nothing here drives the scroll — `position: sticky` does the pinning
+     and an IntersectionObserver reads the result (spec §8.2 forbids hijacking). */
+  .stage[data-enhanced="true"] .stage-track {
+    position: relative;
+    /* One viewport of scroll per highlight, plus one more.
+       The sticky viewport is itself in flow, so it can only stay pinned for
+       (track height - its own height). Without the extra viewport the last
+       highlight activated at the exact scroll offset where the stage unpinned
+       and was never actually seen — measured at 1440x900 before this line
+       existed: the fourth sentinel crossed at offset 3600 in a 4500px track
+       that unpinned at 3600. The sentinels are absolutely positioned for the
+       same reason: in flow they pushed the whole band down by one viewport. */
+    height: calc((var(--stage-steps) + 1) * 100svh);
+  }
+
+  .stage[data-enhanced="true"] .stage-sentinels {
+    position: absolute;
+    inset: 0;
+    /* The overlay is positioned and comes after the viewport in the DOM, so it
+       paints on top of it and swallowed every click aimed at a step link — the
+       whole stage was unclickable. Caught by the E2E, not by hand: a scripted
+       `link.click()` bypasses hit-testing and succeeded against the same build.
+       These are empty, aria-hidden scroll spacers and must never take a hit. */
+    pointer-events: none;
+  }
+
+  .stage[data-enhanced="true"] .stage-viewport {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: clamp(2rem, 4vw, 4rem);
+    /* The gutter lives here rather than on the panel, because the two layouts
+       need different ones: the stacked spreads want the page gutter, and the
+       stage wants room for the step rail beside the content column. */
+    padding-inline: max(1.5rem, calc((100% - var(--content-max-width)) / 2));
+    /* svh, not vh: on mobile Safari `100vh` is the *largest* viewport, so a
+       pinned stage sized that way is clipped by the browser chrome. The stage
+       only turns on at 64rem wide and 44rem tall, but a short laptop window has
+       the same problem in miniature. */
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .stage[data-enhanced="true"] .stage-panels {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .stage[data-enhanced="true"] .stage-panel {
+    grid-area: 1 / 1;
+    opacity: 0;
+    transform: translateY(1rem);
+    /* Faded out, never removed: all four panels stay in the accessibility tree,
+       which is what the rail's `role="list"` of panels used to guarantee. */
+    pointer-events: none;
+    transition:
+      opacity var(--duration-deliberate) var(--ease-out),
+      transform var(--duration-deliberate) var(--ease-out);
+  }
+
+  .stage[data-enhanced="true"] .stage-panel[data-active="true"] {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .stage[data-enhanced="true"] .stage-sentinel {
+    height: 100svh;
+  }
+
+  /* The fallback keeps the page gutter on each spread, since there is no rail
+     to make room for. */
+  .stage[data-enhanced="false"] .stage-panel {
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 40rem) {
+    .stage[data-enhanced="false"] .stage-panel {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  /* The step rail: where you are among the four, and a way to jump. A real
+     column beside the panels rather than an overlay — as an absolutely placed
+     overlay it landed on top of the active panel's kicker at 1440px, since both
+     were aligned to the same content edge. */
+  .stage-steps {
+    flex: none;
+    align-self: center;
+  }
+
+  /* The rail already names the current topic, 200px away and in the same size,
+     weight and letter-spacing. Two copies of one word read as a mistake, so the
+     panel's own kicker is taken out of the enhanced layout visually — it stays
+     in the accessibility tree, where the rail is a separate landmark and the
+     heading still wants its eyebrow. */
+  .stage[data-enhanced="true"] [data-slot="panel-kicker"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .stage-steps ol {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .stage-steps a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-block: 0.375rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--color-muted-foreground);
+    text-decoration: none;
+    transition: color var(--duration-normal) var(--ease-out);
+  }
+
+  .stage-steps a[aria-current="true"] {
+    color: var(--color-foreground);
+  }
+
+  .stage-steps-tick {
+    display: block;
+    height: 1px;
+    width: 1.25rem;
+    background: var(--color-border);
+    transition:
+      width var(--duration-normal) var(--ease-out),
+      background-color var(--duration-normal) var(--ease-out);
+  }
+
+  .stage-steps a[aria-current="true"] .stage-steps-tick {
+    width: 2.75rem;
+    background: var(--color-foreground);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stage-panel,
+    .stage-steps a,
+    .stage-steps-tick {
+      transition: none;
+    }
+  }
+}
+
+/* =============================================================================
    UTILITY LAYER
    Custom utility classes. All motion utilities include prefers-reduced-motion
    overrides. Typography and certainty badge utilities provide DRY shortcuts

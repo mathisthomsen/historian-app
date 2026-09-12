@@ -9,7 +9,7 @@ export default async function ChangelogPage({ params }: { params: Promise<{ loca
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-[var(--section-gap-md)] sm:px-6">
-      <h1 className="font-semibold tracking-[var(--tracking-display-sm)] text-[var(--text-display-sm)]">
+      <h1 className="text-[length:var(--text-display-sm)] font-semibold tracking-[var(--tracking-display-sm)]">
         {t("title")}
       </h1>
 
