@@ -11,23 +11,24 @@ Target: university MVP validation, then commercialization.
 
 ## Tech Stack
 
-| Layer            | Choice                                    | Notes                                                                                                  |
-| ---------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Framework        | Next.js 15 (App Router) + React 19        | Server Components by default, client leaves only where interactivity needs it                          |
-| Language         | TypeScript 5.8, `strict`                  | Plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`                    |
-| Package manager  | pnpm 9.15 (Node ≥ 22)                     | Always pnpm — never npm or yarn                                                                        |
-| Styling          | Tailwind CSS v4                           | CSS-first. **No `tailwind.config.js`** — design tokens live in `src/styles/globals.css` under `@theme` |
-| Components       | shadcn/ui on Radix primitives             | Local, editable source in `src/components/ui/`                                                         |
-| Database         | PostgreSQL (Neon, serverless)             | Pooled + direct (unpooled) endpoints; migrations require the direct one                                |
-| ORM              | Prisma 6                                  | `migrate dev` locally, `migrate deploy` in CI — never `db push`                                        |
-| Auth             | Auth.js (next-auth) v5, Credentials + JWT | Split config: `auth.config.ts` is Edge-safe for middleware, `auth.ts` carries Prisma + bcrypt          |
-| Cache / limiting | Upstash Redis (Vercel Marketplace)        | No in-memory state — the app scales horizontally                                                       |
-| Validation       | Zod 3                                     | Shared schemas in `src/lib/schemas/` — one source of truth per entity                                  |
-| Forms            | react-hook-form + `@hookform/resolvers`   |                                                                                                        |
-| i18n             | next-intl 3                               | `de` (default) and `en`, always locale-prefixed; `localeDetection: false`                              |
-| Email            | Resend                                    | Verification and password-reset flows                                                                  |
-| Testing          | Vitest + Testing Library; Playwright      | Unit + E2E across Chromium and Firefox                                                                 |
-| Hosting / CI     | Vercel; GitHub Actions                    | Lint → typecheck → unit → build → E2E → deploy                                                         |
+| Layer            | Choice                                    | Notes                                                                                                     |
+| ---------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Framework        | Next.js 15 (App Router) + React 19        | Server Components by default, client leaves only where interactivity needs it                             |
+| Language         | TypeScript 5.8, `strict`                  | Plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`                       |
+| Package manager  | pnpm 9.15 (Node ≥ 22)                     | Always pnpm — never npm or yarn                                                                           |
+| Styling          | Tailwind CSS v4                           | CSS-first. **No `tailwind.config.js`** — design tokens live in `src/styles/globals.css` under `@theme`    |
+| Components       | shadcn/ui on Radix primitives             | Local, editable source in `src/components/ui/`                                                            |
+| Database         | PostgreSQL (Neon, serverless)             | Pooled + direct (unpooled) endpoints; migrations require the direct one                                   |
+| ORM              | Prisma 6                                  | `migrate dev` locally, `migrate deploy` in CI — never `db push`                                           |
+| Auth             | Auth.js (next-auth) v5, Credentials + JWT | Split config: `auth.config.ts` is Edge-safe for middleware, `auth.ts` carries Prisma + bcrypt             |
+| Cache / limiting | Upstash Redis (Vercel Marketplace)        | No in-memory state — the app scales horizontally                                                          |
+| Validation       | Zod 3                                     | Shared schemas in `src/lib/schemas/` — one source of truth per entity                                     |
+| Forms            | react-hook-form + `@hookform/resolvers`   |                                                                                                           |
+| i18n             | next-intl 3                               | `de` (default) and `en`, always locale-prefixed; `localeDetection: false`                                 |
+| Email            | Resend                                    | Verification and password-reset flows                                                                     |
+| Content          | MDX via `next-mdx-remote`                 | Changelog entries only, from `content/changelog/{version}.{locale}.mdx` — repo-authored, never user input |
+| Testing          | Vitest + Testing Library; Playwright      | Unit + E2E across Chromium and Firefox                                                                    |
+| Hosting / CI     | Vercel; GitHub Actions                    | Lint → typecheck → unit → build → E2E → deploy                                                            |
 
 ### Getting started
 

@@ -59,7 +59,13 @@ export function Sidebar({ isOpen }: SidebarProps) {
   }
 
   function navLink(key: string, icon: React.ElementType, label: string, disabled = false) {
-    const href = `/${locale}/${key === "dashboard" ? "" : key}`;
+    // The dashboard lives at /{locale}/dashboard, not at the locale root.
+    // The root used to redirect there; since Epic 2.6 it renders the public
+    // landing page, so the special case sent a signed-in user clicking
+    // "Dashboard" straight out of the app shell and onto marketing.
+    // `isActive` already compared against `/{locale}/dashboard`, so the href
+    // was the half that was wrong.
+    const href = `/${locale}/${key}`;
     const Icon = icon;
     const active = isActive(key);
 
