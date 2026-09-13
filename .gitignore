@@ -125,6 +125,9 @@ app/__todo.txt
 # personal decision, not a property of the repo.
 .claude/settings.json
 
+# Claude Code agent worktrees — full checkouts of this repo inside itself
+.claude/worktrees/
+
 # Editor directories and files
 .vscode/
 .idea/
