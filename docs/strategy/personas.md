@@ -55,9 +55,9 @@ Two consequences are load-bearing enough to name here; both follow directly from
 rows above.
 
 1. **The same data model serves opposite complexity tolerances.** The student will
-   learn a complex workflow; the faculty leader will not. This is the product-side
-   statement of the positioning in [`vision.md`](./vision.md) §1 — the complexity
-   lives in the model, and the UX keeps it away from the user who does not want it.
+   learn a complex workflow; the faculty leader will not. This aligns with the
+   positioning in [`vision.md`](./vision.md) §1 — the complexity lives in the
+   model, and the UX keeps it away from the user.
 2. **German is the primary UI language.** Two of three personas prefer or strongly
    prefer a German interface, which matches `de` being the default locale
    (`src/i18n/routing.ts`).

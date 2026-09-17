@@ -30,10 +30,10 @@ Daraus die drei Festlegungen, die dieses Dokument trägt:
    universitäre Forschung; eine Kommerzialisierung als SaaS ist als Folgeschritt
    vorgesehen, nicht als Startpunkt.
 2. **Die Komplexität liegt im Datenmodell, nicht in der Oberfläche.** Historische
-   Daten sind unvollständig, widersprüchlich und unscharf datiert. Evidoxa bildet
-   das im Modell ab — partielle Daten, kategoriale Gewissheitsgrade, ein universeller
-   Beziehungsgraph — und hält diese Komplexität per UX-Konzept von der Benutzerin
-   fern.
+   Daten sind unvollständig, widersprüchlich und unscharf datiert
+   (`docs/design-system/01-ux/research.md` §3.4). Evidoxa bildet das im Modell ab —
+   partielle Daten, kategoriale Gewissheitsgrade, ein universeller Beziehungsgraph —
+   und hält diese Komplexität per UX-Konzept von der Benutzerin fern.
 3. **Was das Produkt ist:** eine webbasierte Forschungsdatenbank für historische
    Projekte (Formulierung aus `docs/communication/evidoxa-overview.md`, gelöscht).
 
@@ -68,11 +68,11 @@ Deutsche Wiedergabe (Übersetzung des obigen Originals, keine inhaltliche Ergän
 > und Historikern.
 
 Die technische Absicherung dieser These ist in [`decisions.md`](./decisions.md)
-als Entscheidungen 13–18 gesperrt: Agenten haben **keine** Schreibrechte (nur
-`AgentSuggestion`-Datensätze), jeder Vorschlag muss mindestens eine vorhandene
-`Source.id` referenzieren, jede Übernahme erfordert ein explizites ACCEPT durch
-EDITOR oder OWNER, und die Herkunft (`created_via`, `agent_name`) wird an der Entität
-gespeichert.
+als Entscheidungen 13–18 gesperrt: Agenten sollen **keine** Schreibrechte haben (nur
+`AgentSuggestion`-Datensätze), jeder Vorschlag soll mindestens eine vorhandene
+`Source.id` referenzieren, jede Übernahme soll ein explizites ACCEPT durch
+EDITOR oder OWNER erfordern, und die Herkunft (`created_via`, `agent_name`) soll an der Entität
+gespeichert werden.
 
 **Nichts davon ist gebaut.** Die agentische Schicht ist Phase 6 der
 [Roadmap](./roadmap.md) (Epics 6.0–6.3). Heute existiert im Schema lediglich die
@@ -111,10 +111,16 @@ Belegstellen stehen in der Klammer, damit die Prüfung wiederholbar ist.
 
 ### Beziehungsmodell
 
-- **Beliebige Entität zu beliebiger Entität.** `Relation` speichert Typ und ID beider
-  Seiten polymorph, mit Gewissheitsgrad und historischer Gültigkeitsspanne
-  (`valid_from_*` / `valid_to_*`, ebenfalls mit Gewissheit).
-  (`prisma/schema.prisma:440–481`; `src/app/[locale]/(app)/relations/page.tsx`)
+- **Person, Ereignis und Quelle, in jeder Kombination.** `Relation` speichert Typ und
+  ID beider Seiten polymorph, mit Gewissheitsgrad und historischer Gültigkeitsspanne
+  (`valid_from_*` / `valid_to_*`, ebenfalls mit Gewissheit). `enum EntityType` enthält
+  zusätzlich `LOCATION` und `LITERATURE`, aber die Oberfläche bietet nur die drei
+  genannten Typen an (`ALL_TYPES`, `src/components/relations/EntitySelector.tsx:36`,
+  mit dem Lade-Switch für nur diese drei Typen in Zeilen 131–135) — Ort und Literatur
+  kommen mit Epic 3.2/3.3. Für Beziehungen selbst gibt es keinen `EntityType`-Wert;
+  eine Beziehung kann also nicht Ziel einer weiteren Beziehung sein.
+  (`prisma/schema.prisma:440–481`, `enum EntityType` 41–47;
+  `src/app/[locale]/(app)/relations/page.tsx`)
 - **Beziehungstypen sind pro Projekt frei definierbar** — Name, Gegenrichtungsname,
   erlaubte Quell- und Zieltypen.
   (`prisma/schema.prisma:409–432`, `inverse_name` 414, `valid_from_types` 421;
@@ -122,20 +128,27 @@ Belegstellen stehen in der Klammer, damit die Prüfung wiederholbar ist.
 - **Belege an der Beziehung.** Jede Beziehung kann mit Primärquellen belegt werden,
   je Beleg mit Seitenangabe, Zitat und eigener Gewissheit.
   (`prisma/schema.prisma:486–504`, `page_reference` 491, `quote` 492, `confidence` 493)
-- **Belege am einzelnen Datenfeld.** Jedes einzelne Feld einer Entität (z. B. das
-  Geburtsjahr) kann direkt mit einer Primärquelle belegt werden — mit Seitenangabe,
-  normalisiertem Zitat, diplomatischer Transkription und eigener Gewissheit.
+- **Belege am einzelnen Datenfeld — bei Person, Ereignis und Quelle.** Jedes einzelne
+  Feld einer dieser drei Entitäten (z. B. das Geburtsjahr) kann direkt mit einer
+  Primärquelle belegt werden — mit Seitenangabe, normalisiertem Zitat, diplomatischer
+  Transkription und eigener Gewissheit. `PropertyEvidenceBadge` ist ausschließlich in
+  `PersonDetailCard.tsx`, `EventDetailCard.tsx` und `SourceDetailCard.tsx` eingebunden;
+  für Beziehungsfelder gibt es keine feldweise Beleghistorie und kann es nicht geben,
+  solange `EntityType` keinen `RELATION`-Wert kennt.
   (`prisma/schema.prisma:517–539`, `quote` 526, `raw_transcription` 527,
   `confidence` 528; `src/components/relations/PropertyEvidencePanel.tsx`,
   eingebunden über `PropertyEvidenceBadge.tsx`)
 
 ### Nachvollziehbarkeit
 
-- **Aktivitätsprotokoll pro Entität** — wer wann welches Feld von welchem auf welchen
-  Wert geändert hat, append-only, ohne Löschendpunkt.
-  (`prisma/schema.prisma:554–576`; `src/components/relations/ActivityLog.tsx`,
-  eingebunden in `PersonDetailTabs.tsx`, `EventDetailTabs.tsx`,
-  `SourceDetailTabs.tsx`)
+- **Aktivitätsprotokoll pro Entität** — wer wann welches Feld geändert hat, append-only,
+  ohne Löschendpunkt.
+  (`prisma/schema.prisma:554–576`, `old_value`/`new_value` 563–564;
+  `src/components/relations/ActivityLog.tsx`, eingebunden in `PersonDetailTabs.tsx`,
+  `EventDetailTabs.tsx`, `SourceDetailTabs.tsx`. Alter und neuer Wert werden im Schema
+  gespeichert und von der API zurückgegeben (`src/app/api/entities/[type]/[id]/activity/route.ts:84–85`),
+  aber die Oberfläche zeigt sie heute nicht an — `ActivityLog.tsx:119–142` rendert nur
+  Akteur, Aktion, Feldname und einen relativen Zeitstempel.)
 
 ### Arbeiten mit Listen
 
@@ -159,7 +172,7 @@ Belegstellen stehen in der Klammer, damit die Prüfung wiederholbar ist.
   Passwort-Zurücksetzung.
   (`src/app/[locale]/(auth)/auth/{register,verify,login,forgot-password,reset-password}/page.tsx`)
 - **Deutsche und englische Oberfläche**, umschaltbar; Deutsch ist die Standardsprache.
-  (`src/i18n/routing.ts:4`; `src/components/shell/locale-switcher.tsx`)
+  (`src/i18n/routing.ts:5`; `src/components/shell/locale-switcher.tsx`)
 - **Helles und dunkles Farbschema.**
   (`src/components/shell/theme-toggle.tsx`)
 - **Webanwendung, browserbasiert** — kein lokaler Client.
@@ -210,7 +223,7 @@ Drei Nutzertypen, jeweils mit unterschiedlichem Verhältnis zur Komplexität:
 Die vollständige Extraktion inklusive Sitzungsmustern, Sprachpräferenzen und
 Feature-Prioritäten steht in [`personas.md`](./personas.md).
 
-Diese Verteilung ist der Grund für die Positionierung aus Abschnitt 1: dasselbe
+Diese Verteilung deckt sich mit der Positionierung aus Abschnitt 1: dasselbe
 Datenmodell muss einer Person genügen, die es an einem Nachmittag durchdringen will,
 und einer, die es nur zur Kontrolle öffnet.
 
@@ -218,10 +231,10 @@ und einer, die es nur zur Kontrolle öffnet.
 
 ## Quellen
 
-| Abschnitt                    | Quelle                                                                                                                                                            |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 Problem und Positionierung | `docs/specs/roadmap.md`, Einleitung (gelöscht; `git show 56c83e3:docs/specs/roadmap.md`) + Eröffnungssatz von `docs/communication/evidoxa-overview.md` (gelöscht) |
-| 2 Die These                  | `docs/specs/ai_aided_roadmap.md`, Präambel (gelöscht; `git show 56c83e3:docs/specs/ai_aided_roadmap.md`)                                                          |
-| 3 Was Evidoxa heute kann     | `docs/communication/evidoxa-overview.md` (gelöscht), gefiltert und einzeln gegen `prisma/schema.prisma` bzw. Routen unter `src/app/[locale]/` geprüft             |
-| 4 Was geplant ist            | dieselben Behauptungen aus `evidoxa-overview.md`, zugeordnet zu den Epics in [`roadmap.md`](./roadmap.md)                                                         |
-| 5 Für wen                    | `docs/design-system/01-ux/research.md` §2.4, Persona-Matrix                                                                                                       |
+| Abschnitt                    | Quelle                                                                                                                                                                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Problem und Positionierung | `docs/specs/roadmap.md`, Einleitung (gelöscht; `git show 56c83e3:docs/specs/roadmap.md`) + Eröffnungssatz von `docs/communication/evidoxa-overview.md` (gelöscht; `git show a5e642b:docs/communication/evidoxa-overview.md`) |
+| 2 Die These                  | `docs/specs/ai_aided_roadmap.md`, Präambel (gelöscht; `git show 56c83e3:docs/specs/ai_aided_roadmap.md`)                                                                                                                     |
+| 3 Was Evidoxa heute kann     | `docs/communication/evidoxa-overview.md` (gelöscht; `git show a5e642b:docs/communication/evidoxa-overview.md`), gefiltert und einzeln gegen `prisma/schema.prisma` bzw. Routen unter `src/app/[locale]/` geprüft             |
+| 4 Was geplant ist            | dieselben Behauptungen aus `evidoxa-overview.md`, zugeordnet zu den Epics in [`roadmap.md`](./roadmap.md)                                                                                                                    |
+| 5 Für wen                    | `docs/design-system/01-ux/research.md` §2.4, Persona-Matrix                                                                                                                                                                  |
