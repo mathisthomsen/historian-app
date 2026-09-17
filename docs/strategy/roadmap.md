@@ -6,20 +6,9 @@
 
 ## Strategic Decisions (locked)
 
-| Decision                | Choice                                                                                          |
-| ----------------------- | ----------------------------------------------------------------------------------------------- |
-| UI framework            | shadcn/ui + Tailwind CSS (replacing MUI entirely)                                               |
-| Auth                    | Auth.js v5 (replacing NextAuth v4)                                                              |
-| Relation model          | Universal graph — any entity to any entity, user-defined relation types                         |
-| Life events             | Events are events; birth/death stay as Person attributes for display but are first-class events |
-| Source vs. Literature   | Explicit split: Source = primary source evidence; Literature = secondary scholarly reference    |
-| Uncertainty UX          | Categorical: `certain / probable / possible / unknown` (replacing Decimal confidence scores)    |
-| Caching & rate limiting | Upstash Redis (Vercel KV) — no in-memory state                                                  |
-| i18n                    | next-intl from day one; German first, English second                                            |
-| Build command           | `prisma migrate deploy && next build` (replacing `prisma db push`)                              |
-| Test coverage target    | 80%                                                                                             |
-| Real-time collab        | Architecture must not preclude it; defer WebSocket implementation to v2                         |
-| Export                  | First-class feature, designed in from Phase 1 API contracts                                     |
+All 18 locked strategic decisions — the original 12 plus the 6 AX/agentic-layer
+additions — live in one place: [`docs/strategy/decisions.md`](./decisions.md),
+with each decision's source document recorded.
 
 ---
 
@@ -942,14 +931,14 @@ PDF öffnet sich auf S.12 mit hervorgehobener Region.
 
 ## Summary
 
-| Phase | Theme               | Epics   | Outcome                                                                | Agentic layer                                                                |
-| ----- | ------------------- | ------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| 1     | Foundation & Auth   | 1.1–1.4 | Secure, authenticated shell with infrastructure                        | Bestehend, unverändert                                                       |
-| 2     | Core Research Loop  | 2.1–2.6 | MVP: persons, events, sources, relations + UI polish + marketing pages | Augmentiert: EntityActivity, PropertyEvidence.confidence, source_scan_region |
-| 3     | Research Context    | 3.1–3.4 | Projects, locations, literature, bulk import                           | Augmentiert: Geocoding als AgentSuggestion, Import-Provenance                |
-| 4     | Discovery           | 4.1–4.4 | Search, timeline, network graph, analytics                             | Augmentiert: AX-Dashboard-Karten                                             |
-| 5     | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage                          | Augmentiert: created_via in Exports, AX-Security-Review                      |
-| 6     | Agentic Experience  | 6.0–6.3 | AX infrastructure, collaborative UI, scholarly chat, source-first      | Die Phase selbst                                                             |
+| Phase | Theme               | Epics   | Outcome                                                                | Agentic layer                                                                                          |
+| ----- | ------------------- | ------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| 1     | Foundation & Auth   | 1.1–1.4 | Secure, authenticated shell with infrastructure                        | Bestehend, unverändert                                                                                 |
+| 2     | Core Research Loop  | 2.1–2.6 | MVP: persons, events, sources, relations + UI polish + marketing pages | Augmentiert: EntityActivity, PropertyEvidence.confidence, source_scan_region                           |
+| 3     | Research Context    | 3.1–3.4 | Projects, locations, literature, bulk import                           | Augmentiert: Geocoding als AgentSuggestion, Import-Provenance                                          |
+| 4     | Discovery           | 4.1–4.4 | Search, timeline, network graph, analytics                             | Augmentiert: AX-Dashboard-Karten                                                                       |
+| 5     | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage                          | Augmentiert: created_via in Exports, AX-Security-Review                                                |
+| 6     | Agentic Experience  | 6.0–6.3 | AX infrastructure, collaborative UI, scholarly chat, source-first      | Die Phase selbst _(editorial addition, not sourced from either original roadmap — TODO(content-pass))_ |
 
 **MVP for university validation = Phase 1 + Phase 2 (including 2.5) complete.**
 Phase 3 adds collaborative workspace and import, making it suitable for a research group.

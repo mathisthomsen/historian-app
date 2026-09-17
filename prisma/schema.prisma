@@ -544,7 +544,8 @@ model PropertyEvidence {
 
 /// Append-only audit log of all create/update/delete actions on research entities.
 ///
-/// CONSTRAINT: No DELETE endpoint will ever be created for this table (AX roadmap §7).
+/// CONSTRAINT: No DELETE endpoint will ever be created for this table
+/// (docs/strategy/roadmap.md, Epic 6.0 — AX Infrastructure, CONSTRAINT 7 — EntityActivity Immutabilität).
 /// Records are immutable once written. Retention policy managed at infrastructure level only.
 ///
 /// user_id is nullable to support future agent-initiated actions (Epic 6.0).

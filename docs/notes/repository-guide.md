@@ -14,8 +14,10 @@ on the dated observations below.
   Read issue comments as well as descriptions; later comments sometimes correct
   earlier investigations. Reproduce reported failures before accepting a cause.
 - `docs/specs/{epic}/`: specification, brainstorming, progress, and test plan.
-  `docs/specs/roadmap.md` holds the phase structure. The AI-aided roadmap is a
-  separate proposal; do not infer authorization to implement it.
+  `docs/strategy/roadmap.md` holds the phase structure, including the Phase 6
+  agentic-layer work — merged from the former "AI-aided roadmap" proposal and
+  now committed scope, not a separate proposal. Locked decisions (including the
+  AX additions) are in `docs/strategy/decisions.md`.
 - `docs/design-system/`, `docs/implementation/`, and
   `skills/platforms/evidoxa.md`: design rationale, implementation specifications,
   and the Evidoxa overlay for UX reviews.
