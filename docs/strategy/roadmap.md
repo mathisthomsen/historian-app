@@ -893,6 +893,11 @@ Quellen-Scan rückführbar sein.
 
 #### Offene Schema- und Infrastruktur-Lücken
 
+> _(retitled from "Fehlende Anforderungen (noch nicht in Roadmap)" — editorial
+> rename during the roadmap merge, kept because the original phrase would be
+> self-contradictory as a heading inside this same roadmap document —
+> TODO(content-pass))_
+
 > **TODO(content-pass):** diese Lückenliste stammt aus März 2026. Die drei Schema-Zeilen
 > wurden beim Zusammenführen der beiden Roadmaps gegen `prisma/schema.prisma` nachgeprüft
 > und gelten weiterhin; die Zeilen zu PDF-Viewer, Blob-Storage und URL-Archivierung wurden
