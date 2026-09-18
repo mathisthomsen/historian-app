@@ -366,5 +366,5 @@ Documented honestly, since these are live constraints rather than oversights:
 - **BCE dates are undefined.** `Person` years are bounded 1–2100 while event and relation years
   are unbounded — an inconsistency to resolve before the model claims pre-Common-Era coverage.
 
-A full architectural review lives in [`docs/project-review-2026-07-13.md`](docs/project-review-2026-07-13.md);
+A full architectural review lives in [`docs/archive/project-review-2026-07-13.md`](docs/archive/project-review-2026-07-13.md);
 specs are under [`docs/specs/`](docs/specs/).

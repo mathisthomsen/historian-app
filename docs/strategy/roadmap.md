@@ -974,12 +974,12 @@ commit `9700a9f`). Its documentation lives in `docs/design-system/` and
 Four workstreams were specified and executed outside the epic numbering, each closing
 gaps left by an epic that had already been declared done.
 
-| Workstream        | Spec                                          | What was done                                                                                                                                           |
-| ----------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `2-1_2-4 cleanup` | `docs/specs/2-1_2-4 cleanup/specification.md` | Person detail page: data-mapping bugs, unwired features, dialog pre-population, and activity-log accuracy across Epics 2.1 and 2.4 (commit `72d58ea`)   |
-| `events-cleanup`  | `docs/specs/events-cleanup/specification.md`  | Event detail page brought to parity with the person detail page, including the shared `EntityEvidenceTab` generalisation (commits `d9cf0a4`, `7fcb8a1`) |
-| `sources-cleanup` | `docs/specs/sources-cleanup/specification.md` | Source detail page brought to the same parity; depends on the `EntityEvidenceTab` generalisation from `events-cleanup` (commits `d9cf0a4`, `7fcb8a1`)   |
-| `2-4-delta`       | `docs/specs/2-4-delta/gaps-by-epic.md`        | Gap analysis of Epics 1.1–2.4 against the running app, severity-rated, and the nine resulting fixes (commits `22066c8`, `a54fce9`)                      |
+| Workstream        | Spec                                            | What was done                                                                                                                                           |
+| ----------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `2-1_2-4 cleanup` | `docs/specs/2-1_2-4 cleanup/specification.md`   | Person detail page: data-mapping bugs, unwired features, dialog pre-population, and activity-log accuracy across Epics 2.1 and 2.4 (commit `72d58ea`)   |
+| `events-cleanup`  | `docs/archive/events-cleanup/specification.md`  | Event detail page brought to parity with the person detail page, including the shared `EntityEvidenceTab` generalisation (commits `d9cf0a4`, `7fcb8a1`) |
+| `sources-cleanup` | `docs/archive/sources-cleanup/specification.md` | Source detail page brought to the same parity; depends on the `EntityEvidenceTab` generalisation from `events-cleanup` (commits `d9cf0a4`, `7fcb8a1`)   |
+| `2-4-delta`       | `docs/archive/2-4-delta/gaps-by-epic.md`        | Gap analysis of Epics 1.1–2.4 against the running app, severity-rated, and the nine resulting fixes (commits `22066c8`, `a54fce9`)                      |
 
 Epic 2.6 was also cut down on the way into implementation: `docs/specs/2-6-marketing-landing/specification.md`
 ships one landing page, a changelog and the two legally required pages, and defers
