@@ -80,6 +80,29 @@ Measured on 2026-09-17, on the `fix/public-page-seo-followups` branch:
 | Second backlog, again                   | `.ux-review-log.md` (tracked, 76 KB, repo root) records agent findings as "Critical: 5 · Action taken: Report shown, no fixes" — unfiled work in a file                                             |
 | Aspiration leaking into claims          | `docs/communication/evidoxa-overview.md` described Epics 3.2, 3.3, 4.2, 4.3 in present tense; issues #97 and #99 are open bugs about the landing page claiming unbuilt behaviour                    |
 
+### What an unfiled backlog costs, measured
+
+When `docs/technical-debt.md`'s twelve items were finally re-verified against the code on
+2026-09-18 — before any of them were filed — **four were no longer true**:
+
+| Item | Claim                                               | Measured 2026-09-18                                                                                                                                                                                   |
+| ---- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 12   | "~1,519 pre-existing `TS2349` errors in test files" | `pnpm exec tsc --noEmit` exits 0 with zero diagnostics. Verified by mutation: injecting a type error produced exit 2 and `TS2322`, so a silently-broken compiler could not masquerade as a clean one. |
+| 11   | "`logActivity` calls not verified by any test"      | 7 test files reference it, across the persons, events, sources, relations and property-evidence routes.                                                                                               |
+| 4    | "`ALLOWED_PROPERTIES` duplicated"                   | Appears in exactly one file, `src/app/api/property-evidence/route.ts`.                                                                                                                                |
+| 7    | "Epic scope too broad — Epic 2.4 as case study"     | A process retrospective with no code location; the symptom it described is already fixed.                                                                                                             |
+
+Item 6 was stale in a subtler way: it described a `NODE_ENV` guard in the rate limiter that
+Epic 1.4 had already replaced with Upstash, so the mechanism named no longer existed.
+
+This is the cost the first criterion is guarding against, and it is worse than duplication.
+An issue gets closed, re-read, or contradicted by someone working the code. A list in a file
+is never re-checked, so it does not merely sit there — **it rots, while still reading as
+current**. Filing those twelve items verbatim would have put four confidently-worded false
+claims on the board, which CLAUDE.md rightly says costs more than no issue at all.
+
+The eight that survived verification are issues #104–#110 and #117.
+
 One correction worth recording, because it nearly became an error: `docs/design-system/`
 looked like archaeology by size and age. It is not. `skills/platforms/evidoxa.md` cites
 it by section (§2.4, §3.1, §3.6), CLAUDE.md mandates loading that skill for UX review,
