@@ -2,7 +2,7 @@
 
 **Scope:** Cleanup of Epics 2.1 (Person Management) and 2.4 (Universal Relationship Engine)
 **Date:** 2026-03-15
-**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+**Status:** Shipped. See GitHub Issues + Project 1 (Evidoxa Backlog) for current status.
 
 ---
 

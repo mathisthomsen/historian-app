@@ -17,13 +17,16 @@ fact live, and what stops the duplication returning?
 **One fact, one home. The home is chosen by who must be able to change it and how
 often it changes — never by what topic it is about.**
 
-| Home                                          | Holds                                                                   | Changes              | Read by                   |
-| --------------------------------------------- | ----------------------------------------------------------------------- | -------------------- | ------------------------- |
-| Repo root                                     | `CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/notes/repository-guide.md` | as conventions shift | agents, devs              |
-| GitHub Issues + Project 1                     | every unit of executable work                                           | daily                | maintainer, agents        |
-| `docs/strategy/`                              | vision, personas, roadmap, locked decisions                             | monthly              | agents, then published    |
-| `docs/design-system/`, `docs/implementation/` | design authority cited by section                                       | rarely, deliberately | UX platform skill, agents |
-| `docs/archive/`                               | closed material                                                         | never                | forensics only            |
+| Home                                          | Holds                                                                   | Changes                  | Read by                   |
+| --------------------------------------------- | ----------------------------------------------------------------------- | ------------------------ | ------------------------- |
+| Repo root                                     | `CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/notes/repository-guide.md` | as conventions shift     | agents, devs              |
+| GitHub Issues + Project 1                     | every unit of executable work                                           | daily                    | maintainer, agents        |
+| `docs/strategy/`                              | vision, personas, roadmap, locked decisions                             | monthly                  | agents, then published    |
+| `docs/design-system/`, `docs/implementation/` | design authority cited by section                                       | rarely, deliberately     | UX platform skill, agents |
+| `docs/specs/`                                 | per-epic specification, brainstorming, and test-plan files              | per epic                 | agents, devs              |
+| `docs/decisions/`                             | architecture decision records                                           | rarely, one per decision | agents, devs              |
+| `docs/notes/`                                 | navigation aids                                                         | as structure shifts      | agents, devs              |
+| `docs/archive/`                               | closed material                                                         | never                    | forensics only            |
 
 Three rules make it hold:
 
@@ -33,7 +36,11 @@ Three rules make it hold:
 2. **Strategy documents state `is` versus `will be` explicitly.** Any sentence
    describing unbuilt behaviour is future tense or marked as planned.
 3. **Frozen material says so, in its first line.** Closed documents are marked, and
-   moved to `docs/archive/` only when nothing references them.
+   moved to `docs/archive/` only when nothing cites them as authority for current
+   behaviour. Citing an archived document by path as a historical record of what was
+   done — the way `docs/strategy/decisions.md`'s Source column and
+   `docs/strategy/roadmap.md`'s History table do — is fine; treating it as a live
+   link or a source of current fact is not.
 
 ## Why not a wiki
 
@@ -102,8 +109,9 @@ things to do is a backlog regardless of what the file is called.
 
 ## Consequences
 
-- `docs/technical-debt.md` and `docs/communication/evidoxa-overview.md` are deleted;
-  their content becomes issues and `docs/strategy/vision.md` respectively.
+- `docs/communication/evidoxa-overview.md` is deleted; its content becomes
+  `docs/strategy/vision.md`. `docs/technical-debt.md` is retired once its items are
+  filed as issues; until then it stays on disk.
 - The two roadmaps become one at `docs/strategy/roadmap.md`. Citations in
   `prisma/schema.prisma` and `skills/platforms/evidoxa.md` are updated with the move.
 - `progress.md` is no longer written. The board and git history already carry it, and

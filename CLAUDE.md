@@ -7,12 +7,15 @@ user-type vocabulary, mental-model rules, brand voice, and stack adapter specifi
 ## Where things live
 
 Full rationale and evidence: [`docs/decisions/0002-documentation-architecture.md`](docs/decisions/0002-documentation-architecture.md).
-Five homes, chosen by who must change a fact and how often — never by topic:
+Eight homes, chosen by who must change a fact and how often — never by topic:
 
 - **Repo root** (`CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/notes/repository-guide.md`) — agent-facing conventions.
 - **GitHub Issues + Project 1** — every unit of executable work.
 - **`docs/strategy/`** — vision, personas, roadmap, and locked decisions.
 - **`docs/design-system/` + `docs/implementation/`** — design and implementation authority.
+- **`docs/specs/`** — per-epic specifications, brainstorming, and test plans.
+- **`docs/decisions/`** — architecture decision records.
+- **`docs/notes/`** — navigation aids.
 - **`docs/archive/`** — closed material, kept only for forensics.
 
 Two rules keep it from drifting back into duplication:

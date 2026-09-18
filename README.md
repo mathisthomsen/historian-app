@@ -208,8 +208,8 @@ research record can never be edited or deleted after the fact — including by a
 on an accepted suggestion. `prisma/schema.prisma` (around line 542) documents the no-DELETE
 constraint on this table and cites the roadmap as its authority. **None of this is built
 today:** `created_via` and `AgentSuggestion` do not exist yet in the schema or the
-application code; `EntityActivity.agent_name` and `.source_id` are reserved columns, unused
-until Phase 6 is implemented.
+application code; `EntityActivity.agent_name` and `.source_id` are reserved and always
+null today — no caller supplies them until Phase 6 is implemented.
 
 ### 9. Multi-tenancy from day one
 

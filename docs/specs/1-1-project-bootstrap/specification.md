@@ -1,6 +1,6 @@
 # Epic 1.1 — Project Bootstrap & Developer Experience
 
-**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+**Status:** Shipped. See GitHub Issues + Project 1 (Evidoxa Backlog) for current status.
 
 ## Specification
 
