@@ -1,5 +1,7 @@
 # Epic 1.4 — Security Infrastructure & CI/CD
 
+**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+
 ## Specification
 
 **Phase:** 1 — Foundation & Auth

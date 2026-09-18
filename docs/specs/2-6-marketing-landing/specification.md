@@ -1,5 +1,7 @@
 # Epic 2.6 — Marketing Landing Page (MVP scope)
 
+**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+
 ## Specification
 
 **Phase:** 2 — Core Research Loop

@@ -1,4 +1,7 @@
 # Epic 1.3 — Authentication & Authorization
+
+**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+
 ## Specification
 
 **Phase:** 1 — Foundation & Auth
@@ -11,13 +14,13 @@
 
 New dependencies introduced in this epic:
 
-| Package | Version | Type | Purpose |
-|---|---|---|---|
-| `next-auth` | `^5.0.0` | prod | Auth.js v5 — session, JWT, Credentials provider |
-| `bcryptjs` | `^2.4.3` | prod | Password hashing (pure JS, edge-compatible) |
-| `@types/bcryptjs` | `^2.4.6` | dev | TypeScript types for bcryptjs |
-| `resend` | `^4` | prod | Transactional email delivery |
-| `lru-cache` | `^11` | prod | In-process rate limiter shim (replaced by Redis in Epic 1.4) |
+| Package           | Version  | Type | Purpose                                                      |
+| ----------------- | -------- | ---- | ------------------------------------------------------------ |
+| `next-auth`       | `^5.0.0` | prod | Auth.js v5 — session, JWT, Credentials provider              |
+| `bcryptjs`        | `^2.4.3` | prod | Password hashing (pure JS, edge-compatible)                  |
+| `@types/bcryptjs` | `^2.4.6` | dev  | TypeScript types for bcryptjs                                |
+| `resend`          | `^4`     | prod | Transactional email delivery                                 |
+| `lru-cache`       | `^11`    | prod | In-process rate limiter shim (replaced by Redis in Epic 1.4) |
 
 > **Note:** Auth.js v5 uses `AUTH_SECRET` / `AUTH_URL` env var names (not `NEXTAUTH_SECRET` / `NEXTAUTH_URL` from v4).
 
@@ -126,13 +129,13 @@ used_at IS NULL AND expires_at > NOW()
 
 ### 2.5 Token invalidation events
 
-| Trigger | Action |
-|---|---|
-| Token redeemed successfully | Set `used_at = now()` (keep row for audit trail) |
-| New token requested for same user | Delete ALL previous rows for that `user_id` |
-| Password changed via reset | Delete all `PasswordReset` rows for `user_id` |
-| Email verified | Delete all `EmailConfirmation` rows for `user_id` |
-| Account deleted | Cascade delete via FK |
+| Trigger                           | Action                                            |
+| --------------------------------- | ------------------------------------------------- |
+| Token redeemed successfully       | Set `used_at = now()` (keep row for audit trail)  |
+| New token requested for same user | Delete ALL previous rows for that `user_id`       |
+| Password changed via reset        | Delete all `PasswordReset` rows for `user_id`     |
+| Email verified                    | Delete all `EmailConfirmation` rows for `user_id` |
+| Account deleted                   | Cascade delete via FK                             |
 
 ---
 
@@ -154,15 +157,17 @@ These routes are handled entirely by Auth.js v5. No custom logic here.
 Creates a new account and sends a verification email.
 
 **Request body (Zod-validated):**
+
 ```typescript
 interface RegisterRequest {
-  email: string;    // valid email, max 254 chars
-  name: string;     // 1–100 chars, trimmed
+  email: string; // valid email, max 254 chars
+  name: string; // 1–100 chars, trimmed
   password: string; // min 8 chars, must satisfy strength requirements
 }
 ```
 
 **Zod schema:**
+
 ```typescript
 const registerSchema = z.object({
   email: z.string().email().max(254).toLowerCase().trim(),
@@ -178,6 +183,7 @@ const registerSchema = z.object({
 ```
 
 **Success response (201):**
+
 ```json
 { "message": "auth.register.verificationSent" }
 ```
@@ -191,6 +197,7 @@ const registerSchema = z.object({
 | 500 | `{ "error": "Internal server error" }` | DB or email failure |
 
 **Server logic:**
+
 1. Rate limit check: `register:${anonymizedIp}` — 10 req / 1 hr
 2. Validate body with Zod
 3. Check `users` table for duplicate email → 409 if found
@@ -203,6 +210,7 @@ const registerSchema = z.object({
 10. Return 201
 
 **Security notes:**
+
 - Email is lowercased before storage and lookup (`.toLowerCase()`)
 - Never return different messages for duplicate vs. new email (but 409 is acceptable here since enumeration is lower risk at registration than at login)
 
@@ -213,6 +221,7 @@ const registerSchema = z.object({
 Redeems an email verification token.
 
 **Request body:**
+
 ```typescript
 interface VerifyEmailRequest {
   token: string; // raw 64-char hex token from URL query param
@@ -220,13 +229,18 @@ interface VerifyEmailRequest {
 ```
 
 **Zod schema:**
+
 ```typescript
 const verifyEmailSchema = z.object({
-  token: z.string().length(64).regex(/^[0-9a-f]+$/),
+  token: z
+    .string()
+    .length(64)
+    .regex(/^[0-9a-f]+$/),
 });
 ```
 
 **Success response (200):**
+
 ```json
 { "message": "auth.verify.success" }
 ```
@@ -239,6 +253,7 @@ const verifyEmailSchema = z.object({
 | 429 | `{ "error": "auth.errors.rateLimited" }` | Rate limit exceeded |
 
 **Server logic:**
+
 1. Rate limit: `verify:${anonymizedIp}` — 5 req / 15 min
 2. Validate body
 3. Compute `SHA-256(token)`, look up in `email_confirmations`
@@ -257,6 +272,7 @@ const verifyEmailSchema = z.object({
 Initiates password reset. Always returns 200 to prevent email enumeration.
 
 **Request body:**
+
 ```typescript
 interface ForgotPasswordRequest {
   email: string;
@@ -264,6 +280,7 @@ interface ForgotPasswordRequest {
 ```
 
 **Zod schema:**
+
 ```typescript
 const forgotPasswordSchema = z.object({
   email: z.string().email().max(254).toLowerCase().trim(),
@@ -271,6 +288,7 @@ const forgotPasswordSchema = z.object({
 ```
 
 **Success response (200) — always:**
+
 ```json
 { "message": "auth.forgot.emailSent" }
 ```
@@ -282,6 +300,7 @@ const forgotPasswordSchema = z.object({
 | 429 | `{ "error": "auth.errors.rateLimited" }` | Rate limit exceeded |
 
 **Server logic:**
+
 1. Rate limit: `forgot:${anonymizedIp}:${email}` — 3 req / 1 hr
 2. Validate body
 3. Look up user by email
@@ -299,6 +318,7 @@ const forgotPasswordSchema = z.object({
 Redeems a password reset token and sets a new password.
 
 **Request body:**
+
 ```typescript
 interface ResetPasswordRequest {
   token: string;
@@ -308,10 +328,14 @@ interface ResetPasswordRequest {
 ```
 
 **Zod schema:**
+
 ```typescript
 const resetPasswordSchema = z
   .object({
-    token: z.string().length(64).regex(/^[0-9a-f]+$/),
+    token: z
+      .string()
+      .length(64)
+      .regex(/^[0-9a-f]+$/),
     password: z
       .string()
       .min(8)
@@ -328,6 +352,7 @@ const resetPasswordSchema = z
 ```
 
 **Success response (200):**
+
 ```json
 { "message": "auth.reset.success" }
 ```
@@ -341,6 +366,7 @@ const resetPasswordSchema = z
 | 429 | `{ "error": "auth.errors.rateLimited" }` | Rate limit exceeded |
 
 **Server logic:**
+
 1. Rate limit: `reset:${token.slice(0, 8)}` — 5 req / 15 min (token prefix as key to resist brute force)
 2. Validate body (Zod)
 3. Compute `SHA-256(token)`, look up `PasswordReset`
@@ -360,6 +386,7 @@ const resetPasswordSchema = z
 Login is handled by calling `signIn('credentials', { email, password })` from the client. Auth.js routes this to the `authorize` function in `src/auth.ts`.
 
 **`authorize` function logic:**
+
 1. Rate limit: `login:${anonymizedIp}:${email}` — 5 req / 15 min
 2. Validate input with Zod (same schema as above, email + password)
 3. Fetch user by email
@@ -377,6 +404,7 @@ Login is handled by calling `signIn('credentials', { email, password })` from th
 11. Return `{ id, email, name, role }`
 
 **DUMMY_HASH constant** (in `src/auth.ts`, never logged):
+
 ```typescript
 const DUMMY_HASH = "$2a$12$dummyhashfortimingnormalizationxxxxxxxxxxxxxxxxxxxxxxxx";
 ```
@@ -461,31 +489,33 @@ src/components/auth/
 
 ```typescript
 // LoginForm — no props; calls signIn() internally
-export function LoginForm(): JSX.Element
+export function LoginForm(): JSX.Element;
 
 // RegisterForm — no props; calls POST /api/auth/register
-export function RegisterForm(): JSX.Element
+export function RegisterForm(): JSX.Element;
 
 // ForgotPasswordForm — no props
-export function ForgotPasswordForm(): JSX.Element
+export function ForgotPasswordForm(): JSX.Element;
 
 // ResetPasswordForm
 interface ResetPasswordFormProps {
   token: string; // extracted from URL searchParam by server page
 }
-export function ResetPasswordForm({ token }: ResetPasswordFormProps): JSX.Element
+export function ResetPasswordForm({ token }: ResetPasswordFormProps): JSX.Element;
 
 // VerifyEmailCard
 interface VerifyEmailCardProps {
   token: string | null; // null = show "no token" error state
 }
-export function VerifyEmailCard({ token }: VerifyEmailCardProps): JSX.Element
+export function VerifyEmailCard({ token }: VerifyEmailCardProps): JSX.Element;
 
 // PasswordStrengthIndicator
 interface PasswordStrengthIndicatorProps {
   password: string;
 }
-export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicatorProps): JSX.Element
+export function PasswordStrengthIndicator({
+  password,
+}: PasswordStrengthIndicatorProps): JSX.Element;
 ```
 
 ### 4.5 Server utilities
@@ -854,13 +884,13 @@ export async function checkRateLimit(
 
 **Auth route limits (must remain stable when Epic 1.4 replaces backend):**
 
-| Route | Limit | Window | Key pattern |
-|---|---|---|---|
-| POST /api/auth/register | 10 | 1 hr | `register:${anonymizedIp}` |
-| POST /api/auth/login (in authorize) | 5 | 15 min | `login:${anonymizedIp}:${email}` |
-| POST /api/auth/forgot-password | 3 | 1 hr | `forgot:${anonymizedIp}:${email}` |
-| POST /api/auth/reset-password | 5 | 15 min | `reset:${token.slice(0,8)}` |
-| POST /api/auth/verify-email | 5 | 15 min | `verify:${anonymizedIp}` |
+| Route                               | Limit | Window | Key pattern                       |
+| ----------------------------------- | ----- | ------ | --------------------------------- |
+| POST /api/auth/register             | 10    | 1 hr   | `register:${anonymizedIp}`        |
+| POST /api/auth/login (in authorize) | 5     | 15 min | `login:${anonymizedIp}:${email}`  |
+| POST /api/auth/forgot-password      | 3     | 1 hr   | `forgot:${anonymizedIp}:${email}` |
+| POST /api/auth/reset-password       | 5     | 15 min | `reset:${token.slice(0,8)}`       |
+| POST /api/auth/verify-email         | 5     | 15 min | `verify:${anonymizedIp}`          |
 
 ### 7.3 Timing attack prevention
 
@@ -871,10 +901,10 @@ export async function checkRateLimit(
 
 Secondary defense layer (on top of IP rate limiting, handles password spraying from distributed IPs):
 
-| `failed_login_count` | Action |
-|---|---|
-| < 10 | No lockout |
-| >= 10 | Set `locked_until = now() + 30 min`, write `ACCOUNT_LOCKED` log |
+| `failed_login_count` | Action                                                          |
+| -------------------- | --------------------------------------------------------------- |
+| < 10                 | No lockout                                                      |
+| >= 10                | Set `locked_until = now() + 30 min`, write `ACCOUNT_LOCKED` log |
 
 `locked_until` is cleared on: successful login, successful password reset.
 
@@ -889,16 +919,16 @@ export async function writeAuditLog(params: {
   userId?: string | null;
   request: Request;
   metadata?: Record<string, unknown>;
-}): Promise<void>
+}): Promise<void>;
 ```
 
 Negative events that MUST be logged (with metadata):
 
-| Event | Logged when | metadata fields |
-|---|---|---|
-| `LOGIN_FAILED` | Any login failure | `{ reason: 'user_not_found' \| 'wrong_password' \| 'account_locked' \| 'email_not_verified', email }` |
-| `INVALID_TOKEN` | Bad/expired/used token | `{ token_type: 'email_confirmation' \| 'password_reset', reason: 'not_found' \| 'expired' \| 'used' }` |
-| `ACCOUNT_LOCKED` | Lockout triggered | `{ failed_count: number }` |
+| Event            | Logged when            | metadata fields                                                                                        |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `LOGIN_FAILED`   | Any login failure      | `{ reason: 'user_not_found' \| 'wrong_password' \| 'account_locked' \| 'email_not_verified', email }`  |
+| `INVALID_TOKEN`  | Bad/expired/used token | `{ token_type: 'email_confirmation' \| 'password_reset', reason: 'not_found' \| 'expired' \| 'used' }` |
+| `ACCOUNT_LOCKED` | Lockout triggered      | `{ failed_count: number }`                                                                             |
 
 ### 7.6 Cookie security policy
 
@@ -936,6 +966,7 @@ jwt: {
 ```
 
 `AUTH_SECRET` must be minimum 32 characters (validated at startup). Generate with:
+
 ```bash
 openssl rand -hex 32
 ```
@@ -961,11 +992,11 @@ function sanitizeCallbackUrl(url: string | undefined): string {
 
 ### 7.10 HTTP response semantics
 
-| Scenario | Response |
-|---|---|
-| No session / expired JWT | `401 { error: "Unauthorized" }` (API) or redirect to `/auth/login` (page) |
-| Valid session, insufficient role | `403 { error: "Forbidden" }` (API) or 403 error page (page) |
-| Valid session, resource not owned | `404` (preferred over 403 to avoid resource enumeration) |
+| Scenario                          | Response                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| No session / expired JWT          | `401 { error: "Unauthorized" }` (API) or redirect to `/auth/login` (page) |
+| Valid session, insufficient role  | `403 { error: "Forbidden" }` (API) or 403 error page (page)               |
+| Valid session, resource not owned | `404` (preferred over 403 to avoid resource enumeration)                  |
 
 ---
 
@@ -1027,7 +1058,7 @@ const server = z.object({
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig: NextAuthConfig = {
-  providers: [],  // Credentials provider added in auth.ts (requires bcrypt — Node.js only)
+  providers: [], // Credentials provider added in auth.ts (requires bcrypt — Node.js only)
   pages: {
     signIn: "/auth/login",
     error: "/auth/login",
@@ -1066,7 +1097,8 @@ export const authConfig: NextAuthConfig = {
       const { pathname } = request.nextUrl;
       const isLoggedIn = !!auth?.user;
       const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}/, "");
-      const isPublic = PUBLIC_PATHS.has(pathnameWithoutLocale) ||
+      const isPublic =
+        PUBLIC_PATHS.has(pathnameWithoutLocale) ||
         pathnameWithoutLocale.startsWith("/api/auth") ||
         pathnameWithoutLocale === "/api/health";
       if (isPublic) return true;
@@ -1145,23 +1177,25 @@ export async function sendVerificationEmail(params: {
   name: string;
   token: string; // raw token (not hash)
   locale: string;
-}): Promise<void>
+}): Promise<void>;
 
 export async function sendPasswordResetEmail(params: {
   to: string;
   name: string;
   token: string; // raw token (not hash)
   locale: string;
-}): Promise<void>
+}): Promise<void>;
 ```
 
 **Verification email:**
+
 - Subject (de): `"Bestätige deine E-Mail-Adresse"`
 - Subject (en): `"Confirm your email address"`
 - CTA URL: `${env.AUTH_URL}/${locale}/auth/verify?token=${tokenRaw}`
 - Expires note: `"Dieser Link ist 24 Stunden gültig."`
 
 **Reset email:**
+
 - Subject (de): `"Passwort zurücksetzen"`
 - Subject (en): `"Reset your password"`
 - CTA URL: `${env.AUTH_URL}/${locale}/auth/reset-password?token=${tokenRaw}`
@@ -1289,25 +1323,25 @@ export function checkPasswordStrength(password: string): {
 
 ### 13.1 Unit tests (Vitest + RTL)
 
-| File | What to test |
-|---|---|
-| `src/lib/security.test.ts` | `generateToken()` length/charset; `hashToken()` determinism; `anonymizeIp()` IPv4 + IPv6 edge cases |
-| `src/lib/password.test.ts` | `checkPasswordStrength()` all 6 scores; boundary: exactly 8 chars; missing each rule |
-| `src/lib/rate-limit.test.ts` | Allows N requests; blocks N+1; resets after window; different keys independent |
-| `src/lib/email.test.ts` | `renderEmail()` returns string containing CTA URL and token; non-empty text fallback |
-| `src/components/auth/PasswordStrengthIndicator.test.tsx` | Renders 5 segments; correct aria-label; score 0–5 changes segment colors |
-| `src/components/auth/LoginForm.test.tsx` | Renders fields; shows generic error on submit failure; disables during submit |
-| `src/components/auth/RegisterForm.test.tsx` | Field-level errors from Zod; strength indicator appears when typing password |
+| File                                                     | What to test                                                                                        |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `src/lib/security.test.ts`                               | `generateToken()` length/charset; `hashToken()` determinism; `anonymizeIp()` IPv4 + IPv6 edge cases |
+| `src/lib/password.test.ts`                               | `checkPasswordStrength()` all 6 scores; boundary: exactly 8 chars; missing each rule                |
+| `src/lib/rate-limit.test.ts`                             | Allows N requests; blocks N+1; resets after window; different keys independent                      |
+| `src/lib/email.test.ts`                                  | `renderEmail()` returns string containing CTA URL and token; non-empty text fallback                |
+| `src/components/auth/PasswordStrengthIndicator.test.tsx` | Renders 5 segments; correct aria-label; score 0–5 changes segment colors                            |
+| `src/components/auth/LoginForm.test.tsx`                 | Renders fields; shows generic error on submit failure; disables during submit                       |
+| `src/components/auth/RegisterForm.test.tsx`              | Field-level errors from Zod; strength indicator appears when typing password                        |
 
 ### 13.2 API route integration tests (Vitest with mocked Prisma + Resend)
 
-| Route | Test cases |
-|---|---|
-| `POST /api/auth/register` | 201 happy path; 409 duplicate email; 400 weak password (each rule); 400 invalid email; 429 rate limited |
-| `POST /api/auth/verify-email` | 200 valid token; 400 unknown token; 400 expired token; 400 already-used token; token hash not stored raw |
-| `POST /api/auth/forgot-password` | 200 for known email (creates reset row); 200 for unknown email (no DB write — no enumeration); 429 rate limited |
-| `POST /api/auth/reset-password` | 200 valid token; 400 expired; 400 used; 400 mismatch; password hash updated; previous tokens deleted |
-| `authorize()` | Unknown email (timing-safe, returns null); wrong password (increments failed_count); locked account; unverified email; success |
+| Route                            | Test cases                                                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /api/auth/register`        | 201 happy path; 409 duplicate email; 400 weak password (each rule); 400 invalid email; 429 rate limited                        |
+| `POST /api/auth/verify-email`    | 200 valid token; 400 unknown token; 400 expired token; 400 already-used token; token hash not stored raw                       |
+| `POST /api/auth/forgot-password` | 200 for known email (creates reset row); 200 for unknown email (no DB write — no enumeration); 429 rate limited                |
+| `POST /api/auth/reset-password`  | 200 valid token; 400 expired; 400 used; 400 mismatch; password hash updated; previous tokens deleted                           |
+| `authorize()`                    | Unknown email (timing-safe, returns null); wrong password (increments failed_count); locked account; unverified email; success |
 
 ### 13.3 E2E tests (Playwright)
 
@@ -1353,10 +1387,11 @@ TC-E2E-06: Locale consistency
 ```
 
 **Test helper** for extracting tokens from DB:
+
 ```typescript
 // e2e/helpers/db.ts
-export async function getLatestVerificationToken(email: string): Promise<string>
-export async function getLatestResetToken(email: string): Promise<string>
+export async function getLatestVerificationToken(email: string): Promise<string>;
+export async function getLatestResetToken(email: string): Promise<string>;
 // Uses DATABASE_URL directly (raw SQL, not Prisma client) to stay fast
 ```
 
@@ -1457,6 +1492,7 @@ e2e/
 ### 15.2 Route group refactor — impact on Epic 1.1 E2E tests
 
 The existing `smoke.spec.ts` tests `/de/` expecting the AppShell to render. After this epic:
+
 - `/de/` becomes a session-aware redirect page (no AppShell)
 - The AppShell moves to `(app)/layout.tsx`
 - **Action required:** Update `smoke.spec.ts` to target `/de/auth/login` for the locale switcher and theme toggle tests. Auth pages render the theme toggle and the locale switcher in the `(auth)/layout.tsx`.
@@ -1468,14 +1504,17 @@ In Auth.js v5, `signIn('credentials', { redirect: false })` returns `{ ok: boole
 ### 15.4 DUMMY_HASH for timing normalization
 
 The `DUMMY_HASH` constant must be a valid bcrypt hash at cost 12. Generate it once:
+
 ```bash
 node -e "const b = require('bcryptjs'); b.hash('dummy', 12).then(console.log)"
 ```
+
 Paste the output as a string constant in `auth.ts`. Never use this hash to accept logins.
 
 ### 15.5 Seed data update
 
 The seed in `prisma/seed.ts` creates a demo user. Update the seed to:
+
 - Add `password_hash` (bcrypt of `"Demo1234!"`, cost 10 for fast seeding)
 - Set `email_verified_at = new Date()`
 - This allows immediate login after `pnpm prisma db seed`
@@ -1526,16 +1565,16 @@ With route groups: `src/app/[locale]/(auth)/auth/login/page.tsx` has `auth` appe
 
 The following are explicitly deferred to later epics:
 
-| Item | Epic |
-|---|---|
-| Upstash Redis rate limiter (replaces lru-cache shim) | 1.4 |
-| JWT jti blocklist on logout (requires Redis) | 1.4 |
-| Security headers (CSP, X-Frame-Options, etc.) | 1.4 |
-| OAuth providers (Google, GitHub) | Unscheduled |
-| Two-factor authentication (TOTP) | Unscheduled |
-| Account deletion / GDPR data export | Unscheduled |
-| User profile page (change name, password) | 5.3 |
-| Locale preference persisted in user account | 5.3 |
-| Admin user management UI | Unscheduled |
-| Project role enforcement in API routes | 3.1 |
-| Activity log for research actions (non-auth events) | 4.4 |
+| Item                                                 | Epic        |
+| ---------------------------------------------------- | ----------- |
+| Upstash Redis rate limiter (replaces lru-cache shim) | 1.4         |
+| JWT jti blocklist on logout (requires Redis)         | 1.4         |
+| Security headers (CSP, X-Frame-Options, etc.)        | 1.4         |
+| OAuth providers (Google, GitHub)                     | Unscheduled |
+| Two-factor authentication (TOTP)                     | Unscheduled |
+| Account deletion / GDPR data export                  | Unscheduled |
+| User profile page (change name, password)            | 5.3         |
+| Locale preference persisted in user account          | 5.3         |
+| Admin user management UI                             | Unscheduled |
+| Project role enforcement in API routes               | 3.1         |
+| Activity log for research actions (non-auth events)  | 4.4         |

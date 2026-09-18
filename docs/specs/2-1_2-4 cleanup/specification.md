@@ -2,7 +2,7 @@
 
 **Scope:** Cleanup of Epics 2.1 (Person Management) and 2.4 (Universal Relationship Engine)
 **Date:** 2026-03-15
-**Status:** Draft
+**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
 
 ---
 

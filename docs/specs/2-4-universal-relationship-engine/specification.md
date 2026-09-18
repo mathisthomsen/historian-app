@@ -1,5 +1,7 @@
 # Epic 2.4 — Universal Relationship Engine
 
+**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+
 ## Specification
 
 **Phase:** 2 — Core Research Loop

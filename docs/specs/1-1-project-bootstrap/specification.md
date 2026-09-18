@@ -1,4 +1,7 @@
 # Epic 1.1 — Project Bootstrap & Developer Experience
+
+**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+
 ## Specification
 
 **Phase:** 1 — Foundation & Auth
@@ -9,24 +12,24 @@
 
 ## 1. Technology Stack (pinned)
 
-| Concern | Choice | Version |
-|---|---|---|
-| Framework | Next.js App Router | 15.x |
-| Language | TypeScript (strict) | 5.x |
-| Runtime | React | 19.x |
-| Package manager | pnpm | 9.x |
-| Node.js | LTS | 22.x |
-| Styling | Tailwind CSS | v4 (CSS-first, no `tailwind.config.js`) |
-| Component library | shadcn/ui | latest (v4-compatible) |
-| i18n | next-intl | 3.x |
-| Theme management | next-themes | latest |
-| Font | Geist (via `next/font/google`) | — |
-| Form validation | Zod | 3.x |
-| Unit/integration tests | Vitest + React Testing Library | latest |
-| E2E tests | Playwright | latest |
-| Linting | ESLint (flat config) | 9.x |
-| Formatting | Prettier | 3.x |
-| Git hooks | Husky + lint-staged + commitlint | latest |
+| Concern                | Choice                           | Version                                 |
+| ---------------------- | -------------------------------- | --------------------------------------- |
+| Framework              | Next.js App Router               | 15.x                                    |
+| Language               | TypeScript (strict)              | 5.x                                     |
+| Runtime                | React                            | 19.x                                    |
+| Package manager        | pnpm                             | 9.x                                     |
+| Node.js                | LTS                              | 22.x                                    |
+| Styling                | Tailwind CSS                     | v4 (CSS-first, no `tailwind.config.js`) |
+| Component library      | shadcn/ui                        | latest (v4-compatible)                  |
+| i18n                   | next-intl                        | 3.x                                     |
+| Theme management       | next-themes                      | latest                                  |
+| Font                   | Geist (via `next/font/google`)   | —                                       |
+| Form validation        | Zod                              | 3.x                                     |
+| Unit/integration tests | Vitest + React Testing Library   | latest                                  |
+| E2E tests              | Playwright                       | latest                                  |
+| Linting                | ESLint (flat config)             | 9.x                                     |
+| Formatting             | Prettier                         | 3.x                                     |
+| Git hooks              | Husky + lint-staged + commitlint | latest                                  |
 
 ---
 
@@ -92,7 +95,7 @@ historian_app/
 {
   "compilerOptions": {
     "strict": true,
-    "noUncheckedIndexedAccess": true,       // extra strictness on array access
+    "noUncheckedIndexedAccess": true, // extra strictness on array access
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": true,
     "target": "ES2022",
@@ -102,13 +105,13 @@ historian_app/
     "incremental": true,
     "paths": {
       "@/components/*": ["./src/components/*"],
-      "@/lib/*":        ["./src/lib/*"],
-      "@/types/*":      ["./src/types/*"],
-      "@/hooks/*":      ["./src/hooks/*"],
-      "@/stores/*":     ["./src/stores/*"],
-      "@/styles/*":     ["./src/styles/*"]
-    }
-  }
+      "@/lib/*": ["./src/lib/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/styles/*": ["./src/styles/*"],
+    },
+  },
 }
 ```
 
@@ -139,6 +142,7 @@ Tailwind v4 is CSS-first — no `tailwind.config.js`. All configuration lives in
 ## 5. shadcn/ui Setup
 
 Initialize with:
+
 ```
 pnpm dlx shadcn@latest init
   style: default
@@ -148,20 +152,20 @@ pnpm dlx shadcn@latest init
 
 Base components installed in Epic 1.1:
 
-| Component | Use |
-|---|---|
-| Button | Primary actions |
-| Input | Form fields |
-| Dialog | Modals |
-| Table | Data lists |
-| Card | Content containers |
-| Badge | Status indicators |
-| Tabs | Detail page sections |
-| Toast (Sonner) | Notifications |
-| Skeleton | Loading states |
-| Separator | Layout dividers |
-| DropdownMenu | User menu, action menus |
-| Avatar | User avatar in top bar |
+| Component      | Use                     |
+| -------------- | ----------------------- |
+| Button         | Primary actions         |
+| Input          | Form fields             |
+| Dialog         | Modals                  |
+| Table          | Data lists              |
+| Card           | Content containers      |
+| Badge          | Status indicators       |
+| Tabs           | Detail page sections    |
+| Toast (Sonner) | Notifications           |
+| Skeleton       | Loading states          |
+| Separator      | Layout dividers         |
+| DropdownMenu   | User menu, action menus |
+| Avatar         | User avatar in top bar  |
 
 All components live in `src/components/ui/` (shadcn default).
 
@@ -216,6 +220,7 @@ The authenticated shell (wraps all `[locale]/(app)/*` routes) is a **collapsible
 ```
 
 **TopBar contents (left → right):**
+
 - Hamburger toggle (collapses sidebar)
 - App logo / name
 - Project switcher (stub in 1.1, wired in Epic 3.1)
@@ -223,13 +228,14 @@ The authenticated shell (wraps all `[locale]/(app)/*` routes) is a **collapsible
 - Locale switcher (DE | EN)
 
 **Sidebar nav items (stubs in 1.1, linked in later epics):**
+
 - Dashboard
 - Persons
 - Events
 - Sources
 - Relations
-- Locations *(Phase 3)*
-- Literature *(Phase 3)*
+- Locations _(Phase 3)_
+- Literature _(Phase 3)_
 - Settings
 
 Sidebar collapse state persisted in `localStorage` via a custom `useSidebar` hook.
@@ -239,10 +245,12 @@ Sidebar collapse state persisted in `localStorage` via a custom `useSidebar` hoo
 ## 9. i18n — next-intl
 
 ### Routing strategy
+
 All locales prefixed: `/de/...` and `/en/...`.
 Root `/` redirects to `/de` (default locale).
 
 ### Middleware (`src/middleware.ts`)
+
 ```ts
 import createMiddleware from "next-intl/middleware";
 
@@ -258,11 +266,13 @@ export const config = {
 ```
 
 ### Locale switcher persistence
+
 Sets `NEXT_LOCALE` cookie (30-day expiry) on language change. Cookie read by next-intl middleware on subsequent requests.
 
 Migration note: In Epic 5.3, locale preference moves to user profile (`User.locale` DB field).
 
 ### Message files
+
 `messages/de.json` and `messages/en.json` — structured by feature namespace:
 
 ```json
@@ -298,14 +308,15 @@ Migration note: In Epic 5.3, locale preference moves to user profile (`User.loca
 
 Flat config (`eslint.config.mjs`), plugins:
 
-| Plugin | Purpose |
-|---|---|
-| `eslint-config-next` | Next.js + React rules |
-| `@typescript-eslint/eslint-plugin` | TypeScript-aware rules |
-| `eslint-plugin-unicorn` | Modern JS best practices |
-| `eslint-plugin-import` | Import order & no-cycle |
+| Plugin                             | Purpose                  |
+| ---------------------------------- | ------------------------ |
+| `eslint-config-next`               | Next.js + React rules    |
+| `@typescript-eslint/eslint-plugin` | TypeScript-aware rules   |
+| `eslint-plugin-unicorn`            | Modern JS best practices |
+| `eslint-plugin-import`             | Import order & no-cycle  |
 
 Key rules:
+
 - `unicorn/filename-case`: `kebabCase` for files, `PascalCase` for components
 - `import/order`: enforced with groups: builtin → external → internal (`@/`) → relative
 - `@typescript-eslint/no-explicit-any`: error
@@ -316,6 +327,7 @@ Key rules:
 ## 11. Prettier Configuration
 
 `prettier.config.mjs`:
+
 ```js
 export default {
   semi: true,
@@ -324,8 +336,8 @@ export default {
   trailingComma: "all",
   printWidth: 100,
   plugins: [
-    "prettier-plugin-tailwindcss",       // sorts Tailwind classes
-    "prettier-plugin-organize-imports",   // sorts import statements
+    "prettier-plugin-tailwindcss", // sorts Tailwind classes
+    "prettier-plugin-organize-imports", // sorts import statements
   ],
 };
 ```
@@ -339,12 +351,14 @@ export default {
 ### Husky
 
 `.husky/pre-commit` (via lint-staged):
+
 ```sh
 pnpm lint-staged
 pnpm tsc --noEmit
 ```
 
 `lint-staged` config in `package.json`:
+
 ```json
 {
   "lint-staged": {
@@ -355,6 +369,7 @@ pnpm tsc --noEmit
 ```
 
 `.husky/commit-msg`:
+
 ```sh
 pnpm commitlint --edit $1
 ```
@@ -362,6 +377,7 @@ pnpm commitlint --edit $1
 ### commitlint
 
 `commitlint.config.mjs`:
+
 ```js
 export default {
   extends: ["@commitlint/config-conventional"],
@@ -377,6 +393,7 @@ Allowed types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `test`, `ci`
 ### Vitest (unit + integration)
 
 `vitest.config.ts`:
+
 ```ts
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
@@ -409,9 +426,7 @@ import deMessages from "../../messages/de.json";
 function AllProviders({ children }: { children: React.ReactNode }) {
   return (
     <NextIntlClientProvider locale="de" messages={deMessages}>
-      <ThemeProvider attribute="class">
-        {children}
-      </ThemeProvider>
+      <ThemeProvider attribute="class">{children}</ThemeProvider>
     </NextIntlClientProvider>
   );
 }
@@ -424,6 +439,7 @@ export * from "@testing-library/react";
 ```
 
 `src/test/setup.ts`:
+
 ```ts
 import "@testing-library/jest-dom";
 ```
@@ -431,6 +447,7 @@ import "@testing-library/jest-dom";
 ### Test co-location
 
 Unit/integration tests live next to source files:
+
 ```
 src/components/shell/LocaleSwitcher.tsx
 src/components/shell/LocaleSwitcher.test.tsx
@@ -439,6 +456,7 @@ src/components/shell/LocaleSwitcher.test.tsx
 ### Playwright (E2E)
 
 `playwright.config.ts`:
+
 ```ts
 projects: [
   { name: "chromium", use: { ...devices["Desktop Chrome"] } },
@@ -451,6 +469,7 @@ webServer: { command: "pnpm dev", port: 3000, reuseExistingServer: true },
 E2E tests in top-level `e2e/` directory.
 
 `e2e/smoke.spec.ts` covers:
+
 - App loads at `/de`, redirects from `/`
 - Language switcher toggles to `/en`, content changes
 - `/dev/showcase` renders without errors
@@ -473,11 +492,11 @@ const server = z.object({
 
   // Epic 1.3 — Auth
   NEXTAUTH_SECRET: z.string().min(32).optional(),
-  NEXTAUTH_URL:    z.string().url().optional(),
-  RESEND_API_KEY:  z.string().optional(),
+  NEXTAUTH_URL: z.string().url().optional(),
+  RESEND_API_KEY: z.string().optional(),
 
   // Epic 1.4 — Redis
-  UPSTASH_REDIS_REST_URL:   z.string().url().optional(),
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 });
 
@@ -500,6 +519,7 @@ export const env = {
 ### Global error boundary (`src/app/[locale]/error.tsx`)
 
 Styled `Card` with:
+
 - Error icon
 - Translated error heading (`common.error`)
 - Error message (dev: `error.message`, prod: generic)
@@ -575,19 +595,19 @@ Security headers and CSP are deferred to Epic 1.4.
 ```json
 {
   "scripts": {
-    "dev":          "next dev --turbopack",
-    "build":        "next build",
-    "start":        "next start",
-    "lint":         "eslint .",
-    "lint:fix":     "eslint . --fix",
-    "format":       "prettier --write .",
-    "typecheck":    "tsc --noEmit",
-    "test":         "vitest run",
-    "test:watch":   "vitest",
-    "test:coverage":"vitest run --coverage",
-    "test:e2e":     "playwright test",
-    "test:e2e:ui":  "playwright test --ui",
-    "prepare":      "husky"
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "prepare": "husky"
   }
 }
 ```
@@ -598,25 +618,25 @@ Security headers and CSP are deferred to Epic 1.4.
 
 All must be verifiable in the browser / CLI without any additional setup:
 
-| # | Criterion |
-|---|---|
-| AC-1 | `pnpm dev` starts without errors; app renders at `http://localhost:3000` |
-| AC-2 | `/` redirects to `/de` |
-| AC-3 | `/de` and `/en` both render the app shell |
-| AC-4 | Language switcher on `/de` navigates to `/en`; all visible UI text changes to English |
-| AC-5 | Switching back to DE sets `NEXT_LOCALE` cookie; refreshing stays in DE |
-| AC-6 | `/de/dev/showcase` renders all shadcn/ui base components without errors |
-| AC-7 | Dark mode toggle applies/removes `dark` class on `<html>`; colors shift |
-| AC-8 | Sidebar collapses to icon rail on toggle; state persists across page navigation |
-| AC-9 | `pnpm typecheck` exits 0 |
-| AC-10 | `pnpm lint` exits 0 |
+| #     | Criterion                                                                               |
+| ----- | --------------------------------------------------------------------------------------- |
+| AC-1  | `pnpm dev` starts without errors; app renders at `http://localhost:3000`                |
+| AC-2  | `/` redirects to `/de`                                                                  |
+| AC-3  | `/de` and `/en` both render the app shell                                               |
+| AC-4  | Language switcher on `/de` navigates to `/en`; all visible UI text changes to English   |
+| AC-5  | Switching back to DE sets `NEXT_LOCALE` cookie; refreshing stays in DE                  |
+| AC-6  | `/de/dev/showcase` renders all shadcn/ui base components without errors                 |
+| AC-7  | Dark mode toggle applies/removes `dark` class on `<html>`; colors shift                 |
+| AC-8  | Sidebar collapses to icon rail on toggle; state persists across page navigation         |
+| AC-9  | `pnpm typecheck` exits 0                                                                |
+| AC-10 | `pnpm lint` exits 0                                                                     |
 | AC-11 | `pnpm test` passes (smoke tests for AppShell, LocaleSwitcher, error boundary, Skeleton) |
-| AC-12 | `pnpm test:e2e` passes on Chromium + Firefox |
-| AC-13 | `pnpm build` succeeds |
-| AC-14 | A commit with message `bad commit message` is rejected by commitlint |
-| AC-15 | A commit with a type error in staged files is rejected by pre-commit hook |
-| AC-16 | Navigating to a non-existent route shows the styled 404 page |
-| AC-17 | `.env.example` contains all env vars with comments |
+| AC-12 | `pnpm test:e2e` passes on Chromium + Firefox                                            |
+| AC-13 | `pnpm build` succeeds                                                                   |
+| AC-14 | A commit with message `bad commit message` is rejected by commitlint                    |
+| AC-15 | A commit with a type error in staged files is rejected by pre-commit hook               |
+| AC-16 | Navigating to a non-existent route shows the styled 404 page                            |
+| AC-17 | `.env.example` contains all env vars with comments                                      |
 
 ---
 

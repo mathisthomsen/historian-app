@@ -1,5 +1,7 @@
 # Epic 2.1 — Person Management
 
+**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+
 ## Specification
 
 **Phase:** 2 — Core Research Loop

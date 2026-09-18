@@ -1,5 +1,7 @@
 # Epic 2.2 — Event Management
 
+**Status:** Shipped. See `docs/strategy/roadmap.md` for current status.
+
 ## Specification
 
 **Phase:** 2 — Core Research Loop
@@ -1323,7 +1325,7 @@ A separate lightweight endpoint is not needed — reuse the existing `GET /api/e
 Add a settings section using Tailwind `mt-auto` and shadcn `Separator`:
 
 ```tsx
-<nav className="flex flex-col h-full">
+<nav className="flex h-full flex-col">
   <div className="flex-1 space-y-1 px-2 py-4">
     <NavItem href="/persons">Personen</NavItem>
     <NavItem href="/events">Ereignisse</NavItem>
@@ -1331,7 +1333,7 @@ Add a settings section using Tailwind `mt-auto` and shadcn `Separator`:
     {/* Relations — added in Epic 2.4 */}
   </div>
 
-  <div className="px-2 pb-4 mt-auto">
+  <div className="mt-auto px-2 pb-4">
     <Separator className="mb-3" />
     <NavItem href="/settings/event-types">Ereignistypen</NavItem>
     {/* Epic 3.1 adds: Project Settings, Members */}
