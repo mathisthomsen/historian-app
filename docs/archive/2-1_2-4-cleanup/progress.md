@@ -1,5 +1,7 @@
 # Progress: Person Detail Page — Bug Fixes & Feature Completion
 
+> **Archived 2026-09-18:** progress log for the Person detail page cleanup, closed (see Status below). Kept for forensics only, not as authority — see `docs/archive/README.md`.
+
 **Status:** ✅ Complete
 
 ---

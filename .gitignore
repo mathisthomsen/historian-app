@@ -183,3 +183,6 @@ backup-*.json
 # Debug artifacts
 *-debug.png
 .superpowers/
+
+# Agent-generated UX review log — findings belong in GitHub issues (ADR-0002)
+.ux-review-log.md

@@ -1,5 +1,7 @@
 # Spec: Person Detail Page — Bug Fixes & Feature Completion
 
+> **Archived 2026-09-18:** spec for the Person detail page cleanup workstream (dated 2026-03-15), closed once shipped. Kept for forensics only, not as authority — see `docs/archive/README.md`.
+
 **Scope:** Cleanup of Epics 2.1 (Person Management) and 2.4 (Universal Relationship Engine)
 **Date:** 2026-03-15
 **Status:** Shipped. See GitHub Issues + Project 1 (Evidoxa Backlog) for current status.

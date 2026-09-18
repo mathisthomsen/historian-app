@@ -1,5 +1,7 @@
 # Test Plan — 2-1/2-4 Cleanup: Person Detail Bug Fixes & Feature Completion
 
+> **Archived 2026-09-18:** test plan for the Person detail page cleanup, closed with the spec it covers. Kept for forensics only, not as authority — see `docs/archive/README.md`.
+
 ## Scope
 
 Covers all 13 acceptance criteria from the spec. Tests the person detail page on Chromium.
