@@ -13,7 +13,7 @@ on the dated observations below.
   [Evidoxa Backlog](https://github.com/users/mathisthomsen/projects/1): current work.
   Read issue comments as well as descriptions; later comments sometimes correct
   earlier investigations. Reproduce reported failures before accepting a cause.
-- `docs/specs/{epic}/`: specification, brainstorming, progress, and test plan.
+- `docs/specs/{epic}/`: specification, brainstorming, and test plan.
   `docs/strategy/roadmap.md` holds the phase structure, including the Phase 6
   agentic-layer work — merged from the former "AI-aided roadmap" proposal and
   now committed scope, not a separate proposal. Locked decisions (including the

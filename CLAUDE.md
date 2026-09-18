@@ -4,6 +4,22 @@ UX skill overlay: `skills/platforms/evidoxa.md`. Load it whenever running the UX
 skills (`ux`, `ux-audit`, `ux-mr`, `ux-reviewer`, etc.) against this repo — it supplies the
 user-type vocabulary, mental-model rules, brand voice, and stack adapter specific to Evidoxa.
 
+## Where things live
+
+Full rationale and evidence: [`docs/decisions/0002-documentation-architecture.md`](docs/decisions/0002-documentation-architecture.md).
+Five homes, chosen by who must change a fact and how often — never by topic:
+
+- **Repo root** (`CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/notes/repository-guide.md`) — agent-facing conventions.
+- **GitHub Issues + Project 1** — every unit of executable work.
+- **`docs/strategy/`** — vision, personas, roadmap, and locked decisions.
+- **`docs/design-system/` + `docs/implementation/`** — design and implementation authority.
+- **`docs/archive/`** — closed material, kept only for forensics.
+
+Two rules keep it from drifting back into duplication:
+
+- **Status is hand-written in exactly one place: GitHub.** Every other surface derives it — never re-type "done", "in progress", or a percentage anywhere else.
+- **Strategy documents state `is` versus `will be` explicitly.** A sentence describing unbuilt behaviour is future tense or marked as planned, never written as if it already exists.
+
 ## Context efficiency
 
 Be conservative with tool output.
