@@ -27,11 +27,15 @@ describe("docs/strategy/roadmap.md", () => {
   // no headings. Epic 2.7 (Session & Authorization Hardening) was added at the
   // end of Phase 2 in the September 2026 grooming pass to carry three
   // priority:high session/authorization defects (#103, #88, #27) that predate
-  // the roadmap and were previously undocumented in it — 27 total.
+  // the roadmap and were previously undocumented in it — 27 total. In the same
+  // grooming pass, Epic 6.3 (Source Scan & Pixel Anchoring) moved to Phase 3
+  // and was renumbered 3.5 — a rename, not an addition, so the count did not
+  // change. Three genuinely new epics were then added: 6.4 (Document AI) in
+  // Phase 6, and 7.1/7.2 (Field Capture) in a new Phase 7 — 30 total.
   it("carries every epic from both source roadmaps, exactly once", () => {
     const headings = readFileSync(ROADMAP, "utf8").match(/^### Epic \d+\.\d+/gmu) ?? [];
 
-    expect(headings).toHaveLength(27);
-    expect(new Set(headings).size).toBe(27);
+    expect(headings).toHaveLength(30);
+    expect(new Set(headings).size).toBe(30);
   });
 });

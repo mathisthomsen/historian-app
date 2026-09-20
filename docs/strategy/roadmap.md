@@ -208,7 +208,7 @@ account for this.
 - `PropertyEvidence` erhält `raw_transcription String?` (diplomatische Transkription, verbatim) — in Epic 2.4 umgesetzt
 - `PropertyEvidence` erhält `source_scan_region String?` (JSON: `{page, x, y, w, h}`)
   — Grundlage für das Source-First-Pixel-Anchoring-Prinzip
-  — auf Epic 6.3 verschoben (hat keine Konsumenten bis der PDF-Viewer gebaut wird)
+  — auf Epic 3.5 verschoben (hat keine Konsumenten bis der PDF-Viewer gebaut wird)
 
 **AX Addition — EntityActivity Log (vorgezogen aus Epic 4.4):**
 
@@ -450,6 +450,72 @@ as part of its scope, not after.
   `agent_name: "ImportAgent v{version}"` → vollständige Traceability
 - Duplicate detection in Import nutzt `AgentSuggestion` (type: POTENTIAL_DUPLICATE)
   statt direktem Merge — Historiker entscheidet im Review-Queue
+
+---
+
+### Requirement-Check: Source-First-Prinzip
+
+Das Source-First-Prinzip fordert: Jeder Datenpunkt muss direkt zu einem Pixel im
+Quellen-Scan rückführbar sein.
+
+#### Offene Schema- und Infrastruktur-Lücken
+
+| Lücke                                                   | Befund (geprüft 2026-09-20)     | Adressiert in   |
+| ------------------------------------------------------- | ------------------------------- | --------------- |
+| `Source.file_url` (Blob-URL für Scan-Upload)            | Fehlt im Schema                 | Epic 3.5 Schema |
+| `Source.file_hash` (SHA-256, Tampering-Schutz)          | Fehlt im Schema                 | Epic 3.5 Schema |
+| `PropertyEvidence.source_scan_region` (Pixel-Anchoring) | Fehlt im Schema                 | Epic 3.5 Schema |
+| PDF/Scan-Viewer mit Annotations-Support                 | Keine Abhängigkeit, keine Route | Epic 3.5        |
+| Blob-Storage-Integration (Vercel Blob / S3)             | Keine Abhängigkeit, keine Route | Epic 3.5        |
+| URL-Archivierung (Wayback Machine API)                  | Kein Plan, kein Code            | Epic 3.5        |
+
+All six rows re-checked directly against `prisma/schema.prisma` and `src/` (a March 2026 check
+had only re-verified the first three). The two rows previously assigned to "Epic 6.0 Schema"
+are corrected here: Epic 6.0's schema block (Phase 6, below) does not define `file_url`/
+`file_hash` — they belong to Epic 3.5, which is also where `Source.file_hash` is described as
+being computed on upload. `PropertyEvidence.source_scan_region` is likewise corrected from
+"Epic 2.4 Agentic layer" to Epic 3.5: Epic 2.4 explicitly defers it there (see that epic's
+Agentic layer section) rather than addressing it.
+
+**Note (Phase-3 move, September 2026 grooming pass):** this epic shipped as Epic 6.3 in Phase 6
+under the name "Source Scan & Pixel Anchoring." It was moved to Phase 3 and renumbered to 3.5
+because none of it needs AI — it delivers value on its own and should not wait behind the
+agentic phase (Phase 6). The move added per-region transcription and region tagging; everything
+previously specified is unchanged. See `## History` below and decisions 19–22 in
+[`decisions.md`](./decisions.md).
+
+---
+
+### Epic 3.5 — Source Media & Region Transcription
+
+**Deliverable:** Scan-Upload für Primärquellen mit Regions-Annotation und
+Direktverlinkung zu PropertyEvidence.
+
+- File upload zu Vercel Blob: PDF, JPG, PNG — max. 50MB pro Datei
+- PDF-Viewer (react-pdf oder pdf.js): inline Rendering
+- Annotations-Tool: Benutzer markiert Textstelle → Region wird als JSON gespeichert
+  `{page: 3, x: 120, y: 450, w: 800, h: 60}`
+- `PropertyEvidence.source_scan_region` verknüpft Annotation mit Datenpunkt
+- EvidenceStrip-Erweiterung: Klick auf Quelle → öffnet PDF-Viewer an der Seite +
+  scrollt zu markierter Region. **Hinweis (aus dem Phase-3-Umzug):** `<EvidenceStrip>`
+  selbst wird erst in Epic 6.1 (Phase 6) gebaut; bis dahin läuft dieser Link über das
+  bereits existierende `PropertyEvidencePanel`/`PropertyEvidenceBadge`-Paar, das
+  `.quote`/`.raw_transcription` schon heute rendert.
+- `Source.file_hash` (SHA-256) wird bei Upload berechnet, dient als Integritätsnachweis
+
+**Neu (Erweiterung beim Phase-3-Umzug — funktioniert vollständig ohne KI):**
+
+- **Per-Region-Transkription:** Zusätzlich zum Markieren einer Region tippt der Historiker
+  ein, was der Text in dieser Region sagt. Die Transkription wird zusammen mit der Region
+  gespeichert (`PropertyEvidence.raw_transcription`, aus Epic 2.4).
+- **Region-Tagging:** Regionen können mit benutzerdefinierten Tags versehen werden (z.B.
+  "Geburtsdatum", "Unterschrift", "Randnotiz"), um sie später wiederzufinden und zu filtern.
+
+**Verifiable:** Scan hochladen, Zeile "geboren 1848" markieren, als Evidence für
+Person.birth_year verknüpfen. Transkription "geboren 1848" eintippen und mit dem Tag
+"Geburtsdatum" versehen — beides erscheint zusammen mit der Region im
+PropertyEvidence-Panel. (Sobald Epic 6.1 verfügbar ist: EvidenceStrip auf der
+Personendetailseite → klicken → PDF öffnet sich auf S.12 mit hervorgehobener Region.)
 
 ---
 
@@ -990,75 +1056,112 @@ Chat einreichen → erscheint in KI-Vorschläge-Tab als PENDING AgentSuggestion.
 
 ---
 
-### Requirement-Check: Source-First-Prinzip
+### Epic 6.4 — Document AI (OCR & Structured Extraction)
 
-Das Source-First-Prinzip fordert: Jeder Datenpunkt muss direkt zu einem Pixel im
-Quellen-Scan rückführbar sein.
+**Deliverable:** Optionale KI-gestützte Vorverarbeitung gespeicherter Quellen-Scans, die
+ausschließlich Vorschläge erzeugt, denen ein Mensch zustimmt — nie direkte Schreibzugriffe.
 
-#### Offene Schema- und Infrastruktur-Lücken
+- **Self-hosted OCR** über die in Epic 3.5 erfassten/hochgeladenen Bilder. Läuft auf eigener
+  Infrastruktur; Bilder verlassen diese Infrastruktur nie.
+- **Optionale LLM-Interpretation** des OCR-_Texts_ (nicht des Bilds): strukturierte Extraktion
+  von Namen, Daten, Orten — als `AgentSuggestion`-Records unter den in Epic 6.0 festgelegten
+  Grounding-Regeln (jeder Vorschlag referenziert mindestens einen existierenden `Source.id`;
+  kein direkter Write; Akzeptanz erfordert ein explizites menschliches Gate).
+  - Da mit Epic 3.5 Regionen (nicht nur ganze Quellen) existieren, ist die Region — nicht die
+    gesamte Quelle — die korrekte Grounding-Einheit für einen Document-AI-Vorschlag; sonst
+    führt dieser Epic exakt die "welches Pixel?"-Unschärfe wieder ein, die das
+    Source-First-Prinzip beseitigen soll ("Jeder Datenpunkt muss direkt zu einem Pixel im
+    Quellen-Scan rückführbar sein" — siehe Requirement-Check unter Epic 3.5). `AgentSuggestion`
+    erhält daher ein optionales Feld für eine Region-Referenz (z.B. `source_region_ref`,
+    verweist auf `PropertyEvidence.source_scan_region`) zusätzlich zu `source_ids`.
+- **Asynchron:** OCR und Interpretation laufen als Queue-Jobs, nicht blockierend. Ein Nutzer
+  stößt sie an und sieht sich die Ergebnisse später an.
+- **Egress-Durchsetzung pro Asset** (Decision 20): Die zum Zeitpunkt der Aufnahme eines Assets
+  geltende Egress-Policy wird auf dem Asset gespeichert und dauerhaft befolgt — ein späterer
+  OCR-/Interpretations-Lauf auf einem alten Scan folgt der Policy von damals, nicht der
+  aktuellen Projekt- oder Session-Einstellung.
+- Abhängigkeiten: Epic 6.0 (`AgentSuggestion`-Schema und Grounding-API) und Epic 3.5 (die
+  gespeicherten Scans und Regionen).
 
-| Lücke                                                   | Befund (geprüft 2026-09-20)     | Adressiert in   |
-| ------------------------------------------------------- | ------------------------------- | --------------- |
-| `Source.file_url` (Blob-URL für Scan-Upload)            | Fehlt im Schema                 | Epic 6.3 Schema |
-| `Source.file_hash` (SHA-256, Tampering-Schutz)          | Fehlt im Schema                 | Epic 6.3 Schema |
-| `PropertyEvidence.source_scan_region` (Pixel-Anchoring) | Fehlt im Schema                 | Epic 6.3 Schema |
-| PDF/Scan-Viewer mit Annotations-Support                 | Keine Abhängigkeit, keine Route | Epic 6.3        |
-| Blob-Storage-Integration (Vercel Blob / S3)             | Keine Abhängigkeit, keine Route | Epic 6.3        |
-| URL-Archivierung (Wayback Machine API)                  | Kein Plan, kein Code            | Epic 6.3        |
-
-All six rows re-checked directly against `prisma/schema.prisma` and `src/` (a March 2026 check
-had only re-verified the first three). The two rows previously assigned to "Epic 6.0 Schema"
-are corrected here: Epic 6.0's schema block (above) does not define `file_url`/`file_hash` —
-they belong to Epic 6.3, which is also where `Source.file_hash` is described as being computed
-on upload. `PropertyEvidence.source_scan_region` is likewise corrected from "Epic 2.4 Agentic
-layer" to Epic 6.3: Epic 2.4 explicitly defers it there (see that epic's Agentic layer
-section) rather than addressing it.
+**Verifiable:** OCR auf einem in Epic 3.5 hochgeladenen Scan anstoßen → erscheint als
+asynchroner Job, blockiert die UI nicht. Ergebnis erscheint später als Vorschlag, nicht als
+direkter Feld-Write. LLM-Interpretation des OCR-Texts liefert einen `AgentSuggestion` mit
+Region-Referenz und ≥1 `Source.id`; ohne `source_ids` → 422 (wie in Epic 6.0 CONSTRAINT 2). Ein
+Asset, dessen Egress-Policy bei Aufnahme "kein Hosted-LLM" war, wird auch nach einer späteren
+Projekt- oder Session-Policy-Änderung nicht an das gehostete Modell gesendet.
 
 ---
 
-### Epic 6.3 — Source Scan & Pixel Anchoring (Source-First MVP)
+## Phase 7 — Field Capture
 
-**Deliverable:** Scan-Upload für Primärquellen mit Regions-Annotation und
-Direktverlinkung zu PropertyEvidence.
+> Goal: The app has to work in an archive or a library reading room, from a phone, with poor
+> or no connectivity.
 
-- File upload zu Vercel Blob: PDF, JPG, PNG — max. 50MB pro Datei
-- PDF-Viewer (react-pdf oder pdf.js): inline Rendering
-- Annotations-Tool: Benutzer markiert Textstelle → Region wird als JSON gespeichert
-  `{page: 3, x: 120, y: 450, w: 800, h: 60}`
-- `PropertyEvidence.source_scan_region` verknüpft Annotation mit Datenpunkt
-- EvidenceStrip-Erweiterung: Klick auf Quelle → öffnet PDF-Viewer an der Seite +
-  scrollt zu markierter Region
-- `Source.file_hash` (SHA-256) wird bei Upload berechnet, dient als Integritätsnachweis
+### Epic 7.1 — Mobile Capture Client
 
-**Verifiable:** Scan hochladen, Zeile "geboren 1848" markieren, als Evidence für
-Person.birth_year verknüpfen. EvidenceStrip auf Personendetailseite → klicken →
-PDF öffnet sich auf S.12 mit hervorgehobener Region.
+**Deliverable:** A Capacitor application bundling a small, dedicated web client — **not** the
+Next.js app.
+
+- **Measured reason for the separate architecture (Decision 21):** all 28 `page.tsx` files in
+  this app are React Server Components, `next.config.ts` sets no `output: "export"`, and
+  `src/middleware.ts` performs auth and locale routing per request. The app requires a server
+  by construction and cannot be bundled into a Capacitor shell.
+- OS document scanners: Apple VisionKit (`VNDocumentCameraViewController`) and Google ML Kit
+  Document Scanner — edge detection, perspective correction, multi-page capture.
+- Local capture queue that survives being offline.
+- Background upload sync when connectivity returns.
+
+**Verifiable:** In airplane mode, capture several pages with the document scanner (edges are
+detected and perspective-corrected automatically); close and reopen the app — the captures are
+still in the local queue. Restore connectivity → captures upload in the background without the
+app needing to be in the foreground.
+
+---
+
+### Epic 7.2 — Scanning-Session Review
+
+**Deliverable:** A capture session groups everything scanned during one archive visit; at the
+end of the session the researcher reviews in one pass instead of item by item.
+
+- A session groups all scans captured during one visit.
+- The review view shows, per session: what was captured, what OCR (Epic 6.4) produced from it,
+  and any drafted data additions (`AgentSuggestion` records).
+- The researcher accepts, edits, or discards in one pass, rather than opening each item
+  individually.
+
+**Verifiable:** Close out a session with 5 scans → the review view shows all 5 with their OCR
+result and any suggestions; one scan is accepted, one edited, one discarded — without leaving
+the review view.
 
 ---
 
 ## Summary
 
-| Phase | Theme               | Epics   | Outcome                                                                                          | Agentic layer                                                 |
-| ----- | ------------------- | ------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| 1     | Foundation & Auth   | 1.1–1.4 | Secure, authenticated shell with infrastructure                                                  | Bestehend, unverändert                                        |
-| 2     | Core Research Loop  | 2.1–2.7 | MVP: persons, events, sources, relations + UI polish + marketing pages + session/authz hardening | Augmentiert: EntityActivity, PropertyEvidence.confidence      |
-| 3     | Research Context    | 3.1–3.4 | Projects, locations, literature, bulk import                                                     | Augmentiert: Geocoding als AgentSuggestion, Import-Provenance |
-| 4     | Discovery           | 4.1–4.4 | Search, timeline, network graph, analytics                                                       | Augmentiert: AX-Dashboard-Karten                              |
-| 5     | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage                                                    | Augmentiert: created_via in Exports, AX-Security-Review       |
-| 6     | Agentic Experience  | 6.0–6.3 | AX infrastructure, collaborative UI, scholarly chat, source-first                                | Die Phase selbst                                              |
+| Phase | Theme               | Epics        | Outcome                                                                                                                   | Agentic layer                                                 |
+| ----- | ------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 1     | Foundation & Auth   | 1.1–1.4      | Secure, authenticated shell with infrastructure                                                                           | Bestehend, unverändert                                        |
+| 2     | Core Research Loop  | 2.1–2.7      | MVP: persons, events, sources, relations + UI polish + marketing pages + session/authz hardening                          | Augmentiert: EntityActivity, PropertyEvidence.confidence      |
+| 3     | Research Context    | 3.1–3.5      | Projects, locations, literature, bulk import, source scans with pixel-anchored transcription                              | Augmentiert: Geocoding als AgentSuggestion, Import-Provenance |
+| 4     | Discovery           | 4.1–4.4      | Search, timeline, network graph, analytics                                                                                | Augmentiert: AX-Dashboard-Karten                              |
+| 5     | Export & Production | 5.1–5.4      | Export, data quality, i18n, 80% test coverage                                                                             | Augmentiert: created_via in Exports, AX-Security-Review       |
+| 6     | Agentic Experience  | 6.0–6.2, 6.4 | AX infrastructure, collaborative UI, scholarly chat, self-hosted OCR + optional hosted-LLM interpretation of stored scans | Die Phase selbst                                              |
+| 7     | Field Capture       | 7.1–7.2      | Mobile capture client for archive/reading-room work, offline queueing, per-session review                                 | Nutzt AgentSuggestion (Epic 6.0/6.4) für Review-Vorschläge    |
 
 `source_scan_region` was removed from Phase 2's Agentic-layer cell above: Epic 2.4 explicitly
-defers it to Epic 6.3 (no consumer exists until the scan viewer is built), so it never landed
+defers it to Epic 3.5 (no consumer exists until the scan viewer is built), so it never landed
 in Phase 2. Phase 6 as a _phase_ exists only from the September 2026 roadmap merge — see
 `## History` below for the provenance note this cell used to carry inline.
 
 **MVP for university validation = Phase 1 + Phase 2 (including 2.5) complete.**
-Phase 3 adds collaborative workspace and import, making it suitable for a research group.
-Phases 4 and 5 make it a complete, production-ready product.
+Phase 3 adds collaborative workspace, import, and source scanning with pixel-anchored
+transcription, making it suitable for a research group. Phases 4 and 5 make it a complete,
+production-ready product.
 
 **AX-Alpha** = Epic 6.0 + 6.1 (Provenance-Infrastruktur + Lego-Bricks-UI).
 **AX-Beta** = Epic 6.2 (Scholarly Chat) nach Historian-Feedback aus AX-Alpha.
-**Source-First-Vollständigkeit** = Epic 6.3 (Scan-Upload + Pixel-Anchoring).
+**Source-First-Vollständigkeit** = Epic 3.5 (Scan-Upload + Pixel-Anchoring + Transkription),
+erreicht bereits in Phase 3 — Epic 6.4 (Document AI) baut darauf auf, ist aber keine
+Voraussetzung dafür.
 
 ---
 
@@ -1079,6 +1182,14 @@ carried Epics 6.0–6.3 as a proposal, and the merge presented them as committed
 Epic 2.7 (Session & Authorization Hardening) was added to Phase 2 during the September 2026
 roadmap grooming pass, carrying forward three `priority: high` session/authorization defects
 (issues #103, #88, #27) that predate this roadmap and were previously undocumented here.
+
+Epic 6.3 (Source Scan & Pixel Anchoring) was moved to Phase 3 and renumbered to **3.5** on
+2026-09-20 (Maintainer-Entscheidung; decisions 19–22), because none of its scope needs AI and
+it should not wait behind the agentic phase. The move added per-region transcription and
+region tagging to the epic; nothing already specified was removed. 6.3's freed number was
+deliberately **not** reused — a new Document AI epic was added to Phase 6 as **6.4** instead,
+to keep older commits and issues that cite "Epic 6.3" traceable to the scan/pixel-anchoring
+work rather than to an unrelated OCR epic. Phase 7 (Field Capture) was added in the same pass.
 
 ### UI polish and brand tokens (Epic 2.5)
 
@@ -1120,3 +1231,11 @@ These questions should be resolved per-epic during refinement:
   earlier "JSON array vs. separate table" question is resolved (the table exists, Epic 2.1
   shipped against it).
 - **LiteratureEvidence:** Extend RelationEvidence to support Literature (not just Source) as evidence — evaluate in Epic 3.3 refinement
+- **OCR engine choice (Epic 6.4):** which self-hosted OCR engine (e.g. Tesseract, PaddleOCR, a
+  self-hosted layout-aware model) meets the "images never leave our infrastructure" guarantee
+  (Decision 20) at acceptable accuracy on historical handwriting/typewriting — evaluate in
+  Epic 6.4 refinement.
+- **Capacitor data-sync contract (Epic 7.1):** the exact API contract between the mobile
+  capture client's local queue and the Next.js backend (batch upload shape, conflict handling
+  for a session started offline and finished online, retry/backoff policy) is not yet
+  specified — evaluate in Epic 7.1 refinement.
