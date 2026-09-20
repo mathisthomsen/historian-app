@@ -335,13 +335,21 @@ dependency.
   rendering authenticated chrome before the refresh fires); confirm this explicitly once #88
   is fixed rather than assuming it resolved as a side effect, since the alternative reading
   (a session that outlives `signOut`) is the more serious one.
+- **Auth.js session fixation check:** carried over from Epic 5.4's security review — a
+  distinct control from the three defects above (regenerating the session identifier after
+  authentication, not logout invalidation or route gating). Verify next-auth issues a fresh
+  session/JWT on login rather than reusing a pre-authentication one, so a session id set
+  before login cannot be fixed and ridden through it. Grouped here because it is another
+  session-hardening item being worked ahead of Phase 3 on a live product, not because it is
+  related to #103/#88/#27.
 - **Regression coverage:** an E2E test that captures a session token, calls `signOut`, and
   replays the captured token — asserting `401`, not `200` — as a permanent guard against #103
   recurring.
 
 **Verifiable:** Replay a session token captured before logout — `401`, not `200`. Anonymous
 request to `/dashboard` — a real HTTP redirect to `/auth/login`, not a `200` with a
-client-side meta-refresh. TC-AUTH-13 passes 20/20 consecutive CI runs.
+client-side meta-refresh. TC-AUTH-13 passes 20/20 consecutive CI runs. A session id captured
+before login is invalid after it (fixation check).
 
 ---
 
