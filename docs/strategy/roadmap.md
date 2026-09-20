@@ -24,15 +24,11 @@ with each decision's source document recorded.
 - shadcn/ui + Tailwind CSS: base component set installed (Button, Input, Dialog, Table, Card, Badge, Tabs, Toast)
 - next-intl: i18n provider configured, German (de) + English (en) locale files, locale switcher component
 - ESLint (strict), Prettier, Husky pre-commit hooks
-- Jest 30 + React Testing Library + jest-environment-jsdom configured
+- Vitest 3 + React Testing Library + jsdom configured (`vitest.config.ts`, `src/test/setup.ts`)
 - Playwright E2E configured
 - Path aliases (`@/components`, `@/lib`, `@/types`)
 - Global error boundary, not-found page, loading skeleton pattern established
 - Environment variable validation via Zod (`env.ts` checked at startup)
-
-> **TODO(content-pass):** "Jest 30 + jest-environment-jsdom" does not describe the
-> repository. Unit tests run on Vitest (`vitest.config.ts`, `src/test/`) and there is no
-> Jest dependency in `package.json`.
 
 **Verifiable:** App loads, language switcher toggles DE/EN, component showcase page renders all base components.
 
@@ -46,10 +42,11 @@ with each decision's source document recorded.
 
 - All entities: `User`, `Project`, `UserProject`, `Person`, `Event`, `Source`, `Location`, `Literature`
 - Universal relation model:
-  - `Relation` table: `id`, `project_id`, `user_id`, `from_type` (enum), `from_id`, `to_type` (enum), `to_id`, `relation_type_id`, `notes`, `certainty` (enum: CERTAIN/PROBABLE/POSSIBLE/UNKNOWN), `created_at`, `updated_at`
+  - `Relation` table: `id`, `project_id`, `created_by_id` (nullable, `onDelete: SetNull` — not `user_id`), `from_type` (enum), `from_id`, `to_type` (enum), `to_id`, `relation_type_id`, `notes`, `certainty` (enum: CERTAIN/PROBABLE/POSSIBLE/UNKNOWN), plus temporal-validity columns `valid_from_year`/`valid_from_month`/`valid_from_cert`, `valid_to_year`/`valid_to_month`/`valid_to_cert` (same year/month/certainty triple as Person and Event dates — relations are temporally bounded, not just entities), `created_at`, `updated_at`
   - `RelationType` table: `id`, `project_id`, `name`, `inverse_name`, `description`, `color`, `icon`, `valid_from_types` (array), `valid_to_types` (array)
-  - `RelationEvidence` table: `id`, `relation_id`, `source_id`, `notes` — replaces SourceOnRelation
-- Person attributes: `birth_date`, `birth_date_certainty`, `death_date`, `death_date_certainty` + person name variants as JSON or separate `PersonName` table
+  - `RelationEvidence` table: `id`, `relation_id`, `source_id`, `notes`, `page_reference`, `quote`, `confidence` (Certainty) — replaces SourceOnRelation
+- Person attributes: **partial dates**, not a single `birth_date`/`death_date` field — `birth_year`/`birth_month`/`birth_day` and `death_year`/`death_month`/`death_day` (all nullable integers; year-only and year+month are valid), `birth_date_certainty`, `death_date_certainty`, plus `birth_place_certainty`/`death_place_certainty` — certainty applies separately to places, not only dates (see Epic 2.1 for the shipped model). Person name variants live in the separate `PersonName` table (`name`, `language`, `is_primary`) — not a JSON array; see Epic 2.1.
+- `Event` likewise carries `location_certainty` alongside its free-text/FK location fields — certainty on place is a schema-wide pattern, not specific to Person.
 - Naming convention: **snake_case throughout** — no mixed conventions
 - Prisma migrate workflow (`prisma migrate dev` locally, `prisma migrate deploy` in CI)
 - Database seed script with demo project, sample persons, events, and relations
@@ -63,21 +60,24 @@ with each decision's source document recorded.
 
 **Deliverable:** Full auth flow: register, login, email verification, password reset, session management. All pages accessible in browser.
 
-- Auth.js v5 with Credentials provider (bcrypt) and Email provider (magic link via Resend)
-- JWT session strategy, 30-day max age, refresh token rotation
+- Auth.js v5 with a Credentials provider (bcrypt). No Email / magic-link provider: Resend sends
+  the custom verification and password-reset token emails instead (`src/lib/email.ts`).
+- JWT session strategy, 30-day max age. No refresh-token rotation and no server-side
+  revocation check exists — `signOut` only clears the browser cookie, so a captured token
+  stays valid for its full lifetime after logout (issue #103, fixed in Epic 2.7).
 - Email verification: custom token flow (EmailConfirmation table), 24h expiry, branded HTML emails via Resend
 - Password reset: token flow (PasswordReset table), 1h expiry, single-use
 - Password strength: min 8 chars, uppercase/lowercase/number/special char; strength indicator component
 - Pages: `/auth/login`, `/auth/register`, `/auth/verify`, `/auth/forgot-password`, `/auth/reset-password`
-- Middleware: all `/app/*` routes protected; public routes explicit allow-list
+- Middleware: `PUBLIC_PATHS` allow-list is defined in `src/auth.config.ts`, but its
+  `authorized()` callback returns a boolean, which next-auth's dispatch only honours when
+  it is a `Response` — so the allow-list has no runtime effect today (issue #88, fixed in
+  Epic 2.7). Authenticated pages and API routes still self-protect via `requireUser()` /
+  `requireUserOrRedirect()`, so no data is exposed; only the defence-in-depth layer is inert.
 - `requireUser()` server helper for API route protection
 - System roles: `USER`, `ADMIN` (UserRole enum)
 - Project roles: `OWNER`, `EDITOR`, `VIEWER` (proper enum, not string)
 - Auth audit log: LOGIN_SUCCESS, LOGIN_FAILED, REGISTER, PASSWORD_RESET, EMAIL_VERIFIED
-
-> **TODO(content-pass):** `src/auth.ts` registers the Credentials provider only. No Email
-> / magic-link provider is configured, although Resend does send the custom verification
-> and password-reset token emails.
 
 **Verifiable:** Register → verify email → login → see dashboard shell → logout cycle works end-to-end in browser.
 
@@ -139,7 +139,7 @@ with each decision's source document recorded.
 
 - Event list: DataTable with search, filter by type, date range, location; server-side pagination
 - Create/Edit form: title, description, event_type (FK to EventType table), start_date + certainty, end_date + certainty, location (free text + optional geocoded Location FK), parent event (for sub-events)
-- **EventType table:** `EventType` is a proper DB table per project (`id, project_id, name, color, icon`). Epic 2.2 creates this table via migration and exposes CRUD for event types in project settings. The `event_type` column on `Event` is currently a free-text String in the schema stub; this epic adds the FK and migrates it.
+- **EventType table:** `EventType` is a proper DB table per project (`id, project_id, name, color, icon`). Epic 2.2 creates this table via migration and exposes CRUD for event types in project settings. `Event.event_type_id` is the FK to `EventType` (migration `20260312000000_add_event_types`), replacing the earlier free-text `event_type` String.
 - Event types: user-defined per project — no hardcoded types. Seeded defaults provided (Battle, Treaty, Birth, Death, etc.).
 - Sub-event display: indented in list view; breadcrumb chain in detail view
 - Event detail page: all attributes, sub-events list, related persons tab, related sources tab
@@ -163,7 +163,7 @@ cover the `event` model — no boilerplate needed here.
 - Create/Edit form: title, type (archival_document, letter, newspaper, official_record, photograph, other — user-extendable), author, date, repository/archive, call_number, url, reliability (categorical: HIGH / MEDIUM / LOW / UNKNOWN — replaces decimal), notes
 - Source detail page: all attributes, list of all relations where this source is attached as evidence
 - Reliability display: color-coded badge
-- API: `GET/POST /api/sources`, `GET/PUT/DELETE /api/sources/[id]`
+- API: `GET/POST /api/sources`, `GET/PUT/DELETE /api/sources/[id]`, `POST /api/sources/bulk`
 
 **Distinction from Literature:** Sources are primary evidence. They appear in the relation evidence linking UI. Literature is secondary reference (handled in Phase 3).
 
@@ -222,7 +222,7 @@ account for this.
     entity_id    String
     user_id      String?    // null wenn Agent
     agent_name   String?    // null wenn Mensch
-    action       String     // CREATE | UPDATE | DELETE | MERGE | SUGGEST | ACCEPT | REJECT
+    action       ActivityAction // CREATE | UPDATE | DELETE | MERGE | SUGGEST | ACCEPT | REJECT
     field_path   String?    // z.B. "birth_year"
     old_value    Json?
     new_value    Json?
@@ -255,6 +255,13 @@ account for this.
 
 **Note:** This epic does _not_ include marketing/public-facing pages (see Epic 2.6). It focuses exclusively on the authenticated app shell and its components.
 
+**Scope note (shipped incomplete):** Epic 2.5 is recorded as complete in `## History`
+(PR #18, merge `9700a9f`), and every other bullet above did ship — brand tokens, dark/light
+and page transitions, sidebar animation, and the empty-state/skeleton pass. The DataTable
+column-visibility toggle did not: `grep -rniE "columnVisibility|toggleColumn|VisibilityState" src/`
+returns no matches, and the only `localStorage` consumers in `src/` are `use-sidebar.ts` and
+its test. This bullet remains open work, not delivered scope.
+
 **Verifiable:** Toggle dark/light mode — transition is smooth, no flash. Collapse/expand sidebar — animation is smooth. Navigate between Person list and detail page — transition is visible. All pages use brand colors.
 
 ---
@@ -277,12 +284,64 @@ account for this.
 
 **Note:** Auth pages (`/auth/login`, `/auth/register`, etc.) are already implemented. This epic adds the _pre-auth_ marketing funnel pages only.
 
-> **TODO(content-pass):** the implemented scope is narrower than this list. See
-> `docs/specs/2-6-marketing-landing/specification.md`: one landing page, a changelog page
-> and the two legally required pages shipped; Features, About and Pricing are deferred,
-> and a closed-alpha invite-token flow that this text does not mention was added.
+> **Scope note:** the implemented scope is narrower than this list. Epic 2.6 was split; Part A
+> (issue #82, closed) shipped one landing page, a changelog page and the two legally required
+> pages. Features, About and Pricing are deferred. Part B — the closed-alpha access-request and
+> single-use invite-token flow specified in `docs/specs/2-6-marketing-landing/specification.md`
+> §4.1–4.2 — has **not** shipped: there is no `Invite`/`AccessRequest` model in
+> `prisma/schema.prisma`, no migration creates one, and `src/app/api/auth/register/route.ts`
+> has no invite check (its own `token` code is the email-verification mechanism, not a gate).
+> **Registration is open to the public today.** Tracked as issue #29 (open).
 
 **Verifiable:** Homepage renders with brand styling, hero CTA navigates to `/de/auth/register`, all text available in DE and EN, Lighthouse score >90 on public pages.
+
+---
+
+### Epic 2.7 — Session & Authorization Hardening
+
+**Deliverable:** Session invalidation and route-level authorization actually take effect at
+runtime, closing the gap between what Epic 1.3 documents and what the middleware and session
+strategy enforce today. Added to the roadmap during the September 2026 grooming pass: the
+product is live and public (Epic 2.6), and these are three `priority: high` defects on it.
+
+**Depends on:** Epic 1.3 (Auth.js configuration) and Epic 1.4 (Redis). No new external
+dependency.
+
+- **Server-side session invalidation on logout (issue #103):** Under the JWT strategy,
+  `signOut` is a client-side cookie operation only — the token itself is never checked
+  against anything server-side, so a captured `authjs.session-token` keeps full API access
+  for up to its 30-day `maxAge` after the legitimate user has logged out. Measured 2026-09-13
+  against a production build: replaying a captured token after `signOut` returned `200` on
+  `/api/persons` with real project data, while the browser's own cookie-cleared path
+  correctly returned `401`. Fix: a Redis-backed revocation check (denylist of revoked
+  session/`jti` ids, checked in the `session` callback) so a replayed pre-logout token is
+  rejected.
+- **Make `authorized()` actually gate requests (issue #88):** `src/middleware.ts` passes a
+  request handler to `auth(...)`; per next-auth's dispatch logic, the `authorized()`
+  callback's return value is only honoured when it is a `Response` — a boolean (what
+  `src/auth.config.ts` returns today) is silently ignored, so `PUBLIC_PATHS` has no runtime
+  effect. Anonymous `GET /de/dashboard` returns `200` with the full authenticated shell
+  rendered, followed by a client-side meta-refresh rather than a real redirect. No user data
+  leaks — `requireUserOrRedirect()` and the API routes' own guards still hold the line — but
+  the allow-list is dead code and a future page that forgets its own guard has nothing behind
+  it. Fix: return a `Response` (redirect) from `authorized()` for unauthenticated requests to
+  non-public paths, and add a test asserting a real HTTP redirect (not a `200` + meta-refresh)
+  for an anonymous request to a protected route.
+- **Root-cause TC-AUTH-13 (issue #27):** The logout E2E test flaked once in CI, showing a
+  fully authenticated dashboard render immediately after `signOut` had already navigated to
+  `/auth/login`. Not yet root-caused — deliberately filed rather than dismissed as a fluke,
+  because the failure is indistinguishable from a session surviving logout. The leading
+  theory is the same client-side-meta-refresh mechanism as #88 (an anonymous request briefly
+  rendering authenticated chrome before the refresh fires); confirm this explicitly once #88
+  is fixed rather than assuming it resolved as a side effect, since the alternative reading
+  (a session that outlives `signOut`) is the more serious one.
+- **Regression coverage:** an E2E test that captures a session token, calls `signOut`, and
+  replays the captured token — asserting `401`, not `200` — as a permanent guard against #103
+  recurring.
+
+**Verifiable:** Replay a session token captured before logout — `401`, not `200`. Anonymous
+request to `/dashboard` — a real HTTP redirect to `/auth/login`, not a `200` with a
+client-side meta-refresh. TC-AUTH-13 passes 20/20 consecutive CI runs.
 
 ---
 
@@ -320,7 +379,8 @@ account for this.
 - Leaflet map view: plot all locations as pins; click pin to see linked entities; filter by entity type
 - Temporal filter on map: slider to show "who/what was at this location in year X"
 - Location management page: bulk geocoding trigger for un-geocoded locations, merge duplicate locations
-- **Wire Location FKs on Person and Event:** Person gets `birth_location_id` and `death_location_id` wired to a Location autocomplete in the edit form (previously free-text only in Epic 2.1). Event gets `location_id` wired similarly. Free-text fallback fields (`birth_place`, `death_place`, `location`) are retained and pre-populated from the linked Location name when set.
+- **Wire Location FKs on Person and Event:** the `birth_location_id`/`death_location_id` columns on Person and the `location` relation on Event already exist in the schema (added ahead of this epic, with their indexes); this epic wires the UI — a Location autocomplete in the edit form, replacing free-text-only entry from Epic 2.1. Free-text fallback fields (`birth_place`, `death_place`, `location`) are retained and pre-populated from the linked Location name when set.
+- **Note — place FK vs. place certainty:** since this section was written, `Person.birth_place_certainty`/`death_place_certainty` and `Event.location_certainty` were added — a separate axis from the Location FK ("we know which place" vs. "we are sure it was that place"). This epic does not yet say how the two interact, and neither does the historical-name-normalization dictionary above. Resolve alongside issue #72 (the model can't express one place with several historical names, or one place absorbing another), which is the same gap from the data side.
 
 **Verifiable:** Search "Vienna", get autocomplete, select it, it geocodes and shows on map with a pin. Temporal filter slider changes which pins are visible.
 
@@ -348,6 +408,12 @@ account for this.
 - Citation export per entry: Chicago, BibTeX format (foundation for Phase 5 full export)
 - Last synced timestamp, sync metadata display
 
+**Precondition (unstated above, from README "Known limitations"):** `Literature` currently
+has no soft delete despite being a full member of the relation graph — deleting one
+permanently orphans relations that reference it. README records this as something to be
+addressed before Literature's CRUD is built. This epic should add soft delete to `Literature`
+as part of its scope, not after.
+
 **Verifiable:** Connect Zotero API key, sync a collection, see entries appear in literature list. Import a RIS file. Export a single entry as BibTeX.
 
 ---
@@ -360,7 +426,7 @@ account for this.
 - Person import: maps columns to Person fields; fuzzy date parsing ("c. 1850", "1790?", "before 1900", DD/MM/YYYY); place normalization; name variant detection
 - Event import: title, description, date, end_date, location, event_type (matched to project's event types or created)
 - **Import preview:** Before committing, show parsed records with validation warnings and uncertainty flags
-- **Duplicate detection:** Levenshtein similarity for names + date comparison; show potential duplicates with confidence; user decides merge/skip/import
+- **Duplicate detection:** Levenshtein similarity for names + date comparison; show potential duplicates with confidence; user decides merge/skip/import. **Note:** Epic 5.2 specifies on-demand duplicate detection for manually-entered records using the same algorithm — build the matching engine once here (or there, whichever ships first) and have the other epic consume it.
 - Import history: per-project log of imports (file, date, record counts, errors, batch_id)
 - Imported records tagged: `created_via_import: true`, `import_batch_id`
 - **Async processing:** Long imports run in background (Vercel background functions or queue); polling endpoint for status
@@ -383,6 +449,13 @@ account for this.
 
 > Goal: Make the data speak. Visualization, search, and analytical insight.
 
+**Sequencing note:** the epics below are ordered 4.1 → 4.3 → 4.2 → 4.4, not by number
+(approved re-prioritisation, September 2026 grooming pass). 4.3 (Network Graph) is built
+before 4.2 (Timeline) because Epic 5.1's GEXF export consumes 4.3's `/api/graph` endpoint —
+delivering the graph second in this phase unblocks Phase 5 early, and nothing in Phase 4 or 5
+depends on 4.2. 4.4 (Analytics Dashboard) is sequenced last because it extends
+`GET /api/projects/[id]/stats`, which belongs to unshipped Epic 3.1 (see 4.4 below).
+
 ### Epic 4.1 — Cross-Entity Search & Full-Text Discovery
 
 **Deliverable:** A single search box that searches across all entity types simultaneously, with faceted filtering.
@@ -391,10 +464,32 @@ account for this.
 - PostgreSQL full-text search (`tsvector`/`tsquery`) on: Person names + notes, Event titles + descriptions, Source titles + notes, Location names, Literature titles + keywords + abstracts
 - Unified search results page: grouped by entity type, relevance ranked
 - Faceted filter sidebar: filter results by entity type, date range, location, certainty level
-- Autocomplete: per-entity type search in relation form dropdowns
+- Autocomplete: per-entity type search in relation form dropdowns (**already shipped** in Epic 2.4 via `src/components/relations/EntitySelector.tsx` — no new work here, kept in this list only so the epic's original scope is legible)
 - "Connected to X" exploration: from any entity detail page, see all entities within 1-2 relation hops
 
 **Verifiable:** Search "Vienna 1848", get persons born there, events that occurred there, sources about it — all in one results page.
+
+---
+
+### Epic 4.3 — Network Graph Visualization
+
+**Deliverable:** Interactive force-directed graph of the universal relation model.
+
+- Library: D3.js force simulation or Cytoscape.js (TBD in refinement based on performance needs)
+- Nodes: Person (circle), Event (diamond), Source (square), Location (pin) — visually distinct by shape and color
+- Edges: labeled with relation type; thickness or color encodes certainty
+- Filter panel: filter by entity types to show, relation types to show, minimum certainty level
+- Click node → open entity detail side panel
+- Expand/collapse node neighborhood (click to reveal connected nodes up to N hops)
+- Zoom, pan, drag nodes to rearrange
+- Layout options: force-directed, hierarchical, circular
+- Graph data endpoint: `GET /api/graph?project_id=&depth=` returns nodes + edges in a graph-compatible format — **built before Epic 4.2** specifically so Epic 5.1's GEXF export has this endpoint to consume.
+
+**Verifiable:** Project with 30+ entities and 50+ relations renders as a navigable graph. Filter to show only Person nodes and family relation types. Click a node and see the detail panel.
+
+#### Agentic layer
+
+> Graph-Daten (`/api/graph`) werden AX-Layer-3-Chat als Kontext-Endpoint dienen.
 
 ---
 
@@ -418,33 +513,20 @@ account for this.
 
 ---
 
-### Epic 4.3 — Network Graph Visualization
-
-**Deliverable:** Interactive force-directed graph of the universal relation model.
-
-- Library: D3.js force simulation or Cytoscape.js (TBD in refinement based on performance needs)
-- Nodes: Person (circle), Event (diamond), Source (square), Location (pin) — visually distinct by shape and color
-- Edges: labeled with relation type; thickness or color encodes certainty
-- Filter panel: filter by entity types to show, relation types to show, minimum certainty level
-- Click node → open entity detail side panel
-- Expand/collapse node neighborhood (click to reveal connected nodes up to N hops)
-- Zoom, pan, drag nodes to rearrange
-- Layout options: force-directed, hierarchical, circular
-- Graph data endpoint: `GET /api/graph?project_id=&depth=` returns nodes + edges in a graph-compatible format (designed to be reusable for GEXF export in Phase 5)
-
-**Verifiable:** Project with 30+ entities and 50+ relations renders as a navigable graph. Filter to show only Person nodes and family relation types. Click a node and see the detail panel.
-
-#### Agentic layer
-
-> Graph-Daten (`/api/graph`) werden AX-Layer-3-Chat als Kontext-Endpoint dienen.
-
----
-
 ### Epic 4.4 — Analytics Dashboard & Activity Feed
 
 **Deliverable:** A meaningful project dashboard showing research state and real activity.
 
-- **Real activity log:** Track CRUD actions on all entities (not auth events). Table: `activity_log` with: user_id, project_id, action (CREATE/UPDATE/DELETE), entity_type, entity_id, entity_label, timestamp. Displayed as "You added Person 'Karl Maier' 2 hours ago."
+**Depends on:** Epic 3.1 — the stats endpoint this epic extends does not exist until 3.1 ships
+it. Sequenced last in Phase 4 for that reason, not by number.
+
+- **Real activity log:** Track CRUD actions on all entities (not auth events). Uses the
+  `EntityActivity` model introduced in Epic 2.4 (table `entity_activity`,
+  `prisma/schema.prisma:554`): `project_id`, `entity_type`, `entity_id`, `user_id`,
+  `agent_name`, `action`, `field_path`, `old_value`, `new_value`, `reason`, `source_id`,
+  `created_at`. **Note:** there is no `entity_label` column — rendering "You added Person
+  'Karl Maier' 2 hours ago" requires either a migration adding a denormalised label or
+  read-time resolution of the polymorphic `entity_id` (see issue #20 on dangling ids).
 - Dashboard cards (meaningful, not just counts):
   - "Persons with uncertain birth dates" (actionable)
   - "Unconnected entities" (persons/events with 0 relations — data gaps)
@@ -452,12 +534,10 @@ account for this.
   - "Recent additions this week" (bar chart)
   - Entity type distribution (pie chart)
 - Charts: shadcn/ui compatible chart library (Recharts or Tremor — TBD in refinement)
-- Per-project stats endpoint: `GET /api/projects/[id]/stats` — extended to return research quality metrics
+- Per-project stats endpoint: `GET /api/projects/[id]/stats` — extended to return research
+  quality metrics. The base endpoint is Epic 3.1's "Project stats page"; no `/api/projects`
+  route exists yet, so this epic cannot start before 3.1 ships it.
 - Quick-create shortcuts on dashboard (add person, add event, add relation)
-
-> **TODO(content-pass):** the activity log was pulled forward into Epic 2.4 and exists as
-> the `EntityActivity` model, mapped to the table `entity_activity` — not `activity_log`
-> as written above.
 
 **Verifiable:** Perform 5 CRUD actions across entities; activity feed updates correctly. "Unconnected entities" card shows accurate count. Charts render.
 
@@ -503,7 +583,7 @@ account for this.
 
 **Deliverable:** Tools for ongoing data quality: duplicate management, uncertainty review, bulk operations.
 
-- **Duplicate detection:** Run on demand (not only at import time) for manually-entered persons and events. Levenshtein + date matching. Results in a review queue.
+- **Duplicate detection:** Run on demand (not only at import time) for manually-entered persons and events. Levenshtein + date matching. Results in a review queue. **Note:** this is the same algorithm Epic 3.4 specifies for import-time duplicate detection. Specify the matching engine once — in whichever of 3.4 or 5.2 is built first — and have the other consume it; do not implement it twice.
 - **Uncertainty review queue:** List of all records with `UNKNOWN` or `POSSIBLE` certainty. Link to edit. Bulk "mark as reviewed" action.
 - **Bulk operations:** Bulk update certainty, bulk assign event type, bulk assign to location
 - **Orphan report:** Entities with no relations; sources not attached as evidence to any relation
@@ -527,15 +607,14 @@ account for this.
 
 **Deliverable:** Complete German + English localization, locale switcher, polished UI.
 
-- All strings externalized to `messages/de.json` and `messages/en.json`
+- All strings externalized to `messages/de.json` and `messages/en.json` (**already shipped** in Epic 1.1; open issue #40 says the job is incomplete — hardcoded strings still leak in both locale directions — so this bullet is "keep it complete," not "build it")
 - Date formatting per locale (de-DE, en-US) via `Intl.DateTimeFormat`
 - Number formatting per locale
 - Relation type default seeds available in both languages
-- Locale switcher: persisted in user profile settings
-- UI polish pass: consistent spacing, typography scale, empty states, loading skeletons, error states on all pages
+- **Locale persistence:** the shipped mechanism is a client-side `NEXT_LOCALE` cookie (`localeDetection: false` in `src/i18n/routing.ts`), not a `User` profile column. Persisting locale to the `User` row instead would be a schema change this epic does not currently scope — decide explicitly whether the cookie is sufficient or a profile column is worth adding before treating this as a deliverable.
+- UI polish pass: consistent spacing, typography scale, empty states, loading skeletons, error states on all pages (**already shipped** in Epic 2.5 for the authenticated app shell; re-scope this bullet to any pages 2.5 did not cover, if any remain)
 - Accessibility pass: ARIA labels, keyboard navigation, focus management
 - All Zod validation messages externalized (no hardcoded German strings in code)
-- Language/Locale Persistence in Account
 
 **Verifiable:** Switch locale to English, verify all UI text changes. Switch back to German. Date "15. März 1848" in DE, "March 15, 1848" in EN.
 
@@ -548,24 +627,29 @@ account for this.
 - **Unit tests:** All utility functions, validation schemas, data transformation logic — target 90%+ on lib/utils
 - **Integration tests:** All API routes with MSW mocking; auth flows; relation engine; import parser
 - **E2E tests (Playwright):** Critical paths: register→verify→login, create person, create event, link relation, import CSV, export CSV, project invite flow
-- **Advice from previous implementation:** Du hast style-src 'unsafe-inline' wegen Tailwind v4 erlaubt. Hinweis: Das ist für die Entwicklung notwendig. Sobald die App stabil läuft (Phase 5), solltest du auf Nonces umstellen, um CSS-Injections komplett zu unterbinden.
+- **CSP hardening:** `next.config.ts` currently allows `'unsafe-inline'` on **both** `script-src`
+  and `style-src`. `style-src` is the easy half (Tailwind v4 needs it for now). `script-src`
+  is the one that actually needs a nonce strategy — the in-file comment records why: Next.js
+  App Router injects inline RSC streaming scripts (`self.__next_f.push`). Plan the nonce
+  strategy for both directives, not just `style-src`.
 
-- **Security review:**
+- **Security review:** Session/JWT and middleware-authorization hardening (logout not
+  invalidating a captured session, the `authorized()` allow-list being inert) moved to Epic
+  2.7 — see that epic for issues #103, #88, #27. What remains here:
   - Remove any remaining test/debug routes
   - Verify rate limiting works under load
   - Verify Redis tokens not exposed
   - Input validation on all API route parameters
   - SQL injection: verify Prisma parameterization (should be safe by default)
-  - Auth.js session fixation check
-- **Monitoring:** Sentry (error tracking), Vercel Analytics (performance), custom `activity_log` as audit trail
+- **Monitoring:** Sentry (error tracking), Vercel Analytics (performance), the `EntityActivity`
+  log (table `entity_activity`, introduced in Epic 2.4 — not a separate `activity_log` table)
+  as audit trail
 - **Performance:** Bundle analysis, image optimization, lazy loading for graph visualization and maps
 - **Documentation:** README with setup instructions, `.env.example` complete and documented
 - **UI Library** Add Storybook
 
-> **TODO(content-pass):** the package manager is pnpm, not npm. The script exists as
-> `pnpm test:coverage`.
-
-**Verifiable:** `npm run test:coverage` reports 80%+. Lighthouse score >85. Security headers grade A on securityheaders.com. Sentry catches and reports a test error.
+**Verifiable:** `pnpm test:coverage` meets the 80% thresholds already configured in
+`vitest.config.ts:13`. Lighthouse score >85. Security headers grade A on securityheaders.com. Sentry catches and reports a test error.
 
 #### Agentic layer
 
@@ -669,9 +753,12 @@ model DataConflict {
 | `/api/agents/suggestions`             | GET     | Liste aller Vorschläge (filter: status, entity, type) |
 | `/api/agents/suggestions`             | POST    | Agent reicht Vorschlag ein (Grounding-Check)          |
 | `/api/agents/suggestions/[id]`        | PUT     | Historiker akzeptiert/lehnt ab                        |
-| `/api/entities/[type]/[id]/activity`  | GET     | Provenance-Trail einer Entität                        |
 | `/api/entities/[type]/[id]/conflicts` | GET     | Offene Datenkonflikte                                 |
 | `/api/grounding/verify`               | POST    | Prüft: Unterstützt Source X Claim Y?                  |
+
+**Nicht neu:** `GET /api/entities/[type]/[id]/activity` ist bereits in Epic 2.4 spezifiziert
+und existiert (`src/app/api/entities/[type]/[id]/activity/route.ts`). Ursprünglich hier
+fälschlich unter "Neue API-Endpunkte" doppelt aufgeführt.
 
 #### Agentic Guardrails (API-Enforcement)
 
@@ -706,6 +793,9 @@ CONSTRAINT 8 — Approval Gate:
 CONSTRAINT 9 — User Override:
   Manuelle Bearbeitung durch Historiker überschreibt ACCEPTED-Vorschläge automatisch
   und loggt in EntityActivity: action = "USER_OVERRIDE".
+  Hinweis: `enum ActivityAction` (Epic 2.4, `prisma/schema.prisma`) kennt heute nur
+  CREATE/UPDATE/DELETE/MERGE/SUGGEST/ACCEPT/REJECT — USER_OVERRIDE fehlt. Diese Migration
+  muss den Enum-Wert per `ALTER TYPE` ergänzen, sonst schlägt der Log-Write fehl.
 
 CONSTRAINT 10 — Domain Scope Lock:
   suggested_value.field_path muss einem bekannten Prisma-Feld entsprechen.
@@ -818,7 +908,10 @@ Historian → ChatPanel UI
              ↓ POST /api/chat/message {context, question, projectId}
            ChatRouter (Server)
              ↓ RAG: Suche Source + PropertyEvidence + EntityActivity
-           Claude API (claude-sonnet-4-6)
+           Claude API (aktuelle Sonnet-Tier-Generation — Modell-ID erst bei
+           Implementierung fixieren, nicht hier: `claude-sonnet-4-6` war die
+           gepinnte ID, als dieser Abschnitt geschrieben wurde, und ist inzwischen
+           eine ältere Generation)
              ↓ Structured response schema (Zod-validated):
            {
              answer: string,           // Antwort in Historiker-Sprache
@@ -845,7 +938,10 @@ Historian → ChatPanel UI
 
 #### RAG-Pipeline (Retrieval-Augmented Generation)
 
-1. Frage → Embedding (text-embedding-3-small oder pgvector in PostgreSQL)
+1. Frage → Embedding (text-embedding-3-small); Vektor-Speicherung via pgvector.
+   **Hinweis:** keine pgvector-Extension ist heute aktiv und keine Embedding-Spalte existiert
+   in `prisma/schema.prisma` — diese Epic muss beides als Teil ihres Scopes hinzufügen, nicht
+   voraussetzen.
 2. Vektor-Suche über Source.notes + PropertyEvidence.quote + EntityActivity.reason
 3. Top-K-Treffer als Kontext-Fenster an Claude übergeben
 4. Claude generiert Antwort **ausschließlich** aus dem Kontext (System-Prompt: Grounding-First)
@@ -893,24 +989,22 @@ Quellen-Scan rückführbar sein.
 
 #### Offene Schema- und Infrastruktur-Lücken
 
-> _(retitled from "Fehlende Anforderungen (noch nicht in Roadmap)" — editorial
-> rename during the roadmap merge, kept because the original phrase would be
-> self-contradictory as a heading inside this same roadmap document —
-> TODO(content-pass))_
+| Lücke                                                   | Befund (geprüft 2026-09-20)     | Adressiert in   |
+| ------------------------------------------------------- | ------------------------------- | --------------- |
+| `Source.file_url` (Blob-URL für Scan-Upload)            | Fehlt im Schema                 | Epic 6.3 Schema |
+| `Source.file_hash` (SHA-256, Tampering-Schutz)          | Fehlt im Schema                 | Epic 6.3 Schema |
+| `PropertyEvidence.source_scan_region` (Pixel-Anchoring) | Fehlt im Schema                 | Epic 6.3 Schema |
+| PDF/Scan-Viewer mit Annotations-Support                 | Keine Abhängigkeit, keine Route | Epic 6.3        |
+| Blob-Storage-Integration (Vercel Blob / S3)             | Keine Abhängigkeit, keine Route | Epic 6.3        |
+| URL-Archivierung (Wayback Machine API)                  | Kein Plan, kein Code            | Epic 6.3        |
 
-> **TODO(content-pass):** diese Lückenliste stammt aus März 2026. Die drei Schema-Zeilen
-> wurden beim Zusammenführen der beiden Roadmaps gegen `prisma/schema.prisma` nachgeprüft
-> und gelten weiterhin; die Zeilen zu PDF-Viewer, Blob-Storage und URL-Archivierung wurden
-> nicht gegen `src/` geprüft.
-
-| Lücke                                                   | Befund          | Adressiert in          |
-| ------------------------------------------------------- | --------------- | ---------------------- |
-| `Source.file_url` (Blob-URL für Scan-Upload)            | Fehlt im Schema | Epic 6.0 Schema        |
-| `Source.file_hash` (SHA-256, Tampering-Schutz)          | Fehlt im Schema | Epic 6.0 Schema        |
-| `PropertyEvidence.source_scan_region` (Pixel-Anchoring) | Fehlt im Schema | Epic 2.4 Agentic layer |
-| PDF/Scan-Viewer mit Annotations-Support                 | Kein Plan       | Epic 6.3               |
-| Blob-Storage-Integration (Vercel Blob / S3)             | Kein Plan       | Epic 6.3               |
-| URL-Archivierung (Wayback Machine API)                  | Kein Plan       | Epic 6.3               |
+All six rows re-checked directly against `prisma/schema.prisma` and `src/` (a March 2026 check
+had only re-verified the first three). The two rows previously assigned to "Epic 6.0 Schema"
+are corrected here: Epic 6.0's schema block (above) does not define `file_url`/`file_hash` —
+they belong to Epic 6.3, which is also where `Source.file_hash` is described as being computed
+on upload. `PropertyEvidence.source_scan_region` is likewise corrected from "Epic 2.4 Agentic
+layer" to Epic 6.3: Epic 2.4 explicitly defers it there (see that epic's Agentic layer
+section) rather than addressing it.
 
 ---
 
@@ -936,14 +1030,19 @@ PDF öffnet sich auf S.12 mit hervorgehobener Region.
 
 ## Summary
 
-| Phase | Theme               | Epics   | Outcome                                                                | Agentic layer                                                                                          |
-| ----- | ------------------- | ------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| 1     | Foundation & Auth   | 1.1–1.4 | Secure, authenticated shell with infrastructure                        | Bestehend, unverändert                                                                                 |
-| 2     | Core Research Loop  | 2.1–2.6 | MVP: persons, events, sources, relations + UI polish + marketing pages | Augmentiert: EntityActivity, PropertyEvidence.confidence, source_scan_region                           |
-| 3     | Research Context    | 3.1–3.4 | Projects, locations, literature, bulk import                           | Augmentiert: Geocoding als AgentSuggestion, Import-Provenance                                          |
-| 4     | Discovery           | 4.1–4.4 | Search, timeline, network graph, analytics                             | Augmentiert: AX-Dashboard-Karten                                                                       |
-| 5     | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage                          | Augmentiert: created_via in Exports, AX-Security-Review                                                |
-| 6     | Agentic Experience  | 6.0–6.3 | AX infrastructure, collaborative UI, scholarly chat, source-first      | Die Phase selbst _(editorial addition, not sourced from either original roadmap — TODO(content-pass))_ |
+| Phase | Theme               | Epics   | Outcome                                                                                          | Agentic layer                                                 |
+| ----- | ------------------- | ------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| 1     | Foundation & Auth   | 1.1–1.4 | Secure, authenticated shell with infrastructure                                                  | Bestehend, unverändert                                        |
+| 2     | Core Research Loop  | 2.1–2.7 | MVP: persons, events, sources, relations + UI polish + marketing pages + session/authz hardening | Augmentiert: EntityActivity, PropertyEvidence.confidence      |
+| 3     | Research Context    | 3.1–3.4 | Projects, locations, literature, bulk import                                                     | Augmentiert: Geocoding als AgentSuggestion, Import-Provenance |
+| 4     | Discovery           | 4.1–4.4 | Search, timeline, network graph, analytics                                                       | Augmentiert: AX-Dashboard-Karten                              |
+| 5     | Export & Production | 5.1–5.4 | Export, data quality, i18n, 80% test coverage                                                    | Augmentiert: created_via in Exports, AX-Security-Review       |
+| 6     | Agentic Experience  | 6.0–6.3 | AX infrastructure, collaborative UI, scholarly chat, source-first                                | Die Phase selbst                                              |
+
+`source_scan_region` was removed from Phase 2's Agentic-layer cell above: Epic 2.4 explicitly
+defers it to Epic 6.3 (no consumer exists until the scan viewer is built), so it never landed
+in Phase 2. Phase 6 as a _phase_ exists only from the September 2026 roadmap merge — see
+`## History` below for the provenance note this cell used to carry inline.
 
 **MVP for university validation = Phase 1 + Phase 2 (including 2.5) complete.**
 Phase 3 adds collaborative workspace and import, making it suitable for a research group.
@@ -959,7 +1058,19 @@ Phases 4 and 5 make it a complete, production-ready product.
 
 Work that shipped without appearing in either predecessor roadmap. Recorded here so the
 gap between the epic list and the repository is visible; progress against the epics
-themselves is generated from GitHub milestones, not written down here.
+themselves lives on GitHub Issues and the Evidoxa Backlog project board
+(`gh project 1 --owner mathisthomsen`), not written down here. (Measured 2026-09-20: the repo
+has zero GitHub milestones — `gh api repos/mathisthomsen/historian-app/milestones` returns
+`[]`. A milestone-based status generator has been discussed but does not exist yet; if one is
+built, it belongs here as a planned mechanism, not a present-tense one.)
+
+Phase 6 exists as a phase only from the September 2026 roadmap merge: `ai_aided_roadmap.md`
+carried Epics 6.0–6.3 as a proposal, and the merge presented them as committed
+(commit `56c83e3`; rationale in `docs/specs/docs-consolidation/plan.md:103`).
+
+Epic 2.7 (Session & Authorization Hardening) was added to Phase 2 during the September 2026
+roadmap grooming pass, carrying forward three `priority: high` session/authorization defects
+(issues #103, #88, #27) that predate this roadmap and were previously undocumented here.
 
 ### UI polish and brand tokens (Epic 2.5)
 
@@ -983,7 +1094,7 @@ gaps left by an epic that had already been declared done.
 
 Epic 2.6 was also cut down on the way into implementation: `docs/specs/2-6-marketing-landing/specification.md`
 ships one landing page, a changelog and the two legally required pages, and defers
-Features, About and Pricing. See the content-pass marker on Epic 2.6.
+Features, About and Pricing. See the scope note on Epic 2.6.
 
 ---
 
@@ -995,9 +1106,9 @@ These questions should be resolved per-epic during refinement:
 - **Chart library:** Recharts vs. Tremor vs. shadcn charts — to be decided in Epic 4.4 refinement
 - **Async import processing:** Vercel background functions vs. Inngest vs. simple polling — depends on import volume expectations
 - **PostgreSQL full-text vs. Meilisearch:** For Epic 4.1 — Postgres FTS is zero-dependency; Meilisearch gives better relevance for larger datasets
-- **Person name variants:** JSON array on Person table vs. separate `PersonName` table — normalization trade-off
+- **Person name model — DACH convention gap (issue #56):** the shipped `PersonName` table
+  (`name`, `language`, `is_primary`) has no title field and no particle-aware sort key, so it
+  cannot correctly express names in the DACH convention. This is the live open question — the
+  earlier "JSON array vs. separate table" question is resolved (the table exists, Epic 2.1
+  shipped against it).
 - **LiteratureEvidence:** Extend RelationEvidence to support Literature (not just Source) as evidence — evaluate in Epic 3.3 refinement
-
-> **TODO(content-pass):** "Person name variants: JSON array vs. separate `PersonName`
-> table" is no longer open — the `PersonName` table exists in `prisma/schema.prisma`
-> and Epic 2.1 shipped against it. Epic 1.2 above still states the same either/or.

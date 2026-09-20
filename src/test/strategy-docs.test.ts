@@ -7,8 +7,11 @@ const ROADMAP = join(process.cwd(), "docs", "strategy", "roadmap.md");
 
 // The roadmap is the one strategy document most likely to attract a
 // hand-written status column, because that is what both of its predecessors
-// eventually wanted to be. Status is generated from GitHub milestones
-// (see ADR-0002); this test is the guard that keeps it that way.
+// eventually wanted to be. Status lives on GitHub Issues and the Evidoxa
+// Backlog project board (`gh project 1 --owner mathisthomsen`), not in this
+// file — there are no GitHub milestones in this repo, and a milestone-based
+// generator, if ever built, is planned work, not a present mechanism. This
+// test is the guard that keeps status out of the roadmap either way.
 describe("docs/strategy/roadmap.md", () => {
   it("contains no hand-written status markers", () => {
     const offenders = readFileSync(ROADMAP, "utf8")
@@ -19,12 +22,16 @@ describe("docs/strategy/roadmap.md", () => {
     expect(offenders).toEqual([]);
   });
 
-  // 22 epics from roadmap.md + 4 new Phase 6 epics from ai_aided_roadmap.md.
-  // The 5 [AX-AUGMENTATION] blocks overlay existing epics and add no headings.
+  // 22 epics from roadmap.md + 4 new Phase 6 epics from ai_aided_roadmap.md
+  // (26 total). The 5 [AX-AUGMENTATION] blocks overlay existing epics and add
+  // no headings. Epic 2.7 (Session & Authorization Hardening) was added at the
+  // end of Phase 2 in the September 2026 grooming pass to carry three
+  // priority:high session/authorization defects (#103, #88, #27) that predate
+  // the roadmap and were previously undocumented in it — 27 total.
   it("carries every epic from both source roadmaps, exactly once", () => {
     const headings = readFileSync(ROADMAP, "utf8").match(/^### Epic \d+\.\d+/gmu) ?? [];
 
-    expect(headings).toHaveLength(26);
-    expect(new Set(headings).size).toBe(26);
+    expect(headings).toHaveLength(27);
+    expect(new Set(headings).size).toBe(27);
   });
 });
