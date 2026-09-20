@@ -102,7 +102,7 @@ EDITOR oder OWNER erfordern, und die Herkunft (`created_via`, `agent_name`) soll
 gespeichert werden.
 
 **Nichts davon ist gebaut.** Die agentische Schicht ist Phase 6 der
-[Roadmap](./roadmap.md) (Epics 6.0–6.3). Heute existiert im Schema lediglich die
+[Roadmap](./roadmap.md) (Epics 6.0–6.4). Heute existiert im Schema lediglich die
 Vorbereitung: `EntityActivity` ist append-only und trägt bereits die Felder
 `agent_name` und `source_id` für spätere agenten-initiierte Aktionen
 (`prisma/schema.prisma`, Zeilen 554–576).
@@ -225,7 +225,8 @@ das sie tatsächlich liefern soll. Maßgeblich ist [`roadmap.md`](./roadmap.md).
 | Analytik-Dashboard, Aktivitäts-Feed, Datenlücken-Übersicht                                   | 4.4     | nicht vorhanden (`/dashboard` existiert als Route, ohne diese Auswertungen)                                                                                            |
 | Export: CSV, JSON, RIS, BibTeX, JSON-LD, GEXF, Projektpaket                                  | 5.1     | nicht vorhanden                                                                                                                                                        |
 | Ungewissheits-Review-Queue, Vollständigkeitsbericht, Waisenbericht, Dublettenerkennung       | 5.2     | nicht vorhanden                                                                                                                                                        |
-| KI-Assistenz: Vorschlagswesen, quellengebundener Forschungs-Chat, PDF-Viewer mit Pixel-Anker | 6.0–6.3 | nur die Schema-Vorbereitung in `EntityActivity` (554–576)                                                                                                              |
+| Quellen-Scans: Upload, Regionsmarkierung, Transkription je Region                            | 3.5     | nicht vorhanden                                                                                                                                                        |
+| KI-Assistenz: Vorschlagswesen, quellengebundener Forschungs-Chat, OCR und Extraktion         | 6.0–6.4 | nur die Schema-Vorbereitung in `EntityActivity` (554–576)                                                                                                              |
 
 ---
 
