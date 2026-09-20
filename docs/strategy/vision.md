@@ -37,13 +37,40 @@ Daraus die drei Festlegungen, die dieses Dokument trägt:
 3. **Was das Produkt ist:** eine webbasierte Forschungsdatenbank für historische
    Projekte (Formulierung aus `docs/communication/evidoxa-overview.md`, gelöscht).
 
-`TODO(content-pass)` — **Erfolgskriterien der MVP-Validierung fehlen.** Keine Quelle
-nennt, woran die universitäre Validierung gemessen wird, mit welchem Partner sie
-stattfindet oder in welchem Zeitraum.
+### Erfolgskriterium der MVP-Validierung
 
-`TODO(content-pass)` — **Umfang der SaaS-Kommerzialisierung fehlt.** Die Roadmap-Einleitung
-nennt sie als Ziel, beschreibt aber weder Preismodell noch Zielmarkt noch Abgrenzung
-zum universitären Angebot.
+_(Festlegung des Maintainers, 2026-09-20 — keine Quelle im Repository, sondern eine
+Entscheidung. Sie wird hier festgehalten, damit sie prüfbar ist.)_
+
+Die Validierung gilt als bestanden, wenn **eine Historikerin ein laufendes Projekt aus
+ihrem bisherigen Werkzeug** (Excel, Zotero, FileMaker o. ä.) **nach Evidoxa überführt und
+berichtet, dass Evidoxa etwas leistet, was das alte Werkzeug nicht konnte** — konkret:
+Unsicherheit als Datum erster Klasse und der universelle Beziehungsgraph.
+
+Gemessen wird damit nicht Adoption im Allgemeinen, sondern der Vergleich gegen den
+Status quo der Zielgruppe. Der Vergleich erzeugt als Nebenprodukt die Sprache, mit der
+das Produkt positioniert wird.
+
+**Noch offen:** Partnerinstitution und Zeitraum. Beides ist Teil dieses Kriteriums und
+bislang nicht festgelegt — siehe Issue #117.
+
+### Umfang der SaaS-Kommerzialisierung
+
+_(Festlegung des Maintainers, 2026-09-20.)_
+
+Zwei Preismodelle nebeneinander, getrennt nach Zielgruppe:
+
+- **Einzelne Forschende:** Freemium pro Projekt. Ein kleines Projekt ist kostenlos;
+  kostenpflichtig werden mehrere Projekte, Mitarbeitende, Speichervolumen und
+  KI-Verarbeitung.
+- **Institutionen** (Universitäten, Archive, Forschungsgruppen): Lizenzierung pro Sitz
+  oder pro Institution — so, wie akademische Software tatsächlich beschafft wird.
+
+Die Abgrenzung zum universitären MVP bleibt bestehen: der MVP dient der Validierung,
+nicht dem Verkauf.
+
+**Nichts davon ist gebaut, bepreist oder vertraglich zugesagt.** Es gibt keine
+Abrechnung, keine Tarife und keine Mengenbegrenzungen im Code.
 
 Die abgeleiteten Produktentscheidungen zu dieser Positionierung sind in
 [`decisions.md`](./decisions.md) (18 gesperrte Entscheidungen) festgehalten, der
