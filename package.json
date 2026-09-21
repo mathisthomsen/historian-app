@@ -23,6 +23,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "roadmap:status": "tsx scripts/roadmap-status.ts",
+    "roadmap:status:generate": "pnpm --silent roadmap:status > content/roadmap-status.json",
     "prepare": "husky"
   },
   "dependencies": {

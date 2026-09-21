@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { listReleases } from "@/lib/changelog";
@@ -35,15 +36,20 @@ export default async function ChangelogPage({ params }: { params: Promise<{ loca
         <h2 className="text-muted-foreground text-xs tracking-[0.14em] uppercase">
           {t("comingNext")}
         </h2>
-        {/* Explicit role="list"/"listitem": Tailwind's preflight sets
-            `list-style: none` on every <ul>/<ol>, and in WebKit that strips the
-            implicit roles, leaving these three as unrelated lines of text
-            (issue #90). Enforced by src/test/marketing-list-roles.test.ts. */}
-        <ul role="list" className="text-muted-foreground mt-4 space-y-3">
-          <li role="listitem">{t("theme1")}</li>
-          <li role="listitem">{t("theme2")}</li>
-          <li role="listitem">{t("theme3")}</li>
-        </ul>
+        {/*
+          Issue #84: this section used to be three hand-written prose themes.
+          They are replaced by a link to /roadmap — the roadmap page already
+          renders the curated, German-primary, forward-looking view (phases,
+          epic titles, status), so hand-maintaining a second summary here
+          would just be the same fact kept in two places.
+        */}
+        <p className="text-muted-foreground mt-4 max-w-prose">
+          {t("comingNextText")}{" "}
+          <Link href={`/${locale}/roadmap`} className="underline underline-offset-4">
+            {t("comingNextLinkLabel")}
+          </Link>
+          .
+        </p>
       </section>
 
       <div className="mt-16 space-y-12">

@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { env } from "@/lib/env";
 
-const PUBLIC_PATHS = ["", "/changelog", "/impressum", "/datenschutz"] as const;
+const PUBLIC_PATHS = ["", "/changelog", "/roadmap", "/impressum", "/datenschutz"] as const;
 const LOCALES = ["de", "en"] as const;
 
 // Marketing and the authenticated app are served from the same Next
