@@ -73,7 +73,7 @@ nicht dem Verkauf.
 Abrechnung, keine Tarife und keine Mengenbegrenzungen im Code.
 
 Die abgeleiteten Produktentscheidungen zu dieser Positionierung sind in
-[`decisions.md`](./decisions.md) (18 gesperrte Entscheidungen) festgehalten, der
+[`decisions.md`](./decisions.md) (23 gesperrte Entscheidungen) festgehalten, der
 Umsetzungsplan in [`roadmap.md`](./roadmap.md).
 
 ---
@@ -202,7 +202,11 @@ Belegstellen stehen in der Klammer, damit die Prüfung wiederholbar ist.
 
 - **Konto- und Anmeldeverwaltung**: Registrierung, E-Mail-Bestätigung, Anmeldung,
   Passwort-Zurücksetzung.
-  (`src/app/[locale]/(auth)/auth/{register,verify,login,forgot-password,reset-password}/page.tsx`)
+  (Registrierung: `src/app/api/auth/register/route.ts:27`; E-Mail-Bestätigung:
+  `src/app/api/auth/verify-email/route.ts:18`; Anmeldung: `src/auth.ts:43`
+  (`authorize`, inkl. bcrypt-Vergleich und Account-Lockout); Passwort-Zurücksetzung
+  anfordern: `src/app/api/auth/forgot-password/route.ts:16`; Passwort setzen:
+  `src/app/api/auth/reset-password/route.ts:33`)
 - **Deutsche und englische Oberfläche**, umschaltbar; Deutsch ist die Standardsprache.
   (`src/i18n/routing.ts:5`; `src/components/shell/locale-switcher.tsx`)
 - **Helles und dunkles Farbschema.**

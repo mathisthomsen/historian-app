@@ -6,9 +6,10 @@
 
 ## Strategic Decisions (locked)
 
-All 18 locked strategic decisions — the original 12 plus the 6 AX/agentic-layer
-additions — live in one place: [`docs/strategy/decisions.md`](./decisions.md),
-with each decision's source document recorded.
+All 23 locked strategic decisions — the original 12, the 6 AX/agentic-layer
+additions, and 5 more since (decisions 19–23) — live in one place:
+[`docs/strategy/decisions.md`](./decisions.md), with each decision's source
+document recorded.
 
 ---
 
@@ -341,13 +342,14 @@ dependency.
   before login cannot be fixed and ridden through it. Grouped here because it is another
   session-hardening item being worked ahead of Phase 3 on a live product, not because it is
   related to #103/#88/#27.
-- **Regression coverage:** an E2E test that captures a session token, calls `signOut`, and
-  replays the captured token — asserting `401`, not `200` — as a permanent guard against #103
-  recurring.
+- **Regression coverage:** a permanent E2E guard against #103 recurring. The procedure it
+  automates is in the private advisory (GHSA-h32c-m6mx-pmw6), not here — see the disclosure
+  note above.
 
-**Verifiable:** Replay a session token captured before logout — `401`, not `200`. Anonymous
-request to `/dashboard` — a real HTTP redirect to `/auth/login`, not a `200` with a
-client-side meta-refresh. TC-AUTH-13 passes 20/20 consecutive CI runs. A session id captured
+**Verifiable:** The regression tests described in GHSA-h32c-m6mx-pmw6 and
+GHSA-g6gc-49hx-h4jr pass. Anonymous request to `/dashboard` — a real HTTP redirect to
+`/auth/login`, not a `200` with a client-side meta-refresh. TC-AUTH-13 passes 20/20
+consecutive CI runs. A session id captured
 before login is invalid after it (fixation check).
 
 ---
@@ -499,8 +501,18 @@ Direktverlinkung zu PropertyEvidence.
   scrollt zu markierter Region. **Hinweis (aus dem Phase-3-Umzug):** `<EvidenceStrip>`
   selbst wird erst in Epic 6.1 (Phase 6) gebaut; bis dahin läuft dieser Link über das
   bereits existierende `PropertyEvidencePanel`/`PropertyEvidenceBadge`-Paar, das
-  `.quote`/`.raw_transcription` schon heute rendert.
+  `.quote` schon heute rendert (`src/components/relations/EvidenceForm.tsx`,
+  `EvidenceList.tsx`). `.raw_transcription` wird von der API zurückgegeben, aber von
+  keiner der beiden Komponenten angenommen oder angezeigt — das Formular und der
+  Renderer um `.raw_transcription` zu erweitern ist Teil von Epic 3.5s eigenem Scope
+  (Per-Region-Transkription unten), nicht bereits vorhandene Funktionalität.
 - `Source.file_hash` (SHA-256) wird bei Upload berechnet, dient als Integritätsnachweis
+- `Source.egress_policy_at_capture` wird bei Upload aus der dann aktiven Projekt-/
+  Session-Policy geschrieben und ist danach **unveränderlich** — Entscheidung 20
+  verlangt, dass die zum Aufnahmezeitpunkt eines Assets geltende Policy dauerhaft
+  befolgt wird, unabhängig von späteren Änderungen der Projekteinstellung. Epic 6.4
+  (Document AI, gehostetes Sprachmodell) muss dieses Feld lesen, nicht die aktuelle
+  Projekteinstellung, bevor OCR-Text eines Assets an das gehostete Modell geht.
 
 **Neu (Erweiterung beim Phase-3-Umzug — funktioniert vollständig ohne KI):**
 
@@ -1226,10 +1238,12 @@ Voraussetzung dafür.
 Work that shipped without appearing in either predecessor roadmap. Recorded here so the
 gap between the epic list and the repository is visible; progress against the epics
 themselves lives on GitHub Issues and the Evidoxa Backlog project board
-(`gh project 1 --owner mathisthomsen`), not written down here. (Measured 2026-09-20: the repo
-has zero GitHub milestones — `gh api repos/mathisthomsen/historian-app/milestones` returns
-`[]`. A milestone-based status generator has been discussed but does not exist yet; if one is
-built, it belongs here as a planned mechanism, not a present-tense one.)
+(`gh project 1 --owner mathisthomsen`), not written down here. (Measured 2026-09-21: the repo
+has 30 GitHub milestones, 10 closed — `gh api repos/mathisthomsen/historian-app/milestones`,
+paginated with `?state=all` — one per epic, kept in sync with `scripts/roadmap-status.ts`,
+which regenerates `content/roadmap-status.json` on manual run (`pnpm roadmap:status:generate`).
+It does not regenerate itself on a schedule or on issue/milestone changes; issue #122 tracks
+automating that.)
 
 Phase 6 exists as a phase only from the September 2026 roadmap merge: `ai_aided_roadmap.md`
 carried Epics 6.0–6.3 as a proposal, and the merge presented them as committed

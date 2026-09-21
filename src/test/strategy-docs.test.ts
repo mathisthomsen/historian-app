@@ -9,8 +9,9 @@ const ROADMAP = join(process.cwd(), "docs", "strategy", "roadmap.md");
 // hand-written status column, because that is what both of its predecessors
 // eventually wanted to be. Status lives on GitHub Issues and the Evidoxa
 // Backlog project board (`gh project 1 --owner mathisthomsen`), not in this
-// file — there are no GitHub milestones in this repo, and a milestone-based
-// generator, if ever built, is planned work, not a present mechanism. This
+// file — the repo has 30 GitHub milestones (one per epic) and a milestone-based
+// generator, `scripts/roadmap-status.ts`, but it is a manually-run script, not a
+// present-tense live mechanism (issue #122 tracks automating it). This
 // test is the guard that keeps status out of the roadmap either way.
 // What this regex can and cannot do.
 //
