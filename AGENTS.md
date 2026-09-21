@@ -96,6 +96,34 @@ The README explains architectural and scholarly rationale. Flag a documentation 
 
 Do not request README updates for routine feature work or refactors that leave those architectural contracts unchanged.
 
+## Documentation structure
+
+`docs/decisions/0002-documentation-architecture.md` gives every kind of fact one home, and
+`CLAUDE.md` § "Where things live" summarises it. Flag a PR that:
+
+- adds or renumbers an epic in `docs/strategy/roadmap.md` without updating both the expected
+  count and the derivation comment in `src/test/strategy-docs.test.ts`
+- writes status into `docs/strategy/roadmap.md` — any `✅`, `Status:`, "done", "in progress"
+  or percentage. Status lives in GitHub milestones. A guard test enforces this, so look
+  hardest at any PR that _changes the guard_ to accommodate new text
+- moves anything into `docs/archive/` without evidence that a reference search was run first
+- cites something in `docs/archive/` as authority for current behaviour, rather than as a
+  record of what was done
+- introduces a list of work items as a file instead of GitHub issues
+- states a capability in `docs/strategy/vision.md` in the present tense without a
+  `file:line` citation supporting it, or describes unbuilt behaviour without marking it as
+  planned
+
+## Security disclosure
+
+The repository is public and the product is live. Flag any PR that puts a **working
+reproduction** of an unfixed defect into an issue body, a specification, or anything under
+`docs/`. The public artifact carries the class of defect, its impact and the fix;
+reproductions belong in a draft GitHub Security Advisory, which publishes when the fix ships.
+
+Treat this as a correctness issue rather than a style preference — a planning document in
+this repo is published, and `docs/strategy/roadmap.md` is rendered at `/roadmap`.
+
 ## Review style
 
 Only file findings that are actionable and tied to the changed code.

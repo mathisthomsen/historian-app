@@ -23,6 +23,25 @@ Two rules keep it from drifting back into duplication:
 - **Status is hand-written in exactly one place: GitHub.** Every other surface derives it — never re-type "done", "in progress", or a percentage anywhere else.
 - **Strategy documents state `is` versus `will be` explicitly.** A sentence describing unbuilt behaviour is future tense or marked as planned, never written as if it already exists.
 
+### Keeping it that way
+
+- **Adding or renumbering an epic** in `docs/strategy/roadmap.md` breaks the guard test's
+  expected count on purpose. Update the count **and** the comment that derives it. Never
+  loosen the assertion to make a change fit.
+- **Epic status is a GitHub milestone**, one per epic, and nothing else. Closing a milestone
+  asserts the epic shipped — if it shipped incomplete, leave it open, or close it and file
+  the gap as an issue against it. `scripts/roadmap-status.ts` derives the public state; do
+  not hand-edit its output.
+- **Nothing moves to `docs/archive/` without a reference search first.** Age and size prove
+  nothing — `docs/design-system/` looked like archaeology and is cited by section from the
+  UX platform skill.
+- **Archived material may be cited as a historical record, never as authority** for current
+  behaviour.
+- **A finding belongs in a GitHub issue, not a file.** Three separate files here were lists
+  of work items living outside GitHub, and all three rotted — four of one file's twelve
+  items were measured false when finally checked. A list of things to do is a backlog
+  regardless of what the file is called.
+
 ## Context efficiency
 
 Be conservative with tool output.
@@ -105,6 +124,23 @@ against what is now known, and merge duplicates. Report what changed and why.
 
 Prefer splitting an issue that has grown several independent parts — progress on
 one should be visible without waiting for the rest.
+
+## Security findings in a public repo
+
+This repository is public and the product is live, so an issue, spec or roadmap entry
+describing an unfixed defect **is a disclosure**.
+
+- **The public artifact carries the class of defect, the impact, and the fix.** That is what
+  an implementer needs, and it is safe to publish.
+- **The reproduction goes in a draft GitHub Security Advisory.** Advisories are private,
+  support a private fix branch, and publish automatically when the fix ships.
+- **Never in `docs/`.** Planning documents are published — `docs/strategy/roadmap.md` is
+  rendered at `/roadmap`.
+
+This exists because Epic 2.7 carried working reproductions for two live authentication
+defects into a public planning document, and was caught only because the branch had not yet
+been pushed. Note that redaction does not undo such a mistake: GitHub keeps issue edit
+history publicly readable, so the original text stays one click away.
 
 ## Responding to code review
 
