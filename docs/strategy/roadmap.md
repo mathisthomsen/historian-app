@@ -548,7 +548,16 @@ depends on 4.2. 4.4 (Analytics Dashboard) is sequenced last because it extends
 
 **Deliverable:** Interactive force-directed graph of the universal relation model.
 
-- Library: D3.js force simulation or Cytoscape.js (TBD in refinement based on performance needs)
+- Library: **deliberately undecided.** Shortlist, narrowed: **Cytoscape.js** (purpose-built,
+  real layout algorithms, comfortable into the low thousands of nodes), **Sigma.js**
+  (WebGL, comfortable past 10k), **D3-force** (maximum control, every interaction built by
+  hand). React Flow is **ruled out**: it is built for user-arranged node editors, not
+  force-directed exploration of a discovered graph.
+  **The deciding measurement:** the p95 node count of a real research project, which the
+  MVP validation produces by definition — a historian migrating a live project off their
+  current tool (see `vision.md` §1). Below roughly 2,000 nodes any of the three works and
+  DX decides; past that, SVG stops being viable and the choice narrows to Sigma.js.
+  Do not re-debate this before that number exists.
 - Nodes: Person (circle), Event (diamond), Source (square), Location (pin) — visually distinct by shape and color
 - Edges: labeled with relation type; thickness or color encodes certainty
 - Filter panel: filter by entity types to show, relation types to show, minimum certainty level
@@ -606,7 +615,9 @@ it. Sequenced last in Phase 4 for that reason, not by number.
   - "Sources with no evidence links" (orphaned sources)
   - "Recent additions this week" (bar chart)
   - Entity type distribution (pie chart)
-- Charts: shadcn/ui compatible chart library (Recharts or Tremor — TBD in refinement)
+- Charts: **shadcn charts** (Recharts underneath), per locked decision 23 — same
+  CSS-variable token system as the rest of the UI, components owned in
+  `src/components/ui/`. Load the `dataviz` skill before writing chart code.
 - Per-project stats endpoint: `GET /api/projects/[id]/stats` — extended to return research
   quality metrics. The base endpoint is Epic 3.1's "Project stats page"; no `/api/projects`
   route exists yet, so this epic cannot start before 3.1 ships it.
