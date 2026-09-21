@@ -768,7 +768,16 @@ enum CreatedVia { MANUAL IMPORT AGENT }
 // Felder hinzufügen zu: Person, Event, Source, Relation
 created_via      CreatedVia @default(MANUAL)
 agent_name       String?    // z.B. "DeduplicatorAgent v1.2"
-agent_confidence Float?     // 0.0–1.0; null wenn MANUAL
+
+// Kein `agent_confidence Float?` auf diesen Entitäten (Korrektur 2026-09-21): Decision 6
+// ersetzte Dezimal-Konfidenz durch kategoriale Certainty, Decision 15 hält den Float-Track
+// bewusst intern bei Agenten. Ein Entity-weites Float-Feld würde entweder die Certainty
+// einzelner Assertions auf einer gemischt manuell/agentisch gepflegten Entität verfälschen
+// oder beim nächsten Vorschlag überschrieben werden — und holt numerische
+// Wahrscheinlichkeit zurück in ein Modell, das genau das bewusst ablehnt (README §2,
+// `src/components/research/CertaintyMarker.tsx`). Modell-Scores bleiben auf
+// AgentSuggestion.confidence; akzeptierte Aussagen tragen kategoriale Certainty
+// (PropertyEvidence.confidence, Epic 2.4).
 
 // 2. AgentSuggestion — Kernmodell des AX-Systems
 enum SuggestionType {
@@ -855,13 +864,24 @@ CONSTRAINT 2 — Grounding-Zwang:
   POST /api/agents/suggestions → 422 wenn source_ids.length === 0.
 
 CONSTRAINT 3 — Confidence-Cap:
-  suggested_value.confidence wird serverseitig auf Math.min(value, 0.95) gecappt.
+  AgentSuggestion.confidence (das Top-Level-Feld, NICHT ein Feld in suggested_value —
+  suggested_value ist beliebiges JSON) wird serverseitig auf Math.min(value, 0.95) gecappt.
+  Korrektur 2026-09-21: ursprünglich stand hier "suggested_value.confidence", was nichts
+  cappt, das die Verification-Szenarien unten tatsächlich prüfen ("Mit confidence 0.99 →
+  gespeichert als 0.95" bezieht sich auf das Top-Level-Feld, Zeile ~796).
 
 CONSTRAINT 4 — Reasoning-Pflicht:
   AgentSuggestion.reasoning: NOT NULL, minLength: 50.
 
-CONSTRAINT 5 — Source-Existenz-Check:
-  Jede source_id in source_ids muss in Source-Tabelle existieren (App-layer FK-Check).
+CONSTRAINT 5 — Source- und Entity-Scoping-Check:
+  Jede source_id in source_ids UND die Ziel-Entität (entity_type/entity_id) müssen aktiv
+  (deleted_at: null, wo die Tabelle das Feld hat) und im selben project_id liegen wie der
+  anfragende Agent — sonst 403. Bloße Existenz reicht nicht (Korrektur 2026-09-21): ohne
+  Projekt-Check kann ein Aufrufer eine Suggestion an die Source oder Entität eines fremden
+  Projekts binden, solange die CUID irgendwo existiert (cross-tenant). Präzedenzfall, den
+  diese Epic 1:1 übernimmt: `src/app/api/property-evidence/route.ts:156-160` prüft
+  `source_id` bereits so (`where: { id, project_id, deleted_at: null }`), und
+  `src/lib/entity-validation.ts` (`validateEntityExists`) macht dasselbe für die Ziel-Entität.
 
 CONSTRAINT 6 — Rate Limiting per Agent:
   Max. 100 AgentSuggestions/Stunde/Projekt pro agent_name (Redis sliding window).
@@ -873,6 +893,14 @@ CONSTRAINT 7 — EntityActivity Immutabilität:
 CONSTRAINT 8 — Approval Gate:
   PENDING-Vorschläge werden in der UI als "Vorschlag" (nicht Fakt) gerendert.
   Nur ACCEPTED-Vorschläge fließen in Berechnungen ein.
+  Rollen-Check (Ergänzung 2026-09-21 — fehlte in der ursprünglichen Fassung): `PUT
+  /api/agents/suggestions/[id]` muss vor jedem ACCEPT/REJECT `requireProjectMembership(userId,
+  project_id, WRITE_ROLES)` prüfen (Decision 16: "explicit ACCEPT by a project EDITOR or
+  OWNER", bekräftigt in `vision.md` §2). Ohne diesen Check ist die einzige technische
+  Durchsetzung von Decision 16 die UI-Rendering-Regel oben, die ein direkter API-Aufruf
+  umgeht. Präzedenzfall, den diese Epic übernimmt: `requireProjectMembership()` +
+  `WRITE_ROLES` (`src/lib/api.ts:191-210`), bereits verwendet in
+  `src/app/api/{relations,sources,persons,events}/bulk/route.ts` und `persons/route.ts`.
 
 CONSTRAINT 9 — User Override:
   Manuelle Bearbeitung durch Historiker überschreibt ACCEPTED-Vorschläge automatisch
@@ -918,7 +946,12 @@ Kein neues Feature-Set — Ergänzung der bestehenden Detail- und Formular-Seite
 **2. `<ReasoningBox>`**
 
 - Kollabierbare Box, deutlich als "KI-Vorschlag" markiert (Rahmen + Icon: Sparkles)
-- Zeigt: agent_name, suggestion_type, reasoning (Volltext), confidence-Badge (% mit Farbe)
+- Zeigt: agent_name, suggestion_type, reasoning (Volltext), confidence-Badge — kategorisiert
+  (niedrig/mittel/hoch, farbcodiert wie `CertaintyMarker`), NICHT als Prozentzahl (Korrektur
+  2026-09-21: eine Prozent-Badge widerspricht Decision 15 ["categorical enum for historians
+  (UI)"] und dem bereits verworfenen Ansatz in
+  `src/components/research/CertaintyMarker.tsx` — README §2: "a number implies a
+  statistical basis that does not exist"). Der rohe Float bleibt intern (API), nicht in der UI.
 - Niemals direkt editierbar — nur ACCEPT / REJECT / "Zur Quelle" Buttons
 - Erscheint in: PersonDetailTabs ("KI-Vorschläge"-Tab), EventDetailTabs
 
@@ -926,8 +959,10 @@ Kein neues Feature-Set — Ergänzung der bestehenden Detail- und Formular-Seite
 
 - Karten-Komponente für jede AgentSuggestion im PENDING-Status
 - Props: suggestion, onAccept, onReject
-- Zeigt: suggested_value (formatiert), confidence als Farbbalken, reasoning (gekürzt → "mehr"),
-  source_ids als CitationLink-Badges
+- Zeigt: suggested_value (formatiert), confidence — kategorisiert (niedrig/mittel/hoch,
+  farbcodiert), NICHT als proportionaler Farbbalken (Korrektur 2026-09-21, selbe Begründung
+  wie bei `<ReasoningBox>` oben), reasoning (gekürzt → "mehr"), source_ids als
+  CitationLink-Badges
 - Accept → PUT /api/agents/suggestions/[id] {status: ACCEPTED, review_note?}
 - Reject → PUT /api/agents/suggestions/[id] {status: REJECTED, review_note}
 
@@ -1026,7 +1061,14 @@ Historian → ChatPanel UI
    **Hinweis:** keine pgvector-Extension ist heute aktiv und keine Embedding-Spalte existiert
    in `prisma/schema.prisma` — diese Epic muss beides als Teil ihres Scopes hinzufügen, nicht
    voraussetzen.
-2. Vektor-Suche über Source.notes + PropertyEvidence.quote + EntityActivity.reason
+2. Vektor-Suche über Source.notes + PropertyEvidence.quote + EntityActivity.reason — Letzteres
+   NUR für Einträge mit gesetztem `source_id` (Korrektur 2026-09-21). `EntityActivity.reason`
+   ist eine freie menschliche Notiz; `EntityActivity.source_id` ist heute "reserved for agents"
+   und bei jedem menschlichen Eintrag null (`prisma/schema.prisma:566`). Ungegroundete
+   Freitext-Notizen dürfen nicht in den Korpus — sonst wird eine Audit-Notiz als
+   quellenbelegte historische Aussage präsentiert, was der These in `vision.md` §2
+   widerspricht ("Jede Aussage eines Agenten muss durch einen vorhandenen Quellen-Datensatz
+   belegt sein").
 3. Top-K-Treffer als Kontext-Fenster an Claude übergeben
 4. Claude generiert Antwort **ausschließlich** aus dem Kontext (System-Prompt: Grounding-First)
 5. Zod-Validierung des Response-Schemas — bei Validierungsfehler: Retry (max. 2×)
@@ -1047,7 +1089,9 @@ REGELN:
 #### Chat-UI-Komponenten
 
 - `<ChatPanel>` — Collapsible right-side panel (400px), persistiert Status in localStorage
-- `<ChatMessage>` — Einzelne Nachricht mit: Text, CitationLinks, confidence-Badge, "Vorschlag einreichen"-Button
+- `<ChatMessage>` — Einzelne Nachricht mit: Text, CitationLinks, confidence-Badge —
+  kategorisiert wie bei `<ReasoningBox>` (Epic 6.1), nicht als Prozentzahl (Korrektur
+  2026-09-21, gleiche Begründung: Decision 15 + README §2) —, "Vorschlag einreichen"-Button
 - `<ChatContext>` — Zeigt aktiven Kontext-Modus (Entity-Name oder "Gesamtes Projekt")
 - `<SuggestionDraft>` — Expandierbare Karte für vorgeschlagene AgentSuggestions aus dem Chat
   → Klick "Einreichen" → POST /api/agents/suggestions → erscheint in KI-Vorschläge-Tab
