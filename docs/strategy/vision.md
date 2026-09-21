@@ -155,10 +155,15 @@ Belegstellen stehen in der Klammer, damit die Prüfung wiederholbar ist.
 - **Belege an der Beziehung.** Jede Beziehung kann mit Primärquellen belegt werden,
   je Beleg mit Seitenangabe, Zitat und eigener Gewissheit.
   (`prisma/schema.prisma:486–504`, `page_reference` 491, `quote` 492, `confidence` 493)
-- **Belege am einzelnen Datenfeld — bei Person, Ereignis und Quelle.** Jedes einzelne
-  Feld einer dieser drei Entitäten (z. B. das Geburtsjahr) kann direkt mit einer
-  Primärquelle belegt werden — mit Seitenangabe, normalisiertem Zitat, diplomatischer
-  Transkription und eigener Gewissheit. `PropertyEvidenceBadge` ist ausschließlich in
+- **Belege am einzelnen Datenfeld — bei ausgewählten Feldern von Person, Ereignis und
+  Quelle.** Einzelne Felder dieser drei Entitäten (z. B. das Geburtsjahr) können direkt
+  mit einer Primärquelle belegt werden — mit Seitenangabe, normalisiertem Zitat,
+  diplomatischer Transkription und eigener Gewissheit. **Nicht alle Felder:** eine
+  serverseitige Allowlist (`src/app/api/property-evidence/route.ts:16`) entscheidet,
+  welche. Derzeit ausgenommen sind unter anderem sämtliche Gewissheitsfelder
+  (`birth_place_certainty`, `end_date_certainty` u. a.), `Event.event_type`,
+  `Event.parent`, `Source.type` und `Source.reliability` — ein Beleg für diese Felder
+  wird mit `422 INVALID_PROPERTY` abgelehnt. `PropertyEvidenceBadge` ist ausschließlich in
   `PersonDetailCard.tsx`, `EventDetailCard.tsx` und `SourceDetailCard.tsx` eingebunden;
   für Beziehungsfelder gibt es keine feldweise Beleghistorie und kann es nicht geben,
   solange `EntityType` keinen `RELATION`-Wert kennt.

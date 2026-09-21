@@ -1,13 +1,22 @@
 # Epic 2.4 — Universal Relationship Engine
 
+> **Historical record — Epic 2.4 shipped.** This is the brainstorming transcript from
+> March 2026, kept as the design record; it is not current guidance. It quotes
+> `docs/specs/roadmap.md` and `docs/specs/ai_aided_roadmap.md`, which were merged into
+> [`docs/strategy/roadmap.md`](../../strategy/roadmap.md) and
+> [`docs/strategy/decisions.md`](../../strategy/decisions.md) in September 2026. Quotations
+> of those documents are left as they were written — rewriting them would falsify the
+> record — so read them as what those files said at the time, not as live references.
+
 ## Brainstorming
 
 **Goal:** Define every implementation detail so the specification leaves no ambiguity.
 
 **Context sources:**
 
-- `docs/specs/roadmap.md` — Epic 2.4 requirements
-- `docs/specs/ai_aided_roadmap.md` — AX augmentations for Epic 2.4
+- `docs/specs/roadmap.md` — Epic 2.4 requirements _(moved: now `docs/strategy/roadmap.md`)_
+- `docs/specs/ai_aided_roadmap.md` — AX augmentations for Epic 2.4 _(merged into
+  `docs/strategy/roadmap.md`; the locked choices are in `docs/strategy/decisions.md`)_
 
 **Schema already in place (from Epic 1.2):**
 
