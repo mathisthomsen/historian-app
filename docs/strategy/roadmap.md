@@ -307,25 +307,24 @@ product is live and public (Epic 2.6), and these are three `priority: high` defe
 **Depends on:** Epic 1.3 (Auth.js configuration) and Epic 1.4 (Redis). No new external
 dependency.
 
+> **Disclosure note.** This repository is public and this document is published. The defects
+> below are described by class and by fix, not by reproduction. Step-by-step reproductions
+> live in the private security advisories; do not copy them back into this file.
+
 - **Server-side session invalidation on logout (issue #103):** Under the JWT strategy,
-  `signOut` is a client-side cookie operation only — the token itself is never checked
-  against anything server-side, so a captured `authjs.session-token` keeps full API access
-  for up to its 30-day `maxAge` after the legitimate user has logged out. Measured 2026-09-13
-  against a production build: replaying a captured token after `signOut` returned `200` on
-  `/api/persons` with real project data, while the browser's own cookie-cleared path
-  correctly returned `401`. Fix: a Redis-backed revocation check (denylist of revoked
-  session/`jti` ids, checked in the `session` callback) so a replayed pre-logout token is
-  rejected.
-- **Make `authorized()` actually gate requests (issue #88):** `src/middleware.ts` passes a
-  request handler to `auth(...)`; per next-auth's dispatch logic, the `authorized()`
-  callback's return value is only honoured when it is a `Response` — a boolean (what
-  `src/auth.config.ts` returns today) is silently ignored, so `PUBLIC_PATHS` has no runtime
-  effect. Anonymous `GET /de/dashboard` returns `200` with the full authenticated shell
-  rendered, followed by a client-side meta-refresh rather than a real redirect. No user data
-  leaks — `requireUserOrRedirect()` and the API routes' own guards still hold the line — but
-  the allow-list is dead code and a future page that forgets its own guard has nothing behind
-  it. Fix: return a `Response` (redirect) from `authorized()` for unauthenticated requests to
-  non-public paths, and add a test asserting a real HTTP redirect (not a `200` + meta-refresh)
+  `signOut` clears the cookie client-side but nothing server-side refuses a token that was
+  captured beforehand, so it stays valid for the remainder of its `maxAge`. Confirmed by
+  measurement against a production build on 2026-09-13; the reproduction is recorded in the
+  private security advisory rather than here, because this document is published.
+  Fix: a Redis-backed revocation check (denylist of revoked session/`jti` ids, checked in the
+  `session` callback) so a replayed pre-logout token is rejected.
+- **Make `authorized()` actually gate requests (issue #88):** per next-auth's dispatch logic
+  the `authorized()` callback's return value is only honoured when it is a `Response`; the
+  boolean `src/auth.config.ts` returns today is silently ignored, so `PUBLIC_PATHS` is dead
+  code with no runtime effect. **No user data leaks** — `requireUserOrRedirect()` and the API
+  routes' own guards still hold the line — but a future page that forgets its own guard would
+  have nothing behind it. Fix: return a `Response` (redirect) from `authorized()` for
+  unauthenticated requests to non-public paths, and add a test asserting a real HTTP redirect
   for an anonymous request to a protected route.
 - **Root-cause TC-AUTH-13 (issue #27):** The logout E2E test flaked once in CI, showing a
   fully authenticated dashboard render immediately after `signOut` had already navigated to
