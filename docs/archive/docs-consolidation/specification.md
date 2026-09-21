@@ -1,5 +1,7 @@
 # Specification — Documentation consolidation
 
+> **Archived 2026-09-21:** specification for the one-time documentation consolidation migration; archived once executed (Part 2 shipped). Kept for forensics only, not as authority — see `docs/archive/README.md`.
+
 **Status:** Draft · **Date:** 2026-09-17
 **Rule of record:** [ADR-0002](../../decisions/0002-documentation-architecture.md)
 **Disposable:** this document describes a one-time migration. Once executed it is

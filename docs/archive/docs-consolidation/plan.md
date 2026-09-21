@@ -1,5 +1,7 @@
 # Documentation Consolidation — Implementation Plan (Part 1 of 2)
 
+> **Archived 2026-09-21:** task-by-task migration plan for the documentation consolidation; archived once executed (Part 2 shipped). Kept for forensics only, not as authority — see `docs/archive/README.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Give every kind of project knowledge exactly one home, and make the duplication structurally unable to return.

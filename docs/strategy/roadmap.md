@@ -1233,7 +1233,7 @@ built, it belongs here as a planned mechanism, not a present-tense one.)
 
 Phase 6 exists as a phase only from the September 2026 roadmap merge: `ai_aided_roadmap.md`
 carried Epics 6.0–6.3 as a proposal, and the merge presented them as committed
-(commit `56c83e3`; rationale in `docs/specs/docs-consolidation/plan.md:103`).
+(commit `56c83e3`; rationale in `docs/archive/docs-consolidation/plan.md:105`).
 
 Epic 2.7 (Session & Authorization Hardening) was added to Phase 2 during the September 2026
 roadmap grooming pass, carrying forward three `priority: high` session/authorization defects
