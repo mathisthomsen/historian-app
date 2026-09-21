@@ -12,12 +12,30 @@ const ROADMAP = join(process.cwd(), "docs", "strategy", "roadmap.md");
 // file — there are no GitHub milestones in this repo, and a milestone-based
 // generator, if ever built, is planned work, not a present mechanism. This
 // test is the guard that keeps status out of the roadmap either way.
+// What this regex can and cannot do.
+//
+// It catches the mechanical forms: status glyphs anywhere, and a "Status:" label at the
+// start of a line in the spellings that actually occur (`**Status**:`, `Status :`,
+// lowercase). Issue #115 tracks the gaps this closes.
+//
+// The line-start anchor is load-bearing. Without it, `status:` matches the API payload
+// `{status: ACCEPTED, review_note?}` in Epic 6.1 — a field name, not a status claim. The
+// first version of this hardening did exactly that and failed the build on correct text.
+//
+// It cannot catch a status claim written as ordinary prose — "Phase 1 and 2 are done",
+// or a scope definition ambiguous enough to read as one. A regex that tried would have to
+// flag "Phases 4 and 5 make it a complete, production-ready product", which is a correct
+// sentence three lines further down. Semantic status claims are a review concern, not a
+// test concern: AGENTS.md § "Documentation structure" asks reviewers to flag them, and to
+// look hardest at any PR that changes THIS test to accommodate new text.
 describe("docs/strategy/roadmap.md", () => {
   it("contains no hand-written status markers", () => {
     const offenders = readFileSync(ROADMAP, "utf8")
       .split("\n")
       .map((line, index) => ({ line: index + 1, text: line }))
-      .filter(({ text }) => /[✅❌🚧]|\bStatus:/u.test(text));
+      .filter(({ text }) =>
+        /[✅❌🚧⏳⚡🆕✔️🔴🟢🟡]|^\s*[-*]?\s*\*{0,2}[Ss]tatus\*{0,2}\s*:/u.test(text),
+      );
 
     expect(offenders).toEqual([]);
   });

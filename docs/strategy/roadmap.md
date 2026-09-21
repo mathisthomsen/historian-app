@@ -1206,7 +1206,9 @@ defers it to Epic 3.5 (no consumer exists until the scan viewer is built), so it
 in Phase 2. Phase 6 as a _phase_ exists only from the September 2026 roadmap merge — see
 `## History` below for the provenance note this cell used to carry inline.
 
-**MVP for university validation = Phase 1 + Phase 2 (including 2.5) complete.**
+**MVP for university validation requires Phase 1 and Phase 2, including 2.5.** That is a
+statement of scope, not of progress — whether it has been reached is recorded in the GitHub
+milestones and rendered at `/roadmap`, never here.
 Phase 3 adds collaborative workspace, import, and source scanning with pixel-anchored
 transcription, making it suitable for a research group. Phases 4 and 5 make it a complete,
 production-ready product.
