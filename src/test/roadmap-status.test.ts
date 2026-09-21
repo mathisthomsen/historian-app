@@ -51,10 +51,14 @@ describe("parseEpicTitle", () => {
   });
 });
 
-describe("deriveEpicState — the four derivation rules", () => {
+describe("deriveEpicState — the three derivation rules", () => {
   it("closed milestone -> shipped, regardless of issue counts", () => {
     expect(deriveEpicState({ state: "closed", open_issues: 0, closed_issues: 0 })).toBe("shipped");
     expect(deriveEpicState({ state: "closed", open_issues: 3, closed_issues: 5 })).toBe("shipped");
+  });
+
+  it("closed milestone with open issues remaining -> shipped with a non-zero openIssues (Epic 2.5 case: shipped with a known follow-up)", () => {
+    expect(deriveEpicState({ state: "closed", open_issues: 1, closed_issues: 0 })).toBe("shipped");
   });
 
   it("open milestone with at least one closed issue -> in_progress", () => {
@@ -63,10 +67,12 @@ describe("deriveEpicState — the four derivation rules", () => {
     );
   });
 
-  it("open milestone with any open issue -> in_progress", () => {
-    expect(deriveEpicState({ state: "open", open_issues: 1, closed_issues: 0 })).toBe(
-      "in_progress",
-    );
+  it("open milestone with open issues but zero closed issues -> planned, not in_progress (Epic 2.7 case: filed scope is not evidence work has started)", () => {
+    expect(deriveEpicState({ state: "open", open_issues: 3, closed_issues: 0 })).toBe("planned");
+  });
+
+  it("open milestone with a single open issue and zero closed -> planned", () => {
+    expect(deriveEpicState({ state: "open", open_issues: 1, closed_issues: 0 })).toBe("planned");
   });
 
   it("open milestone with no issues at all -> planned", () => {

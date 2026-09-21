@@ -13,7 +13,14 @@
  * status here until its milestone is created — that is a gap to close in
  * GitHub, not something this script should paper over by inventing state.
  *
- * Run with: `pnpm roadmap:status`
+ * Run with: `pnpm --silent roadmap:status` — the `--silent` is load-bearing.
+ * Without it, pnpm writes its own banner to stdout ahead of the JSON below,
+ * which breaks any consumer (CI, a build step) piping this into a JSON
+ * parser. This script itself is already well-behaved: JSON only on stdout
+ * (`console.log` in `main()`), diagnostics/errors only on stderr
+ * (`console.error` in the top-level catch below) — the noise comes from
+ * pnpm's own wrapper, not from this script, so `--silent` is the fix, not a
+ * change here.
  */
 import { execFileSync } from "node:child_process";
 
@@ -57,17 +64,37 @@ export function parseEpicTitle(title: string): { epic: string; name: string } | 
 }
 
 /**
- * The four derivation rules, applied to a single epic's milestone data.
+ * The three derivation rules, applied to a single epic's milestone data.
  * `undefined` (no milestone for this epic at all) is a first-class input,
  * not an error case — it must resolve to "planned", never throw or default
  * to "shipped".
+ *
+ *   - milestone closed                        -> "shipped"
+ *   - milestone open, closed_issues >= 1       -> "in_progress"
+ *   - milestone open, closed_issues === 0      -> "planned" (however many
+ *     issues are open — see below)
+ *   - no milestone                             -> "planned"
+ *
+ * `in_progress` requires at least one *closed* issue, not merely an open
+ * one. An open issue is filed scope, not evidence that work has started;
+ * only a closed issue is evidence that something was actually finished.
+ * This deliberately underclaims: an epic someone started today but has
+ * closed nothing on still reads "planned" rather than "in_progress" — that
+ * is the direction to err on a public roadmap page. Distinguishing "not
+ * started" from "started, nothing shipped yet" would need a richer signal
+ * than open/closed issue counts (e.g. the project board's Status field),
+ * which was deliberately not used here — see the file header: status is
+ * meant to live in exactly one place (GitHub milestones), and promoting the
+ * board's Status into a second status surface for this script would
+ * reintroduce the duplication the milestone-derivation approach exists to
+ * avoid.
  */
 export function deriveEpicState(
   milestone: Pick<GhMilestone, "state" | "open_issues" | "closed_issues"> | undefined,
 ): EpicState {
   if (!milestone) return "planned";
   if (milestone.state === "closed") return "shipped";
-  if (milestone.open_issues > 0 || milestone.closed_issues > 0) return "in_progress";
+  if (milestone.closed_issues > 0) return "in_progress";
   return "planned";
 }
 
