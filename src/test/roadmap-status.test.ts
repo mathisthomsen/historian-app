@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  buildStatusFile,
   deriveEpicState,
   deriveEpicStatuses,
   fetchMilestones,
@@ -147,6 +148,31 @@ describe("deriveEpicStatuses", () => {
 
     expect(statuses.map((s) => s.epic)).toEqual(["1.1"]);
     expect(statuses.find((s) => s.epic === "9.9")).toBeUndefined();
+  });
+});
+
+describe("buildStatusFile", () => {
+  it("emits a generatedAt timestamp alongside the derived epics", () => {
+    const milestones: GhMilestone[] = [
+      milestone({ title: "Epic 1.1 — Project Bootstrap & Developer Experience", state: "closed" }),
+    ];
+    const fixedNow = () => new Date("2026-09-24T12:00:00.000Z");
+
+    const output = buildStatusFile(milestones, fixedNow);
+
+    expect(output.generatedAt).toBe("2026-09-24T12:00:00.000Z");
+    expect(output.epics).toEqual(deriveEpicStatuses(milestones));
+  });
+
+  it("defaults to the real clock when no clock is injected", () => {
+    const before = Date.now();
+    const output = buildStatusFile([]);
+    const after = Date.now();
+
+    const parsed = Date.parse(output.generatedAt);
+    expect(parsed).toBeGreaterThanOrEqual(before);
+    expect(parsed).toBeLessThanOrEqual(after);
+    expect(output.epics).toEqual([]);
   });
 });
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 
 import { Badge } from "@/components/ui/badge";
 import { marketingRouteMetadata } from "@/lib/marketing-metadata";
@@ -34,7 +34,8 @@ const STATE_VARIANT: Record<EpicState, "success" | "warning" | "secondary"> = {
 
 export default async function RoadmapPage() {
   const t = await getTranslations("marketing.roadmapPage");
-  const { phases, statusAvailable } = await loadRoadmap();
+  const format = await getFormatter();
+  const { phases, statusAvailable, generatedAt } = await loadRoadmap();
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-[var(--section-gap-md)] sm:px-6">
@@ -42,6 +43,21 @@ export default async function RoadmapPage() {
         {t("title")}
       </h1>
       <p className="text-muted-foreground mt-4 max-w-prose">{t("intro")}</p>
+
+      {/* The freshness note the safety net in issue #122 exists for: shown
+          whenever the artifact carried a valid `generatedAt`, independent of
+          `statusAvailable` below — the two can differ (a malformed
+          `generatedAt` on an otherwise-valid file, or vice versa is
+          impossible but not assumed). Never crashes on a missing/invalid
+          timestamp — `generatedAt` is `null` in that case and this simply
+          doesn't render. */}
+      {generatedAt ? (
+        <p className="text-muted-foreground mt-2 text-xs">
+          {t("statusGeneratedAt", {
+            date: format.dateTime(new Date(generatedAt), { dateStyle: "long" }),
+          })}
+        </p>
+      ) : null}
 
       {!statusAvailable ? (
         <p className="border-border text-muted-foreground mt-8 rounded-md border border-dashed px-4 py-3 text-sm">

@@ -755,6 +755,7 @@
       },
       "statusUnavailable": "Status unavailable",
       "statusUnavailableNotice": "The current status could not be loaded. The phases and epics below are still complete — only the status is missing right now.",
+      "statusGeneratedAt": "As of {date}",
       "footnote": "This page shows only phases, epic titles and status. Details on individual epics live in the internal planning document."
     },
     "legal": {

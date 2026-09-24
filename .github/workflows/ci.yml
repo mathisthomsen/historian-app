@@ -223,6 +223,36 @@ jobs:
       - name: Run DB migrations
         run: DATABASE_URL="$DATABASE_URL_UNPOOLED" pnpm prisma migrate deploy
 
+      # Issue #122: content/roadmap-status.json is a committed artifact that
+      # only refreshes when a human reruns `roadmap:status:generate` by hand,
+      # so /roadmap can silently show stale epic state. This runner already
+      # has `gh` preinstalled, and GH_TOKEN below authenticates it, so the
+      # existing generator (scripts/roadmap-status.ts) runs unchanged here —
+      # no fetch rewrite, no new secret. The refreshed file feeds this build
+      # only; it is NOT committed back (see the generator's own header for
+      # why: the repo copy is a development fallback / last-known-good, not
+      # something CI should keep "fixing").
+      #
+      # This must never fail the deploy. A stale status page is a bad look;
+      # a deploy blocked because GitHub was briefly unreachable or the
+      # generator hiccuped is worse — the committed artifact is right there
+      # as a fine fallback, and its `generatedAt` field (read by the page)
+      # makes any staleness visible rather than silent. Written to a temp
+      # file and moved into place only on success, so a failed/partial run
+      # can never truncate the committed fallback to empty or garbage JSON.
+      - name: Refresh roadmap status artifact
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if pnpm --silent roadmap:status > content/roadmap-status.json.tmp; then
+            mv content/roadmap-status.json.tmp content/roadmap-status.json
+            echo "Refreshed content/roadmap-status.json."
+          else
+            rm -f content/roadmap-status.json.tmp
+            echo "::warning::Could not refresh content/roadmap-status.json (GitHub unreachable or generator error). Falling back to the committed copy for this build."
+          fi
+
       - name: Build
         run: pnpm build
 
