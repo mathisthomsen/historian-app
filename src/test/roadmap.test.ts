@@ -154,18 +154,25 @@ describe("parseEpicStatuses", () => {
 // content/roadmap-status.json is mocked the same way changelog.test.ts mocks
 // content/changelog/*.mdx: readFile keyed by basename, so these tests never
 // touch the real committed artifact or the real roadmap.md.
+const FIXTURE_GENERATED_AT = "2026-09-24T12:00:00.000Z";
+
+const FIXTURE_EPICS = [
+  { epic: "1.1", title: "Project Bootstrap", state: "shipped", openIssues: 0, closedIssues: 0 },
+  { epic: "1.2", title: "Database Schema", state: "planned", openIssues: 0, closedIssues: 0 },
+  {
+    epic: "2.7",
+    title: "Session & Authorization Hardening",
+    state: "in_progress",
+    openIssues: 2,
+    closedIssues: 1,
+  },
+];
+
 const files: Record<string, string> = {
-  "roadmap-status.json": JSON.stringify([
-    { epic: "1.1", title: "Project Bootstrap", state: "shipped", openIssues: 0, closedIssues: 0 },
-    { epic: "1.2", title: "Database Schema", state: "planned", openIssues: 0, closedIssues: 0 },
-    {
-      epic: "2.7",
-      title: "Session & Authorization Hardening",
-      state: "in_progress",
-      openIssues: 2,
-      closedIssues: 1,
-    },
-  ]),
+  "roadmap-status.json": JSON.stringify({
+    generatedAt: FIXTURE_GENERATED_AT,
+    epics: FIXTURE_EPICS,
+  }),
   "roadmap.md": ROADMAP_FIXTURE,
 };
 
@@ -181,6 +188,11 @@ vi.mock("node:fs/promises", () => {
   return { readFile, default: { readFile } };
 });
 
+const DEFAULT_FIXTURE_JSON = JSON.stringify({
+  generatedAt: FIXTURE_GENERATED_AT,
+  epics: FIXTURE_EPICS,
+});
+
 describe("loadEpicStatuses", () => {
   it("reads and parses the committed status artifact", async () => {
     const { statuses, available } = await loadEpicStatuses();
@@ -189,40 +201,69 @@ describe("loadEpicStatuses", () => {
     expect(statuses.get("2.7")).toEqual({ state: "in_progress", openIssues: 2, closedIssues: 1 });
   });
 
+  it("extracts generatedAt from the artifact", async () => {
+    const { generatedAt } = await loadEpicStatuses();
+    expect(generatedAt).toBe(FIXTURE_GENERATED_AT);
+  });
+
   it("reports unavailable, without throwing, when the file is missing", async () => {
-    files["roadmap-status.json"] = undefined as unknown as string;
     delete files["roadmap-status.json"];
-    const { statuses, available } = await loadEpicStatuses();
+    const { statuses, available, generatedAt } = await loadEpicStatuses();
     expect(available).toBe(false);
     expect(statuses.size).toBe(0);
+    expect(generatedAt).toBeNull();
     // restore for subsequent tests
-    files["roadmap-status.json"] = JSON.stringify([
-      { epic: "1.1", title: "Project Bootstrap", state: "shipped", openIssues: 0, closedIssues: 0 },
-      { epic: "1.2", title: "Database Schema", state: "planned", openIssues: 0, closedIssues: 0 },
-      {
-        epic: "2.7",
-        title: "Session & Authorization Hardening",
-        state: "in_progress",
-        openIssues: 2,
-        closedIssues: 1,
-      },
-    ]);
+    files["roadmap-status.json"] = DEFAULT_FIXTURE_JSON;
   });
 
   it("reports unavailable, without throwing, when the file is not valid JSON", async () => {
     const original = files["roadmap-status.json"];
     files["roadmap-status.json"] = "{ not json";
-    const { statuses, available } = await loadEpicStatuses();
+    const { statuses, available, generatedAt } = await loadEpicStatuses();
     expect(available).toBe(false);
     expect(statuses.size).toBe(0);
+    expect(generatedAt).toBeNull();
     files["roadmap-status.json"] = original!;
   });
 
-  it("reports unavailable when the file is valid JSON but not an array", async () => {
+  it("reports unavailable when the file is valid JSON but not an object (e.g. the old bare-array shape)", async () => {
     const original = files["roadmap-status.json"];
-    files["roadmap-status.json"] = JSON.stringify({ oops: true });
+    files["roadmap-status.json"] = JSON.stringify(FIXTURE_EPICS);
     const { available } = await loadEpicStatuses();
     expect(available).toBe(false);
+    files["roadmap-status.json"] = original!;
+  });
+
+  it("reports unavailable when the file is an object with no epics array", async () => {
+    const original = files["roadmap-status.json"];
+    files["roadmap-status.json"] = JSON.stringify({
+      generatedAt: FIXTURE_GENERATED_AT,
+      oops: true,
+    });
+    const { available } = await loadEpicStatuses();
+    expect(available).toBe(false);
+    files["roadmap-status.json"] = original!;
+  });
+
+  it("degrades generatedAt to null, without affecting availability, when it is missing", async () => {
+    const original = files["roadmap-status.json"];
+    files["roadmap-status.json"] = JSON.stringify({ epics: FIXTURE_EPICS });
+    const { available, generatedAt, statuses } = await loadEpicStatuses();
+    expect(available).toBe(true);
+    expect(generatedAt).toBeNull();
+    expect(statuses.get("1.1")?.state).toBe("shipped");
+    files["roadmap-status.json"] = original!;
+  });
+
+  it("degrades generatedAt to null, without affecting availability, when it is not a parsable date", async () => {
+    const original = files["roadmap-status.json"];
+    files["roadmap-status.json"] = JSON.stringify({
+      generatedAt: "not-a-date",
+      epics: FIXTURE_EPICS,
+    });
+    const { available, generatedAt } = await loadEpicStatuses();
+    expect(available).toBe(true);
+    expect(generatedAt).toBeNull();
     files["roadmap-status.json"] = original!;
   });
 });
@@ -270,5 +311,43 @@ describe("loadRoadmap", () => {
   it("never leaks epic body text through the full load path either", async () => {
     const { phases } = await loadRoadmap();
     expect(JSON.stringify(phases)).not.toContain(SENSITIVE_MARKER);
+  });
+
+  // The freshness note on /roadmap (issue #122) is driven entirely by this
+  // field, which is why it is exercised end to end through loadRoadmap here
+  // rather than only at loadEpicStatuses — that's the seam the page actually
+  // calls.
+  it("surfaces generatedAt end to end for the page's freshness note", async () => {
+    const { generatedAt } = await loadRoadmap();
+    expect(generatedAt).toBe(FIXTURE_GENERATED_AT);
+  });
+
+  it("degrades generatedAt to null, without crashing or dropping status, when it is missing", async () => {
+    const original = files["roadmap-status.json"];
+    files["roadmap-status.json"] = JSON.stringify({ epics: FIXTURE_EPICS });
+
+    const { generatedAt, statusAvailable, phases } = await loadRoadmap();
+
+    expect(generatedAt).toBeNull();
+    expect(statusAvailable).toBe(true);
+    const phase1 = phases.find((p) => p.name === "Foundation & Auth");
+    expect(phase1?.epics.find((e) => e.id === "1.1")?.status?.state).toBe("shipped");
+
+    files["roadmap-status.json"] = original!;
+  });
+
+  it("degrades generatedAt to null, without crashing, when it is malformed", async () => {
+    const original = files["roadmap-status.json"];
+    files["roadmap-status.json"] = JSON.stringify({
+      generatedAt: 12345,
+      epics: FIXTURE_EPICS,
+    });
+
+    const { generatedAt, statusAvailable } = await loadRoadmap();
+
+    expect(generatedAt).toBeNull();
+    expect(statusAvailable).toBe(true);
+
+    files["roadmap-status.json"] = original!;
   });
 });

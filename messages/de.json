@@ -755,6 +755,7 @@
       },
       "statusUnavailable": "Status nicht verfügbar",
       "statusUnavailableNotice": "Der aktuelle Status konnte nicht geladen werden. Die Phasen und Epics unten sind trotzdem vollständig — nur die Statusangabe fehlt gerade.",
+      "statusGeneratedAt": "Stand: {date}",
       "footnote": "Diese Seite zeigt nur Phasen, Epic-Titel und Status. Details zu einzelnen Epics stehen im internen Planungsdokument."
     },
     "legal": {

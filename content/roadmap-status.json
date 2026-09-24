@@ -1,212 +1,215 @@
-[
-  {
-    "epic": "1.1",
-    "title": "Project Bootstrap & Developer Experience",
-    "state": "shipped",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "1.2",
-    "title": "Database Schema & Data Layer",
-    "state": "shipped",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "1.3",
-    "title": "Authentication & Authorization",
-    "state": "shipped",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "1.4",
-    "title": "Security Infrastructure & CI/CD",
-    "state": "shipped",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "2.1",
-    "title": "Person Management",
-    "state": "shipped",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "2.2",
-    "title": "Event Management",
-    "state": "shipped",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "2.3",
-    "title": "Source Management (Primary Sources)",
-    "state": "shipped",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "2.4",
-    "title": "Universal Relationship Engine",
-    "state": "shipped",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "2.5",
-    "title": "UI Polish & Brand Tokens",
-    "state": "shipped",
-    "openIssues": 1,
-    "closedIssues": 0
-  },
-  {
-    "epic": "2.6",
-    "title": "Marketing & Pre-Auth Pages",
-    "state": "shipped",
-    "openIssues": 12,
-    "closedIssues": 3
-  },
-  {
-    "epic": "2.7",
-    "title": "Session & Authorization Hardening",
-    "state": "planned",
-    "openIssues": 3,
-    "closedIssues": 0
-  },
-  {
-    "epic": "3.1",
-    "title": "Project & Collaboration Workspace",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "3.2",
-    "title": "Location System & Mapping",
-    "state": "planned",
-    "openIssues": 1,
-    "closedIssues": 0
-  },
-  {
-    "epic": "3.3",
-    "title": "Literature & Bibliography",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "3.4",
-    "title": "Import System",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "3.5",
-    "title": "Source Media & Region Transcription",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "4.1",
-    "title": "Cross-Entity Search & Full-Text Discovery",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "4.2",
-    "title": "Timeline Visualization",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "4.3",
-    "title": "Network Graph Visualization",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "4.4",
-    "title": "Analytics Dashboard & Activity Feed",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "5.1",
-    "title": "Export System",
-    "state": "planned",
-    "openIssues": 1,
-    "closedIssues": 0
-  },
-  {
-    "epic": "5.2",
-    "title": "Data Quality & Uncertainty Management",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "5.3",
-    "title": "Internationalization & UI Polish",
-    "state": "planned",
-    "openIssues": 1,
-    "closedIssues": 0
-  },
-  {
-    "epic": "5.4",
-    "title": "Testing, Security & Production Hardening",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "6.0",
-    "title": "AX Infrastructure (Schema & API Foundation)",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "6.1",
-    "title": "Layer 2: Collaborative UI (The Lego-Bricks)",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "6.2",
-    "title": "Layer 3: Scholarly Dialogue (The MVP Chat Interface)",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "6.4",
-    "title": "Document AI (OCR & Structured Extraction)",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "7.1",
-    "title": "Mobile Capture Client",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  },
-  {
-    "epic": "7.2",
-    "title": "Scanning-Session Review",
-    "state": "planned",
-    "openIssues": 0,
-    "closedIssues": 0
-  }
-]
+{
+  "generatedAt": "2026-09-24T10:02:53.164Z",
+  "epics": [
+    {
+      "epic": "1.1",
+      "title": "Project Bootstrap & Developer Experience",
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "1.2",
+      "title": "Database Schema & Data Layer",
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "1.3",
+      "title": "Authentication & Authorization",
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "1.4",
+      "title": "Security Infrastructure & CI/CD",
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "2.1",
+      "title": "Person Management",
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "2.2",
+      "title": "Event Management",
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "2.3",
+      "title": "Source Management (Primary Sources)",
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "2.4",
+      "title": "Universal Relationship Engine",
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "2.5",
+      "title": "UI Polish & Brand Tokens",
+      "state": "shipped",
+      "openIssues": 1,
+      "closedIssues": 0
+    },
+    {
+      "epic": "2.6",
+      "title": "Marketing & Pre-Auth Pages",
+      "state": "shipped",
+      "openIssues": 10,
+      "closedIssues": 5
+    },
+    {
+      "epic": "2.7",
+      "title": "Session & Authorization Hardening",
+      "state": "planned",
+      "openIssues": 3,
+      "closedIssues": 0
+    },
+    {
+      "epic": "3.1",
+      "title": "Project & Collaboration Workspace",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "3.2",
+      "title": "Location System & Mapping",
+      "state": "planned",
+      "openIssues": 1,
+      "closedIssues": 0
+    },
+    {
+      "epic": "3.3",
+      "title": "Literature & Bibliography",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "3.4",
+      "title": "Import System",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "3.5",
+      "title": "Source Media & Region Transcription",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "4.1",
+      "title": "Cross-Entity Search & Full-Text Discovery",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "4.2",
+      "title": "Timeline Visualization",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "4.3",
+      "title": "Network Graph Visualization",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "4.4",
+      "title": "Analytics Dashboard & Activity Feed",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "5.1",
+      "title": "Export System",
+      "state": "planned",
+      "openIssues": 1,
+      "closedIssues": 0
+    },
+    {
+      "epic": "5.2",
+      "title": "Data Quality & Uncertainty Management",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "5.3",
+      "title": "Internationalization & UI Polish",
+      "state": "planned",
+      "openIssues": 1,
+      "closedIssues": 0
+    },
+    {
+      "epic": "5.4",
+      "title": "Testing, Security & Production Hardening",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "6.0",
+      "title": "AX Infrastructure (Schema & API Foundation)",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "6.1",
+      "title": "Layer 2: Collaborative UI (The Lego-Bricks)",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "6.2",
+      "title": "Layer 3: Scholarly Dialogue (The MVP Chat Interface)",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "6.4",
+      "title": "Document AI (OCR & Structured Extraction)",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "7.1",
+      "title": "Mobile Capture Client",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    },
+    {
+      "epic": "7.2",
+      "title": "Scanning-Session Review",
+      "state": "planned",
+      "openIssues": 0,
+      "closedIssues": 0
+    }
+  ]
+}

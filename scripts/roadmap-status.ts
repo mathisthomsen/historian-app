@@ -21,6 +21,15 @@
  * (`console.error` in the top-level catch below) — the noise comes from
  * pnpm's own wrapper, not from this script, so `--silent` is the fix, not a
  * change here.
+ *
+ * CI (`.github/workflows/ci.yml`, the step immediately before `Build`) runs
+ * this on every deploy and overwrites `content/roadmap-status.json` with
+ * fresh output for that build only — it does NOT commit the result back.
+ * The committed copy of that file is a development fallback and
+ * last-known-good for when CI's refresh step can't reach GitHub (see
+ * `generatedAt` below, which is exactly the field that lets a reader tell
+ * the two cases apart). Do not "fix" the repo copy by hand-editing it to
+ * look fresher than it is — regenerate it, or leave it.
  */
 import { execFileSync } from "node:child_process";
 
@@ -167,10 +176,37 @@ export function fetchMilestones(): GhMilestone[] {
   return parsed as GhMilestone[];
 }
 
+/** The full shape written to `content/roadmap-status.json`. */
+export interface RoadmapStatusFile {
+  /**
+   * ISO 8601 timestamp of when this file was produced. The safety net for
+   * issue #122: even when CI's refresh step fails and the build falls back
+   * to the committed copy, a reader of `/roadmap` can see how old the data
+   * is instead of trusting it silently.
+   */
+  generatedAt: string;
+  epics: EpicStatus[];
+}
+
+/**
+ * Builds the full artifact payload: derived epic statuses plus a generation
+ * timestamp. `now` is injectable so tests can assert on a fixed clock
+ * without touching the (untouched) derivation rules in `deriveEpicStatuses`.
+ */
+export function buildStatusFile(
+  milestones: GhMilestone[],
+  now: () => Date = () => new Date(),
+): RoadmapStatusFile {
+  return {
+    generatedAt: now().toISOString(),
+    epics: deriveEpicStatuses(milestones),
+  };
+}
+
 function main(): void {
   const milestones = fetchMilestones();
-  const statuses = deriveEpicStatuses(milestones);
-  console.log(JSON.stringify(statuses, null, 2));
+  const output = buildStatusFile(milestones);
+  console.log(JSON.stringify(output, null, 2));
 }
 
 const isMain = process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`;
