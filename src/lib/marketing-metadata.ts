@@ -39,6 +39,9 @@ export function marketingRouteMetadata({
   return {
     title: `${title} — Evidoxa`,
     description,
+    // See the note in the landing page's generateMetadata: unset, `og:image`
+    // resolves against the request host, which breaks preview unfurls.
+    metadataBase: new URL(base),
     alternates: {
       canonical: url,
       languages: {

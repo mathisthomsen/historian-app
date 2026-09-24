@@ -22,6 +22,10 @@ const config = [
       "coverage/**",
       "playwright-report/**",
       "test-results/**",
+      // Claude Code agent worktrees. These are full checkouts of the repo
+      // living inside it, so without this every file is linted twice and a
+      // worktree being cleaned up mid-run fails the lint with ENOENT.
+      ".claude/worktrees/**",
     ],
   },
   ...compat.extends("next/core-web-vitals"),

@@ -27,6 +27,13 @@ export async function generateMetadata({
   return {
     title: `Evidoxa — ${t("headline")}`,
     description: t("sub"),
+    // Without this, Next resolves relative metadata URLs — notably the
+    // generated `og:image` — against the *request* host rather than the
+    // configured origin. In production the two happen to coincide, which is
+    // why it looked fine; on a preview deployment the request host is a
+    // *.vercel.app behind deployment protection, so unfurling a preview link
+    // fetches a 401 instead of an image. It also silences the build warning.
+    metadataBase: new URL(base),
     alternates: {
       canonical: `${base}/${locale}`,
       languages: { de: `${base}/de`, en: `${base}/en` },
