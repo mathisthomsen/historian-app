@@ -651,6 +651,7 @@
       "imprint": "Impressum",
       "privacy": "Datenschutz",
       "changelog": "Changelog",
+      "roadmap": "Roadmap",
       "github": "GitHub",
       "label": "Fußzeile"
     },
@@ -738,11 +739,23 @@
     "changelogPage": {
       "title": "Changelog",
       "comingNext": "Als Nächstes",
-      "theme1": "Import und Export — Daten sollen so leicht herauskommen wie hinein.",
-      "theme2": "Zusammenarbeit — mehrere Personen an einem Projekt, mit sichtbarer Zuschreibung.",
-      "theme3": "Historische Ortsnamen — ein Ort, der im Lauf der Zeit mehrere Namen trägt.",
+      "comingNextText": "Die kommenden Phasen und Epics dieses Projekts stehen jetzt auf der öffentlichen",
+      "comingNextLinkLabel": "Roadmap",
       "description": "Jede Veröffentlichung von Evidoxa, mit Datum und Begründung.",
       "localeFallback": "Dieser Eintrag liegt bisher nur auf Deutsch vor."
+    },
+    "roadmapPage": {
+      "title": "Roadmap",
+      "description": "Phasen und Epics der Evidoxa-Entwicklung, mit Status live aus GitHub.",
+      "intro": "Phasen und Epics, so wie sie für Evidoxa geplant sind. Der Status jeder Epic wird automatisch aus GitHub-Milestones übernommen.",
+      "status": {
+        "shipped": "Live",
+        "in_progress": "In Arbeit",
+        "planned": "Geplant"
+      },
+      "statusUnavailable": "Status nicht verfügbar",
+      "statusUnavailableNotice": "Der aktuelle Status konnte nicht geladen werden. Die Phasen und Epics unten sind trotzdem vollständig — nur die Statusangabe fehlt gerade.",
+      "footnote": "Diese Seite zeigt nur Phasen, Epic-Titel und Status. Details zu einzelnen Epics stehen im internen Planungsdokument."
     },
     "legal": {
       "imprintTitle": "Impressum",

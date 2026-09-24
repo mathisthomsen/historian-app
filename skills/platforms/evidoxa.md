@@ -58,7 +58,7 @@ tabs, sidebar items) must be sized to the German baseline, not truncated — e.g
 rather than truncate; entity names never truncate on their own detail page
 _(spec — docs/design-system/02-brand/identity.md §3.6)_.
 
-## Market Profile _(elicited — 2026-08-09, informed by docs/design-system/01-ux/research.md and docs/specs/ai_aided_roadmap.md)_
+## Market Profile _(elicited — 2026-08-09, informed by docs/design-system/01-ux/research.md and docs/strategy/roadmap.md)_
 
 Declared target markets and where their UX norms diverge from the universal Western-default the skills
 assume.
@@ -66,7 +66,7 @@ assume.
 Primary market: **DACH** (Germany / Austria / Switzerland) — academic and archival institutions. This
 is a declared decision, not an inference from persona language preference alone: the personas'
 demographics, quotes, and workflows in `research.md` §2 describe this audience specifically, and the
-locked AX-roadmap principles (`ai_aided_roadmap.md`) are written against the same audience's AI
+locked AX-roadmap principles (`docs/strategy/roadmap.md`) are written against the same audience's AI
 skepticism. No secondary market is declared.
 
 | Market | Density norm                                                                                                                                                       | Color semantics                 | Trust signals | Payment order                                                                      | Name/Address order                                                                                                                                                                                                                                                                     | Consent model                                                                                                                                                                                                                                                                                                                                                | Reading dir      |
@@ -79,7 +79,7 @@ scholarly work with primary materials):**
 - Never frame a feature as "AI-powered" or "smart" in copy without also surfacing what grounds it. The
   locked AX-roadmap principle: "the AI is a Transparent Research Assistant, never an author" — every
   agent-origin datum must carry a visible, non-removable `created_via: AGENT` badge distinct from
-  human-entered data (`ai_aided_roadmap.md`), never blended silently into a record.
+  human-entered data (`docs/strategy/roadmap.md`), never blended silently into a record.
 - Machine suggestions are never auto-applied — they require an explicit human ACCEPT (the locked
   "Approval gate" decision) and agents never write directly to an entity.
 - Human attribution stays visibly primary ("Created by X on date" on every record) — required by the

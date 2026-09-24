@@ -20,7 +20,7 @@ Wait for the user to confirm the scope before proceeding. A well-scoped epic has
 
 ## Step 1 — Understand the epic
 
-1. Check if there is a roadmap at `docs/spec/roadmap.md`. If it exists, read it and locate the epic matching the argument. Extract its deliverable, bullet points, and any locked strategic decisions.
+1. Check if there is a roadmap at `docs/strategy/roadmap.md`. If it exists, read it and locate the epic matching the argument. Extract its deliverable, bullet points, and any locked strategic decisions.
 2. If no roadmap exists, treat the argument itself as the full epic description.
 3. Parse a short slug for the epic from the argument:
    - Replace dots and spaces with dashes, lowercase. E.g. `1.1 Project Bootstrap` → `1-1-project-bootstrap`
@@ -69,7 +69,7 @@ Rules for questions:
 - Mark exactly one option `[x]` with `**recommended**` and a reason — unless the choice is genuinely 50/50, in which case note that
 - Use ASCII art, tables, or directory trees when a visual makes the options clearer
 - Cover all dimensions relevant to the epic: tech choices, UI/UX patterns, data schema, API design, file structure, error handling, testing approach, i18n, performance, security, out-of-scope boundaries
-- Do not ask about things already locked in the roadmap's Strategic Decisions table
+- Do not ask about things already locked in `docs/strategy/decisions.md`
 - Do not repeat questions already answered in earlier rounds of this same file
 
 3. Tell the user: "Round N is in the file — {N} questions on {theme}. Answer in the file and I'll add the next round."

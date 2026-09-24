@@ -18,6 +18,7 @@ export function PublicFooter({ locale }: PublicFooterProps) {
         <Link href={`/${locale}/impressum`}>{t("imprint")}</Link>
         <Link href={`/${locale}/datenschutz`}>{t("privacy")}</Link>
         <Link href={`/${locale}/changelog`}>{t("changelog")}</Link>
+        <Link href={`/${locale}/roadmap`}>{t("roadmap")}</Link>
         <a href="https://github.com/mathisthomsen/historian-app">{t("github")}</a>
       </div>
     </footer>

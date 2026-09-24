@@ -1,5 +1,7 @@
 # Epic 1.4 — Security Infrastructure & CI/CD
 
+**Status:** Shipped. See GitHub Issues + Project 1 (Evidoxa Backlog) for current status.
+
 ## Specification
 
 **Phase:** 1 — Foundation & Auth

@@ -198,6 +198,19 @@ research record itself is preserved.
 `Location` and `Literature` are treated as reference data and currently have no soft delete
 (see _Known limitations_).
 
+**`EntityActivity` is append-only because of a constraint the model is already built to
+satisfy: an agentic layer is committed roadmap scope (`docs/strategy/roadmap.md`, Phase 6),
+and its design requires agents to hold no write authority of their own.** An agent will only
+ever be able to submit a suggestion, never write directly; every suggestion must be grounded
+in an existing `Source` record; and turning a suggestion into a change requires an explicit
+human ACCEPT. For that guarantee to be checkable, the log of what actually changed the
+research record can never be edited or deleted after the fact — including by an agent acting
+on an accepted suggestion. `prisma/schema.prisma` (around line 542) documents the no-DELETE
+constraint on this table and cites the roadmap as its authority. **None of this is built
+today:** `created_via` and `AgentSuggestion` do not exist yet in the schema or the
+application code; `EntityActivity.agent_name` and `.source_id` are reserved and always
+null today — no caller supplies them until Phase 6 is implemented.
+
 ### 9. Multi-tenancy from day one
 
 Every user-data table carries `project_id`, and access runs through `UserProject` with
@@ -366,5 +379,5 @@ Documented honestly, since these are live constraints rather than oversights:
 - **BCE dates are undefined.** `Person` years are bounded 1–2100 while event and relation years
   are unbounded — an inconsistency to resolve before the model claims pre-Common-Era coverage.
 
-A full architectural review lives in [`docs/project-review-2026-07-13.md`](docs/project-review-2026-07-13.md);
+A full architectural review lives in [`docs/archive/project-review-2026-07-13.md`](docs/archive/project-review-2026-07-13.md);
 specs are under [`docs/specs/`](docs/specs/).

@@ -38,7 +38,7 @@ function authenticatedSegments(): string[] {
 describe("sitemap", () => {
   it("lists both locales of every public route", () => {
     const urls = sitemap().map((entry) => entry.url);
-    for (const path of ["", "/changelog", "/impressum", "/datenschutz"]) {
+    for (const path of ["", "/changelog", "/roadmap", "/impressum", "/datenschutz"]) {
       expect(urls.some((u) => u.endsWith(`/de${path}`))).toBe(true);
       expect(urls.some((u) => u.endsWith(`/en${path}`))).toBe(true);
     }
@@ -120,7 +120,7 @@ describe("indexable marketing routes carry their own metadata", () => {
       marketingRoutePages()
         .map((r) => r.segment)
         .sort(),
-    ).toEqual(["changelog", "datenschutz", "impressum"]);
+    ).toEqual(["changelog", "datenschutz", "impressum", "roadmap"]);
   });
 
   it.each(marketingRoutePages())("$segment exports generateMetadata", async ({ file }) => {

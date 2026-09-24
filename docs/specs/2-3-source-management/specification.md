@@ -1,4 +1,7 @@
 # Epic 2.3 — Source Management (Primary Sources)
+
+**Status:** Shipped. See GitHub Issues + Project 1 (Evidoxa Backlog) for current status.
+
 ## Specification
 
 **Phase:** 2 — Core Research Loop
@@ -11,14 +14,14 @@
 
 No new packages required. All dependencies are already installed from Epics 2.1/2.2.
 
-| Concern | Solution (already installed) |
-|---|---|
-| Forms | react-hook-form + @hookform/resolvers |
-| Validation | zod |
-| Sanitization | sanitize-html (upgraded in Epic 2.1) |
-| Caching | @upstash/redis via `src/lib/cache.ts` |
-| Auth guard | `src/lib/auth-guard.ts` |
-| Soft-delete | Prisma extension in `src/lib/db.ts` (extend to source) |
+| Concern      | Solution (already installed)                           |
+| ------------ | ------------------------------------------------------ |
+| Forms        | react-hook-form + @hookform/resolvers                  |
+| Validation   | zod                                                    |
+| Sanitization | sanitize-html (upgraded in Epic 2.1)                   |
+| Caching      | @upstash/redis via `src/lib/cache.ts`                  |
+| Auth guard   | `src/lib/auth-guard.ts`                                |
+| Soft-delete  | Prisma extension in `src/lib/db.ts` (extend to source) |
 
 ---
 
@@ -110,18 +113,19 @@ export const SOURCE_TYPE_SUGGESTIONS = [
 
 Query parameters (all optional except inferred `projectId`):
 
-| Param | Type | Default | Description |
-|---|---|---|---|
-| `page` | int ≥ 1 | `1` | Page number |
-| `pageSize` | int 1–100 | `25` | Results per page |
-| `search` | string | — | ILIKE match on `title` OR `author` |
-| `reliability` | comma-sep enum | — | Filter by `SourceReliability` values |
-| `type` | string | — | Exact (case-insensitive) match on `type` field |
-| `sort` | `title\|author\|created_at` | `created_at` | Sort column |
-| `order` | `asc\|desc` | `desc` | Sort direction |
-| `projectId` | string | session default | Override project (Epic 3.1 replaces this) |
+| Param         | Type                        | Default         | Description                                    |
+| ------------- | --------------------------- | --------------- | ---------------------------------------------- |
+| `page`        | int ≥ 1                     | `1`             | Page number                                    |
+| `pageSize`    | int 1–100                   | `25`            | Results per page                               |
+| `search`      | string                      | —               | ILIKE match on `title` OR `author`             |
+| `reliability` | comma-sep enum              | —               | Filter by `SourceReliability` values           |
+| `type`        | string                      | —               | Exact (case-insensitive) match on `type` field |
+| `sort`        | `title\|author\|created_at` | `created_at`    | Sort column                                    |
+| `order`       | `asc\|desc`                 | `desc`          | Sort direction                                 |
+| `projectId`   | string                      | session default | Override project (Epic 3.1 replaces this)      |
 
 Response `200`:
+
 ```typescript
 interface SourceListResponse {
   data: SourceSummary[];
@@ -154,16 +158,17 @@ Errors: `401` Unauthorized, `400` Invalid query params, `403` No project.
 **Cache invalidation:** `source-list:{projectId}:` prefix on success
 
 Request body:
+
 ```typescript
 interface CreateSourceInput {
-  project_id: string;      // required
-  title: string;           // required, min 1
-  type: string;            // required, min 1
+  project_id: string; // required
+  title: string; // required, min 1
+  type: string; // required, min 1
   author?: string | null;
   date?: string | null;
   repository?: string | null;
   call_number?: string | null;
-  url?: string | null;     // validated as URL if present
+  url?: string | null; // validated as URL if present
   reliability?: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN"; // default UNKNOWN
   notes?: string | null;
 }
@@ -183,6 +188,7 @@ Sanitization: `sanitize()` applied to `title`, `author`, `date`, `repository`, `
 **Cache-Control:** `no-store`
 
 Response `200`:
+
 ```typescript
 interface SourceDetail {
   id: string;
@@ -244,9 +250,10 @@ Errors: `401`, `403`, `404`.
 **Cache invalidation:** `source-list:{projectId}:` prefix
 
 Request body:
+
 ```typescript
 interface BulkDeleteInput {
-  ids: string[];      // min 1, max 100
+  ids: string[]; // min 1, max 100
   project_id: string;
 }
 ```
@@ -331,17 +338,17 @@ interface ReliabilityBadgeProps {
 
 ### Server vs. client
 
-| Component | Type | Reason |
-|---|---|---|
-| `sources/page.tsx` | Server | SSR data fetch, session check |
-| `sources/new/page.tsx` | Server | Thin wrapper; gets projectId from session |
-| `sources/[id]/page.tsx` | Server | SSR detail fetch |
-| `sources/[id]/edit/page.tsx` | Server | SSR prefetch of existing source |
-| `SourceForm` | Client | react-hook-form requires interactivity |
-| `SourceTable` | Client | Search input, filter state, row selection |
-| `SourceDetailTabs` | Client | Tab switching state |
-| `DeleteSourceButton` | Client | Confirm dialog, mutation |
-| `ReliabilityBadge` | Client (or RSC) | Pure display; no interactivity needed — can be RSC |
+| Component                    | Type            | Reason                                             |
+| ---------------------------- | --------------- | -------------------------------------------------- |
+| `sources/page.tsx`           | Server          | SSR data fetch, session check                      |
+| `sources/new/page.tsx`       | Server          | Thin wrapper; gets projectId from session          |
+| `sources/[id]/page.tsx`      | Server          | SSR detail fetch                                   |
+| `sources/[id]/edit/page.tsx` | Server          | SSR prefetch of existing source                    |
+| `SourceForm`                 | Client          | react-hook-form requires interactivity             |
+| `SourceTable`                | Client          | Search input, filter state, row selection          |
+| `SourceDetailTabs`           | Client          | Tab switching state                                |
+| `DeleteSourceButton`         | Client          | Confirm dialog, mutation                           |
+| `ReliabilityBadge`           | Client (or RSC) | Pure display; no interactivity needed — can be RSC |
 
 ---
 
@@ -352,9 +359,11 @@ interface ReliabilityBadgeProps {
 **Layout:** full-width DataTable with toolbar above.
 
 **Toolbar:**
+
 ```
 [ Search: "Titel oder Autor suchen…" ]  [ Type ▼ ]  [ Reliability ▼ ]  [ + Neue Quelle ]
 ```
+
 - Search input triggers debounced URL param update (same pattern as events/persons list)
 - Type filter: dropdown of known source type suggestions + "All types"
 - Reliability filter: multi-select checkboxes (HIGH / MEDIUM / LOW / UNKNOWN)
@@ -362,15 +371,15 @@ interface ReliabilityBadgeProps {
 
 **Table columns:**
 
-| Column | Sortable | Notes |
-|---|---|---|
-| Checkbox | — | Row selection for bulk delete |
-| Title | ✓ | Link to detail page |
-| Type | — | Displayed as small tag/pill |
-| Author | — | Truncated to 40 chars |
-| Reliability | — | `<ReliabilityBadge>` |
-| Created | ✓ | Localized date |
-| Actions | — | Edit icon, delete icon |
+| Column      | Sortable | Notes                         |
+| ----------- | -------- | ----------------------------- |
+| Checkbox    | —        | Row selection for bulk delete |
+| Title       | ✓        | Link to detail page           |
+| Type        | —        | Displayed as small tag/pill   |
+| Author      | —        | Truncated to 40 chars         |
+| Reliability | —        | `<ReliabilityBadge>`          |
+| Created     | ✓        | Localized date                |
+| Actions     | —        | Edit icon, delete icon        |
 
 **Bulk delete:** Appears when ≥1 row selected. Shows "N Quelle(n) löschen" button → confirm dialog.
 
@@ -387,21 +396,25 @@ interface ReliabilityBadgeProps {
 Two-column layout on md+ screens; single column on mobile.
 
 **Left column (primary fields):**
+
 - Title `*` — text input
 - Type `*` — shadcn Command+Popover combo-box; shows `SOURCE_TYPE_SUGGESTIONS` as options; user can type a custom value; selected value displayed as a tag
 - Author — text input
 - Reliability — four-button selector (same component style as CertaintySelector; maps HIGH/MEDIUM/LOW/UNKNOWN to green/yellow/red/grey)
 
 **Right column (archival metadata):**
+
 - Date — text input with hint: "z. B. ca. März 1848, Sommer 1790"
 - Repository — text input
 - Call Number — text input
 - URL — text input; inline error if not a valid URL
 
 **Full width (bottom):**
+
 - Notes — textarea
 
 **Submit / Cancel buttons:**
+
 - Create: "Quelle erstellen" / "Source erstellen"
 - Edit: "Änderungen speichern" / "Save changes"
 - Cancel: navigates back to list or detail page
@@ -413,6 +426,7 @@ Validation errors shown inline beneath each field (react-hook-form + Zod).
 ### Source detail page — `/[locale]/sources/[id]`
 
 **Header:**
+
 ```
 [ ← Zurück zu Quellen ]
 Source Title                              [ Bearbeiten ]  [ Löschen ]
@@ -422,6 +436,7 @@ Source Title                              [ Bearbeiten ]  [ Löschen ]
 
 **Tab 1 — Details:**
 All attributes displayed in a two-column grid:
+
 - Title, Type (tag), Author, Reliability (badge)
 - Date, Repository, Call Number, URL (clickable link)
 - Notes (full width)
@@ -429,10 +444,12 @@ All attributes displayed in a two-column grid:
 
 **Tab 2 — Verknüpfungen (Relations):**
 Placeholder content:
+
 ```
 [Info icon]  Verknüpfungen werden nach Abschluss von Epic 2.4 hier angezeigt.
              ({N} Verknüpfungen • {M} Quellenbelege)
 ```
+
 Where N = `_count.relation_evidence` and M = `_count.property_evidence` from the API response. If both are 0, omit the counts line.
 
 ---
@@ -479,42 +496,42 @@ DeleteSourceButton (client):
 
 New keys in `messages/de.json` and `messages/en.json` under the `sources` namespace:
 
-| Key | German | English |
-|---|---|---|
-| `sources.title` | Quellen | Sources |
-| `sources.list_title` | Alle Quellen | All Sources |
-| `sources.new_title` | Neue Quelle | New Source |
-| `sources.edit_title` | Quelle bearbeiten | Edit Source |
-| `sources.delete` | Quelle löschen | Delete Source |
-| `sources.delete_confirm` | Diese Quelle wirklich löschen? | Really delete this source? |
-| `sources.bulk_delete_confirm` | {count} Quelle(n) löschen? | Delete {count} source(s)? |
-| `sources.search_placeholder` | Titel oder Autor suchen… | Search by title or author… |
-| `sources.empty_state` | Noch keine Quellen angelegt. | No sources yet. |
-| `sources.field_title` | Titel | Title |
-| `sources.field_type` | Typ | Type |
-| `sources.field_author` | Autor | Author |
-| `sources.field_date` | Datum | Date |
-| `sources.field_date_hint` | z. B. ca. März 1848 | e.g. c. March 1848 |
-| `sources.field_repository` | Archiv / Repository | Repository / Archive |
-| `sources.field_call_number` | Signatur | Call Number |
-| `sources.field_url` | URL | URL |
-| `sources.field_reliability` | Zuverlässigkeit | Reliability |
-| `sources.field_notes` | Notizen | Notes |
-| `sources.reliability_high` | Hoch | High |
-| `sources.reliability_medium` | Mittel | Medium |
-| `sources.reliability_low` | Niedrig | Low |
-| `sources.reliability_unknown` | Unbekannt | Unknown |
-| `sources.type_archival_document` | Archivdokument | Archival Document |
-| `sources.type_letter` | Brief | Letter |
-| `sources.type_newspaper` | Zeitung | Newspaper |
-| `sources.type_official_record` | Amtliche Urkunde | Official Record |
-| `sources.type_photograph` | Fotografie | Photograph |
-| `sources.type_other` | Sonstiges | Other |
-| `sources.type_placeholder` | Typ auswählen oder eingeben… | Select or type a source type… |
-| `sources.tab_details` | Details | Details |
-| `sources.tab_relations` | Verknüpfungen | Relations |
-| `sources.relations_placeholder` | Verknüpfungen werden nach Abschluss von Epic 2.4 angezeigt. | Relations will be populated in Epic 2.4. |
-| `sources.sidebar_link` | Quellen | Sources |
+| Key                              | German                                                      | English                                  |
+| -------------------------------- | ----------------------------------------------------------- | ---------------------------------------- |
+| `sources.title`                  | Quellen                                                     | Sources                                  |
+| `sources.list_title`             | Alle Quellen                                                | All Sources                              |
+| `sources.new_title`              | Neue Quelle                                                 | New Source                               |
+| `sources.edit_title`             | Quelle bearbeiten                                           | Edit Source                              |
+| `sources.delete`                 | Quelle löschen                                              | Delete Source                            |
+| `sources.delete_confirm`         | Diese Quelle wirklich löschen?                              | Really delete this source?               |
+| `sources.bulk_delete_confirm`    | {count} Quelle(n) löschen?                                  | Delete {count} source(s)?                |
+| `sources.search_placeholder`     | Titel oder Autor suchen…                                    | Search by title or author…               |
+| `sources.empty_state`            | Noch keine Quellen angelegt.                                | No sources yet.                          |
+| `sources.field_title`            | Titel                                                       | Title                                    |
+| `sources.field_type`             | Typ                                                         | Type                                     |
+| `sources.field_author`           | Autor                                                       | Author                                   |
+| `sources.field_date`             | Datum                                                       | Date                                     |
+| `sources.field_date_hint`        | z. B. ca. März 1848                                         | e.g. c. March 1848                       |
+| `sources.field_repository`       | Archiv / Repository                                         | Repository / Archive                     |
+| `sources.field_call_number`      | Signatur                                                    | Call Number                              |
+| `sources.field_url`              | URL                                                         | URL                                      |
+| `sources.field_reliability`      | Zuverlässigkeit                                             | Reliability                              |
+| `sources.field_notes`            | Notizen                                                     | Notes                                    |
+| `sources.reliability_high`       | Hoch                                                        | High                                     |
+| `sources.reliability_medium`     | Mittel                                                      | Medium                                   |
+| `sources.reliability_low`        | Niedrig                                                     | Low                                      |
+| `sources.reliability_unknown`    | Unbekannt                                                   | Unknown                                  |
+| `sources.type_archival_document` | Archivdokument                                              | Archival Document                        |
+| `sources.type_letter`            | Brief                                                       | Letter                                   |
+| `sources.type_newspaper`         | Zeitung                                                     | Newspaper                                |
+| `sources.type_official_record`   | Amtliche Urkunde                                            | Official Record                          |
+| `sources.type_photograph`        | Fotografie                                                  | Photograph                               |
+| `sources.type_other`             | Sonstiges                                                   | Other                                    |
+| `sources.type_placeholder`       | Typ auswählen oder eingeben…                                | Select or type a source type…            |
+| `sources.tab_details`            | Details                                                     | Details                                  |
+| `sources.tab_relations`          | Verknüpfungen                                               | Relations                                |
+| `sources.relations_placeholder`  | Verknüpfungen werden nach Abschluss von Epic 2.4 angezeigt. | Relations will be populated in Epic 2.4. |
+| `sources.sidebar_link`           | Quellen                                                     | Sources                                  |
 
 Also add "Quellen" / "Sources" to the sidebar navigation translation keys (same namespace as existing `nav.*` keys).
 
@@ -525,6 +542,7 @@ Also add "Quellen" / "Sources" to the sidebar navigation translation keys (same 
 ### Unit tests (`src/app/api/sources/`)
 
 **`route.test.ts` (GET /api/sources):**
+
 - Returns paginated list for authenticated user
 - `search` filters on title (case-insensitive)
 - `search` filters on author (case-insensitive)
@@ -535,6 +553,7 @@ Also add "Quellen" / "Sources" to the sidebar navigation translation keys (same 
 - Returns cached result on second call (mock `cache.get`)
 
 **`[id]/route.test.ts` (GET/PUT/DELETE):**
+
 - GET returns full SourceDetail with `_count`
 - GET returns 404 for soft-deleted source
 - GET returns 403 for non-member
@@ -544,15 +563,18 @@ Also add "Quellen" / "Sources" to the sidebar navigation translation keys (same 
 - DELETE returns 404 for already-deleted source
 
 **`bulk/route.test.ts`:**
+
 - Bulk deletes 2 sources; returns `{ deleted: 2 }`
 - Silently skips IDs not belonging to project
 - Returns 400 for empty `ids` array
 
 **`ReliabilityBadge.test.tsx`:**
+
 - Renders correct className for each reliability level
 - Renders translated label text
 
 **`SourceForm` validation (unit):**
+
 - Zod schema rejects missing `title`
 - Zod schema rejects missing `type`
 - Zod schema rejects malformed URL
@@ -623,32 +645,40 @@ e2e/
 ## 10. Implementation Notes
 
 ### Soft-delete extension ordering
+
 Extend `db.ts` before touching any source API routes. The `db` extended client must filter `deleted_at: null` or the list endpoint will return soft-deleted records.
 
 ### Type combo-box implementation
+
 The combo-box is a `<Popover>` wrapping a `<Command>` with `<CommandInput>` and `<CommandList>`. The `SOURCE_TYPE_SUGGESTIONS` list is filtered client-side. When the user types a value not in the list, it's accepted as-is and saved verbatim. The label displayed uses `t("sources.type_" + value)` with a fallback to the raw value if no translation key exists (for user-defined custom types).
 
 ### URL field normalization
+
 In the form, an empty string in the URL field should be coerced to `null` before submission — Zod does this via `.or(z.literal("")).transform(v => v === "" ? null : v)` before the `.url()` check.
 
 Exact Zod snippet:
+
 ```typescript
 url: z.union([z.string().url(), z.literal(""), z.null()]).optional()
   .transform(v => (v === "" ? null : v ?? null)),
 ```
 
 ### Cache key construction
+
 Type filter value should be URL-encoded in the cache key to handle spaces or special characters in user-defined type strings:
+
 ```typescript
 const cacheKey = `source-list:${projectId}:${page}:${pageSize}:${search ?? ""}:${sort}:${order}:${reliability}:${encodeURIComponent(type ?? "")}`;
 ```
 
 ### `prisma` vs `db` in API routes
+
 - Use `db.source.findMany()` (soft-delete filtered) for list and detail endpoints.
 - Use `prisma.source.count({ where: { ...where, deleted_at: null } })` for pagination total (matches the event pattern).
 - Use `prisma.source.update()` for soft-delete writes (direct client; extension only filters reads).
 
 ### Sidebar link
+
 Add Sources to the Sidebar navigation items array between Events and any settings divider. Use the `Database` or `BookOpen` Lucide icon (choose `BookOpen` — semantically appropriate for primary source documents).
 
 ---
@@ -679,14 +709,14 @@ Add Sources to the Sidebar navigation items array between Events and any setting
 
 ## 12. Out of Scope
 
-| Excluded | Covered in |
-|---|---|
-| Populated Relations tab (showing actual linked relations) | Epic 2.4 |
-| PropertyEvidence UI (attaching sources as property evidence) | Epic 2.4 |
-| Source-to-source linking (e.g. "this letter cites that document") | Epic 2.4 |
-| SourceType as a separate DB table | Schema decision: `String` type; not revisited |
-| Literature entity (secondary scholarly references) | Epic 3.3 |
-| RIS / BibTeX import | Epic 3.3 |
-| Bulk reliability update | Epic 5.2 (Data Quality) |
-| Column visibility toggle in DataTable | Epic 2.5 (UI Polish) |
-| Full-text search (tsvector) | Epic 4.1 |
+| Excluded                                                          | Covered in                                    |
+| ----------------------------------------------------------------- | --------------------------------------------- |
+| Populated Relations tab (showing actual linked relations)         | Epic 2.4                                      |
+| PropertyEvidence UI (attaching sources as property evidence)      | Epic 2.4                                      |
+| Source-to-source linking (e.g. "this letter cites that document") | Epic 2.4                                      |
+| SourceType as a separate DB table                                 | Schema decision: `String` type; not revisited |
+| Literature entity (secondary scholarly references)                | Epic 3.3                                      |
+| RIS / BibTeX import                                               | Epic 3.3                                      |
+| Bulk reliability update                                           | Epic 5.2 (Data Quality)                       |
+| Column visibility toggle in DataTable                             | Epic 2.5 (UI Polish)                          |
+| Full-text search (tsvector)                                       | Epic 4.1                                      |

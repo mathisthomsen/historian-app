@@ -1,5 +1,7 @@
 # Epic 1.2 — Database Schema & Data Layer
 
+**Status:** Shipped. See GitHub Issues + Project 1 (Evidoxa Backlog) for current status.
+
 ## Specification
 
 **Phase:** 1 — Foundation & Auth
@@ -481,21 +483,21 @@ model PropertyEvidence {
 
 ### 2.3 Table Summary
 
-| Table               | Soft Delete  | created_by_id | Notes                                                          |
-| ------------------- | ------------ | ------------- | -------------------------------------------------------------- |
-| `users`             | —            | —             | Auth fields added Epic 1.3                                     |
-| `projects`          | `deleted_at` | —             | Recovery UI in Epic 3.1                                        |
-| `user_projects`     | —            | —             | Junction table                                                 |
-| `persons`           | `deleted_at` | `user_id?`    | Core research entity; nullable birth/death location FKs        |
-| `person_names`      | —            | —             | Child of Person; multilingual name variants                    |
-| `events`            | `deleted_at` | `user_id?`    | Self-referential sub-events; nullable location_id FK           |
-| `sources`           | `deleted_at` | `user_id?`    | Primary evidence                                               |
-| `locations`         | —            | —             | Reference data; back-refs from Person (×2) and Event           |
-| `literature`        | —            | —             | Stub; expanded Epic 3.3                                        |
-| `relation_types`    | —            | —             | Per-project taxonomy                                           |
+| Table               | Soft Delete  | created_by_id | Notes                                                             |
+| ------------------- | ------------ | ------------- | ----------------------------------------------------------------- |
+| `users`             | —            | —             | Auth fields added Epic 1.3                                        |
+| `projects`          | `deleted_at` | —             | Recovery UI in Epic 3.1                                           |
+| `user_projects`     | —            | —             | Junction table                                                    |
+| `persons`           | `deleted_at` | `user_id?`    | Core research entity; nullable birth/death location FKs           |
+| `person_names`      | —            | —             | Child of Person; multilingual name variants                       |
+| `events`            | `deleted_at` | `user_id?`    | Self-referential sub-events; nullable location_id FK              |
+| `sources`           | `deleted_at` | `user_id?`    | Primary evidence                                                  |
+| `locations`         | —            | —             | Reference data; back-refs from Person (×2) and Event              |
+| `literature`        | —            | —             | Stub; expanded Epic 3.3                                           |
+| `relation_types`    | —            | —             | Per-project taxonomy                                              |
 | `relations`         | `deleted_at` | `user_id?`    | Polymorphic FK; temporal validity (valid_from/to year+month+cert) |
-| `relation_evidence` | —            | —             | Links Source to Relation; page_reference, quote, confidence    |
-| `property_evidence` | —            | —             | Links Source to a specific entity property value (polymorphic) |
+| `relation_evidence` | —            | —             | Links Source to Relation; page_reference, quote, confidence       |
+| `property_evidence` | —            | —             | Links Source to a specific entity property value (polymorphic)    |
 
 ---
 
@@ -722,16 +724,16 @@ Seed uses `upsert` throughout keyed on deterministic unique fields (email for Us
 
 The following open questions were resolved before implementation. See `architecture-evaluation.md` for full analysis.
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Temporal validity precision on Relation | Year + Month + Certainty triple | Consistency with Person/Event date model; "c. 1870" must be expressible on relations too |
-| `PropertyEvidence.property` type | `String` (app-layer validation) | DB enums are costly to extend in Prisma/Postgres; String allows future entity types without ALTER TYPE |
-| Location FK on Person and Event | Added now (nullable) | Prevents free-text→structured migration on 5,000+ records; nullable = zero migration risk now |
-| ClaimVersion stub table | Deferred entirely | PropertyEvidence covers 90% of attribution use cases; full versioning is Phase 4+ work |
-| Conflicting property values | "Primary fact" model | Entity column holds researcher's best estimate; PropertyEvidence surfaces conflicts in UI as warnings |
-| Inverse relations | Derived at query time | Explicit `inverse_id` creates write-sync bugs; Postgres is fast enough for derived traversal |
-| Event hierarchy | `parent_id` self-referential (current) | Sufficient for Phase 1; EventGroup can be layered on top later without breaking this |
-| Soft-delete cascade | Prisma middleware (Epic 2.1) | DB triggers are invisible; middleware keeps logic in the codebase where developers see it |
+| Decision                                | Choice                                 | Rationale                                                                                              |
+| --------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Temporal validity precision on Relation | Year + Month + Certainty triple        | Consistency with Person/Event date model; "c. 1870" must be expressible on relations too               |
+| `PropertyEvidence.property` type        | `String` (app-layer validation)        | DB enums are costly to extend in Prisma/Postgres; String allows future entity types without ALTER TYPE |
+| Location FK on Person and Event         | Added now (nullable)                   | Prevents free-text→structured migration on 5,000+ records; nullable = zero migration risk now          |
+| ClaimVersion stub table                 | Deferred entirely                      | PropertyEvidence covers 90% of attribution use cases; full versioning is Phase 4+ work                 |
+| Conflicting property values             | "Primary fact" model                   | Entity column holds researcher's best estimate; PropertyEvidence surfaces conflicts in UI as warnings  |
+| Inverse relations                       | Derived at query time                  | Explicit `inverse_id` creates write-sync bugs; Postgres is fast enough for derived traversal           |
+| Event hierarchy                         | `parent_id` self-referential (current) | Sufficient for Phase 1; EventGroup can be layered on top later without breaking this                   |
+| Soft-delete cascade                     | Prisma middleware (Epic 2.1)           | DB triggers are invisible; middleware keeps logic in the codebase where developers see it              |
 
 ---
 

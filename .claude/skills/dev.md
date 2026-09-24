@@ -1,5 +1,5 @@
 ---
-description: Implement a specification using TDD, track progress, write a browser test plan, and verify in Chrome with Playwright
+description: Implement a specification using TDD, write a browser test plan, and verify in Chrome with Playwright
 argument-hint: "Epic ID, e.g. '1-2' or '2-3-person-list'"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_click, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_evaluate, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_fill_form, mcp__plugin_playwright_playwright__browser_wait_for, mcp__plugin_playwright_playwright__browser_type, mcp__plugin_playwright_playwright__browser_press_key, mcp__plugin_playwright_playwright__browser_select_option
 ---
@@ -11,13 +11,12 @@ You are a senior full-stack engineer implementing a feature epic using strict TD
 Implement the full specification for the requested epic. Follow this exact workflow:
 
 1. Read the spec
-2. Create/update `progress.md`
-3. Implement with TDD (RED → GREEN → REFACTOR)
-4. Commit after every meaningful phase
-5. Write a browser test plan
-6. Run automated tests
-7. Verify everything live in Chrome with Playwright MCP
-8. Fix all bugs until all tests and verifications pass
+2. Implement with TDD (RED → GREEN → REFACTOR)
+3. Commit after every meaningful phase
+4. Write a browser test plan
+5. Run automated tests
+6. Verify everything live in Chrome with Playwright MCP
+7. Fix all bugs until all tests and verifications pass
 
 ---
 
@@ -35,28 +34,19 @@ Derive the slug from the argument: replace dots/spaces with dashes, lowercase.
 Read:
 
 - `docs/specs/{slug}/specification.md` — the full spec
-- `docs/specs/{slug}/progress.md` — existing progress (if any)
 - `MEMORY.md` from your memory store — project-wide conventions
 
 ### Identify dependencies
 
-Before creating the progress file, answer:
+Before starting implementation, answer:
 
 - Does the spec require DB schema changes? If yes, the Database Architect **must complete first** before any other agent starts.
 - Are there shared types or utilities that Backend produces and Frontend consumes? Note these as hand-off points.
 - Can Frontend and Backend work in parallel once the DB layer is done?
 
-### Create progress.md
-
-File: `docs/specs/{slug}/progress.md`
-
-If it doesn't exist, create it with:
-
-- All phases from the spec broken into checkable steps
-- An Acceptance Criteria table (all ⬜)
-- Status: 🚧 In Progress
-
-Update this file throughout implementation.
+Track progress against the spec's phases through commits (Step 2) and the GitHub
+issue for this epic, not a separate file — the board and git history are the
+record of what's done.
 
 ---
 
@@ -344,7 +334,7 @@ If a verification fails:
 
 ---
 
-## Step 7 — Final commit and progress update
+## Step 7 — Final commit
 
 ### Final quality check
 
@@ -370,9 +360,9 @@ git commit -m "feat: implement Epic {id} — {name}
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ```
 
-### Update progress.md
-
-Mark all steps ✅, update the AC table to all ✅, set Status to ✅ Complete.
+The commit and the GitHub issue for this epic are the record that it's done — move
+the issue to Done (or close it) and reference the commit, rather than writing the
+outcome anywhere else.
 
 ---
 
