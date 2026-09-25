@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { hashToken } from "@/lib/security";
+import { revokeSessionsBefore } from "@/lib/session-revocation";
 
 const resetPasswordSchema = z
   .object({
@@ -109,6 +110,12 @@ export async function POST(request: Request): Promise<NextResponse> {
   ]);
 
   await writeAuditLog({ action: "PASSWORD_RESET", userId: resetRow.user_id, request });
+
+  // Only after the transaction above has committed: a reset is very often done
+  // because the old password is believed compromised, so this ends whatever
+  // sessions that compromise created. Revoking before a failed write would sign
+  // the user out of everything for a password that never actually changed.
+  await revokeSessionsBefore(resetRow.user_id, Math.floor(Date.now() / 1000));
 
   return NextResponse.json({ message: "auth.reset.success" });
 }
