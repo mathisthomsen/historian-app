@@ -1,4 +1,5 @@
 import type { UserRole } from "@prisma/client";
+import { NextResponse } from "next/server";
 import type { NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 
@@ -67,7 +68,17 @@ export const authConfig: NextAuthConfig = {
         pathnameWithoutLocale === "/api/health" ||
         pathnameWithoutLocale.startsWith("/dev/");
       if (isPublic) return true;
-      return isLoggedIn;
+      if (isLoggedIn) return true;
+
+      // A boolean here is silently discarded by next-auth's dispatch when a
+      // handler is passed to `auth()` — which is why PUBLIC_PATHS had no
+      // runtime effect (#88). Only a Response is honoured.
+      if (pathnameWithoutLocale.startsWith("/api/")) {
+        // Never redirect an API caller to an HTML login page.
+        return Response.json({ error: "UNAUTHORIZED" }, { status: 401 });
+      }
+      const locale = /^\/([a-z]{2})(\/|$)/.exec(pathname)?.[1] ?? "de";
+      return NextResponse.redirect(new URL(`/${locale}/auth/login`, request.nextUrl));
     },
   },
 };

@@ -27,3 +27,41 @@ describe("authConfig.session", () => {
     expect(result.user).toBeUndefined();
   });
 });
+
+describe("authConfig.authorized", () => {
+  async function run(pathname: string, loggedIn: boolean) {
+    const { authConfig } = await import("@/auth.config");
+    const request = { nextUrl: new URL(`https://evidoxa.test${pathname}`) };
+    return authConfig.callbacks!.authorized!({
+      auth: loggedIn ? ({ user: { id: "u1" } } as never) : null,
+      request: request as never,
+    });
+  }
+
+  it("lets a public path through", async () => {
+    expect(await run("/de/changelog", false)).toBe(true);
+  });
+
+  it("lets an authenticated request through", async () => {
+    expect(await run("/de/dashboard", true)).toBe(true);
+  });
+
+  it("redirects an anonymous page request to the locale-correct login", async () => {
+    const result = await run("/de/dashboard", false);
+    expect(result).toBeInstanceOf(Response);
+    const res = result as Response;
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/de/auth/login");
+  });
+
+  it("preserves a non-default locale in the redirect", async () => {
+    const res = (await run("/en/dashboard", false)) as Response;
+    expect(res.headers.get("location")).toContain("/en/auth/login");
+  });
+
+  it("answers an anonymous API request with 401, never a redirect", async () => {
+    const res = (await run("/api/persons", false)) as Response;
+    expect(res.status).toBe(401);
+    expect(res.headers.get("location")).toBeNull();
+  });
+});
