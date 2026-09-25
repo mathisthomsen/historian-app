@@ -396,3 +396,56 @@ test.describe("TC-AUTH-19: i18n on auth pages", () => {
     await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// TC-AUTH-20: Session fixation — login issues a fresh identifier
+//
+// next-auth's JWT `jti` is expected to be regenerated on every encode
+// (measured earlier in Epic 2.7) — which is exactly why it must be measured
+// here rather than assumed. A session cookie value that survived from a
+// prior authentication into a new one would be a fixation vulnerability: an
+// attacker who fixed a victim's pre-auth identifier could hijack the
+// resulting authenticated session. Kept in this file rather than
+// e2e/session-hardening.spec.ts because it exercises the same
+// login/sign-out cycle as TC-AUTH-08/13 above, not the replay guard's
+// cross-context API requests.
+// ---------------------------------------------------------------------------
+test.describe("TC-AUTH-20: Session fixation", () => {
+  test("logging in a second time issues a different session cookie value", async ({
+    page,
+    context,
+  }) => {
+    const sessionCookieValue = async () => {
+      const cookies = await context.cookies();
+      const sessionCookie = cookies.find((cookie) =>
+        /^(__Secure-)?(authjs|next-auth)\.session-token$/.test(cookie.name),
+      );
+      return sessionCookie?.value ?? "";
+    };
+
+    await loginAsAdmin(page);
+    const firstValue = await sessionCookieValue();
+    // Not vacuous: fails here first if login stopped setting a session cookie.
+    expect(firstValue).not.toBe("");
+
+    // Synchronise on the sign-out request itself, not the navigation it
+    // triggers (same reasoning as TC-AUTH-13 above).
+    const signOut = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/auth/signout" &&
+        response.request().method() === "POST",
+      { timeout: 10_000 },
+    );
+    await page.getByRole("button", { name: "Abmelden" }).click();
+    await signOut;
+    await page.waitForURL(/\/auth\/login/, { timeout: 10_000 });
+
+    await loginAsAdmin(page);
+    const secondValue = await sessionCookieValue();
+    expect(secondValue).not.toBe("");
+
+    // The property under test: a pre-authentication identifier must not
+    // survive authentication.
+    expect(secondValue).not.toBe(firstValue);
+  });
+});
