@@ -22,6 +22,14 @@ declare module "next-auth/jwt" {
     id: string;
     role: UserRole;
     projectId?: string;
+    /**
+     * Unix seconds, stamped once at sign-in (`callbacks.jwt` only receives
+     * `user` then) and never touched again. Unlike `iat`, which `jwt.encode`
+     * overwrites with `now` on every session read, this survives re-encode —
+     * see `src/auth.config.ts`'s `session` callback for why revocation must
+     * compare against this instead of `iat`.
+     */
+    authTime?: number;
   }
 }
 

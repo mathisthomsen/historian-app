@@ -1,38 +1,18 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
+import { loginAsAdmin, resetAuthState, SEED_EMAIL } from "./helpers/auth";
 import {
   createTestUser,
   deleteTestUser,
   insertTestResetToken,
   insertTestVerificationToken,
-  resetRateLimits,
 } from "./helpers/db";
 
 // Auth tests share the seeded admin user and password_resets table — run serially
 // to prevent TC-AUTH-14 (forgot-password) and TC-AUTH-15 (reset) from racing.
 test.describe.configure({ mode: "serial" });
 
-const SEED_EMAIL = "admin@evidoxa.dev";
-const SEED_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
-
-// Helper: login with the seeded admin account
-async function loginAsAdmin(page: Page) {
-  await page.goto("/de/auth/login");
-  await page.getByLabel("E-Mail").fill(SEED_EMAIL);
-  await page.getByLabel("Passwort", { exact: true }).fill(SEED_PASSWORD);
-  await page.getByRole("button", { name: "Anmelden" }).click();
-  await page.waitForURL(/\/de\/dashboard/, { timeout: 15_000 });
-}
-
-// Clear cookies, localStorage, and rate-limit counters before each test so
-// sequential login attempts never exhaust the sliding-window budget.
-test.beforeEach(async ({ context, page }) => {
-  await resetRateLimits();
-  await context.clearCookies();
-  await page.addInitScript(() => {
-    window.localStorage.clear();
-  });
-});
+test.beforeEach(resetAuthState);
 
 // ---------------------------------------------------------------------------
 // TC-AUTH-01: Login page renders without AppShell

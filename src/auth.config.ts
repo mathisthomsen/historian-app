@@ -33,18 +33,36 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.id = user.id as string;
         token.role = user.role;
+        // Stamped only here, at sign-in — `user` is undefined on every other
+        // call to this callback — and never touched again, so it survives
+        // the unconditional re-encode below. See the `session` callback for
+        // why revocation compares against this instead of `iat`.
+        token.authTime = Math.floor(Date.now() / 1000);
         if (user.projectId) token.projectId = user.projectId;
       }
       return token;
     },
     async session({ session, token }) {
       const jwt = token as JWT;
-      // Revocation is checked here, not in `jwt`: measured on 2026-08-12 and
-      // recorded at src/auth.ts:148-152, `jwt` runs only on sign-in and on
-      // `updateAge` rotation, so a check there would not run on an ordinary
-      // page request. Stripping `user` is what invalidates the session —
-      // requireUser(), requireUserOrRedirect() and authorized() all test it.
-      if (await isSessionRevoked(jwt.id as string, (token as { iat?: number }).iat)) {
+      // Revocation compares against `authTime`, not `iat`. Measured against
+      // the installed @auth/core: on the JWT strategy, `jwt.encode` re-signs
+      // the token on *every* session read (not only at `updateAge`
+      // rotation), and jose's `.setIssuedAt()` is called with no argument —
+      // so `iat` is overwritten with `now` on every read. A revoked cookie
+      // compared against `iat` would be refused once, come back with a
+      // freshly stamped `iat` on that same response's Set-Cookie, and pass
+      // on every request after that. `authTime` is set only when
+      // `callbacks.jwt` receives `user` (sign-in) and is never re-stamped,
+      // so it is stable across re-encode. `?? iat` is a deliberate fallback
+      // for tokens issued before this field existed — they are not treated
+      // as revoked, they simply age out within `maxAge` (30 days) like any
+      // other legacy token.
+      const issued =
+        (token as { authTime?: number; iat?: number }).authTime ?? (token as { iat?: number }).iat;
+      // `jwt.id` is typed as required but that is not runtime-enforced; a
+      // token without one must not turn into a Redis GET on a key that ends
+      // in `:undefined`.
+      if (jwt.id && (await isSessionRevoked(jwt.id, issued))) {
         return { ...session, user: undefined } as unknown as typeof session;
       }
       session.user.id = jwt.id as string;

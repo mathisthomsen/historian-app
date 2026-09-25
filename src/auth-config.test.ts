@@ -26,6 +26,61 @@ describe("authConfig.session", () => {
     const result = await runSession(true);
     expect(result.user).toBeUndefined();
   });
+
+  it("compares against authTime, not the re-encoded iat, so revocation survives the unconditional re-sign", async () => {
+    // authTime is the original sign-in instant, sitting behind the
+    // revocation floor. iat has since been overwritten by a later re-encode
+    // (next-auth does this on every session read) and now sits ahead of the
+    // floor. A comparison against iat would call this session live; it must
+    // not be — this is the exact escape GHSA-h32c-m6mx-pmw6 describes.
+    isSessionRevoked.mockImplementation((_userId: string, issued?: number) =>
+      Promise.resolve(issued === 1000),
+    );
+    const { authConfig } = await import("@/auth.config");
+    const session = { user: { id: "", email: "a@b.c", name: null, role: "USER" }, expires: "" };
+    const token = { id: "u1", role: "USER", authTime: 1000, iat: 5000 };
+    const result = await authConfig.callbacks!.session!({ session, token } as never);
+    expect(isSessionRevoked).toHaveBeenCalledWith("u1", 1000);
+    expect(result.user).toBeUndefined();
+  });
+
+  it("falls back to iat for a legacy token minted before authTime existed", async () => {
+    isSessionRevoked.mockResolvedValue(false);
+    const { authConfig } = await import("@/auth.config");
+    const session = { user: { id: "", email: "a@b.c", name: null, role: "USER" }, expires: "" };
+    const token = { id: "u1", role: "USER", iat: 1000 };
+    await authConfig.callbacks!.session!({ session, token } as never);
+    expect(isSessionRevoked).toHaveBeenCalledWith("u1", 1000);
+  });
+
+  it("does not query revocation for a token without an id", async () => {
+    const { authConfig } = await import("@/auth.config");
+    const session = { user: { id: "", email: "a@b.c", name: null, role: "USER" }, expires: "" };
+    const token = { role: "USER", iat: 1000 };
+    await authConfig.callbacks!.session!({ session, token } as never);
+    expect(isSessionRevoked).not.toHaveBeenCalled();
+  });
+});
+
+describe("authConfig.jwt", () => {
+  it("stamps authTime only at sign-in, when user is present", async () => {
+    const { authConfig } = await import("@/auth.config");
+    const before = Math.floor(Date.now() / 1000);
+    const token = (await authConfig.callbacks!.jwt!({
+      token: {},
+      user: { id: "u1", role: "USER" },
+    } as never)) as { authTime?: number };
+    expect(token.authTime).toBeGreaterThanOrEqual(before);
+  });
+
+  it("does not restamp authTime on an ordinary re-encode, when user is absent", async () => {
+    const { authConfig } = await import("@/auth.config");
+    const token = (await authConfig.callbacks!.jwt!({
+      token: { id: "u1", role: "USER", authTime: 1000 },
+      user: undefined,
+    } as never)) as { authTime?: number };
+    expect(token.authTime).toBe(1000);
+  });
 });
 
 describe("authConfig.authorized", () => {
