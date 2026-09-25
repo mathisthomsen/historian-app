@@ -22,15 +22,24 @@ not have closed the vulnerability.** Measured 2026-09-24 against the installed `
 
 1. **next-auth already issues `jti`, `iat` and `exp` on every token.** No new claim is needed.
    (Probe: `encode()` then `decode()` a token; the claim set is `exp, iat, id, jti, role`.)
-2. **`jti` is regenerated on every re-encode.** Two encodes of identical claims produced
-   different `jti`s. `authConfig.session.updateAge` is 24h, so a live session mints a new
-   `jti` about daily.
+2. **`jti` is regenerated on every re-encode — and re-encode happens on every session read, not
+   only at `updateAge` rotation.** Two consecutive reads of the same session, seconds apart,
+   produced different `jti`s (and different `iat`s). `authConfig.session.updateAge` (24h) governs
+   nothing about `jwt.encode`'s own behaviour; that call is unconditional in
+   `@auth/core`'s JWT-strategy session action and reruns on every request.
 
 Consequence: a `jti` denylist revokes only the _most recently issued_ token. A token captured
 earlier in the same session carries a different `jti`, is not on the list, and stays valid for
 the remainder of its 30-day `maxAge`. That is exactly the attack GHSA-h32c-m6mx-pmw6 describes.
 
 **Therefore: revoke by issue-time, not by token identity.**
+
+**This model mattered beyond the `jti` decision above.** Believing re-encode happened only
+daily is also what made `token.iat` look like a stable authentication-time value worth comparing
+against. It is not: since re-encode happens on every read, `iat` is overwritten with the current
+time on every read too. A whole-branch review measured this directly and found the branch had
+built its revocation check on `token.iat` — the exact same wrong model, reapplied to the fix
+itself. See § 1's Comparison note below for the corrected field.
 
 ## Locked decisions for this epic
 
@@ -42,6 +51,20 @@ the remainder of its 30-day `maxAge`. That is exactly the attack GHSA-h32c-m6mx-
 | 4   | Signing out signs that user out **on all devices**             | Accepted blast radius. Per-device revocation would need our own `sid` carried across every refresh path, and a path that silently drops it reopens the hole                                                                                                                                                                                                                                               |
 
 Decision 4 is a deliberate product trade-off, not an implementation shortcut.
+
+**Clock skew is the one path that is not fail-open (added 2026-09-25).** The floor
+(`revokeSessionsBefore`) is stamped using the _revoking_ instance's clock; `authTime` is stamped
+by the _signing_ instance's clock at that user's next login. If the revoking instance's clock
+runs ahead of the signing instance's, a legitimate fresh login can carry an `authTime` that
+reads as older than the floor, and `isSessionRevoked` correctly (from its own point of view)
+reports it revoked — refusing a real, freshly-authenticated user. This is bounded by however far
+the two clocks actually diverge, and self-corrects once wall-clock time on the signing instance
+catches up to the floor. Before the `authTime` correction above, this failure mode was masked:
+comparing against `iat` meant every re-encode re-admitted the session anyway, so a skew-induced
+false revocation would silently heal itself on the next request. After the correction it no
+longer does — a session caught by clock skew stays refused until the skew resolves. No numeric
+bound on acceptable skew is set by this epic; infrastructure clock sync (NTP) is assumed, as it
+is everywhere else in the stack.
 
 ---
 
@@ -56,21 +79,38 @@ server-side refuses a token captured beforehand, so it remains valid until `exp`
   (equal to `maxAge` — past that, no token issued before the floor can still be valid).
 - **Write:** a `signOut` event. `auth.ts` has no `events` block today; one is added.
 - **Read:** `authConfig.callbacks.session`.
-- **Comparison:** revoke when `token.iat < floor`, strictly. Ties are **not** revoked, and the
-  floor is written as the logout instant — so a login in the same second as a logout is not
-  caught by its own revocation. The residual window is under one second and is accepted.
+- **Comparison:** revoke when `token.authTime < floor`, strictly, falling back to `token.iat`
+  when `authTime` is absent. Ties are **not** revoked, and the floor is written as the logout
+  instant — so a login in the same second as a logout is not caught by its own revocation. The
+  residual window is under one second and is accepted.
+  **Corrected 2026-09-25:** the field compared here was originally `token.iat`. A whole-branch
+  review measured that `@auth/core`'s JWT-strategy session action calls `jwt.encode` — and
+  therefore re-stamps `iat` to the current time via jose's `.setIssuedAt()` — on _every_ session
+  read, not only at `updateAge` rotation (see the corrected measurement above). A revoked cookie
+  compared against `iat` was refused once, came back from that same response with a freshly
+  stamped `iat`, and was admitted on every request after that — escaping the revocation this
+  section exists to provide. `authTime` is a separate claim, stamped once in `callbacks.jwt` at
+  sign-in (the only call where `user` is defined) and never rewritten, so it survives re-encode
+  intact. The `?? iat` fallback exists only so sessions already live before this correction
+  shipped are not misread as revoked; they age out within `maxAge` (30 days) like any other
+  legacy token.
 - **Missing or malformed `iat`:** fail open (decision 2) but log at error level. The probe
   showed `iat` is always present, so its absence means an assumption has broken and should be
-  loud rather than silent.
-- **Invalidation mechanism:** when `token.iat` is older than the floor, **`user` is removed
-  from the returned session**. `requireUser()`, `requireUserOrRedirect()` and `authorized()`
-  all test `session?.user`, so one action invalidates every consumer.
+  loud rather than silent. (This still applies to the `authTime ?? iat` fallback value as a
+  whole: if neither is a usable number, `isSessionRevoked` fails open and logs — see the clock
+  skew note below for the one case where fail-open does not hold.)
+- **Invalidation mechanism:** when the compared issue-time is older than the floor, **`user` is
+  removed from the returned session**. `requireUser()`, `requireUserOrRedirect()` and
+  `authorized()` all test `session?.user`, so one action invalidates every consumer.
 
 **Why that placement.** `src/auth.ts:155` delegates to `authConfig.callbacks.session` before
 adding `attachProjectId`, so a single implementation covers both the Edge middleware and every
-Node-side `auth()` call. The existing comment at `src/auth.ts:148-152` records the supporting
-measurement: `jwt` runs only on sign-in and on `updateAge` rotation, while `session` runs on
-every `auth()` call. The check cannot live in `jwt`.
+Node-side `auth()` call. **Corrected 2026-09-25:** the supporting measurement previously recorded
+here — "`jwt` runs only on sign-in and on `updateAge` rotation" — is false; `callbacks.jwt` fires
+on every session read, same as `session`. The real reason the check cannot live in `jwt` is that
+`user` is only defined there at sign-in, so a check placed in `jwt` would see `user` as `undefined`
+(and therefore nothing to invalidate) on every ordinary page request. `session` has no such gap:
+it runs on every `auth()` call and always has the token to compare.
 
 **Edge-safety constraint — load-bearing.** Nothing currently imports Redis into the Edge path,
 and `src/lib/env.ts` parses `process.env` through Zod **at module scope**. If that throws under
