@@ -2,6 +2,8 @@ import type { UserRole } from "@prisma/client";
 import type { NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 
+import { isSessionRevoked } from "@/lib/session-revocation";
+
 const PUBLIC_PATHS = new Set([
   "/auth/login",
   "/auth/register",
@@ -34,8 +36,16 @@ export const authConfig: NextAuthConfig = {
       }
       return token;
     },
-    session({ session, token }) {
+    async session({ session, token }) {
       const jwt = token as JWT;
+      // Revocation is checked here, not in `jwt`: measured on 2026-08-12 and
+      // recorded at src/auth.ts:148-152, `jwt` runs only on sign-in and on
+      // `updateAge` rotation, so a check there would not run on an ordinary
+      // page request. Stripping `user` is what invalidates the session —
+      // requireUser(), requireUserOrRedirect() and authorized() all test it.
+      if (await isSessionRevoked(jwt.id as string, (token as { iat?: number }).iat)) {
+        return { ...session, user: undefined } as unknown as typeof session;
+      }
       session.user.id = jwt.id as string;
       session.user.role = jwt.role as UserRole;
       if (jwt.projectId) session.user.projectId = jwt.projectId;

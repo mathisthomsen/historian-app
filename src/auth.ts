@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { attachProjectId, ensureDefaultProject } from "@/lib/project";
 import { rateLimiter } from "@/lib/rate-limit";
 import { anonymizeIp } from "@/lib/security";
+import { revokeSessionsBefore } from "@/lib/session-revocation";
 
 import { authConfig } from "./auth.config";
 
@@ -155,6 +156,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const session = (await authConfig.callbacks?.session?.(params)) ?? params.session;
       await attachProjectId(session);
       return session;
+    },
+  },
+  events: {
+    async signOut(message) {
+      const token = "token" in message ? message.token : null;
+      const userId = (token as { id?: string } | null)?.id;
+      if (!userId) {
+        console.error("[auth] signOut event carried no user id; sessions not revoked");
+        return;
+      }
+      await revokeSessionsBefore(userId, Math.floor(Date.now() / 1000));
     },
   },
 });
