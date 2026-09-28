@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const get = vi.fn();
 const set = vi.fn();
 const expireMock = vi.fn();
+const evalMock = vi.fn();
 vi.mock("@upstash/redis", () => ({
-  Redis: vi.fn(() => ({ get, set, expire: expireMock })),
+  Redis: vi.fn(() => ({ get, set, expire: expireMock, eval: evalMock })),
 }));
 
 const ENV = { ...process.env };
@@ -109,15 +110,29 @@ describe("isSessionRevoked", () => {
 });
 
 describe("revokeSessionsBefore", () => {
-  it("writes the floor with a 30-day TTL", async () => {
+  it("raises the floor atomically via a Lua script, with a 30-day TTL, instead of an unconditional SET", async () => {
+    // Two near-simultaneous revocations (a sign-out and a password reset) can
+    // land out of order; an unconditional SET would let the later write lower
+    // the floor and re-admit sessions issued between the two instants. GET-
+    // then-SET from application code would still race between the two calls'
+    // GETs. A Lua script is a single atomic step on the server, so there is
+    // no such window — this test only pins the wiring (script, key, args);
+    // the atomicity itself is Redis's guarantee, not something a mocked
+    // client can exercise.
     const { revokeSessionsBefore } = await import("@/lib/session-revocation");
     await revokeSessionsBefore("u1", 1234);
-    expect(set).toHaveBeenCalledWith("session:revoked-before:u1", 1234, { ex: 30 * 24 * 60 * 60 });
+    expect(set).not.toHaveBeenCalled();
+    expect(evalMock).toHaveBeenCalledOnce();
+    const [script, keys, args] = evalMock.mock.calls[0] as [string, string[], unknown[]];
+    expect(script).toContain('redis.call("GET"');
+    expect(script).toContain('redis.call("SET"');
+    expect(keys).toEqual(["session:revoked-before:u1"]);
+    expect(args).toEqual([1234, 30 * 24 * 60 * 60]);
   });
 
   it("does not throw when Redis is unavailable", async () => {
     const { revokeSessionsBefore } = await import("@/lib/session-revocation");
-    set.mockRejectedValue(new Error("upstash down"));
+    evalMock.mockRejectedValue(new Error("upstash down"));
     await expect(revokeSessionsBefore("u1", 1234)).resolves.toBeUndefined();
   });
 });

@@ -27,8 +27,28 @@ function client(): Redis | null {
 }
 
 /**
+ * Only raise the floor, never lower it, and refresh its TTL when it is
+ * raised. GET-then-SET from application code would race: two near-
+ * simultaneous revocations (a sign-out and a password reset for the same
+ * user) can have their GETs interleave before either SET lands, so the
+ * later-landing SET can still win with the smaller value. A Lua script runs
+ * as a single atomic step on the Redis server, so there is no window between
+ * the read and the write for a second call to land in.
+ */
+const RAISE_FLOOR_SCRIPT = `
+local current = redis.call("GET", KEYS[1])
+if current == false or tonumber(ARGV[1]) > tonumber(current) then
+  redis.call("SET", KEYS[1], ARGV[1], "EX", ARGV[2])
+end
+return 1
+`;
+
+/**
  * Invalidate every session for `userId` issued before `atMs` (epoch
- * milliseconds).
+ * milliseconds) — but only if `atMs` is newer than any floor already
+ * recorded. Two near-simultaneous revocations (a sign-out and a password
+ * reset) can otherwise land out of order and the later write would lower the
+ * floor, re-admitting sessions issued between the two instants.
  *
  * Milliseconds, not seconds: the comparison in `isSessionRevoked` is strict
  * (`<`), deliberately, so that a login in the same second as a logout does
@@ -45,7 +65,7 @@ export async function revokeSessionsBefore(userId: string, atMs: number): Promis
     return;
   }
   try {
-    await redis.set(sessionRevocationKey(userId), atMs, { ex: TTL_SECONDS });
+    await redis.eval(RAISE_FLOOR_SCRIPT, [sessionRevocationKey(userId)], [atMs, TTL_SECONDS]);
   } catch (error) {
     console.error("[session-revocation] failed to write revocation floor", { userId, error });
   }
