@@ -199,12 +199,16 @@ signal to file it rather than write it.
 
 Two sections, because two specific failures keep recurring and both are cheap to prevent.
 
-### A third-party assumptions list
+### An external assumptions list
 
-Every claim the design rests on about a **library's** behaviour, stated explicitly and marked
-**measured** or **assumed**. Not the claims you verified — the ones you did not.
+Every claim the design rests on about code or infrastructure you do not control — libraries,
+hosting platforms, managed services, runtimes — stated explicitly and marked **measured** or
+**assumed**. Not the claims you verified; the ones you did not.
 
-Epic 2.7's central defect was one unstated line: *`iat` is a stable issue time*. It is not —
+Not only libraries. The failures recorded under "Measure, don't infer" below are mostly about
+platforms, and a design can depend on one of those and still satisfy a library-only checklist.
+
+Epic 2.7's session-hardening work turned on one unstated line: *`iat` is a stable issue time*. It is not —
 `@auth/core` rewrites it on every session read. Revocation therefore compared against a value
 the library moves, so a captured token was refused once and admitted on every request after
 that. Six task reviews, a whole-branch review and a scoped re-review all passed, because the

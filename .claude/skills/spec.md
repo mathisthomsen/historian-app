@@ -111,15 +111,21 @@ Structure the spec with these sections (adapt as relevant to the epic):
 
 ---
 
-## 0. Third-party assumptions
-Every claim this design rests on about a **library's** behaviour, each marked **measured** or
-**assumed** — the ones you did not verify matter more than the ones you did. Give the file and
-line for anything measured.
+## 0. External assumptions
+Every claim this design rests on about code or infrastructure you do not control — **libraries,
+hosting platforms, managed services, runtimes** — each marked **measured** or **assumed**. The
+ones you did not verify matter more than the ones you did. Give the file and line, or the
+command and its output, for anything measured.
 
-This section exists because Epic 2.7 shipped a security fix built on one unstated belief
-(`iat` is a stable issue time; `@auth/core` rewrites it on every session read), and nothing in
-six task reviews could see it — the code was correct at the callback boundary and every test
-constructed its own token. Write the belief down and it becomes reviewable.
+Not only libraries: this repository's costliest measurement failures were about *platforms* —
+Vercel overwriting `X-Forwarded-For`, Neon branch identity not matching endpoint names,
+`vercel env ls` showing created rather than updated. See `CLAUDE.md` § "Measure, don't infer".
+
+The section exists because Epic 2.7's session-hardening work was built on one unstated belief
+(`iat` is a stable issue time; `@auth/core` rewrites it on every session read). Six task
+reviews passed over it — the code was correct at the callback boundary and every test
+constructed its own token — and it took a whole-branch review to find. Write the belief down
+and it becomes reviewable.
 
 ## 0b. Blast radius and test scope
 What this change affects **beyond the files it touches**, and the test scope that follows from
