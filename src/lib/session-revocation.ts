@@ -73,9 +73,31 @@ export async function isSessionRevoked(
   const redis = client();
   if (!redis) return false;
   try {
-    const floor = await redis.get<number | string>(sessionRevocationKey(userId));
+    const key = sessionRevocationKey(userId);
+    const floor = await redis.get<number | string>(key);
     if (floor === null || floor === undefined) return false;
-    return issuedAtMs < Number(floor);
+    const revoked = issuedAtMs < Number(floor);
+    if (revoked) {
+      // Every rejected request still comes back with a re-encoded cookie
+      // carrying a fresh `exp` (next-auth re-signs on every read), so a
+      // client that keeps presenting a revoked token keeps that token's own
+      // expiry alive indefinitely. Without this, the floor's own 30-day TTL
+      // would eventually lapse while the token is still being polled, and
+      // the next request after that would authenticate successfully. Refresh
+      // the floor's TTL on every revoked hit so it outlives the token for as
+      // long as anyone keeps presenting it; only once they stop for the full
+      // TTL does the token's own `exp` stop moving too and expire naturally.
+      //
+      // Inside the same try/catch as the read above: a failed refresh must
+      // not change the answer we already have, so it is swallowed the same
+      // way — never let this throw, never let it flip `revoked` to `false`.
+      try {
+        await redis.expire(key, TTL_SECONDS);
+      } catch (error) {
+        console.error("[session-revocation] failed to refresh floor TTL", { userId, error });
+      }
+    }
+    return revoked;
   } catch (error) {
     console.error("[session-revocation] floor unreadable; failing open", { userId, error });
     return false;

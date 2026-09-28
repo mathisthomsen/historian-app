@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const get = vi.fn();
 const set = vi.fn();
+const expireMock = vi.fn();
 vi.mock("@upstash/redis", () => ({
-  Redis: vi.fn(() => ({ get, set })),
+  Redis: vi.fn(() => ({ get, set, expire: expireMock })),
 }));
 
 const ENV = { ...process.env };
@@ -74,6 +75,35 @@ describe("isSessionRevoked", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(await isSessionRevoked("u1", undefined)).toBe(false);
     expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("refreshes the floor's TTL to the full 30 days on a revoked hit", async () => {
+    // Every rejected request still returns a re-encoded cookie with a fresh
+    // `exp`, so a client that keeps polling with a revoked token keeps that
+    // token alive indefinitely. Without refreshing the floor's own TTL on
+    // each revoked hit, the floor (30-day TTL) could lapse before the
+    // token's own `exp` stops moving, and the next request after that would
+    // authenticate successfully.
+    const { isSessionRevoked } = await import("@/lib/session-revocation");
+    get.mockResolvedValue(2000);
+    expect(await isSessionRevoked("u1", 1999)).toBe(true);
+    expect(expireMock).toHaveBeenCalledWith("session:revoked-before:u1", 30 * 24 * 60 * 60);
+  });
+
+  it("does not touch the floor's TTL on a non-revoked hit", async () => {
+    const { isSessionRevoked } = await import("@/lib/session-revocation");
+    get.mockResolvedValue(2000);
+    expect(await isSessionRevoked("u1", 2001)).toBe(false);
+    expect(expireMock).not.toHaveBeenCalled();
+  });
+
+  it("still reports revoked when the TTL refresh itself fails, because a failed refresh must not change the answer", async () => {
+    const { isSessionRevoked } = await import("@/lib/session-revocation");
+    get.mockResolvedValue(2000);
+    expireMock.mockRejectedValue(new Error("upstash down"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await isSessionRevoked("u1", 1999)).toBe(true);
     spy.mockRestore();
   });
 });
