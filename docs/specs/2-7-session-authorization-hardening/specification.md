@@ -75,30 +75,43 @@ server-side refuses a token captured beforehand, so it remains valid until `exp`
 
 **Fix.** A Redis-backed issue-time floor per user.
 
-- **Key:** `session:revoked-before:<userId>` · **Value:** unix seconds · **TTL:** 30 days
-  (equal to `maxAge` — past that, no token issued before the floor can still be valid).
-- **Write:** a `signOut` event. `auth.ts` has no `events` block today; one is added.
+- **Key:** `session:revoked-before:<userId>` in production (its own key space), or
+  `session:revoked-before:<namespace>:<userId>` everywhere else — see
+  `src/lib/session-revocation-key.ts`, which throws rather than build the bare key outside a
+  real Vercel production deployment. **Value:** epoch **milliseconds**, not unix seconds — see
+  the comparison note below for why the unit matters. **TTL:** `maxAge` plus a day of margin
+  (31 days total, not exactly `maxAge`): the `EXPIRE`/`SET … EX` call completes inside the
+  `session` callback, before Auth.js re-encodes the response and stamps the cookie's new `exp`,
+  so an encode landing on the far side of a second boundary could otherwise let the cookie
+  outlive the Redis key.
+- **Write:** a `signOut` event (`auth.ts` had no `events` block before this epic; one was
+  added) and password-reset completion (`api/auth/reset-password`).
 - **Read:** `authConfig.callbacks.session`.
-- **Comparison:** revoke when `token.authTime < floor`, strictly, falling back to `token.iat`
-  when `authTime` is absent. Ties are **not** revoked, and the floor is written as the logout
-  instant — so a login in the same second as a logout is not caught by its own revocation. The
-  residual window is under one second and is accepted.
-  **Corrected 2026-09-25:** the field compared here was originally `token.iat`. A whole-branch
-  review measured that `@auth/core`'s JWT-strategy session action calls `jwt.encode` — and
-  therefore re-stamps `iat` to the current time via jose's `.setIssuedAt()` — on _every_ session
-  read, not only at `updateAge` rotation (see the corrected measurement above). A revoked cookie
-  compared against `iat` was refused once, came back from that same response with a freshly
-  stamped `iat`, and was admitted on every request after that — escaping the revocation this
-  section exists to provide. `authTime` is a separate claim, stamped once in `callbacks.jwt` at
-  sign-in (the only call where `user` is defined) and never rewritten, so it survives re-encode
-  intact. The `?? iat` fallback exists only so sessions already live before this correction
-  shipped are not misread as revoked; they age out within `maxAge` (30 days) like any other
-  legacy token.
-- **Missing or malformed `iat`:** fail open (decision 2) but log at error level. The probe
-  showed `iat` is always present, so its absence means an assumption has broken and should be
-  loud rather than silent. (This still applies to the `authTime ?? iat` fallback value as a
-  whole: if neither is a usable number, `isSessionRevoked` fails open and logs — see the clock
-  skew note below for the one case where fail-open does not hold.)
+- **Comparison:** revoke when `token.authTime < floor`, strictly — **no fallback to
+  `token.iat`.** Ties are not revoked, and the floor is written as the logout instant. Floor and
+  `authTime` are both epoch milliseconds (not the unix-seconds `iat` uses), so the residual
+  window a login in the same instant as a logout could exploit is a single millisecond, not the
+  one-second window an earlier draft of this fix tolerated.
+  **Corrected 2026-09-25, revised again once shipped:** the field compared here was originally
+  `token.iat`. A whole-branch review measured that `@auth/core`'s JWT-strategy session action
+  calls `jwt.encode` — and therefore re-stamps `iat` to the current time via jose's
+  `.setIssuedAt()` — on _every_ session read, not only at `updateAge` rotation (see the
+  corrected measurement above). A revoked cookie compared against `iat` was refused once, came
+  back from that same response with a freshly stamped `iat`, and was admitted on every request
+  after that — escaping the revocation this section exists to provide (GHSA-h32c-m6mx-pmw6).
+  `authTime` is a separate claim, stamped once in `callbacks.jwt` at sign-in (the only call
+  where `user` is defined) and never rewritten, so it survives re-encode intact. An earlier
+  version of this fix kept a `?? iat` fallback in the `session` callback's comparison "only for
+  sessions already live before this correction shipped" — that fallback was itself the escape it
+  was meant to guard against, since `iat` is exactly the moving value `@auth/core` rewrites, and
+  it does not exist in what shipped. Instead, the `jwt` callback backfills `authTime` for every
+  legacy token (from its original, pre-re-encode `iat`, converted to milliseconds, or
+  `Date.now()` if neither is usable) the first time that token is decoded post-deploy, before
+  `session` ever sees it — so there is no live code path left that needs to fall back to `iat`.
+- **Missing or unusable `authTime`:** fail open (decision 2) but log at error level. The probe
+  showed the `jwt` callback backfills `authTime` for every token, sign-in or legacy, so its
+  absence at `session` time means an assumption has broken and should be loud rather than
+  silent — see the clock skew note below for the one case where fail-open does not hold.
 - **Invalidation mechanism:** when the compared issue-time is older than the floor, **`user` is
   removed from the returned session**. `requireUser()`, `requireUserOrRedirect()` and
   `authorized()` all test `session?.user`, so one action invalidates every consumer.
@@ -171,9 +184,9 @@ holding.
 
 ## 5 — Regression coverage
 
-- **Unit:** the issue-time comparison — `iat` older than the floor, newer, exactly equal (not
-  revoked), and no floor present at all; Redis
-  error ⇒ fail open; a missing or malformed `iat` ⇒ fail open with the reason logged.
+- **Unit:** the issue-time comparison — `authTime` older than the floor, newer, exactly equal
+  (not revoked), and no floor present at all; Redis
+  error ⇒ fail open; a missing or malformed `authTime` ⇒ fail open with the reason logged.
 - **Unit:** `authorized()` returns a redirect `Response` for an anonymous page request, a `401`
   for an anonymous API request, and `true` for public paths and authenticated requests.
 - **E2E:** a permanent guard automating GHSA-h32c-m6mx-pmw6's procedure. The procedure stays in
