@@ -44,13 +44,47 @@ describe("authConfig.session", () => {
     expect(result.user).toBeUndefined();
   });
 
-  it("falls back to iat for a legacy token minted before authTime existed", async () => {
+  it("passes undefined to isSessionRevoked when a token somehow has no authTime, rather than falling back to the moving iat", async () => {
+    // This should not happen in practice — the `jwt` callback backfills
+    // `authTime` for every legacy token before `session` ever runs — but the
+    // old `?? iat` fallback was exactly this escape (GHSA-h32c-m6mx-pmw6), so
+    // guard against it coming back. `isSessionRevoked` already fails open on
+    // `undefined`.
     isSessionRevoked.mockResolvedValue(false);
     const { authConfig } = await import("@/auth.config");
     const session = { user: { id: "", email: "a@b.c", name: null, role: "USER" }, expires: "" };
-    const token = { id: "u1", role: "USER", iat: 1000 };
+    const token = { id: "u1", role: "USER", iat: 9000 };
     await authConfig.callbacks!.session!({ session, token } as never);
-    expect(isSessionRevoked).toHaveBeenCalledWith("u1", 1000);
+    expect(isSessionRevoked).toHaveBeenCalledWith("u1", undefined);
+  });
+
+  it("revokes a legacy token once authTime is derived from its original iat, even after iat has moved forward on re-encode", async () => {
+    // Reproduces GHSA-h32c-m6mx-pmw6 end to end: a pre-deploy token has only
+    // `iat`. The `jwt` callback backfills `authTime` from that `iat` on its
+    // first post-deploy decode; a later re-encode (modeled here by mutating
+    // `iat` on the same token object, exactly as `@auth/core` does on
+    // Set-Cookie) must not disturb the frozen `authTime`. `session` must
+    // compare the frozen value, not the moved one — with the old `?? iat`
+    // fallback this test fails because it calls `isSessionRevoked` with the
+    // moved value (9000), which the mock below treats as not revoked.
+    const { authConfig } = await import("@/auth.config");
+    const legacyToken = (await authConfig.callbacks!.jwt!({
+      token: { id: "u1", role: "USER", iat: 1000 },
+      user: undefined,
+    } as never)) as { authTime?: number; iat?: number };
+    expect(legacyToken.authTime).toBe(1_000_000); // 1000s captured once, in ms
+
+    // Simulate the re-encode @auth/core performs on the way out: `iat` moves
+    // forward, `authTime` is an ordinary token field and is carried through.
+    legacyToken.iat = 9000;
+
+    isSessionRevoked.mockImplementation((_userId: string, issued?: number) =>
+      Promise.resolve(issued === 1_000_000),
+    );
+    const session = { user: { id: "", email: "a@b.c", name: null, role: "USER" }, expires: "" };
+    const result = await authConfig.callbacks!.session!({ session, token: legacyToken } as never);
+    expect(isSessionRevoked).toHaveBeenCalledWith("u1", 1_000_000);
+    expect(result.user).toBeUndefined();
   });
 
   it("does not query revocation for a token without an id", async () => {
@@ -63,9 +97,9 @@ describe("authConfig.session", () => {
 });
 
 describe("authConfig.jwt", () => {
-  it("stamps authTime only at sign-in, when user is present", async () => {
+  it("stamps authTime in milliseconds only at sign-in, when user is present", async () => {
     const { authConfig } = await import("@/auth.config");
-    const before = Math.floor(Date.now() / 1000);
+    const before = Date.now();
     const token = (await authConfig.callbacks!.jwt!({
       token: {},
       user: { id: "u1", role: "USER" },
@@ -80,6 +114,25 @@ describe("authConfig.jwt", () => {
       user: undefined,
     } as never)) as { authTime?: number };
     expect(token.authTime).toBe(1000);
+  });
+
+  it("backfills authTime from iat (converted to ms) for a legacy token that has neither", async () => {
+    const { authConfig } = await import("@/auth.config");
+    const token = (await authConfig.callbacks!.jwt!({
+      token: { id: "u1", role: "USER", iat: 42 },
+      user: undefined,
+    } as never)) as { authTime?: number };
+    expect(token.authTime).toBe(42_000);
+  });
+
+  it("backfills authTime from Date.now() for a token with neither authTime nor a usable iat", async () => {
+    const { authConfig } = await import("@/auth.config");
+    const before = Date.now();
+    const token = (await authConfig.callbacks!.jwt!({
+      token: { id: "u1", role: "USER" },
+      user: undefined,
+    } as never)) as { authTime?: number };
+    expect(token.authTime).toBeGreaterThanOrEqual(before);
   });
 });
 

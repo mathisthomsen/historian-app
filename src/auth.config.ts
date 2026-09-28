@@ -36,29 +36,52 @@ export const authConfig: NextAuthConfig = {
         // Stamped only here, at sign-in — `user` is undefined on every other
         // call to this callback — and never touched again, so it survives
         // the unconditional re-encode below. See the `session` callback for
-        // why revocation compares against this instead of `iat`.
-        token.authTime = Math.floor(Date.now() / 1000);
+        // why revocation compares against this instead of `iat`. Milliseconds,
+        // not seconds — see `src/lib/session-revocation.ts` for why.
+        token.authTime = Date.now();
         if (user.projectId) token.projectId = user.projectId;
+      } else {
+        // Legacy sessions minted before `authTime` existed carry only `iat`.
+        // This callback receives the token as decoded from the incoming
+        // cookie, *before* `@auth/core` re-encodes it with a fresh `iat` — so
+        // `token.iat` here is still whatever was on the request's cookie, not
+        // a value this app has already bumped forward. `??=` fires exactly
+        // once per token: the first time this backfill runs, it freezes
+        // `authTime`, and every later re-encode carries that frozen value
+        // forward unchanged even though `iat` keeps moving. Without this, the
+        // `session` callback below would have nothing but the moving `iat` to
+        // compare, and a revoked cookie is re-admitted on its second request
+        // once that request's response re-encodes `iat` to `now`.
+        //
+        // Trade-off: a token with no usable `iat` at all falls back to
+        // `Date.now()`, i.e. treated as freshly issued and so not caught by
+        // any *existing* revocation floor. The alternative — epoch 0, always
+        // revoked — would lock out any session with a malformed token, which
+        // is the fail-closed outcome this design rejects; malformed-`iat` is
+        // not a case the probe (2026-09-24) has ever observed in practice.
+        const legacyToken = token as { authTime?: number; iat?: number };
+        legacyToken.authTime ??=
+          typeof legacyToken.iat === "number" ? legacyToken.iat * 1000 : Date.now();
       }
       return token;
     },
     async session({ session, token }) {
       const jwt = token as JWT;
-      // Revocation compares against `authTime`, not `iat`. Measured against
-      // the installed @auth/core: on the JWT strategy, `jwt.encode` re-signs
-      // the token on *every* session read (not only at `updateAge`
-      // rotation), and jose's `.setIssuedAt()` is called with no argument —
-      // so `iat` is overwritten with `now` on every read. A revoked cookie
-      // compared against `iat` would be refused once, come back with a
-      // freshly stamped `iat` on that same response's Set-Cookie, and pass
-      // on every request after that. `authTime` is set only when
-      // `callbacks.jwt` receives `user` (sign-in) and is never re-stamped,
-      // so it is stable across re-encode. `?? iat` is a deliberate fallback
-      // for tokens issued before this field existed — they are not treated
-      // as revoked, they simply age out within `maxAge` (30 days) like any
-      // other legacy token.
-      const issued =
-        (token as { authTime?: number; iat?: number }).authTime ?? (token as { iat?: number }).iat;
+      // Revocation compares against `authTime` only. Measured against the
+      // installed @auth/core: on the JWT strategy, `jwt.encode` re-signs the
+      // token on *every* session read (not only at `updateAge` rotation), and
+      // jose's `.setIssuedAt()` is called with no argument — so `iat` is
+      // overwritten with `now` on every read. A previous version of this
+      // callback fell back to `?? iat` for tokens without `authTime`; that
+      // fallback was itself the escape it was meant to guard against — `iat`
+      // is exactly the moving value @auth/core rewrites, so a revoked cookie
+      // was refused once, came back with a freshly stamped `iat`, and was
+      // admitted on every request after that (GHSA-h32c-m6mx-pmw6). The `jwt`
+      // callback above now backfills `authTime` for every legacy token before
+      // this callback ever sees it, so there is no case left where falling
+      // back to `iat` is needed — and no fallback here means one that
+      // silently reintroduces the escape.
+      const issued = (token as { authTime?: number }).authTime;
       // `jwt.id` is typed as required but that is not runtime-enforced; a
       // token without one must not turn into a Redis GET on a key that ends
       // in `:undefined`.
