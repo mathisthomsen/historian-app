@@ -115,7 +115,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   // because the old password is believed compromised, so this ends whatever
   // sessions that compromise created. Revoking before a failed write would sign
   // the user out of everything for a password that never actually changed.
-  await revokeSessionsBefore(resetRow.user_id, Math.floor(Date.now() / 1000));
+  await revokeSessionsBefore(resetRow.user_id, Date.now());
 
   return NextResponse.json({ message: "auth.reset.success" });
 }

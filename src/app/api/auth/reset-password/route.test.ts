@@ -60,7 +60,7 @@ describe("POST /api/auth/reset-password", () => {
   });
 
   it("revokes sessions minted before the reset once the new password is persisted", async () => {
-    const before = Math.floor(Date.now() / 1000);
+    const before = Date.now();
     mockPasswordResetFindUnique.mockResolvedValue({
       id: "reset-1",
       user_id: "user-1",
@@ -74,9 +74,9 @@ describe("POST /api/auth/reset-password", () => {
     expect(res.status).toBe(200);
     expect(mockTransaction).toHaveBeenCalledOnce();
     expect(mockRevokeSessionsBefore).toHaveBeenCalledOnce();
-    const [userId, atSeconds] = mockRevokeSessionsBefore.mock.calls[0] as [string, number];
+    const [userId, atMs] = mockRevokeSessionsBefore.mock.calls[0] as [string, number];
     expect(userId).toBe("user-1");
-    expect(atSeconds).toBeGreaterThanOrEqual(before);
+    expect(atMs).toBeGreaterThanOrEqual(before);
 
     // Placement: revocation must not race the write it depends on.
     const transactionOrder = mockTransaction.mock.invocationCallOrder[0]!;

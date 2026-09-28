@@ -36,10 +36,24 @@ describe("isSessionRevoked", () => {
     expect(await isSessionRevoked("u1", 2001)).toBe(false);
   });
 
-  it("does not revoke on an exact tie, so a login in the same second survives its own logout", async () => {
+  it("does not revoke on an exact millisecond tie, so a login in the same instant survives its own logout", async () => {
     const { isSessionRevoked } = await import("@/lib/session-revocation");
     get.mockResolvedValue(2000);
     expect(await isSessionRevoked("u1", 2000)).toBe(false);
+  });
+
+  it("distinguishes a session created and signed out within the same second, because both values are millisecond-precision", async () => {
+    // Both truncate to the same unix *second* (1700000000) — at
+    // second-precision this would be an exact tie, and the tie favours the
+    // session (see the test above), so a session created and revoked within
+    // the same second would survive for its full 30-day lifetime. At
+    // millisecond precision they are 456ms apart and the strict `<` resolves
+    // correctly.
+    const { isSessionRevoked } = await import("@/lib/session-revocation");
+    const authTimeMs = 1_700_000_000_123;
+    const floorMs = 1_700_000_000_579;
+    get.mockResolvedValue(floorMs);
+    expect(await isSessionRevoked("u1", authTimeMs)).toBe(true);
   });
 
   it("fails open when Redis throws", async () => {
@@ -55,7 +69,7 @@ describe("isSessionRevoked", () => {
     expect(await isSessionRevoked("u1", 1)).toBe(false);
   });
 
-  it("fails open and logs when iat is absent, because the probe showed it is always present", async () => {
+  it("fails open and logs when issuedAtMs is absent, because the probe showed authTime is always present", async () => {
     const { isSessionRevoked } = await import("@/lib/session-revocation");
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(await isSessionRevoked("u1", undefined)).toBe(false);

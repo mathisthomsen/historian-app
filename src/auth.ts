@@ -166,7 +166,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         console.error("[auth] signOut event carried no user id; sessions not revoked");
         return;
       }
-      await revokeSessionsBefore(userId, Math.floor(Date.now() / 1000));
+      await revokeSessionsBefore(userId, Date.now());
     },
   },
 });

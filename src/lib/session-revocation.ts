@@ -26,26 +26,48 @@ function client(): Redis | null {
   }
 }
 
-/** Invalidate every session for `userId` issued before `atSeconds` (unix seconds). */
-export async function revokeSessionsBefore(userId: string, atSeconds: number): Promise<void> {
+/**
+ * Invalidate every session for `userId` issued before `atMs` (epoch
+ * milliseconds).
+ *
+ * Milliseconds, not seconds: the comparison in `isSessionRevoked` is strict
+ * (`<`), deliberately, so that a login in the same second as a logout does
+ * not revoke itself. At second precision that strictness instead lets a
+ * session created and signed out within the same second survive for its
+ * full lifetime — `authTime === floor` ties, and the tie favours the
+ * session. Millisecond precision makes that window a millisecond instead of
+ * a second.
+ */
+export async function revokeSessionsBefore(userId: string, atMs: number): Promise<void> {
   const redis = client();
   if (!redis) {
     console.error("[session-revocation] Redis unavailable; sign-out did not revoke", { userId });
     return;
   }
   try {
-    await redis.set(sessionRevocationKey(userId), atSeconds, { ex: TTL_SECONDS });
+    await redis.set(sessionRevocationKey(userId), atMs, { ex: TTL_SECONDS });
   } catch (error) {
     console.error("[session-revocation] failed to write revocation floor", { userId, error });
   }
 }
 
-/** True when this token was issued before the user's revocation floor. Fails open. */
-export async function isSessionRevoked(userId: string, iat: number | undefined): Promise<boolean> {
-  if (typeof iat !== "number" || !Number.isFinite(iat)) {
-    // next-auth issues `iat` on every token (measured 2026-09-24). Its absence
-    // means an assumption has broken; be loud rather than silently permissive.
-    console.error("[session-revocation] token has no usable iat; failing open", { userId, iat });
+/**
+ * True when this token was issued (`issuedAtMs`, epoch milliseconds — the
+ * token's `authTime`, see `auth.config.ts`) before the user's revocation
+ * floor. Fails open.
+ */
+export async function isSessionRevoked(
+  userId: string,
+  issuedAtMs: number | undefined,
+): Promise<boolean> {
+  if (typeof issuedAtMs !== "number" || !Number.isFinite(issuedAtMs)) {
+    // `auth.config.ts`'s `jwt` callback stamps `authTime` on every token,
+    // sign-in or legacy backfill (measured 2026-09-24). Its absence means an
+    // assumption has broken; be loud rather than silently permissive.
+    console.error("[session-revocation] token has no usable authTime; failing open", {
+      userId,
+      issuedAtMs,
+    });
     return false;
   }
   const redis = client();
@@ -53,7 +75,7 @@ export async function isSessionRevoked(userId: string, iat: number | undefined):
   try {
     const floor = await redis.get<number | string>(sessionRevocationKey(userId));
     if (floor === null || floor === undefined) return false;
-    return iat < Number(floor);
+    return issuedAtMs < Number(floor);
   } catch (error) {
     console.error("[session-revocation] floor unreadable; failing open", { userId, error });
     return false;
