@@ -85,17 +85,34 @@ describe("isSessionRevoked", () => {
     spy.mockRestore();
   });
 
-  it("refreshes the floor's TTL to the full 30 days on a revoked hit", async () => {
+  it("refreshes the floor's TTL to 31 days (maxAge plus a day of margin) on a revoked hit", async () => {
     // Every rejected request still returns a re-encoded cookie with a fresh
     // `exp`, so a client that keeps polling with a revoked token keeps that
     // token alive indefinitely. Without refreshing the floor's own TTL on
-    // each revoked hit, the floor (30-day TTL) could lapse before the
-    // token's own `exp` stops moving, and the next request after that would
-    // authenticate successfully.
+    // each revoked hit, the floor could lapse before the token's own `exp`
+    // stops moving, and the next request after that would authenticate
+    // successfully.
     const { isSessionRevoked } = await import("@/lib/session-revocation");
     get.mockResolvedValue(2000);
     expect(await isSessionRevoked("u1", 1999)).toBe(true);
-    expect(expireMock).toHaveBeenCalledWith("session:revoked-before:test-ns:u1", 30 * 24 * 60 * 60);
+    expect(expireMock).toHaveBeenCalledWith(
+      "session:revoked-before:test-ns:u1",
+      30 * 24 * 60 * 60 + 24 * 60 * 60,
+    );
+  });
+
+  it("keeps the floor's TTL strictly greater than session maxAge, so it cannot be tidied back to exactly maxAge", async () => {
+    // FIX 2 (PR #128 round 2): the EXPIRE/SET-EX below completes inside the
+    // `session` callback, before Auth.js re-encodes the response and stamps
+    // the cookie's new `exp`. If that encode crosses a second boundary, a
+    // TTL of exactly maxAge lets the cookie outlive the Redis key, and in
+    // that window an otherwise-revoked token is admitted. Any margin closes
+    // it; this test only pins that the margin exists, not its exact size.
+    const { isSessionRevoked } = await import("@/lib/session-revocation");
+    get.mockResolvedValue(2000);
+    await isSessionRevoked("u1", 1999);
+    const ttlUsed = expireMock.mock.calls[0]?.[1] as number;
+    expect(ttlUsed).toBeGreaterThan(30 * 24 * 60 * 60);
   });
 
   it("does not touch the floor's TTL on a non-revoked hit", async () => {
@@ -144,7 +161,7 @@ describe("revokeSessionsBefore", () => {
     expect(script).toContain('redis.call("GET"');
     expect(script).toContain('redis.call("SET"');
     expect(keys).toEqual(["session:revoked-before:test-ns:u1"]);
-    expect(args).toEqual([1234, 30 * 24 * 60 * 60]);
+    expect(args).toEqual([1234, 30 * 24 * 60 * 60 + 24 * 60 * 60]);
   });
 
   it("does not throw when Redis is unavailable", async () => {

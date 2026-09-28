@@ -2,8 +2,27 @@ import { Redis } from "@upstash/redis";
 
 import { sessionRevocationKey } from "./session-revocation-key";
 
-/** Equal to `authConfig.session.maxAge`: past it, no token issued before the floor can still be valid. */
-const TTL_SECONDS = 30 * 24 * 60 * 60;
+/** `authConfig.session.maxAge`: the cookie lifetime the revocation floor's TTL must outlive. */
+const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
+/**
+ * Margin the floor's TTL keeps beyond `SESSION_MAX_AGE_SECONDS`.
+ *
+ * The `EXPIRE`/`SET ... EX` calls below complete inside the `session`
+ * callback, *before* Auth.js re-encodes the response and stamps the cookie's
+ * new `exp`. If that encode crosses a second boundary, the cookie's expiry
+ * ends up a moment later than the Redis key's — and in that end-of-life
+ * window the floor has already vanished, so an otherwise-revoked token is
+ * admitted (and its floor-refresh logic re-arms the same gap on every poll
+ * after that). A day of margin makes that boundary-crossing race
+ * unreachable in practice and costs nothing: the floor is a single Redis
+ * key, and a day of extra TTL on it is not a meaningful resource. Do not
+ * "simplify" this back to exactly `SESSION_MAX_AGE_SECONDS` — that is the
+ * defect this constant fixes.
+ */
+const TTL_MARGIN_SECONDS = 24 * 60 * 60;
+
+const TTL_SECONDS = SESSION_MAX_AGE_SECONDS + TTL_MARGIN_SECONDS;
 
 /**
  * Own client, env read inside the function.
