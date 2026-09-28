@@ -195,6 +195,47 @@ the surrounding code, adding abstractions, or "while I'm here" improvements all
 enlarge the diff and the next review. If a fix wants to be big, that is a
 signal to file it rather than write it.
 
+## What a spec and a plan must carry
+
+Two sections, because two specific failures keep recurring and both are cheap to prevent.
+
+### A third-party assumptions list
+
+Every claim the design rests on about a **library's** behaviour, stated explicitly and marked
+**measured** or **assumed**. Not the claims you verified — the ones you did not.
+
+Epic 2.7's central defect was one unstated line: *`iat` is a stable issue time*. It is not —
+`@auth/core` rewrites it on every session read. Revocation therefore compared against a value
+the library moves, so a captured token was refused once and admitted on every request after
+that. Six task reviews, a whole-branch review and a scoped re-review all passed, because the
+code was correct at the callback boundary and every test constructed its own token. The wrong
+belief never appeared anywhere a reviewer could look at it.
+
+A plan that has to enumerate its assumptions puts that sentence in front of someone with
+nothing else competing for attention.
+
+### A blast-radius line that sets test scope
+
+State what the change affects **beyond the files it touches**, and derive the test scope from
+that rather than from the diff.
+
+The same epic changed `authorized()`, which gates every path in the application. Every review
+ran the two E2E specs the epic touched; `e2e/smoke.spec.ts` asserts anonymous 404 behaviour,
+and anonymous visitors to unknown URLs had started getting a login redirect instead. CI caught
+it on the first run. The scoping that made each review cheap is exactly what hid it.
+
+When a change alters a cross-cutting gate — auth, middleware, routing, a shared layout — the
+relevant test scope is the whole suite, not the diff.
+
+### Reviewing the plan before the implementation
+
+Worth doing for work touching authentication, data integrity or multi-tenancy. It only helps
+if the plan ships in a pull request **without** the implementation — otherwise the code crowds
+it out. Measured on PR #128: the plan was in the diff and the automated reviewer did comment on
+it, but only about where the file lived, never about the design it described.
+
+Not worth an extra round trip for UI work or anything whose failure mode is visible on screen.
+
 ## Measure, don't infer
 
 When a claim can be tested, test it before acting on it, writing it into an issue,
