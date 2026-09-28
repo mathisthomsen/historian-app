@@ -1,5 +1,27 @@
+import { createHash } from "crypto";
+
 import { isProductionDeployment } from "./deployment-env";
 import { redis } from "./redis";
+
+/**
+ * Redacts a cache key (or prefix) for logging.
+ *
+ * Cache keys embed raw user-supplied search text — a person's name, an event
+ * title, a source title (see src/app/api/persons/route.ts,
+ * src/app/api/events/route.ts, src/app/api/sources/route.ts) — for a research
+ * tool built around historical people. Logging a key verbatim on a Redis
+ * failure would write what a user searched for into application logs, which
+ * have their own retention and access policy, not the app's. A truncated
+ * SHA-256 hash keeps the diagnostic value a log reader actually needs —
+ * matching repeated failures for the same key, or correlating with a key
+ * printed elsewhere in a debugging session — without reproducing what was
+ * typed. It is not a secret store, so a plain (non-HMAC) hash is sufficient:
+ * nothing here needs to resist a dictionary attack, only avoid printing the
+ * text outright.
+ */
+function redactKey(key: string): string {
+  return createHash("sha256").update(key).digest("hex").slice(0, 16);
+}
 
 /**
  * Optional per-environment key namespace, inserted after the "cache:" prefix.
@@ -56,7 +78,7 @@ export const cache = {
     try {
       return await redis.get<T>(cacheKey(key));
     } catch (error) {
-      console.error("[cache] get failed", { key, error });
+      console.error("[cache] get failed", { key: redactKey(key), error });
       return null;
     }
   },
@@ -65,7 +87,7 @@ export const cache = {
     try {
       await redis.set(cacheKey(key), value, { ex: ttlSeconds });
     } catch (error) {
-      console.error("[cache] set failed", { key, error });
+      console.error("[cache] set failed", { key: redactKey(key), error });
     }
   },
 
@@ -73,7 +95,7 @@ export const cache = {
     try {
       await redis.del(cacheKey(key));
     } catch (error) {
-      console.error("[cache] del failed", { key, error });
+      console.error("[cache] del failed", { key: redactKey(key), error });
     }
   },
 
@@ -97,7 +119,7 @@ export const cache = {
         }
       } while (cursor !== "0");
     } catch (error) {
-      console.error("[cache] invalidateByPrefix failed", { prefix, error });
+      console.error("[cache] invalidateByPrefix failed", { prefix: redactKey(prefix), error });
     }
   },
 };

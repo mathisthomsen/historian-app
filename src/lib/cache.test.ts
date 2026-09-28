@@ -136,6 +136,71 @@ describe("cache.invalidateByPrefix", () => {
   });
 });
 
+describe("cache error logging redacts keys", () => {
+  // Cache keys embed raw user-supplied search text (a person's name, an event
+  // title, a source title — see src/app/api/persons/route.ts and friends).
+  // Logging one verbatim on a Redis failure would write what a user searched
+  // for into application logs. Each assertion below stands in for a real
+  // search string and must never appear in the logged fields.
+  const SEARCH_TEXT = "Alexander von Humboldt";
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("hashes the key instead of logging it verbatim on cache.get failure", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockGet.mockRejectedValue(new Error("Redis down"));
+    await cache.get(`person-list:proj:1:25:${SEARCH_TEXT}`);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    const loggedFields = errorSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(JSON.stringify(loggedFields)).not.toContain(SEARCH_TEXT);
+    expect(loggedFields["key"]).toMatch(/^[0-9a-f]{16}$/);
+    errorSpy.mockRestore();
+  });
+
+  it("hashes the key instead of logging it verbatim on cache.set failure", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockSet.mockRejectedValue(new Error("Redis down"));
+    await cache.set(`person-list:proj:1:25:${SEARCH_TEXT}`, {}, 60);
+    const loggedFields = errorSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(JSON.stringify(loggedFields)).not.toContain(SEARCH_TEXT);
+    expect(loggedFields["key"]).toMatch(/^[0-9a-f]{16}$/);
+    errorSpy.mockRestore();
+  });
+
+  it("hashes the key instead of logging it verbatim on cache.del failure", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockDel.mockRejectedValue(new Error("Redis down"));
+    await cache.del(`person-list:proj:1:25:${SEARCH_TEXT}`);
+    const loggedFields = errorSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(JSON.stringify(loggedFields)).not.toContain(SEARCH_TEXT);
+    expect(loggedFields["key"]).toMatch(/^[0-9a-f]{16}$/);
+    errorSpy.mockRestore();
+  });
+
+  it("hashes the prefix instead of logging it verbatim on invalidateByPrefix failure", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockScan.mockRejectedValue(new Error("Redis down"));
+    await cache.invalidateByPrefix(`person-list:proj:${SEARCH_TEXT}`);
+    const loggedFields = errorSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(JSON.stringify(loggedFields)).not.toContain(SEARCH_TEXT);
+    expect(loggedFields["prefix"]).toMatch(/^[0-9a-f]{16}$/);
+    errorSpy.mockRestore();
+  });
+
+  it("produces a stable hash so repeated failures for the same key can still be correlated in logs", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockGet.mockRejectedValue(new Error("Redis down"));
+    await cache.get("same-key");
+    await cache.get("same-key");
+    const first = (errorSpy.mock.calls[0]?.[1] as Record<string, unknown>)["key"];
+    const second = (errorSpy.mock.calls[1]?.[1] as Record<string, unknown>)["key"];
+    expect(first).toBe(second);
+    errorSpy.mockRestore();
+  });
+});
+
 describe("cache key namespace", () => {
   const ORIGINAL_NAMESPACE = process.env["CACHE_NAMESPACE"];
 
