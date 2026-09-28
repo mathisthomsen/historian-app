@@ -16,27 +16,20 @@ vi.mock("@/lib/redis", () => ({
   redis: {},
 }));
 
-// Next's global type augmentation declares NODE_ENV readonly, so tests that
-// need to flip it go through defineProperty rather than assignment.
-function setNodeEnv(value: string | undefined): void {
-  Object.defineProperty(process.env, "NODE_ENV", {
-    value,
-    configurable: true,
-    enumerable: true,
-    writable: true,
-  });
-}
-
 // rate-limit-key.ts is deliberately not mocked (see its own test file), so
 // createRedisRateLimiter().check() calls the real rateLimitPrefix() below.
 // Most of this file exercises the limiter itself, not the namespace guard —
-// pin NODE_ENV to "production" so those tests don't need RATELIMIT_NAMESPACE.
-// "rate-limit key namespace" overrides this per test; restore afterwards
-// since vitest can reuse this worker process for other test files.
-const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
-setNodeEnv("production");
+// pin VERCEL_ENV to "production" so those tests don't need RATELIMIT_NAMESPACE.
+// rateLimitPrefix() gates on VERCEL_ENV, not NODE_ENV (a `next start`
+// production build on a laptop is not a real deployment — see
+// deployment-env.ts). "rate-limit key namespace" overrides this per test;
+// restore afterwards since vitest can reuse this worker process for other
+// test files.
+const ORIGINAL_VERCEL_ENV = process.env["VERCEL_ENV"];
+process.env["VERCEL_ENV"] = "production";
 afterAll(() => {
-  setNodeEnv(ORIGINAL_NODE_ENV);
+  if (ORIGINAL_VERCEL_ENV === undefined) delete process.env["VERCEL_ENV"];
+  else process.env["VERCEL_ENV"] = ORIGINAL_VERCEL_ENV;
 });
 
 const { checkRateLimit, createRedisRateLimiter } = await import("@/lib/rate-limit");
@@ -191,8 +184,8 @@ describe("rate-limit key namespace", () => {
   afterEach(() => {
     if (ORIGINAL === undefined) delete process.env["RATELIMIT_NAMESPACE"];
     else process.env["RATELIMIT_NAMESPACE"] = ORIGINAL;
-    // Tests below override NODE_ENV; restore the file-level pin (see top).
-    setNodeEnv("production");
+    // Tests below override VERCEL_ENV; restore the file-level pin (see top).
+    process.env["VERCEL_ENV"] = "production";
   });
 
   it("writes under the bare prefix when no namespace is configured — production is its own key space", async () => {
@@ -220,7 +213,7 @@ describe("rate-limit key namespace", () => {
   // degraded 503-shaped result, not a thrown error escaping `.check()`.
   it("fails closed, rather than throwing out, when RATELIMIT_NAMESPACE is unset outside production", async () => {
     delete process.env["RATELIMIT_NAMESPACE"];
-    setNodeEnv("development");
+    delete process.env["VERCEL_ENV"];
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const result = await createRedisRateLimiter().check("k", 5, 60_000);
     expect(result.allowed).toBe(false);

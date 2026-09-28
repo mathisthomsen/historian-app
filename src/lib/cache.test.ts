@@ -15,27 +15,19 @@ vi.mock("@/lib/redis", () => ({
   },
 }));
 
-// Next's global type augmentation declares NODE_ENV readonly, so tests that
-// need to flip it go through defineProperty rather than assignment.
-function setNodeEnv(value: string | undefined): void {
-  Object.defineProperty(process.env, "NODE_ENV", {
-    value,
-    configurable: true,
-    enumerable: true,
-    writable: true,
-  });
-}
-
 // The generic redis-interaction tests below assert on bare "cache:..." keys —
 // that is production's key shape (dev and CI are required to set
 // CACHE_NAMESPACE; see the "cache key namespace" describe for that guard
-// itself). Pin NODE_ENV to "production" for this file so importing
-// @/lib/cache does not require CACHE_NAMESPACE, then restore it afterwards —
-// vitest can reuse this worker process for other test files.
-const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
-setNodeEnv("production");
+// itself). requireNamespace() gates on VERCEL_ENV, not NODE_ENV (a `next
+// start` production build on a laptop is not a real deployment — see
+// deployment-env.ts), so pin VERCEL_ENV to "production" for this file rather
+// than NODE_ENV, then restore it afterwards — vitest can reuse this worker
+// process for other test files.
+const ORIGINAL_VERCEL_ENV = process.env["VERCEL_ENV"];
+process.env["VERCEL_ENV"] = "production";
 afterAll(() => {
-  setNodeEnv(ORIGINAL_NODE_ENV);
+  if (ORIGINAL_VERCEL_ENV === undefined) delete process.env["VERCEL_ENV"];
+  else process.env["VERCEL_ENV"] = ORIGINAL_VERCEL_ENV;
 });
 
 // Import AFTER mocks are registered
@@ -150,9 +142,9 @@ describe("cache key namespace", () => {
   afterEach(() => {
     if (ORIGINAL_NAMESPACE === undefined) delete process.env["CACHE_NAMESPACE"];
     else process.env["CACHE_NAMESPACE"] = ORIGINAL_NAMESPACE;
-    // Each test below sets NODE_ENV explicitly; restore the file-level pin
+    // Each test below sets VERCEL_ENV explicitly; restore the file-level pin
     // (see top of file) rather than whatever a given test left behind.
-    setNodeEnv("production");
+    process.env["VERCEL_ENV"] = "production";
     vi.resetModules();
   });
 
@@ -185,7 +177,7 @@ describe("cache key namespace", () => {
   // unnamespaced local cache write lands in production's key space (#124).
   it("throws from requireNamespace() outside production when CACHE_NAMESPACE is unset", async () => {
     delete process.env["CACHE_NAMESPACE"];
-    setNodeEnv("development");
+    delete process.env["VERCEL_ENV"];
     vi.resetModules();
     const { requireNamespace } = await import("@/lib/cache");
     expect(() => requireNamespace()).toThrow(/CACHE_NAMESPACE/);
@@ -193,7 +185,7 @@ describe("cache key namespace", () => {
 
   it("treats an empty namespace as unset outside production, rather than producing a double colon", async () => {
     process.env["CACHE_NAMESPACE"] = "";
-    setNodeEnv("development");
+    delete process.env["VERCEL_ENV"];
     vi.resetModules();
     const { requireNamespace } = await import("@/lib/cache");
     expect(() => requireNamespace()).toThrow(/CACHE_NAMESPACE/);
@@ -203,7 +195,7 @@ describe("cache key namespace", () => {
     vi.resetAllMocks();
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     delete process.env["CACHE_NAMESPACE"];
-    setNodeEnv("development");
+    delete process.env["VERCEL_ENV"];
     vi.resetModules();
     const { cache: unnamespaced } = await import("@/lib/cache");
     const result = await unnamespaced.get("person-list:seed-project-demo:1:25");
@@ -219,7 +211,7 @@ describe("cache key namespace", () => {
   it("returns the bare key in production when CACHE_NAMESPACE is unset — production is its own key space", async () => {
     vi.resetAllMocks();
     delete process.env["CACHE_NAMESPACE"];
-    setNodeEnv("production");
+    process.env["VERCEL_ENV"] = "production";
     vi.resetModules();
     const { cache: unnamespaced, requireNamespace } = await import("@/lib/cache");
     expect(() => requireNamespace()).not.toThrow();

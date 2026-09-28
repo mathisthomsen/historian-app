@@ -1,3 +1,4 @@
+import { isProductionDeployment } from "./deployment-env";
 import { redis } from "./redis";
 
 /**
@@ -14,6 +15,12 @@ import { redis } from "./redis";
  * Upstash instance with every other run. Production keeps working
  * un-namespaced — that is its own key space, and always has been.
  *
+ * "Production" here means `isProductionDeployment()` (`VERCEL_ENV ===
+ * "production"`), not `NODE_ENV`: a `next start` production build on a
+ * laptop, and a Vercel preview, both have `NODE_ENV === "production"` but are
+ * not production — see `deployment-env.ts` for the full rationale. Preview is
+ * deliberately not exempted; it shares this Upstash instance too.
+ *
  * Checked lazily, inside `cacheKey()`, not at module scope: a module-scope
  * throw would break the build and every import, in every environment, which
  * is a worse outcome than the bug this guards against. Every call site below
@@ -23,7 +30,7 @@ import { redis } from "./redis";
  */
 export function requireNamespace(): string {
   const namespace = process.env.CACHE_NAMESPACE;
-  if (!namespace && process.env.NODE_ENV !== "production") {
+  if (!namespace && !isProductionDeployment()) {
     throw new Error(
       "cache: CACHE_NAMESPACE is not set. Refusing to build a key that would land " +
         "on production's cache — local development and production share one " +

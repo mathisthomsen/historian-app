@@ -1,10 +1,13 @@
+import { isProductionDeployment } from "./deployment-env";
+
 /**
  * Redis key namespacing for the rate limiter.
  *
- * Deliberately dependency-free: the E2E fixture helpers import this too, and
- * pulling in `./redis` there would construct an Upstash client just to learn a
- * string. Keeping the prefix in one place is what stops the app and the test
- * helpers from drifting onto different key spaces.
+ * Deliberately dependency-free of `./redis`: the E2E fixture helpers import
+ * this too, and pulling in `./redis` there would construct an Upstash client
+ * just to learn a string. `./deployment-env` is a pure function with no such
+ * cost, so it is safe to import here. Keeping the prefix in one place is what
+ * stops the app and the test helpers from drifting onto different key spaces.
  */
 
 /** The prefix `@upstash/ratelimit` uses by default, and what production writes under. */
@@ -29,11 +32,17 @@ export const RATE_LIMIT_BASE_PREFIX = "@upstash/ratelimit";
  * route and failing open would silently remove brute-force protection — so a
  * throw here degrades to a 503 with a logged reason. It does not crash the
  * request.
+ *
+ * "Production" here means `isProductionDeployment()` (`VERCEL_ENV ===
+ * "production"`), not `NODE_ENV`: a `next start` production build on a
+ * laptop, and a Vercel preview, both have `NODE_ENV === "production"` but are
+ * not production — see `deployment-env.ts`. Preview is deliberately not
+ * exempted; it shares this Upstash instance too.
  */
 export function rateLimitPrefix(
   namespace: string | undefined = process.env["RATELIMIT_NAMESPACE"],
 ): string {
-  if (!namespace && process.env["NODE_ENV"] !== "production") {
+  if (!namespace && !isProductionDeployment()) {
     throw new Error(
       "rateLimitPrefix: RATELIMIT_NAMESPACE is not set. Refusing to build a prefix " +
         "that would land on production's rate-limit buckets — local development " +

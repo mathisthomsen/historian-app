@@ -2,24 +2,14 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { RATE_LIMIT_BASE_PREFIX, purgeablePrefix, rateLimitPrefix } from "@/lib/rate-limit-key";
 
-// Next's global type augmentation declares NODE_ENV readonly, so tests that
-// need to flip it go through defineProperty rather than assignment.
-function setNodeEnv(value: string | undefined): void {
-  Object.defineProperty(process.env, "NODE_ENV", {
-    value,
-    configurable: true,
-    enumerable: true,
-    writable: true,
-  });
-}
-
 const ORIGINAL = process.env["RATELIMIT_NAMESPACE"];
-const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
+const ORIGINAL_VERCEL_ENV = process.env["VERCEL_ENV"];
 
 afterEach(() => {
   if (ORIGINAL === undefined) delete process.env["RATELIMIT_NAMESPACE"];
   else process.env["RATELIMIT_NAMESPACE"] = ORIGINAL;
-  setNodeEnv(ORIGINAL_NODE_ENV);
+  if (ORIGINAL_VERCEL_ENV === undefined) delete process.env["VERCEL_ENV"];
+  else process.env["VERCEL_ENV"] = ORIGINAL_VERCEL_ENV;
 });
 
 describe("rateLimitPrefix", () => {
@@ -29,18 +19,22 @@ describe("rateLimitPrefix", () => {
   // — values that collide across environments. Refusing to build an
   // unnamespaced prefix outside production is what stops a developer hammering
   // a form locally from spending a real user's rate-limit budget (#124).
+  //
+  // "Outside production" is `VERCEL_ENV !== "production"`, not `NODE_ENV` — a
+  // `next start` production build on a laptop also has `NODE_ENV ===
+  // "production"` and must not get a free pass (round 2 of #124).
   it("throws when no namespace is configured outside production", () => {
-    setNodeEnv("development");
+    delete process.env["VERCEL_ENV"];
     expect(() => rateLimitPrefix(undefined)).toThrow(/RATELIMIT_NAMESPACE/);
   });
 
   it("throws on an empty namespace outside production, rather than producing a trailing colon", () => {
-    setNodeEnv("development");
+    delete process.env["VERCEL_ENV"];
     expect(() => rateLimitPrefix("")).toThrow(/RATELIMIT_NAMESPACE/);
   });
 
   it("returns the bare prefix in production when no namespace is configured — production is its own key space", () => {
-    setNodeEnv("production");
+    process.env["VERCEL_ENV"] = "production";
     expect(rateLimitPrefix(undefined)).toBe(RATE_LIMIT_BASE_PREFIX);
   });
 
