@@ -13,10 +13,16 @@ beforeEach(() => {
   vi.clearAllMocks();
   process.env["KV_REST_API_URL"] = "https://example.upstash.io";
   process.env["KV_REST_API_TOKEN"] = "token";
-  delete process.env["CACHE_NAMESPACE"];
+  // This file is about revocation logic, not about the namespace guard added
+  // for #124 (see session-revocation-key.test.ts for that) — so pin a
+  // namespace here to keep `sessionRevocationKey` from throwing outside
+  // production. That guard's un-namespaced/non-production case is exercised
+  // separately below.
+  process.env["CACHE_NAMESPACE"] = "test-ns";
 });
 afterEach(() => {
   process.env = { ...ENV };
+  vi.unstubAllEnvs();
 });
 
 describe("isSessionRevoked", () => {
@@ -89,7 +95,7 @@ describe("isSessionRevoked", () => {
     const { isSessionRevoked } = await import("@/lib/session-revocation");
     get.mockResolvedValue(2000);
     expect(await isSessionRevoked("u1", 1999)).toBe(true);
-    expect(expireMock).toHaveBeenCalledWith("session:revoked-before:u1", 30 * 24 * 60 * 60);
+    expect(expireMock).toHaveBeenCalledWith("session:revoked-before:test-ns:u1", 30 * 24 * 60 * 60);
   });
 
   it("does not touch the floor's TTL on a non-revoked hit", async () => {
@@ -105,6 +111,17 @@ describe("isSessionRevoked", () => {
     expireMock.mockRejectedValue(new Error("upstash down"));
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(await isSessionRevoked("u1", 1999)).toBe(true);
+    spy.mockRestore();
+  });
+
+  it("fails open when CACHE_NAMESPACE is unset outside production, even though sessionRevocationKey itself throws (#124)", async () => {
+    delete process.env["CACHE_NAMESPACE"];
+    vi.stubEnv("NODE_ENV", "development");
+    const { isSessionRevoked } = await import("@/lib/session-revocation");
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await isSessionRevoked("u1", 1999)).toBe(false);
+    expect(get).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalled();
     spy.mockRestore();
   });
 });
@@ -126,7 +143,7 @@ describe("revokeSessionsBefore", () => {
     const [script, keys, args] = evalMock.mock.calls[0] as [string, string[], unknown[]];
     expect(script).toContain('redis.call("GET"');
     expect(script).toContain('redis.call("SET"');
-    expect(keys).toEqual(["session:revoked-before:u1"]);
+    expect(keys).toEqual(["session:revoked-before:test-ns:u1"]);
     expect(args).toEqual([1234, 30 * 24 * 60 * 60]);
   });
 
@@ -134,5 +151,20 @@ describe("revokeSessionsBefore", () => {
     const { revokeSessionsBefore } = await import("@/lib/session-revocation");
     evalMock.mockRejectedValue(new Error("upstash down"));
     await expect(revokeSessionsBefore("u1", 1234)).resolves.toBeUndefined();
+  });
+
+  it("fails open (does not throw out) when CACHE_NAMESPACE is unset outside production, even though sessionRevocationKey itself throws (#124)", async () => {
+    // sessionRevocationKey() refuses to build an un-namespaced key outside
+    // production. This runs inside the Edge session callback, so that throw
+    // must be contained here — never left to reach auth.config.ts or
+    // middleware.
+    delete process.env["CACHE_NAMESPACE"];
+    vi.stubEnv("NODE_ENV", "development");
+    const { revokeSessionsBefore } = await import("@/lib/session-revocation");
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(revokeSessionsBefore("u1", 1234)).resolves.toBeUndefined();
+    expect(evalMock).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
