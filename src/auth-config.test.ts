@@ -1,3 +1,7 @@
+import { readdirSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const isSessionRevoked = vi.fn();
@@ -136,6 +140,21 @@ describe("authConfig.jwt", () => {
   });
 });
 
+/**
+ * The ground truth for "which top-level segments are the authenticated app"
+ * is the filesystem, not a hand-maintained list in `authorized()` — so a
+ * route added under src/app/[locale]/(app)/ and forgotten in the gated-
+ * prefix list is left ungated at the edge instead of silently passing CI.
+ * (Same pattern as src/test/pages/marketing-seo.test.ts for robots.ts.)
+ */
+function protectedAppSegments(): string[] {
+  const testFileDir = path.dirname(fileURLToPath(import.meta.url));
+  const appDir = path.resolve(testFileDir, "app/[locale]/(app)");
+  return readdirSync(appDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+}
+
 describe("authConfig.authorized", () => {
   async function run(pathname: string, loggedIn: boolean) {
     const { authConfig } = await import("@/auth.config");
@@ -171,5 +190,29 @@ describe("authConfig.authorized", () => {
     const res = (await run("/api/persons", false)) as Response;
     expect(res.status).toBe(401);
     expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("lets an unknown path through so Next's catch-all route can 404 it (#128, TC-13)", async () => {
+    // This is the regression: a deny-list gates only known protected
+    // prefixes, so anything not on that list — including a path that does
+    // not exist at all — must fall through as `true` rather than redirect
+    // to login. An allow-list got this backwards and sent anonymous 404s to
+    // the login page instead.
+    expect(await run("/de/this-route-does-not-exist-xyz", false)).toBe(true);
+  });
+
+  it("gates every directory that actually exists under (app), not a hand-maintained copy of the list", async () => {
+    const segments = protectedAppSegments();
+    // Guard against the directory scan itself silently finding nothing — an
+    // empty list would make the loop below pass vacuously.
+    expect(segments.length).toBeGreaterThan(0);
+
+    for (const segment of segments) {
+      const result = await run(`/de/${segment}`, false);
+      expect(result, `expected /de/${segment} to redirect an anonymous visitor`).toBeInstanceOf(
+        Response,
+      );
+      expect((result as Response).status).toBe(307);
+    }
   });
 });

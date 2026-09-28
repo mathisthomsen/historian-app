@@ -5,16 +5,25 @@ import type { JWT } from "next-auth/jwt";
 
 import { isSessionRevoked } from "@/lib/session-revocation";
 
-const PUBLIC_PATHS = new Set([
-  "/auth/login",
-  "/auth/register",
-  "/auth/verify",
-  "/auth/forgot-password",
-  "/auth/reset-password",
-  "/changelog",
-  "/impressum",
-  "/datenschutz",
-  "/",
+// Every directory under `src/app/[locale]/(app)/` — the only protected route
+// group. Everything else under `[locale]/` is `(auth)`, `(marketing)`, `dev`,
+// or the `[...catchAll]` 404, and must fall through as public so an unknown
+// path reaches Next's 404 instead of demanding a login (#128, TC-13).
+//
+// This is a deny-list, and a deny-list fails open on omission: forgetting to
+// add a new protected directory here leaves it ungated at this layer. The
+// real defence is that every page under `(app)` calls
+// `requireUserOrRedirect()` itself — this list only decides whether an
+// anonymous visitor bounces at the edge or reaches the page and bounces
+// there. `auth-config.test.ts` reads this directory at runtime and fails the
+// suite if a new subdirectory is missing from this set.
+const GATED_PREFIXES = new Set([
+  "dashboard",
+  "events",
+  "persons",
+  "relations",
+  "settings",
+  "sources",
 ]);
 
 export const authConfig: NextAuthConfig = {
@@ -98,26 +107,28 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!session?.user;
       const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
 
-      // /dev/* stays public here; it is gated by the page's own build-time
-      // guard instead (audit S-L3), which returns 404 from any deployed build.
-      // Requiring a session would not add protection — the page holds no data —
-      // and would only make the dev-only route unusable without logging in.
-      const isPublic =
-        PUBLIC_PATHS.has(pathnameWithoutLocale) ||
-        pathnameWithoutLocale === "/" ||
-        pathnameWithoutLocale.startsWith("/api/auth") ||
-        pathnameWithoutLocale === "/api/health" ||
-        pathnameWithoutLocale.startsWith("/dev/");
-      if (isPublic) return true;
-      if (isLoggedIn) return true;
-
       // A boolean here is silently discarded by next-auth's dispatch when a
-      // handler is passed to `auth()` — which is why PUBLIC_PATHS had no
-      // runtime effect (#88). Only a Response is honoured.
+      // handler is passed to `auth()` — which is why an inert PUBLIC_PATHS
+      // list had no runtime effect (#88). Only a Response is honoured.
       if (pathnameWithoutLocale.startsWith("/api/")) {
+        if (
+          pathnameWithoutLocale.startsWith("/api/auth") ||
+          pathnameWithoutLocale === "/api/health"
+        ) {
+          return true;
+        }
+        if (isLoggedIn) return true;
         // Never redirect an API caller to an HTML login page.
         return Response.json({ error: "UNAUTHORIZED" }, { status: 401 });
       }
+
+      // Gate only the known protected prefixes (see GATED_PREFIXES above).
+      // Everything else — marketing, auth pages, /dev/*, and unknown paths —
+      // falls through so the catch-all route can 404 or render normally.
+      const firstSegment = pathnameWithoutLocale.split("/")[1] ?? "";
+      if (!GATED_PREFIXES.has(firstSegment)) return true;
+      if (isLoggedIn) return true;
+
       const locale = /^\/([a-z]{2})(\/|$)/.exec(pathname)?.[1] ?? "de";
       return NextResponse.redirect(new URL(`/${locale}/auth/login`, request.nextUrl));
     },
