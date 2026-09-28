@@ -1,5 +1,7 @@
 # Epic 2.7 — Session & Authorization Hardening — Implementation Plan
 
+> **Archived 2026-09-28:** task-by-task implementation plan for Epic 2.7; archived once the epic shipped. Kept for forensics only, not as authority — see `docs/archive/README.md`. The durable architectural record is `docs/specs/2-7-session-authorization-hardening/specification.md`, which stays in place.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make session invalidation and route-level authorization take effect at runtime, closing #103, #88 and #27 on a live public product.
