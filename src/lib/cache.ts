@@ -3,31 +3,53 @@ import { redis } from "./redis";
 /**
  * Optional per-environment key namespace, inserted after the "cache:" prefix.
  *
- * Unset in dev and production, so keys keep their historical shape. CI sets it
- * to a per-run value because every CI run now gets a *fresh, empty Neon branch*
- * but still shares one Upstash instance with every other run. Cache keys are
- * built from the seed project id, which is fixed (`seed-project-demo`), so
- * without a namespace a list response cached by the previous run — 60s TTL —
- * could be served against a database that has never contained those rows.
+ * Outside production, an unset namespace is an error, not a silent default:
+ * local development and production share **one** Upstash instance (measured —
+ * `.env.local` and `vercel env pull --environment=production` resolve to the
+ * same host), and cache keys are built from the seed project id, which is
+ * fixed (`seed-project-demo`) across environments. Without a namespace, a
+ * locally-cached list response can be served to production users and vice
+ * versa (#124). CI sets it to a per-run value for the same reason, plus its
+ * own: every CI run gets a *fresh, empty Neon branch* but still shares this
+ * Upstash instance with every other run. Production keeps working
+ * un-namespaced — that is its own key space, and always has been.
  *
- * Read once at module load: the value is identical at build and at runtime in
- * every environment that sets it, so Next inlining it is harmless.
+ * Checked lazily, inside `cacheKey()`, not at module scope: a module-scope
+ * throw would break the build and every import, in every environment, which
+ * is a worse outcome than the bug this guards against. Every call site below
+ * already wraps key construction in a try/catch that treats any failure as a
+ * cache miss (fail open, log loudly) — so the throw degrades a cache
+ * operation, it does not crash a page or route.
  */
-const NAMESPACE = process.env.CACHE_NAMESPACE ? `${process.env.CACHE_NAMESPACE}:` : "";
+export function requireNamespace(): string {
+  const namespace = process.env.CACHE_NAMESPACE;
+  if (!namespace && process.env.NODE_ENV !== "production") {
+    throw new Error(
+      "cache: CACHE_NAMESPACE is not set. Refusing to build a key that would land " +
+        "on production's cache — local development and production share one " +
+        "Upstash instance, and cache keys are built from a fixed seed project id. " +
+        "Set CACHE_NAMESPACE to a per-environment value (see README).",
+    );
+  }
+  return namespace ? `${namespace}:` : "";
+}
 
 /** Fully-qualified Redis key for an app-level cache entry. */
-const cacheKey = (key: string) => `cache:${NAMESPACE}${key}`;
+const cacheKey = (key: string) => `cache:${requireNamespace()}${key}`;
 
 /**
  * Application-level durable cache backed by Upstash Redis.
  * All keys use the "cache:" prefix to avoid collision with rate-limit keys.
- * All methods fail silently — cache misses/errors are non-fatal.
+ * All methods fail open — cache misses/errors (including a missing namespace
+ * outside production) are non-fatal, but are logged loudly rather than
+ * swallowed, so a misconfigured environment is discoverable.
  */
 export const cache = {
   async get<T>(key: string): Promise<T | null> {
     try {
       return await redis.get<T>(cacheKey(key));
-    } catch {
+    } catch (error) {
+      console.error("[cache] get failed", { key, error });
       return null;
     }
   },
@@ -35,13 +57,17 @@ export const cache = {
   async set<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
     try {
       await redis.set(cacheKey(key), value, { ex: ttlSeconds });
-    } catch {}
+    } catch (error) {
+      console.error("[cache] set failed", { key, error });
+    }
   },
 
   async del(key: string): Promise<void> {
     try {
       await redis.del(cacheKey(key));
-    } catch {}
+    } catch (error) {
+      console.error("[cache] del failed", { key, error });
+    }
   },
 
   /**
@@ -63,6 +89,8 @@ export const cache = {
           await redis.del(...(keys as [string, ...string[]]));
         }
       } while (cursor !== "0");
-    } catch {}
+    } catch (error) {
+      console.error("[cache] invalidateByPrefix failed", { prefix, error });
+    }
   },
 };

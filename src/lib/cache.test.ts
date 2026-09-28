@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mock for redis module — must be declared before the cache import
 const mockGet = vi.fn();
@@ -14,6 +14,29 @@ vi.mock("@/lib/redis", () => ({
     scan: mockScan,
   },
 }));
+
+// Next's global type augmentation declares NODE_ENV readonly, so tests that
+// need to flip it go through defineProperty rather than assignment.
+function setNodeEnv(value: string | undefined): void {
+  Object.defineProperty(process.env, "NODE_ENV", {
+    value,
+    configurable: true,
+    enumerable: true,
+    writable: true,
+  });
+}
+
+// The generic redis-interaction tests below assert on bare "cache:..." keys —
+// that is production's key shape (dev and CI are required to set
+// CACHE_NAMESPACE; see the "cache key namespace" describe for that guard
+// itself). Pin NODE_ENV to "production" for this file so importing
+// @/lib/cache does not require CACHE_NAMESPACE, then restore it afterwards —
+// vitest can reuse this worker process for other test files.
+const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
+setNodeEnv("production");
+afterAll(() => {
+  setNodeEnv(ORIGINAL_NODE_ENV);
+});
 
 // Import AFTER mocks are registered
 const { cache } = await import("@/lib/cache");
@@ -122,22 +145,15 @@ describe("cache.invalidateByPrefix", () => {
 });
 
 describe("cache key namespace", () => {
-  const ORIGINAL = process.env["CACHE_NAMESPACE"];
+  const ORIGINAL_NAMESPACE = process.env["CACHE_NAMESPACE"];
 
   afterEach(() => {
-    if (ORIGINAL === undefined) delete process.env["CACHE_NAMESPACE"];
-    else process.env["CACHE_NAMESPACE"] = ORIGINAL;
+    if (ORIGINAL_NAMESPACE === undefined) delete process.env["CACHE_NAMESPACE"];
+    else process.env["CACHE_NAMESPACE"] = ORIGINAL_NAMESPACE;
+    // Each test below sets NODE_ENV explicitly; restore the file-level pin
+    // (see top of file) rather than whatever a given test left behind.
+    setNodeEnv("production");
     vi.resetModules();
-  });
-
-  it("leaves keys unchanged when CACHE_NAMESPACE is unset, as in dev and production", async () => {
-    vi.resetAllMocks();
-    delete process.env["CACHE_NAMESPACE"];
-    vi.resetModules();
-    const { cache: unnamespaced } = await import("@/lib/cache");
-    mockGet.mockResolvedValue(null);
-    await unnamespaced.get("person-list:seed-project-demo:1:25");
-    expect(mockGet).toHaveBeenCalledWith("cache:person-list:seed-project-demo:1:25");
   });
 
   // Cache keys are built from the seed project id, which is fixed. Two CI runs
@@ -161,5 +177,54 @@ describe("cache key namespace", () => {
     const { cache: namespaced } = await import("@/lib/cache");
     await namespaced.set("k", { v: 1 }, 60);
     expect(mockSet).toHaveBeenCalledWith("cache:ci-42-1:k", { v: 1 }, { ex: 60 });
+  });
+
+  // Local development and production share one Upstash instance (measured —
+  // .env.local and `vercel env pull --environment=production` resolve to the
+  // same host). Cache keys are built from a fixed seed project id, so an
+  // unnamespaced local cache write lands in production's key space (#124).
+  it("throws from requireNamespace() outside production when CACHE_NAMESPACE is unset", async () => {
+    delete process.env["CACHE_NAMESPACE"];
+    setNodeEnv("development");
+    vi.resetModules();
+    const { requireNamespace } = await import("@/lib/cache");
+    expect(() => requireNamespace()).toThrow(/CACHE_NAMESPACE/);
+  });
+
+  it("treats an empty namespace as unset outside production, rather than producing a double colon", async () => {
+    process.env["CACHE_NAMESPACE"] = "";
+    setNodeEnv("development");
+    vi.resetModules();
+    const { requireNamespace } = await import("@/lib/cache");
+    expect(() => requireNamespace()).toThrow(/CACHE_NAMESPACE/);
+  });
+
+  it("degrades to a logged cache miss, rather than throwing out, when the public API hits the missing namespace", async () => {
+    vi.resetAllMocks();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    delete process.env["CACHE_NAMESPACE"];
+    setNodeEnv("development");
+    vi.resetModules();
+    const { cache: unnamespaced } = await import("@/lib/cache");
+    const result = await unnamespaced.get("person-list:seed-project-demo:1:25");
+    expect(result).toBeNull();
+    expect(mockGet).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[cache] get failed",
+      expect.objectContaining({ error: expect.any(Error) }),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("returns the bare key in production when CACHE_NAMESPACE is unset — production is its own key space", async () => {
+    vi.resetAllMocks();
+    delete process.env["CACHE_NAMESPACE"];
+    setNodeEnv("production");
+    vi.resetModules();
+    const { cache: unnamespaced, requireNamespace } = await import("@/lib/cache");
+    expect(() => requireNamespace()).not.toThrow();
+    mockGet.mockResolvedValue(null);
+    await unnamespaced.get("person-list:seed-project-demo:1:25");
+    expect(mockGet).toHaveBeenCalledWith("cache:person-list:seed-project-demo:1:25");
   });
 });

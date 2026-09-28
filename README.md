@@ -59,6 +59,15 @@ It refuses to reuse an already-running server so that its database and email
 configuration cannot be mistaken for the test configuration. `EMAIL_TRANSPORT`
 defaults to `resend`; use `stub` only for this local E2E workflow.
 
+`CACHE_NAMESPACE` and `RATELIMIT_NAMESPACE` are **required outside
+production** (`pnpm dev`, tests, CI) — set both to the same value, e.g.
+`local-dev`. Local development and production share one Upstash instance, and
+without these the app writes cache entries and rate-limit buckets into
+production's bare key space (#124); `src/lib/cache.ts` and
+`src/lib/rate-limit-key.ts` throw when either is unset outside production
+rather than doing that silently. Production itself must stay un-namespaced —
+that is its own key space.
+
 ---
 
 ## Scientific Background — Why the Data Model Looks Like This

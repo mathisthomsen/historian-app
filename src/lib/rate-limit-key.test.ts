@@ -2,24 +2,50 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { RATE_LIMIT_BASE_PREFIX, purgeablePrefix, rateLimitPrefix } from "@/lib/rate-limit-key";
 
+// Next's global type augmentation declares NODE_ENV readonly, so tests that
+// need to flip it go through defineProperty rather than assignment.
+function setNodeEnv(value: string | undefined): void {
+  Object.defineProperty(process.env, "NODE_ENV", {
+    value,
+    configurable: true,
+    enumerable: true,
+    writable: true,
+  });
+}
+
 const ORIGINAL = process.env["RATELIMIT_NAMESPACE"];
+const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 
 afterEach(() => {
   if (ORIGINAL === undefined) delete process.env["RATELIMIT_NAMESPACE"];
   else process.env["RATELIMIT_NAMESPACE"] = ORIGINAL;
+  setNodeEnv(ORIGINAL_NODE_ENV);
 });
 
 describe("rateLimitPrefix", () => {
-  it("returns the bare prefix when no namespace is configured", () => {
+  // Local development and production share one Upstash instance (measured —
+  // .env.local and `vercel env pull --environment=production` resolve to the
+  // same host), and rate-limit buckets are keyed by action and anonymised IP
+  // — values that collide across environments. Refusing to build an
+  // unnamespaced prefix outside production is what stops a developer hammering
+  // a form locally from spending a real user's rate-limit budget (#124).
+  it("throws when no namespace is configured outside production", () => {
+    setNodeEnv("development");
+    expect(() => rateLimitPrefix(undefined)).toThrow(/RATELIMIT_NAMESPACE/);
+  });
+
+  it("throws on an empty namespace outside production, rather than producing a trailing colon", () => {
+    setNodeEnv("development");
+    expect(() => rateLimitPrefix("")).toThrow(/RATELIMIT_NAMESPACE/);
+  });
+
+  it("returns the bare prefix in production when no namespace is configured — production is its own key space", () => {
+    setNodeEnv("production");
     expect(rateLimitPrefix(undefined)).toBe(RATE_LIMIT_BASE_PREFIX);
   });
 
   it("appends the namespace as a key segment when one is configured", () => {
     expect(rateLimitPrefix("ci-42-1")).toBe(`${RATE_LIMIT_BASE_PREFIX}:ci-42-1`);
-  });
-
-  it("treats an empty namespace as unset, rather than producing a trailing colon", () => {
-    expect(rateLimitPrefix("")).toBe(RATE_LIMIT_BASE_PREFIX);
   });
 
   it("reads RATELIMIT_NAMESPACE from the environment by default", () => {
