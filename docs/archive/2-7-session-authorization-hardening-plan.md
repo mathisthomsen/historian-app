@@ -638,7 +638,7 @@ test("anonymous API request gets 401, not a redirect", async ({ request }) => {
 
 Automates GHSA-h32c-m6mx-pmw6. **Reference the GHSA id only — do not restate the procedure in a comment.**
 
-Shape: sign in, capture the session cookie via `context.cookies()`, sign out through the UI, then issue a request in a _fresh_ context carrying the captured cookie and assert it is refused. Use `request.newContext()` so the signed-out browser context cannot mask the result.
+Defect class: a session token captured before sign-out remained valid until its cookie's own expiry (GHSA-h32c-m6mx-pmw6). Fix under test: the issue-time revocation floor in `src/lib/session-revocation.ts`, checked on every session read via `authConfig.callbacks.session`. See the advisory for the reproduction shape — it is deliberately not restated here.
 
 - [ ] **Step 4: Run against a local dev server**
 
