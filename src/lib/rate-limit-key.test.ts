@@ -23,7 +23,16 @@ describe("rateLimitPrefix", () => {
   // "Outside production" is `VERCEL_ENV !== "production"`, not `NODE_ENV` — a
   // `next start` production build on a laptop also has `NODE_ENV ===
   // "production"` and must not get a free pass (round 2 of #124).
+  //
+  // Each test below that means to exercise the "unset" path also deletes
+  // RATELIMIT_NAMESPACE itself, rather than relying on it happening to be
+  // absent from the runner's shell: passing `undefined` only reaches
+  // rateLimitPrefix()'s default parameter (which reads the env var) when no
+  // other value is supplied, so an ambient RATELIMIT_NAMESPACE — e.g. one a
+  // developer exported locally, per the README instruction this PR adds —
+  // would otherwise leak into these "unset" cases and flip their assertions.
   it("throws when no namespace is configured outside production", () => {
+    delete process.env["RATELIMIT_NAMESPACE"];
     delete process.env["VERCEL_ENV"];
     expect(() => rateLimitPrefix(undefined)).toThrow(/RATELIMIT_NAMESPACE/);
   });
@@ -34,6 +43,7 @@ describe("rateLimitPrefix", () => {
   });
 
   it("returns the bare prefix in production when no namespace is configured — production is its own key space", () => {
+    delete process.env["RATELIMIT_NAMESPACE"];
     process.env["VERCEL_ENV"] = "production";
     expect(rateLimitPrefix(undefined)).toBe(RATE_LIMIT_BASE_PREFIX);
   });
@@ -54,6 +64,10 @@ describe("purgeablePrefix", () => {
   // prefix, so refusing to build a purge target without a namespace is what
   // makes wiping them impossible rather than merely unlikely.
   it("throws when no namespace is configured, so unnamespaced keys can never be purged", () => {
+    // See the comment in the "rateLimitPrefix" describe above: `undefined`
+    // only reaches the default parameter (the env var) when the var is
+    // actually unset, so it must be deleted here rather than assumed absent.
+    delete process.env["RATELIMIT_NAMESPACE"];
     expect(() => purgeablePrefix(undefined)).toThrow(/namespace/i);
   });
 
