@@ -201,6 +201,17 @@ describe("authConfig.authorized", () => {
     expect(await run("/de/this-route-does-not-exist-xyz", false)).toBe(true);
   });
 
+  it("lets an unsupported locale through so [locale]/layout.tsx can 404 it, instead of redirecting to login (#127, #128 round 2)", async () => {
+    // The old regex stripped ANY two-letter segment, not just a supported
+    // one: `/fr/dashboard` became `/dashboard`, matched the `dashboard`
+    // gated prefix, and redirected to `/fr/auth/login` — the same class of
+    // regression TC-13 above fixed, in a narrower form the directory-
+    // enumeration guard below cannot see (it only probes `/de/<segment>`).
+    // Without that redirect, [locale]/layout.tsx rejects `fr` (it is not in
+    // routing.locales) and Next renders its 404 instead.
+    expect(await run("/fr/dashboard", false)).toBe(true);
+  });
+
   it("gates every directory that actually exists under (app), not a hand-maintained copy of the list", async () => {
     const segments = protectedAppSegments();
     // Guard against the directory scan itself silently finding nothing — an

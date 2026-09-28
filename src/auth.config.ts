@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 
+import { routing } from "@/i18n/routing";
 import { isSessionRevoked } from "@/lib/session-revocation";
 
 // Every directory under `src/app/[locale]/(app)/` — the only protected route
@@ -105,7 +106,22 @@ export const authConfig: NextAuthConfig = {
     authorized({ auth: session, request }) {
       const { pathname } = request.nextUrl;
       const isLoggedIn = !!session?.user;
-      const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
+
+      // Only strip a segment that is an actual supported locale. The old
+      // regex stripped any two-letter segment unconditionally, so
+      // `/fr/dashboard` became `/dashboard`, matched a gated prefix below,
+      // and redirected to `/fr/auth/login` — a class of unknown URLs that
+      // still redirected instead of falling through to
+      // `[locale]/layout.tsx`'s 404 (that layout checks the same
+      // `routing.locales` list). Fixes #127, folded into this PR because the
+      // regression it describes is a narrower case of the one fixed above.
+      const localeMatch = /^\/([a-z]{2})(\/|$)/.exec(pathname);
+      const requestedLocale = localeMatch?.[1];
+      const supportedLocales = routing.locales as readonly string[];
+      const isSupportedLocale = !!requestedLocale && supportedLocales.includes(requestedLocale);
+      const pathnameWithoutLocale = isSupportedLocale
+        ? pathname.replace(/^\/[a-z]{2}(\/|$)/, "/")
+        : pathname;
 
       // A boolean here is silently discarded by next-auth's dispatch when a
       // handler is passed to `auth()` — which is why an inert PUBLIC_PATHS
@@ -129,7 +145,10 @@ export const authConfig: NextAuthConfig = {
       if (!GATED_PREFIXES.has(firstSegment)) return true;
       if (isLoggedIn) return true;
 
-      const locale = /^\/([a-z]{2})(\/|$)/.exec(pathname)?.[1] ?? "de";
+      // Only reachable when isSupportedLocale is true (the gate above falls
+      // through otherwise), but validated explicitly rather than relied on,
+      // so this can never build a redirect target like `/fr/auth/login`.
+      const locale = isSupportedLocale ? requestedLocale : routing.defaultLocale;
       return NextResponse.redirect(new URL(`/${locale}/auth/login`, request.nextUrl));
     },
   },
