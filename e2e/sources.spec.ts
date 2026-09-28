@@ -325,6 +325,20 @@ test.describe("TC-SRC-03: Delete source from detail page", () => {
     // The deleted source should not be in the list
     await expect(page.getByText("Test Archivbrief 1848 (bearbeitet)")).not.toBeVisible();
 
+    // Let the post-delete navigation finish before starting another one.
+    //
+    // `waitForURL` above resolves when the URL changes, which under the App
+    // Router happens before the RSC stream for that page has finished. Calling
+    // `goto` in that window aborts the in-flight request, and Firefox surfaces
+    // it as `NS_BINDING_ABORTED` rather than navigating.
+    //
+    // The race is not new — Epic 2.7 added a Redis round trip to the session
+    // callback (measured: ~28% on this spec, tens of ms per request), which was
+    // enough to start losing it. The app's behaviour is correct; this test just
+    // never meant to assert anything about navigation timing. Latency itself is
+    // tracked in #125.
+    await page.waitForLoadState("networkidle");
+
     // Navigating directly should show 404
     await page.goto(`/de/sources/${sourceId}`);
     await expect(page.getByText(/nicht gefunden|not found/i).first()).toBeVisible();
