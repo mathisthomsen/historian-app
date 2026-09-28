@@ -109,13 +109,20 @@ export async function POST(request: Request): Promise<NextResponse> {
     }),
   ]);
 
-  await writeAuditLog({ action: "PASSWORD_RESET", userId: resetRow.user_id, request });
-
   // Only after the transaction above has committed: a reset is very often done
   // because the old password is believed compromised, so this ends whatever
   // sessions that compromise created. Revoking before a failed write would sign
   // the user out of everything for a password that never actually changed.
+  //
+  // Ordered before the audit write, not after: revocation never throws, but
+  // the audit write can (e.g. a transient DB error). If it ran first and
+  // then threw, the password would already be changed with old sessions
+  // still live and the caller told the request failed — the worst
+  // combination. Doing the fallible write last means a failure there never
+  // costs us the revocation.
   await revokeSessionsBefore(resetRow.user_id, Date.now());
+
+  await writeAuditLog({ action: "PASSWORD_RESET", userId: resetRow.user_id, request });
 
   return NextResponse.json({ message: "auth.reset.success" });
 }

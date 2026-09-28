@@ -136,4 +136,29 @@ describe("POST /api/auth/reset-password", () => {
     await expect(POST(request(validBody()))).rejects.toThrow("db unavailable");
     expect(mockRevokeSessionsBefore).not.toHaveBeenCalled();
   });
+
+  it("still revokes sessions when the audit write rejects, since revocation runs first", async () => {
+    // Regression for the ordering bug: revocation used to sit after
+    // writeAuditLog, so a fallible audit write throwing meant the password
+    // had already changed but no sessions were revoked, and the caller got
+    // a 500 anyway. Revocation now runs first — it never throws — so an
+    // audit failure can no longer cost us the revocation.
+    mockPasswordResetFindUnique.mockResolvedValue({
+      id: "reset-1",
+      user_id: "user-1",
+      token_hash: "hash:" + VALID_TOKEN,
+      used_at: null,
+      expires_at: new Date(Date.now() + 60_000),
+    });
+    mockWriteAuditLog.mockRejectedValue(new Error("audit db unavailable"));
+
+    await expect(POST(request(validBody()))).rejects.toThrow("audit db unavailable");
+
+    expect(mockRevokeSessionsBefore).toHaveBeenCalledOnce();
+    expect(mockRevokeSessionsBefore).toHaveBeenCalledWith("user-1", expect.any(Number));
+
+    const revokeOrder = mockRevokeSessionsBefore.mock.invocationCallOrder[0]!;
+    const auditOrder = mockWriteAuditLog.mock.invocationCallOrder[0]!;
+    expect(revokeOrder).toBeLessThan(auditOrder);
+  });
 });
