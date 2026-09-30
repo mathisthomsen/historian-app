@@ -115,11 +115,22 @@ Structure the spec with these sections (adapt as relevant to the epic):
 Every claim this design **would break if it were false**, each marked **measured** or
 **assumed**, with the file and line or the command and its output for anything measured.
 
-**The test is consequence, not ownership.** List an assumption if its falsity would change the
-design, weaken the security argument, or misdirect a production action. That threshold is what
-bounds the section: a runtime detail you merely happen to rely on, and whose falsity changes
-nothing here, does not belong in it. A sprawl of true-but-inert facts is the failure mode to
-avoid — it buries the two or three lines that carry the design.
+**The test is consequence, not ownership.** List an assumption when its falsity would
+**invalidate correctness, break the security argument, or misdirect a production action**.
+
+That is narrower than "would change the design", and deliberately so. Discovering that any
+chosen library, API or helper is unavailable changes *some* part of a design, so a
+change-the-design test readmits every dependency and rebuilds the wall of trivia. The
+distinction is between a premise the design is **built on** and a detail that merely needs
+**local substitution**:
+
+- *Load-bearing:* `@auth/core` re-signs the JWT on every session read. False → the revocation
+  comparison is meaningless and the security argument collapses. **List it.**
+- *Substitutable:* this date helper formats partial dates. False → swap the helper; nothing
+  about correctness or security moves. **Do not list it.**
+
+If you cannot name what breaks, it is not load-bearing. Two or three entries is a normal
+section; twenty means the test is being applied as "everything I depend on".
 
 Apply the test to anything, wherever it lives:
 
@@ -129,9 +140,10 @@ Apply the test to anything, wherever it lives:
   endpoint names, `vercel env ls` showing created rather than updated. See `CLAUDE.md`
   § "Measure, don't infer".
 - **Project state** — what has actually shipped, what a sibling branch deployed, which
-  environment an env var is set in. Internally owned, and still routinely wrong: this very
-  document was first written claiming Epic 2.7 had shipped a security fix while its PR was
-  still open. An ownership-scoped rule would have waved that through.
+  environment an env var is set in. Internally owned, and still routinely wrong: the first
+  draft of *this file* (`72320d1`, § 0) claimed Epic 2.7 "shipped a security fix" while PR #128
+  was still open. An ownership-scoped rule would have waved that through, because project state
+  is not something external.
 
 The section exists because Epic 2.7's session-hardening work rested on one unstated belief —
 `iat` is a stable issue time; `@auth/core` rewrites it on every session read. Six task reviews
@@ -143,13 +155,26 @@ sessions, and the external review on the PR caught that.
 
 Two things follow, and they are the argument for this section. A premise nothing forces you to
 write down is not reviewable — six reviews is not a substitute for one written line. And what
-caught it was not a more careful review but a review whose *method* differed, which is what
-§ 0b is for.
+broke through was not a more careful review but one whose *method* differed: a real browser
+instead of constructed tokens. Breadth of review did not help; a different kind of test did,
+which is why § 0b asks for the method and not only the scope.
 
 ## 0b. Blast radius and test scope
 What this change affects **beyond the files it touches**, and the test scope that follows from
 it. A change to a cross-cutting gate — auth, middleware, routing, a shared layout — has the
 whole suite as its scope, not the diff. Say which, and why.
+
+**Scope alone is not enough — name the method.** For each assumption in § 0, say what kind of
+test could actually observe it being false: which layer, and with which fixtures. Breadth does
+not substitute for this. A spec can correctly declare the whole suite in scope while every test
+in it constructs its own token, and a defect that only appears in a real session lifecycle will
+survive all of them.
+
+So state the method explicitly where it matters: *this must be exercised through a real
+browser session, not a constructed token* — or a real Redis round trip rather than a mock, a
+production build rather than a dev server. If an assumption in § 0 has no test that could
+falsify it, say that too; an unfalsifiable premise is worth knowing about before implementation
+rather than after.
 
 ## 1. Technology Stack
 Pinned versions table for everything introduced in this epic.

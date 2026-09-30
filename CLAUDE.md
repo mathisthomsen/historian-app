@@ -202,20 +202,29 @@ Two sections, because two specific failures keep recurring and both are cheap to
 ### A load-bearing assumptions list
 
 Every claim the design **would break if it were false**, stated explicitly and marked
-**measured** or **assumed**. Not the claims you verified; the ones you did not.
+**measured** or **assumed** — verified ones included, with the evidence beside them. The
+unverified entries carry the emphasis, because they are where the risk sits; they are not the
+only entries. Omitting a measured premise hides the fact that it was load-bearing at all, and
+the next person cannot tell a checked assumption from one nobody thought of.
 
 **Scope it by consequence, not by ownership.** An assumption belongs on the list when its
-falsity would change the design, weaken the security argument, or misdirect a production
-action — wherever the thing it describes lives. That threshold is also what keeps the list
-short: a fact you merely rely on, whose falsity changes nothing, is noise that buries the two
-or three lines carrying the design.
+falsity would **invalidate correctness, break the security argument, or misdirect a production
+action** — wherever the thing it describes lives.
+
+Not "would change the design": that readmits every dependency, since discovering any library is
+unavailable changes something. The line is between a premise the design is built on and a
+detail that needs only local substitution. If you cannot name what breaks, leave it out.
 
 Ownership is the wrong axis in both directions. Outward, the failures under "Measure, don't
 infer" below are mostly *platform* failures, so a library-only checklist misses them. Inward,
 **project state is internally owned and still routinely wrong** — what has actually shipped,
-what a sibling branch deployed, which environment a variable is set in. The first draft of
-this very section claimed Epic 2.7 had shipped a security fix while its PR was still open;
-scoped to things "you do not control", the rule would have waved that through.
+what a sibling branch deployed, which environment a variable is set in.
+
+The worked example is this rule's own first draft: `.claude/skills/spec.md` § 0, at commit
+`72320d1`, said Epic 2.7 "shipped a security fix" while PR #128 was still open. (This section
+of `CLAUDE.md` did not — it said "central defect"; the claim was the spec template's.) Scoped
+to things "you do not control", the rule would have waved it through, because a sibling PR's
+deployment state is not external to us.
 
 Epic 2.7's session-hardening work turned on one unstated line: *`iat` is a stable issue time*.
 It is not — `@auth/core` rewrites it on every session read. Revocation therefore compared
@@ -245,6 +254,14 @@ it on the first run. The scoping that made each review cheap is exactly what hid
 
 When a change alters a cross-cutting gate — auth, middleware, routing, a shared layout — the
 relevant test scope is the whole suite, not the diff.
+
+**Breadth is not enough on its own: name the method too.** For each assumption in the list
+above, say what kind of test could observe it being false — which layer, which fixtures. A spec
+can declare the whole suite in scope while every test in it constructs its own token, and a
+defect that only appears in a real session lifecycle survives all of them. That is what
+happened here: the `iat` assumption fell to a real browser, not to more tests. So where it
+matters, say it — *a real browser session rather than a constructed token, a real Redis round
+trip rather than a mock, a production build rather than a dev server.*
 
 ### Reviewing the plan before the implementation
 
