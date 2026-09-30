@@ -322,8 +322,39 @@ test.describe("TC-SRC-03: Delete source from detail page", () => {
     await page.waitForURL(/\/de\/sources$/, { timeout: 15_000 });
     await expect(page).toHaveURL(/\/de\/sources$/);
 
-    // The deleted source should not be in the list
-    await expect(page.getByText("Test Archivbrief 1848 (bearbeitet)")).not.toBeVisible();
+    // Wait for the list page itself to render before asserting anything about it.
+    //
+    // `waitForURL` resolves as soon as the URL changes, which under the App
+    // Router is before the RSC payload for that page has been received. Two
+    // things go wrong in that window: the absence assertion below passes
+    // vacuously against a page that has not rendered yet, and the `goto`
+    // further down aborts the still-in-flight request — firefox reports
+    // `NS_BINDING_ABORTED`, chromium simply hangs.
+    //
+    // The `h1` is rendered unconditionally by the list page (the search box is
+    // not — it is skipped in the empty state, so waiting on it would smuggle in
+    // an assumption about row counts). The detail page we came from has a
+    // different `h1`, so seeing this one proves the new page rendered.
+    //
+    // Not `networkidle`: it never settles on chromium in CI, and Playwright
+    // discourages it for exactly that reason.
+    //
+    // The race is pre-existing. Epic 2.7 added a Redis round trip to the
+    // session callback (+28% on this spec, measured) which was enough to start
+    // losing it; the app's behaviour is correct and the latency is tracked
+    // in #125.
+    await expect(page.getByRole("heading", { level: 1, name: "Quellen" })).toBeVisible({
+      timeout: 15_000,
+    });
+
+    // The deleted source should not be in the list.
+    //
+    // Assert on the id, not the title: titles are not unique. Earlier runs leave
+    // sources behind (#21), so `getByText(<title>)` matches every leftover with
+    // the same name and says nothing about the one this test deleted. Locally it
+    // resolved to two elements and failed strict mode; in CI, where each run gets
+    // a fresh database, it passed for the wrong reason.
+    await expect(page.locator(`a[href$="/sources/${sourceId}"]`)).toHaveCount(0);
 
     // Navigating directly should show 404
     await page.goto(`/de/sources/${sourceId}`);

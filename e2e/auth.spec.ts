@@ -1,38 +1,18 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
+import { loginAsAdmin, resetAuthState, SEED_EMAIL } from "./helpers/auth";
 import {
   createTestUser,
   deleteTestUser,
   insertTestResetToken,
   insertTestVerificationToken,
-  resetRateLimits,
 } from "./helpers/db";
 
 // Auth tests share the seeded admin user and password_resets table — run serially
 // to prevent TC-AUTH-14 (forgot-password) and TC-AUTH-15 (reset) from racing.
 test.describe.configure({ mode: "serial" });
 
-const SEED_EMAIL = "admin@evidoxa.dev";
-const SEED_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Demo1234!";
-
-// Helper: login with the seeded admin account
-async function loginAsAdmin(page: Page) {
-  await page.goto("/de/auth/login");
-  await page.getByLabel("E-Mail").fill(SEED_EMAIL);
-  await page.getByLabel("Passwort", { exact: true }).fill(SEED_PASSWORD);
-  await page.getByRole("button", { name: "Anmelden" }).click();
-  await page.waitForURL(/\/de\/dashboard/, { timeout: 15_000 });
-}
-
-// Clear cookies, localStorage, and rate-limit counters before each test so
-// sequential login attempts never exhaust the sliding-window budget.
-test.beforeEach(async ({ context, page }) => {
-  await resetRateLimits();
-  await context.clearCookies();
-  await page.addInitScript(() => {
-    window.localStorage.clear();
-  });
-});
+test.beforeEach(resetAuthState);
 
 // ---------------------------------------------------------------------------
 // TC-AUTH-01: Login page renders without AppShell
@@ -394,5 +374,58 @@ test.describe("TC-AUTH-19: i18n on auth pages", () => {
     await page.getByRole("button", { name: /^EN$/i }).first().click();
     await page.waitForURL(/\/en\/auth\/login/);
     await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TC-AUTH-20: Session fixation — login issues a fresh identifier
+//
+// next-auth's JWT `jti` is expected to be regenerated on every encode
+// (measured earlier in Epic 2.7) — which is exactly why it must be measured
+// here rather than assumed. A session cookie value that survived from a
+// prior authentication into a new one would be a fixation vulnerability: an
+// attacker who fixed a victim's pre-auth identifier could hijack the
+// resulting authenticated session. Kept in this file rather than
+// e2e/session-hardening.spec.ts because it exercises the same
+// login/sign-out cycle as TC-AUTH-08/13 above, not the replay guard's
+// cross-context API requests.
+// ---------------------------------------------------------------------------
+test.describe("TC-AUTH-20: Session fixation", () => {
+  test("logging in a second time issues a different session cookie value", async ({
+    page,
+    context,
+  }) => {
+    const sessionCookieValue = async () => {
+      const cookies = await context.cookies();
+      const sessionCookie = cookies.find((cookie) =>
+        /^(__Secure-)?(authjs|next-auth)\.session-token$/.test(cookie.name),
+      );
+      return sessionCookie?.value ?? "";
+    };
+
+    await loginAsAdmin(page);
+    const firstValue = await sessionCookieValue();
+    // Not vacuous: fails here first if login stopped setting a session cookie.
+    expect(firstValue).not.toBe("");
+
+    // Synchronise on the sign-out request itself, not the navigation it
+    // triggers (same reasoning as TC-AUTH-13 above).
+    const signOut = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/auth/signout" &&
+        response.request().method() === "POST",
+      { timeout: 10_000 },
+    );
+    await page.getByRole("button", { name: "Abmelden" }).click();
+    await signOut;
+    await page.waitForURL(/\/auth\/login/, { timeout: 10_000 });
+
+    await loginAsAdmin(page);
+    const secondValue = await sessionCookieValue();
+    expect(secondValue).not.toBe("");
+
+    // The property under test: a pre-authentication identifier must not
+    // survive authentication.
+    expect(secondValue).not.toBe(firstValue);
   });
 });
