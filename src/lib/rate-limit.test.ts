@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mock — must be before any import that resolves the rate-limit module
 const mockLimit = vi.fn();
@@ -15,6 +15,22 @@ vi.mock("@upstash/ratelimit", () => ({
 vi.mock("@/lib/redis", () => ({
   redis: {},
 }));
+
+// rate-limit-key.ts is deliberately not mocked (see its own test file), so
+// createRedisRateLimiter().check() calls the real rateLimitPrefix() below.
+// Most of this file exercises the limiter itself, not the namespace guard —
+// pin VERCEL_ENV to "production" so those tests don't need RATELIMIT_NAMESPACE.
+// rateLimitPrefix() gates on VERCEL_ENV, not NODE_ENV (a `next start`
+// production build on a laptop is not a real deployment — see
+// deployment-env.ts). "rate-limit key namespace" overrides this per test;
+// restore afterwards since vitest can reuse this worker process for other
+// test files.
+const ORIGINAL_VERCEL_ENV = process.env["VERCEL_ENV"];
+process.env["VERCEL_ENV"] = "production";
+afterAll(() => {
+  if (ORIGINAL_VERCEL_ENV === undefined) delete process.env["VERCEL_ENV"];
+  else process.env["VERCEL_ENV"] = ORIGINAL_VERCEL_ENV;
+});
 
 const { checkRateLimit, createRedisRateLimiter } = await import("@/lib/rate-limit");
 
@@ -168,9 +184,11 @@ describe("rate-limit key namespace", () => {
   afterEach(() => {
     if (ORIGINAL === undefined) delete process.env["RATELIMIT_NAMESPACE"];
     else process.env["RATELIMIT_NAMESPACE"] = ORIGINAL;
+    // Tests below override VERCEL_ENV; restore the file-level pin (see top).
+    process.env["VERCEL_ENV"] = "production";
   });
 
-  it("writes under the bare prefix when no namespace is configured", async () => {
+  it("writes under the bare prefix when no namespace is configured — production is its own key space", async () => {
     delete process.env["RATELIMIT_NAMESPACE"];
     await createRedisRateLimiter().check("k", 5, 60_000);
     expect(MockRatelimit).toHaveBeenCalledWith(
@@ -186,5 +204,25 @@ describe("rate-limit key namespace", () => {
     expect(MockRatelimit).toHaveBeenCalledWith(
       expect.objectContaining({ prefix: "@upstash/ratelimit:ci-42-1" }),
     );
+  });
+
+  // Local development shares the same Upstash instance as production (#124):
+  // outside production, an unset namespace must not silently build a prefix
+  // at all. createRedisRateLimiter() already fails CLOSED on any error (it is
+  // the only posture safe for an auth route), so the guard shows up here as a
+  // degraded 503-shaped result, not a thrown error escaping `.check()`.
+  it("fails closed, rather than throwing out, when RATELIMIT_NAMESPACE is unset outside production", async () => {
+    delete process.env["RATELIMIT_NAMESPACE"];
+    delete process.env["VERCEL_ENV"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await createRedisRateLimiter().check("k", 5, 60_000);
+    expect(result.allowed).toBe(false);
+    expect(result.degraded).toBe(true);
+    expect(MockRatelimit).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[rate-limit] limiter unavailable, failing closed",
+      expect.objectContaining({ error: expect.any(Error) }),
+    );
+    errorSpy.mockRestore();
   });
 });
