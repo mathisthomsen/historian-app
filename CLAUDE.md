@@ -199,24 +199,39 @@ signal to file it rather than write it.
 
 Two sections, because two specific failures keep recurring and both are cheap to prevent.
 
-### An external assumptions list
+### A load-bearing assumptions list
 
-Every claim the design rests on about code or infrastructure you do not control — libraries,
-hosting platforms, managed services, runtimes — stated explicitly and marked **measured** or
-**assumed**. Not the claims you verified; the ones you did not.
+Every claim the design **would break if it were false**, stated explicitly and marked
+**measured** or **assumed**. Not the claims you verified; the ones you did not.
 
-Not only libraries. The failures recorded under "Measure, don't infer" below are mostly about
-platforms, and a design can depend on one of those and still satisfy a library-only checklist.
+**Scope it by consequence, not by ownership.** An assumption belongs on the list when its
+falsity would change the design, weaken the security argument, or misdirect a production
+action — wherever the thing it describes lives. That threshold is also what keeps the list
+short: a fact you merely rely on, whose falsity changes nothing, is noise that buries the two
+or three lines carrying the design.
 
-Epic 2.7's session-hardening work turned on one unstated line: *`iat` is a stable issue time*. It is not —
-`@auth/core` rewrites it on every session read. Revocation therefore compared against a value
-the library moves, so a captured token was refused once and admitted on every request after
-that. Six task reviews, a whole-branch review and a scoped re-review all passed, because the
-code was correct at the callback boundary and every test constructed its own token. The wrong
-belief never appeared anywhere a reviewer could look at it.
+Ownership is the wrong axis in both directions. Outward, the failures under "Measure, don't
+infer" below are mostly *platform* failures, so a library-only checklist misses them. Inward,
+**project state is internally owned and still routinely wrong** — what has actually shipped,
+what a sibling branch deployed, which environment a variable is set in. The first draft of
+this very section claimed Epic 2.7 had shipped a security fix while its PR was still open;
+scoped to things "you do not control", the rule would have waved that through.
 
-A plan that has to enumerate its assumptions puts that sentence in front of someone with
-nothing else competing for attention.
+Epic 2.7's session-hardening work turned on one unstated line: *`iat` is a stable issue time*.
+It is not — `@auth/core` rewrites it on every session read. Revocation therefore compared
+against a value the library moves, so a captured token was refused once and admitted on every
+request after that.
+
+The review record, stated precisely, because the point depends on it: six task reviews passed
+over it — each task's code was correct at its own boundary and every test constructed its own
+token, so the belief never appeared anywhere a reviewer could look at it. The **whole-branch
+review caught it**, by exercising a real browser instead of constructed tokens. The first fix
+then carried a `?? iat` fallback that reopened the same hole for pre-existing sessions, and
+the **external review on the PR caught that**.
+
+So the lesson is not that reviews fail. It is that a premise nothing forces you to write down
+is not reviewable at all, and that what broke through was a review whose *method* differed —
+which is what the blast-radius line below is for.
 
 ### A blast-radius line that sets test scope
 

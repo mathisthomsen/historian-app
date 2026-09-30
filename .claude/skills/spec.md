@@ -111,21 +111,40 @@ Structure the spec with these sections (adapt as relevant to the epic):
 
 ---
 
-## 0. External assumptions
-Every claim this design rests on about code or infrastructure you do not control — **libraries,
-hosting platforms, managed services, runtimes** — each marked **measured** or **assumed**. The
-ones you did not verify matter more than the ones you did. Give the file and line, or the
-command and its output, for anything measured.
+## 0. Load-bearing assumptions
+Every claim this design **would break if it were false**, each marked **measured** or
+**assumed**, with the file and line or the command and its output for anything measured.
 
-Not only libraries: this repository's costliest measurement failures were about *platforms* —
-Vercel overwriting `X-Forwarded-For`, Neon branch identity not matching endpoint names,
-`vercel env ls` showing created rather than updated. See `CLAUDE.md` § "Measure, don't infer".
+**The test is consequence, not ownership.** List an assumption if its falsity would change the
+design, weaken the security argument, or misdirect a production action. That threshold is what
+bounds the section: a runtime detail you merely happen to rely on, and whose falsity changes
+nothing here, does not belong in it. A sprawl of true-but-inert facts is the failure mode to
+avoid — it buries the two or three lines that carry the design.
 
-The section exists because Epic 2.7's session-hardening work was built on one unstated belief
-(`iat` is a stable issue time; `@auth/core` rewrites it on every session read). Six task
-reviews passed over it — the code was correct at the callback boundary and every test
-constructed its own token — and it took a whole-branch review to find. Write the belief down
-and it becomes reviewable.
+Apply the test to anything, wherever it lives:
+
+- **Code and infrastructure you do not control** — libraries, hosting platforms, managed
+  services, runtimes. This repository's costliest failures were *platform* failures, not
+  library ones: Vercel overwriting `X-Forwarded-For`, Neon branch identity not matching
+  endpoint names, `vercel env ls` showing created rather than updated. See `CLAUDE.md`
+  § "Measure, don't infer".
+- **Project state** — what has actually shipped, what a sibling branch deployed, which
+  environment an env var is set in. Internally owned, and still routinely wrong: this very
+  document was first written claiming Epic 2.7 had shipped a security fix while its PR was
+  still open. An ownership-scoped rule would have waved that through.
+
+The section exists because Epic 2.7's session-hardening work rested on one unstated belief —
+`iat` is a stable issue time; `@auth/core` rewrites it on every session read. Six task reviews
+passed over it, because each task's code was correct at its own boundary and every test
+constructed its own token, so the belief never appeared anywhere a reviewer could look at it.
+The whole-branch review caught it, by exercising a real browser instead of constructed tokens;
+the first fix then carried a `?? iat` fallback that reopened the same hole for pre-existing
+sessions, and the external review on the PR caught that.
+
+Two things follow, and they are the argument for this section. A premise nothing forces you to
+write down is not reviewable — six reviews is not a substitute for one written line. And what
+caught it was not a more careful review but a review whose *method* differed, which is what
+§ 0b is for.
 
 ## 0b. Blast radius and test scope
 What this change affects **beyond the files it touches**, and the test scope that follows from
