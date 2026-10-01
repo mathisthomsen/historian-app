@@ -333,10 +333,10 @@ dependency.
   CI, showing a fully authenticated dashboard render immediately after `signOut` had already
   navigated to `/auth/login` — indistinguishable from a session surviving logout, which is why
   it was filed rather than dismissed. It was investigated alongside this epic and the leading
-  theory (the same client-side meta-refresh as #88) was **tested and falsified**, so it is
-  tracked independently at **#27** and does not gate this epic. The two readings of it —
-  slow redirect versus session outliving `signOut` — are both guarded by regression tests;
-  neither is explained.
+  theory (the same client-side meta-refresh as #88) was **tested and falsified**, so it sits
+  outside this epic's scope — see **#27** for its disposition, which is GitHub's to state, not
+  this document's. The two readings of it — slow redirect versus session outliving `signOut` —
+  are both covered by regression tests; neither is explained.
 - **Auth.js session fixation check:** carried over from Epic 5.4's security review — a
   distinct control from the three defects above (regenerating the session identifier after
   authentication, not logout invalidation or route gating). Verify next-auth issues a fresh
