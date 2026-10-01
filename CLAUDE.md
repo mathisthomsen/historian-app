@@ -195,6 +195,95 @@ the surrounding code, adding abstractions, or "while I'm here" improvements all
 enlarge the diff and the next review. If a fix wants to be big, that is a
 signal to file it rather than write it.
 
+## What a spec and a plan must carry
+
+Two sections, because two specific failures keep recurring and both are cheap to prevent.
+
+### A load-bearing assumptions list
+
+Every claim the design **would break if it were false**, stated explicitly and marked
+**measured** or **assumed** — verified ones included, with the evidence beside them. The
+unverified entries carry the emphasis, because they are where the risk sits; they are not the
+only entries. Omitting a measured premise hides the fact that it was load-bearing at all, and
+the next person cannot tell a checked assumption from one nobody thought of.
+
+**Scope it by consequence, not by ownership.** An assumption belongs on the list when its
+falsity would **invalidate correctness, break the security argument, or misdirect a production
+action** — wherever the thing it describes lives.
+
+Not "would change the design": that readmits every dependency, since discovering any library is
+unavailable changes something. The line is between a premise the design is built on and a
+detail that needs only local substitution. If you cannot name what breaks, leave it out.
+
+**For a security-relevant, destructive or production-bound premise, "assumed" is not an
+acceptable final state.** "Measure, don't infer" below makes measurement required for exactly
+those, and listing one as assumed does not satisfy that rule — it documents the gap. Measure it
+before implementation, or block the spec until it is measured. Elsewhere, **assumed** is honest
+and fine; the mark exists to make risk visible, not to forbid proceeding.
+
+Ownership is the wrong axis in both directions. Outward, the failures under "Measure, don't
+infer" below are mostly *platform* failures, so a library-only checklist misses them. Inward,
+**project state is internally owned and still routinely wrong** — what has actually shipped,
+what a sibling branch deployed, which environment a variable is set in.
+
+The worked example is this rule's own first draft: `.claude/skills/spec.md` § 0, at commit
+`72320d1`, said Epic 2.7 "shipped a security fix" while PR #128 was still open. (This section
+of `CLAUDE.md` did not — it said "central defect"; the claim was the spec template's.) Scoped
+to things "you do not control", the rule would have waved it through, because a sibling PR's
+deployment state is not external to us.
+
+Epic 2.7's session-hardening work turned on one unstated line: *`iat` is a stable issue time*.
+It is not — `@auth/core` rewrites it on every session read. Revocation therefore compared
+against a value the library moves, so a captured token was refused once and admitted on every
+request after that.
+
+The review record, stated precisely, because the point depends on it: six task reviews passed
+over it — each task's code was correct at its own boundary and every test constructed its own
+token, so the belief never appeared anywhere a reviewer could look at it. The **whole-branch
+review caught it**, by exercising a real browser instead of constructed tokens. The first fix
+then carried a `?? iat` fallback that reopened the same hole for pre-existing sessions, and
+the **external review on the PR caught that**.
+
+So the lesson is not that reviews fail. It is that a premise nothing forces you to write down
+is not reviewable at all, and that what broke through was a review whose *method* differed —
+which is what the blast-radius line below is for.
+
+### A blast-radius line that sets test scope
+
+State what the change affects **beyond the files it touches**, and derive the test scope from
+that rather than from the diff.
+
+The same epic changed `authorized()`, which gates every path in the application. Every review
+ran the two E2E specs the epic touched; `e2e/smoke.spec.ts` asserts anonymous 404 behaviour,
+and anonymous visitors to unknown URLs had started getting a login redirect instead. CI caught
+it on the first run. The scoping that made each review cheap is exactly what hid it.
+
+When a change alters a cross-cutting gate — auth, middleware, routing, a shared layout — the
+relevant test scope is the whole suite, not the diff.
+
+**Breadth is not enough on its own: name the method too.** For each assumption in the list
+above, say what kind of test could observe it being false — which layer, which fixtures. A spec
+can declare the whole suite in scope while every test in it constructs its own token, and a
+defect that only appears in a real session lifecycle survives all of them. That is what
+happened here: the `iat` assumption fell to a real browser, not to more tests. So where it
+matters, say it — *a real browser session rather than a constructed token, a real Redis round
+trip rather than a mock, a production build rather than a dev server.*
+
+**Name the instance and key space when the method uses a real dependency.** The `pnpm test` job
+holds real Upstash credentials and no `CACHE_NAMESPACE`/`RATELIMIT_NAMESPACE`. `cache.ts` and
+`rate-limit-key.ts` refuse to build a key in that state, but `src/lib/redis.ts` is the raw
+client and does not, so "use real Redis" without a namespace means writing to production's key
+space. An isolation-less method is worse than a mock.
+
+### Reviewing the plan before the implementation
+
+Worth doing for work touching authentication, data integrity or multi-tenancy. It only helps
+if the plan ships in a pull request **without** the implementation — otherwise the code crowds
+it out. Measured on PR #128: the plan was in the diff and the automated reviewer did comment on
+it, but only about where the file lived, never about the design it described.
+
+Not worth an extra round trip for UI work or anything whose failure mode is visible on screen.
+
 ## Measure, don't infer
 
 When a claim can be tested, test it before acting on it, writing it into an issue,

@@ -111,6 +111,100 @@ Structure the spec with these sections (adapt as relevant to the epic):
 
 ---
 
+## 0. Load-bearing assumptions
+Every claim this design **would break if it were false**, each marked **measured** or
+**assumed**, with the file and line or the command and its output for anything measured.
+
+**The test is consequence, not ownership.** List an assumption when its falsity would
+**invalidate correctness, break the security argument, or misdirect a production action**.
+
+That is narrower than "would change the design", and deliberately so. Discovering that any
+chosen library, API or helper is unavailable changes *some* part of a design, so a
+change-the-design test readmits every dependency and rebuilds the wall of trivia. The
+distinction is between a premise the design is **built on** and a detail that merely needs
+**local substitution**:
+
+- *Load-bearing:* **`iat` is a stable issue time.** False → the revocation comparison is
+  meaningless, a captured token is admitted, and the security argument collapses. **List it.**
+  (It *was* false: `@auth/core` re-signs the JWT on every session read.)
+- *Substitutable:* this date helper formats partial dates. False → swap the helper; nothing
+  about correctness or security moves. **Do not list it.**
+
+Note the direction, because it is easy to get backwards: the entry is the **belief you are
+relying on**, not the mechanism you later discovered. "`@auth/core` re-signs on every read" is
+a fact about the library — if *it* were false, the shipped `authTime` design would still be
+correct, so it fails the test. The premise that actually carried the original design, and
+invalidated it when false, was that `iat` does not move. Write the sentence whose falsity
+breaks you, not the finding that explained the break.
+
+If you cannot name what breaks, it is not load-bearing. Two or three entries is a normal
+section; twenty means the test is being applied as "everything I depend on".
+
+**"Assumed" is not a valid final state for a security-relevant, destructive or
+production-bound premise.** `CLAUDE.md` § "Measure, don't infer" makes measurement *required*
+rather than preferred for those, and this section does not relax it: such an entry must be
+measured before implementation starts, or the spec is blocked until it is. Marking one
+**assumed** and proceeding is precisely the Epic 2.7 failure with a label attached.
+
+For everything else, **assumed** is an honest and acceptable state — the point of the mark is
+to make the risk visible, not to force verification of every claim.
+
+Apply the test to anything, wherever it lives:
+
+- **Code and infrastructure you do not control** — libraries, hosting platforms, managed
+  services, runtimes. This repository's costliest failures were *platform* failures, not
+  library ones: Vercel overwriting `X-Forwarded-For`, Neon branch identity not matching
+  endpoint names, `vercel env ls` showing created rather than updated. See `CLAUDE.md`
+  § "Measure, don't infer".
+- **Project state** — what has actually shipped, what a sibling branch deployed, which
+  environment an env var is set in. Internally owned, and still routinely wrong: the first
+  draft of *this file* claimed Epic 2.7 "shipped a security fix" while PR #128 was still open
+  (§ 0 at commit `72320d1`; durable copy in PR #129, which is where to look if that SHA has
+  been squashed out of history). An ownership-scoped rule would have waved that through,
+  because project state is not something external.
+
+The section exists because Epic 2.7's session-hardening work rested on one unstated belief —
+`iat` is a stable issue time; `@auth/core` rewrites it on every session read. Six task reviews
+passed over it, because each task's code was correct at its own boundary and every test
+constructed its own token, so the belief never appeared anywhere a reviewer could look at it.
+The whole-branch review caught it, by exercising a real browser instead of constructed tokens;
+the first fix then carried a `?? iat` fallback that reopened the same hole for pre-existing
+sessions, and the external review on the PR caught that.
+
+Two things follow, and they are the argument for this section. A premise nothing forces you to
+write down is not reviewable — six reviews is not a substitute for one written line. And what
+broke through was not a more careful review but one whose *method* differed: a real browser
+instead of constructed tokens. Breadth of review did not help; a different kind of test did,
+which is why § 0b asks for the method and not only the scope.
+
+## 0b. Blast radius and test scope
+What this change affects **beyond the files it touches**, and the test scope that follows from
+it. A change to a cross-cutting gate — auth, middleware, routing, a shared layout — has the
+whole suite as its scope, not the diff. Say which, and why.
+
+**Scope alone is not enough — name the method.** For each assumption in § 0, say what kind of
+test could actually observe it being false: which layer, and with which fixtures. Breadth does
+not substitute for this. A spec can correctly declare the whole suite in scope while every test
+in it constructs its own token, and a defect that only appears in a real session lifecycle will
+survive all of them.
+
+So state the method explicitly where it matters: *this must be exercised through a real
+browser session, not a constructed token* — or a real Redis round trip rather than a mock, a
+production build rather than a dev server.
+
+**A real dependency needs stated isolation, or the method is a hazard.** Say which instance and
+which key space the test uses. In this repository that is not theoretical: the `pnpm test` job
+is given real Upstash credentials (`.github/workflows/ci.yml`, the `KV_REST_API_*` env) and
+**no** `CACHE_NAMESPACE` or `RATELIMIT_NAMESPACE`. `cache.ts` and `rate-limit-key.ts` refuse to
+build a key in that state, so they fail loudly — but `src/lib/redis.ts` is the raw client and
+has no such guard, so an integration test written against it reads and writes **production's**
+key space. A method of "real Redis round trip" with no namespace named is an instruction to
+corrupt live data.
+
+If an assumption in § 0 has no test that could falsify it, say that too — with one exception:
+for a security-relevant, destructive or production-bound premise, "no test can falsify this" is
+not a disclosure, it is a blocker. Find a method or change the design.
+
 ## 1. Technology Stack
 Pinned versions table for everything introduced in this epic.
 
