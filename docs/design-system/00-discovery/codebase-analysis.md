@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-02
 **Analyst:** ds-codebase-analyst
-**Branch:** 2-5_design_system
+**Branch:** 2-5_design_system (merged into `main` with Epic 2.5; branch since deleted — historical provenance only)
 **Status:** Complete — ready for downstream design system phases
 
 ---

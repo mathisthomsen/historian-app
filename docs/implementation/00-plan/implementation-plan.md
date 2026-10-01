@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-02
 **Author:** Staff Frontend Engineer (Technical Lead)
-**Branch:** `2-5_design_system`
+**Branch:** `2-5_design_system` (merged into `main` with Epic 2.5; branch since deleted — historical provenance only)
 **Status:** Ready for execution
 **Upstream:** All documents in `docs/design-system/` (00-discovery through 04-design-system)
 
@@ -374,7 +374,7 @@ No feature flags are needed. The design system migration is a visual change appl
 
 1. **Token rollback:** Revert `src/styles/globals.css` to the commit before the design system branch. All components instantly revert to the old zinc palette.
 2. **Component rollback:** Each component is changed in its own commit. `git revert <commit>` rolls back a single component.
-3. **Full rollback:** The entire design system work is on branch `2-5_design_system`. If the migration fails, the branch is abandoned and `main` is unaffected.
+3. **Full rollback:** ~~The entire design system work is on branch `2-5_design_system`; if the migration fails, the branch is abandoned and `main` is unaffected.~~ **No longer available.** Epic 2.5 shipped, the work is in `main`, and the branch was deleted on 2026-10-01 after verifying its files were present on `main`. Rolling back the design system now means a revert against `main`, not abandoning a branch.
 
 ### 4.5 shadcn/ui Component Override Strategy
 

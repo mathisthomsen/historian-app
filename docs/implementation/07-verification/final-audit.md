@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-03
 **Auditor:** QA Engineer / Accessibility Auditor
-**Branch:** `2-5_design_system`
+**Branch:** `2-5_design_system` (merged into `main` with Epic 2.5; branch since deleted — historical provenance only)
 **Baseline:** All prior epics (1.1 through 2.4) complete on `main`
 
 ---
