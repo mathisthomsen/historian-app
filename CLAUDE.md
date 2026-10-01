@@ -215,6 +215,12 @@ Not "would change the design": that readmits every dependency, since discovering
 unavailable changes something. The line is between a premise the design is built on and a
 detail that needs only local substitution. If you cannot name what breaks, leave it out.
 
+**For a security-relevant, destructive or production-bound premise, "assumed" is not an
+acceptable final state.** "Measure, don't infer" below makes measurement required for exactly
+those, and listing one as assumed does not satisfy that rule — it documents the gap. Measure it
+before implementation, or block the spec until it is measured. Elsewhere, **assumed** is honest
+and fine; the mark exists to make risk visible, not to forbid proceeding.
+
 Ownership is the wrong axis in both directions. Outward, the failures under "Measure, don't
 infer" below are mostly *platform* failures, so a library-only checklist misses them. Inward,
 **project state is internally owned and still routinely wrong** — what has actually shipped,
@@ -262,6 +268,12 @@ defect that only appears in a real session lifecycle survives all of them. That 
 happened here: the `iat` assumption fell to a real browser, not to more tests. So where it
 matters, say it — *a real browser session rather than a constructed token, a real Redis round
 trip rather than a mock, a production build rather than a dev server.*
+
+**Name the instance and key space when the method uses a real dependency.** The `pnpm test` job
+holds real Upstash credentials and no `CACHE_NAMESPACE`/`RATELIMIT_NAMESPACE`. `cache.ts` and
+`rate-limit-key.ts` refuse to build a key in that state, but `src/lib/redis.ts` is the raw
+client and does not, so "use real Redis" without a namespace means writing to production's key
+space. An isolation-less method is worse than a mock.
 
 ### Reviewing the plan before the implementation
 
