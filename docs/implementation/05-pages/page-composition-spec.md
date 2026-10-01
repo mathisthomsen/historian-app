@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-03
 **Author:** Frontend Engineer (Page Compositions)
-**Branch:** `2-5_design_system`
+**Branch:** `2-5_design_system` (merged into `main` with Epic 2.5; branch since deleted — historical provenance only)
 **Status:** Approved — ready for implementation
 **Upstream:** `docs/implementation/04-layouts/layout-spec.md`, `docs/design-system/04-design-system/components.md`, `docs/implementation/00-plan/implementation-plan.md §Layer 5`
 

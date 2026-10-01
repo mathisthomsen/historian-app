@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-03
 **Author:** Layout Systems Engineer
-**Branch:** `2-5_design_system`
+**Branch:** `2-5_design_system` (merged into `main` with Epic 2.5; branch since deleted — historical provenance only)
 **Status:** Approved — ready for implementation
 **Upstream:** `docs/design-system/01-ux/architecture.md` §4, `docs/design-system/03-ui/concept.md` §§2.1, 3, `docs/design-system/04-design-system/components.md` §§15–17
 

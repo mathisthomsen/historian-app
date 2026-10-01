@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-02
 **Author:** Staff Frontend Engineer (Technical Lead)
-**Branch:** `2-5_design_system`
+**Branch:** `2-5_design_system` (merged into `main` with Epic 2.5; branch since deleted — historical provenance only)
 **Status:** Ready for execution
 **Upstream:** `implementation-plan.md`, `docs/design-system/04-design-system/tokens.md`
 
