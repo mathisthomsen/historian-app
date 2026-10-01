@@ -75,6 +75,13 @@ The backlog is **GitHub Issues** on this repo plus the **Evidoxa Backlog** proje
 board (`gh project 1 --owner mathisthomsen`). It is the single place where known
 work lives. A finding reported only in chat is a finding that will be lost.
 
+**Start here if you are picking up work cold:** the **Pre-Alpha Gate** milestone
+(`gh api repos/mathisthomsen/historian-app/milestones/31`) holds the five things
+standing between the product and its first invited user, and its description
+carries the reasoning — including which issues are _not_ blockers and why, and
+which gaps decide whether the tool suits a given researcher at all. Epic
+milestones say what shipped; that one says what is next and why.
+
 ### File it
 
 When you discover a problem, a risk, or deferred work that outlives the current
@@ -222,7 +229,7 @@ before implementation, or block the spec until it is measured. Elsewhere, **assu
 and fine; the mark exists to make risk visible, not to forbid proceeding.
 
 Ownership is the wrong axis in both directions. Outward, the failures under "Measure, don't
-infer" below are mostly *platform* failures, so a library-only checklist misses them. Inward,
+infer" below are mostly _platform_ failures, so a library-only checklist misses them. Inward,
 **project state is internally owned and still routinely wrong** — what has actually shipped,
 what a sibling branch deployed, which environment a variable is set in.
 
@@ -232,7 +239,7 @@ of `CLAUDE.md` did not — it said "central defect"; the claim was the spec temp
 to things "you do not control", the rule would have waved it through, because a sibling PR's
 deployment state is not external to us.
 
-Epic 2.7's session-hardening work turned on one unstated line: *`iat` is a stable issue time*.
+Epic 2.7's session-hardening work turned on one unstated line: _`iat` is a stable issue time_.
 It is not — `@auth/core` rewrites it on every session read. Revocation therefore compared
 against a value the library moves, so a captured token was refused once and admitted on every
 request after that.
@@ -245,7 +252,7 @@ then carried a `?? iat` fallback that reopened the same hole for pre-existing se
 the **external review on the PR caught that**.
 
 So the lesson is not that reviews fail. It is that a premise nothing forces you to write down
-is not reviewable at all, and that what broke through was a review whose *method* differed —
+is not reviewable at all, and that what broke through was a review whose _method_ differed —
 which is what the blast-radius line below is for.
 
 ### A blast-radius line that sets test scope
@@ -266,8 +273,8 @@ above, say what kind of test could observe it being false — which layer, which
 can declare the whole suite in scope while every test in it constructs its own token, and a
 defect that only appears in a real session lifecycle survives all of them. That is what
 happened here: the `iat` assumption fell to a real browser, not to more tests. So where it
-matters, say it — *a real browser session rather than a constructed token, a real Redis round
-trip rather than a mock, a production build rather than a dev server.*
+matters, say it — _a real browser session rather than a constructed token, a real Redis round
+trip rather than a mock, a production build rather than a dev server._
 
 **Name the instance and key space when the method uses a real dependency.** The `pnpm test` job
 holds real Upstash credentials and no `CACHE_NAMESPACE`/`RATELIMIT_NAMESPACE`. `cache.ts` and
