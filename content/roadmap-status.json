@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T10:02:53.164Z",
+  "generatedAt": "2026-10-01T12:42:37.499Z",
   "epics": [
     {
       "epic": "1.1",
@@ -74,9 +74,9 @@
     {
       "epic": "2.7",
       "title": "Session & Authorization Hardening",
-      "state": "planned",
-      "openIssues": 3,
-      "closedIssues": 0
+      "state": "shipped",
+      "openIssues": 0,
+      "closedIssues": 2
     },
     {
       "epic": "3.1",

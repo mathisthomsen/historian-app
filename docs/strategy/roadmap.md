@@ -63,18 +63,19 @@ document recorded.
 
 - Auth.js v5 with a Credentials provider (bcrypt). No Email / magic-link provider: Resend sends
   the custom verification and password-reset token emails instead (`src/lib/email.ts`).
-- JWT session strategy, 30-day max age. No refresh-token rotation and no server-side
-  revocation check exists — `signOut` only clears the browser cookie, so a captured token
-  stays valid for its full lifetime after logout (issue #103, fixed in Epic 2.7).
+- JWT session strategy, 30-day max age. No refresh-token rotation. **As shipped in 1.3** there
+  was no server-side revocation check: `signOut` only cleared the browser cookie, so a captured
+  token stayed valid for its full lifetime after logout. Epic 2.7 added one (issue #103).
 - Email verification: custom token flow (EmailConfirmation table), 24h expiry, branded HTML emails via Resend
 - Password reset: token flow (PasswordReset table), 1h expiry, single-use
 - Password strength: min 8 chars, uppercase/lowercase/number/special char; strength indicator component
 - Pages: `/auth/login`, `/auth/register`, `/auth/verify`, `/auth/forgot-password`, `/auth/reset-password`
-- Middleware: `PUBLIC_PATHS` allow-list is defined in `src/auth.config.ts`, but its
-  `authorized()` callback returns a boolean, which next-auth's dispatch only honours when
-  it is a `Response` — so the allow-list has no runtime effect today (issue #88, fixed in
-  Epic 2.7). Authenticated pages and API routes still self-protect via `requireUser()` /
-  `requireUserOrRedirect()`, so no data is exposed; only the defence-in-depth layer is inert.
+- Middleware: a `PUBLIC_PATHS` allow-list was defined in `src/auth.config.ts`, but **as shipped
+  in 1.3** its `authorized()` callback returned a boolean, which next-auth's dispatch only
+  honours when it is a `Response` — so the allow-list had no runtime effect. No data was
+  exposed, because pages and API routes self-protect via `requireUser()` /
+  `requireUserOrRedirect()`; only the defence-in-depth layer was inert. Epic 2.7 made the
+  callback return a real `Response` and gate an explicit prefix list (issue #88).
 - `requireUser()` server helper for API route protection
 - System roles: `USER`, `ADMIN` (UserRole enum)
 - Project roles: `OWNER`, `EDITOR`, `VIEWER` (proper enum, not string)
@@ -313,20 +314,21 @@ dependency.
 > live in the private security advisories; do not copy them back into this file.
 
 - **Server-side session invalidation on logout (issue #103):** Under the JWT strategy,
-  `signOut` clears the cookie client-side but nothing server-side refuses a token that was
-  captured beforehand, so it stays valid for the remainder of its `maxAge`. Confirmed by
-  measurement against a production build on 2026-09-13; the reproduction is recorded in the
-  private security advisory rather than here, because this document is published.
-  Fix: a Redis-backed revocation check (denylist of revoked session/`jti` ids, checked in the
-  `session` callback) so a replayed pre-logout token is rejected.
+  `signOut` cleared the cookie client-side but nothing server-side refused a token captured
+  beforehand, so it stayed valid for the remainder of its `maxAge`. Confirmed by measurement
+  against a production build on 2026-09-13; the reproduction is recorded in the private
+  security advisory rather than here, because this document is published.
+  Delivered: a Redis-backed revocation floor per user, compared in the `session` callback
+  against an `authTime` claim stamped once at sign-in — not `iat`, which `@auth/core` re-signs
+  on every session read.
 - **Make `authorized()` actually gate requests (issue #88):** per next-auth's dispatch logic
   the `authorized()` callback's return value is only honoured when it is a `Response`; the
-  boolean `src/auth.config.ts` returns today is silently ignored, so `PUBLIC_PATHS` is dead
-  code with no runtime effect. **No user data leaks** — `requireUserOrRedirect()` and the API
-  routes' own guards still hold the line — but a future page that forgets its own guard would
-  have nothing behind it. Fix: return a `Response` (redirect) from `authorized()` for
-  unauthenticated requests to non-public paths, and add a test asserting a real HTTP redirect
-  for an anonymous request to a protected route.
+  boolean `src/auth.config.ts` returned was silently ignored, so `PUBLIC_PATHS` was dead code.
+  **No user data leaked** — `requireUserOrRedirect()` and the API routes' own guards held the
+  line — but a future page that forgot its own guard would have had nothing behind it.
+  Delivered: `authorized()` returns a real `Response` — a 307 for pages, a 401 for `/api/*` —
+  gating an explicit list of protected prefixes rather than everything-not-public, with the
+  locale segment validated against `routing.locales` before it is stripped.
 - **Root-cause TC-AUTH-13 (issue #27):** The logout E2E test flaked once in CI, showing a
   fully authenticated dashboard render immediately after `signOut` had already navigated to
   `/auth/login`. Not yet root-caused — deliberately filed rather than dismissed as a fluke,
