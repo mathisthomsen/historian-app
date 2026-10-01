@@ -161,4 +161,96 @@ test.describe("Session replay guard", () => {
       await persistent.dispose();
     }
   });
+
+  // -------------------------------------------------------------------------
+  // The page path, which is what #27 actually describes.
+  //
+  // The two tests above exercise `/api/persons`. #27's symptom was a *page*:
+  // `/de/dashboard` rendered with authenticated chrome ("Willkommen, Evidoxa
+  // Admin!" and a working sign-out button) after logout had already navigated
+  // away. Pages and API routes take different branches of `authorized()` — a
+  // 307 redirect versus a 401 body — and the page additionally has its own
+  // `requireUserOrRedirect()`. Proving the API branch says nothing about the
+  // branch the reported symptom came from.
+  //
+  // This test is deliberately self-validating. It replays the captured cookie
+  // *before* signing out and requires a 200 first. Without that, a cookie that
+  // was never valid, a wrong cookie name, or a replay context that silently
+  // sends nothing would all produce the same "refused" result and the test
+  // would pass while asserting nothing.
+  // -------------------------------------------------------------------------
+  test("a captured cookie cannot render the protected page after sign-out (#27)", async ({
+    page,
+    context,
+  }) => {
+    await loginAsAdmin(page);
+
+    const sessionCookie = (await context.cookies()).find((cookie) =>
+      /^(__Secure-)?(authjs|next-auth)\.session-token$/.test(cookie.name),
+    );
+    if (!sessionCookie) {
+      throw new Error(
+        "session-hardening: no session cookie present after login — cannot exercise the replay guard",
+      );
+    }
+
+    const replayContext = async () =>
+      apiRequest.newContext({
+        baseURL: BASE_URL,
+        storageState: {
+          cookies: [
+            {
+              name: sessionCookie.name,
+              value: sessionCookie.value,
+              domain: sessionCookie.domain,
+              path: sessionCookie.path,
+              expires: sessionCookie.expires,
+              httpOnly: sessionCookie.httpOnly,
+              secure: sessionCookie.secure,
+              sameSite: sessionCookie.sameSite,
+            },
+          ],
+          origins: [],
+        },
+      });
+
+    // Non-vacuity: while the session is live, this exact replay reaches the page.
+    const beforeSignOut = await replayContext();
+    try {
+      const live = await beforeSignOut.get("/de/dashboard", { maxRedirects: 0 });
+      expect(
+        live.status(),
+        "replayed cookie should reach the dashboard while the session is live — " +
+          "if this is not 200, the rest of this test proves nothing",
+      ).toBe(200);
+    } finally {
+      await beforeSignOut.dispose();
+    }
+
+    const signOut = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/auth/signout" &&
+        response.request().method() === "POST",
+      { timeout: 10_000 },
+    );
+    await page.getByRole("button", { name: "Abmelden" }).click();
+    await signOut;
+
+    // Twice, from a jar that persists Set-Cookie: `@auth/core` re-signs the
+    // token on every session read and `handleAuth` appends that Set-Cookie to
+    // every response, so a single request cannot show whether the cookie was
+    // refreshed back into validity. This is the mechanism recorded on #27.
+    const afterSignOut = await replayContext();
+    try {
+      for (const attempt of [1, 2]) {
+        const res = await afterSignOut.get("/de/dashboard", { maxRedirects: 0 });
+        expect(res.status(), `replay attempt ${attempt} after sign-out`).toBe(307);
+        expect(res.headers()["location"], `replay attempt ${attempt} after sign-out`).toContain(
+          "/de/auth/login",
+        );
+      }
+    } finally {
+      await afterSignOut.dispose();
+    }
+  });
 });
