@@ -63,18 +63,20 @@ document recorded.
 
 - Auth.js v5 with a Credentials provider (bcrypt). No Email / magic-link provider: Resend sends
   the custom verification and password-reset token emails instead (`src/lib/email.ts`).
-- JWT session strategy, 30-day max age. No refresh-token rotation and no server-side
-  revocation check exists — `signOut` only clears the browser cookie, so a captured token
-  stays valid for its full lifetime after logout (issue #103, fixed in Epic 2.7).
+- JWT session strategy, 30-day max age. No refresh-token rotation. **As shipped in 1.3** there
+  was no server-side revocation check: `signOut` only cleared the browser cookie, so a captured
+  token stayed valid for its full lifetime after logout. Carried as issue #103, scoped to
+  Epic 2.7 — see that epic; its state is the milestone's, not this document's.
 - Email verification: custom token flow (EmailConfirmation table), 24h expiry, branded HTML emails via Resend
 - Password reset: token flow (PasswordReset table), 1h expiry, single-use
 - Password strength: min 8 chars, uppercase/lowercase/number/special char; strength indicator component
 - Pages: `/auth/login`, `/auth/register`, `/auth/verify`, `/auth/forgot-password`, `/auth/reset-password`
-- Middleware: `PUBLIC_PATHS` allow-list is defined in `src/auth.config.ts`, but its
-  `authorized()` callback returns a boolean, which next-auth's dispatch only honours when
-  it is a `Response` — so the allow-list has no runtime effect today (issue #88, fixed in
-  Epic 2.7). Authenticated pages and API routes still self-protect via `requireUser()` /
-  `requireUserOrRedirect()`, so no data is exposed; only the defence-in-depth layer is inert.
+- Middleware: a `PUBLIC_PATHS` allow-list was defined in `src/auth.config.ts`, but **as shipped
+  in 1.3** its `authorized()` callback returned a boolean, which next-auth's dispatch only
+  honours when it is a `Response` — so the allow-list had no runtime effect. No data was
+  exposed, because pages and API routes self-protect via `requireUser()` /
+  `requireUserOrRedirect()`; only the defence-in-depth layer was inert. Carried as issue #88,
+  scoped to Epic 2.7.
 - `requireUser()` server helper for API route protection
 - System roles: `USER`, `ADMIN` (UserRole enum)
 - Project roles: `OWNER`, `EDITOR`, `VIEWER` (proper enum, not string)
@@ -313,28 +315,28 @@ dependency.
 > live in the private security advisories; do not copy them back into this file.
 
 - **Server-side session invalidation on logout (issue #103):** Under the JWT strategy,
-  `signOut` clears the cookie client-side but nothing server-side refuses a token that was
-  captured beforehand, so it stays valid for the remainder of its `maxAge`. Confirmed by
-  measurement against a production build on 2026-09-13; the reproduction is recorded in the
-  private security advisory rather than here, because this document is published.
-  Fix: a Redis-backed revocation check (denylist of revoked session/`jti` ids, checked in the
-  `session` callback) so a replayed pre-logout token is rejected.
+  `signOut` cleared the cookie client-side but nothing server-side refused a token captured
+  beforehand, so it stayed valid for the remainder of its `maxAge`. Confirmed by measurement
+  against a production build on 2026-09-13; the reproduction is recorded in the private
+  security advisory rather than here, because this document is published.
+  Required: a server-side check that refuses a token issued before the sign-out that revoked
+  it. The mechanism is the spec's to choose and record —
+  `docs/specs/2-7-session-authorization-hardening/specification.md`.
 - **Make `authorized()` actually gate requests (issue #88):** per next-auth's dispatch logic
   the `authorized()` callback's return value is only honoured when it is a `Response`; the
-  boolean `src/auth.config.ts` returns today is silently ignored, so `PUBLIC_PATHS` is dead
-  code with no runtime effect. **No user data leaks** — `requireUserOrRedirect()` and the API
-  routes' own guards still hold the line — but a future page that forgets its own guard would
-  have nothing behind it. Fix: return a `Response` (redirect) from `authorized()` for
-  unauthenticated requests to non-public paths, and add a test asserting a real HTTP redirect
-  for an anonymous request to a protected route.
-- **Root-cause TC-AUTH-13 (issue #27):** The logout E2E test flaked once in CI, showing a
-  fully authenticated dashboard render immediately after `signOut` had already navigated to
-  `/auth/login`. Not yet root-caused — deliberately filed rather than dismissed as a fluke,
-  because the failure is indistinguishable from a session surviving logout. The leading
-  theory is the same client-side-meta-refresh mechanism as #88 (an anonymous request briefly
-  rendering authenticated chrome before the refresh fires); confirm this explicitly once #88
-  is fixed rather than assuming it resolved as a side effect, since the alternative reading
-  (a session that outlives `signOut`) is the more serious one.
+  boolean `src/auth.config.ts` returned was silently ignored, so `PUBLIC_PATHS` was dead code.
+  **No user data leaked** — `requireUserOrRedirect()` and the API routes' own guards held the
+  line — but a future page that forgot its own guard would have had nothing behind it.
+  Required: `authorized()` must return a `Response` so its decision is honoured, and an
+  anonymous request to an unknown URL must still 404 rather than bounce to login.
+- **Out of scope: root-causing TC-AUTH-13 (issue #27).** The logout E2E test flaked once in
+  CI, showing a fully authenticated dashboard render immediately after `signOut` had already
+  navigated to `/auth/login` — indistinguishable from a session surviving logout, which is why
+  it was filed rather than dismissed. It was investigated alongside this epic and the leading
+  theory (the same client-side meta-refresh as #88) was **tested and falsified**, so it is
+  tracked independently at **#27** and does not gate this epic. The two readings of it —
+  slow redirect versus session outliving `signOut` — are both guarded by regression tests;
+  neither is explained.
 - **Auth.js session fixation check:** carried over from Epic 5.4's security review — a
   distinct control from the three defects above (regenerating the session identifier after
   authentication, not logout invalidation or route gating). Verify next-auth issues a fresh
@@ -348,9 +350,14 @@ dependency.
 
 **Verifiable:** The regression tests described in GHSA-h32c-m6mx-pmw6 and
 GHSA-g6gc-49hx-h4jr pass. Anonymous request to `/dashboard` — a real HTTP redirect to
-`/auth/login`, not a `200` with a client-side meta-refresh. TC-AUTH-13 passes 20/20
-consecutive CI runs. A session id captured
-before login is invalid after it (fixation check).
+`/auth/login`, not a `200` with a client-side meta-refresh. A session id captured before
+login is invalid after it (fixation check). A session cookie captured before sign-out is
+refused afterwards, on both the API and the page path, from a client that persists
+`Set-Cookie`.
+
+(The earlier criterion "TC-AUTH-13 passes 20/20 consecutive CI runs" belonged to the #27
+investigation, which this epic does not close. Repeat-run counts were explicitly rejected as
+evidence of a root cause during that investigation, so the criterion moved out with it.)
 
 ---
 
