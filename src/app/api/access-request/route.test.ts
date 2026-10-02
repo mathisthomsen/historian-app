@@ -1,3 +1,4 @@
+import type * as NextServer from "next/server";
 import { NextResponse } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -15,6 +16,17 @@ const mocks = vi.hoisted(() => ({
   deleteManyRequests: vi.fn(),
   notify: vi.fn(),
   isExpired: vi.fn(),
+  // Callbacks handed to next/server's `after()`, in scheduling order.
+  afterTasks: [] as Array<() => unknown>,
+}));
+
+// `after()` only works inside a Next request scope. Capture what the route
+// schedules; tests run it explicitly, which is what Next does after the response.
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof NextServer>()),
+  after: (task: () => unknown) => {
+    mocks.afterTasks.push(task);
+  },
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -72,8 +84,16 @@ function makeRequest(body: unknown, rawBody?: string): Request {
   });
 }
 
-function post(overrides: Record<string, unknown> = {}): Promise<Response> {
-  return POST(makeRequest(validBody(overrides)));
+/** Runs everything the route handed to `after()`, as Next does once the response is out. */
+async function runAfterTasks(): Promise<void> {
+  for (const task of mocks.afterTasks.splice(0)) await task();
+}
+
+/** POST, then let the post-response work run — the shape most tests care about. */
+async function post(overrides: Record<string, unknown> = {}): Promise<Response> {
+  const response = await POST(makeRequest(validBody(overrides)));
+  await runAfterTasks();
+  return response;
 }
 
 /** Everything that would write state or send mail. */
@@ -110,6 +130,7 @@ const created = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.afterTasks.length = 0;
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
   vi.spyOn(console, "error").mockImplementation(() => {});
@@ -570,6 +591,76 @@ describe("create race (Q6)", () => {
 
     await expect(post()).rejects.toThrow("boom");
     expect(mocks.notify).not.toHaveBeenCalled();
+  });
+});
+
+describe("the notification is off the response path (no timing side channel)", () => {
+  const scheduled = () => mocks.afterTasks.length;
+
+  it("a real new submission returns BEFORE the notification runs, and schedules exactly one", async () => {
+    const res = await POST(makeRequest(validBody()));
+
+    expect(res.status).toBe(200);
+    expect(scheduled()).toBe(1);
+    expect(mocks.notify).not.toHaveBeenCalled();
+
+    await runAfterTasks();
+    expect(mocks.notify).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not wait on a notification that never settles", async () => {
+    mocks.notify.mockReturnValue(new Promise(() => {}));
+
+    const res = await POST(makeRequest(validBody()));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+  });
+
+  it("an existing account schedules nothing", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    await POST(makeRequest(validBody()));
+    expect(scheduled()).toBe(0);
+  });
+
+  it("a trap (honeypot) schedules nothing", async () => {
+    await POST(makeRequest(validBody({ company: "Acme" })));
+    expect(scheduled()).toBe(0);
+  });
+
+  it("a too-fast submission schedules nothing", async () => {
+    await POST(makeRequest(validBody({ rendered_at: NOW.getTime() - 100 })));
+    expect(scheduled()).toBe(0);
+  });
+
+  it("a P2002 create race schedules nothing", async () => {
+    mocks.createRequest.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));
+    const res = await POST(makeRequest(validBody()));
+    expect(res.status).toBe(200);
+    expect(scheduled()).toBe(0);
+  });
+
+  it("an existing PENDING request schedules nothing", async () => {
+    mocks.findRequest.mockResolvedValue(row());
+    await POST(makeRequest(validBody()));
+    expect(scheduled()).toBe(0);
+  });
+
+  it("a DECLINED re-open schedules exactly one", async () => {
+    mocks.findRequest.mockResolvedValue(row({ status: "DECLINED" }));
+    await POST(makeRequest(validBody()));
+    expect(scheduled()).toBe(1);
+  });
+
+  it("a throwing notification is caught inside the callback and logged by request id", async () => {
+    mocks.notify.mockRejectedValue(new Error("Resend exploded for ada@example.com"));
+    await POST(makeRequest(validBody()));
+
+    await expect(runAfterTasks()).resolves.toBeUndefined();
+
+    expect(console.error).toHaveBeenCalledWith("[access-request] notification failed", {
+      requestId: "req_new",
+    });
   });
 });
 

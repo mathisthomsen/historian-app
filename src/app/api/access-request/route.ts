@@ -1,4 +1,4 @@
-import type { NextResponse } from "next/server";
+import { after, type NextResponse } from "next/server";
 import { z } from "zod";
 
 import { isExpired } from "@/lib/access-retention";
@@ -205,23 +205,29 @@ export async function POST(request: Request): Promise<NextResponse> {
     notifyId = existing.id;
   }
 
-  // Step 8 — a notification failure is logged (request id only, no PII) and
-  // does not change the response (I12).
+  // Step 8 — the notification runs AFTER the response is sent. Awaiting it here
+  // would make only new-address submissions pay for the external mail call, and
+  // that latency difference tells a caller which addresses already have an
+  // account or a request (I5). A failure is logged (request id only, no PII)
+  // and never changes the outcome (I12).
   if (notifyId !== null) {
-    try {
-      await sendAccessRequestNotification({
-        requestId: notifyId,
-        name: fields.name,
-        email: data.email,
-        institution: fields.institution,
-        researchArea: fields.research_area,
-        toolGap: fields.tool_gap,
-        locale: fields.locale,
-        statusChangedAt,
-      });
-    } catch {
-      console.error("[access-request] notification failed", { requestId: notifyId });
-    }
+    const requestId = notifyId;
+    after(async () => {
+      try {
+        await sendAccessRequestNotification({
+          requestId,
+          name: fields.name,
+          email: data.email,
+          institution: fields.institution,
+          researchArea: fields.research_area,
+          toolGap: fields.tool_gap,
+          locale: fields.locale,
+          statusChangedAt,
+        });
+      } catch {
+        console.error("[access-request] notification failed", { requestId });
+      }
+    });
   }
 
   return accepted();
