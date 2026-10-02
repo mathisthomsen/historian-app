@@ -639,6 +639,51 @@
     "next": "Next",
     "page": "Page"
   },
+  "admin": {
+    "accessRequest": {
+      "title": "Access request",
+      "description": "Review the request and decide whether to send an invitation.",
+      "fields": {
+        "name": "Name",
+        "email": "Email",
+        "institution": "Institution",
+        "researchArea": "Research area",
+        "toolGap": "What their current tool does not answer",
+        "locale": "Invitation language",
+        "created": "Received",
+        "status": "Status",
+        "reviewed": "Decided",
+        "notProvided": "Not provided"
+      },
+      "localeName": {
+        "de": "German",
+        "en": "English"
+      },
+      "status": {
+        "PENDING": "Open",
+        "INVITED": "Invited",
+        "DECLINED": "Declined"
+      },
+      "reviewedBy": "{date} by {name}",
+      "reviewedByUnknown": "{date}",
+      "decisionHeading": "Decision",
+      "approve": "Invite",
+      "reinvite": "Invite again",
+      "decline": "Decline",
+      "outcome": {
+        "invited": "The invitation was created and sent by email.",
+        "declined": "The request was declined.",
+        "emailNotSent": "The invitation was created, but the email was not sent. Invite again?"
+      },
+      "accountExists": "An account already exists for this address.",
+      "errors": {
+        "generic": "The decision could not be saved. Please try again.",
+        "forbidden": "You do not have permission to make this decision.",
+        "notFound": "This request no longer exists. It may have expired.",
+        "network": "No connection. Please try again."
+      }
+    }
+  },
   "marketing": {
     "nav": {
       "changelog": "Changelog",

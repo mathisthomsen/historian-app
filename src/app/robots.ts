@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 // directory; src/test/pages/marketing-seo.test.ts derives its expectation
 // from the filesystem so a segment added there and forgotten here fails CI.
 const AUTHENTICATED_SEGMENTS = [
+  "admin",
   "dashboard",
   "events",
   "persons",

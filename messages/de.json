@@ -639,6 +639,51 @@
     "next": "Weiter",
     "page": "Seite"
   },
+  "admin": {
+    "accessRequest": {
+      "title": "Zugangsanfrage",
+      "description": "Prüfen Sie die Anfrage und entscheiden Sie, ob eine Einladung verschickt wird.",
+      "fields": {
+        "name": "Name",
+        "email": "E-Mail",
+        "institution": "Institution",
+        "researchArea": "Forschungsgebiet",
+        "toolGap": "Was das bisherige Werkzeug nicht beantwortet",
+        "locale": "Sprache der Einladung",
+        "created": "Eingegangen",
+        "status": "Status",
+        "reviewed": "Entschieden",
+        "notProvided": "Nicht angegeben"
+      },
+      "localeName": {
+        "de": "Deutsch",
+        "en": "Englisch"
+      },
+      "status": {
+        "PENDING": "Offen",
+        "INVITED": "Eingeladen",
+        "DECLINED": "Abgelehnt"
+      },
+      "reviewedBy": "{date} von {name}",
+      "reviewedByUnknown": "{date}",
+      "decisionHeading": "Entscheidung",
+      "approve": "Einladen",
+      "reinvite": "Erneut einladen",
+      "decline": "Ablehnen",
+      "outcome": {
+        "invited": "Die Einladung wurde angelegt und per E-Mail versendet.",
+        "declined": "Die Anfrage wurde abgelehnt.",
+        "emailNotSent": "Die Einladung wurde angelegt, die E-Mail aber nicht versendet. Erneut einladen?"
+      },
+      "accountExists": "Für diese Adresse besteht bereits ein Konto.",
+      "errors": {
+        "generic": "Die Entscheidung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        "forbidden": "Für diese Entscheidung fehlt die Berechtigung.",
+        "notFound": "Diese Anfrage gibt es nicht mehr. Möglicherweise ist sie abgelaufen.",
+        "network": "Keine Verbindung. Bitte versuchen Sie es erneut."
+      }
+    }
+  },
   "marketing": {
     "nav": {
       "changelog": "Changelog",
