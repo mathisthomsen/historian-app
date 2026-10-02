@@ -6,6 +6,23 @@ on:
   pull_request:
     branches: [main]
 
+# Production deploys must not overlap, and must run in push order. The live
+# check asserts that the public domain serves THIS run's commit; if two merges
+# to main ran concurrently, the first run's check would see the second commit
+# and fail spuriously. The group is taken at WORKFLOW level, not on the deploy
+# job: a job-level group is only acquired once that job's `needs` finish, so a
+# push whose lint/typecheck/unit jobs ran slower could reach the deploy job
+# second and promote an older commit over a newer one, rolling production
+# back. Main pushes queue rather than cancel (cancel-in-progress: false) so a
+# deploy is never killed half-way. GitHub keeps only ONE pending run per group:
+# a newer queued run supersedes an older pending one, which is cancelled. That
+# is acceptable because the newer commit contains the older one. PR runs (and
+# anything that is not a push to main) get a group unique to the run, so they
+# never queue behind each other or behind a production deploy.
+concurrency:
+  group: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && 'production-deploy' || format('ci-{0}', github.run_id) }}
+  cancel-in-progress: false
+
 env:
   # Exact Vercel CLI version for every `vercel` invocation. It is pinned
   # because an unpinned `pnpm dlx vercel` meant the deploy behaviour could change
@@ -74,20 +91,6 @@ jobs:
     # starting run delete the branch out from under it. Capping the job well
     # under the reaper cutoff makes that impossible. A normal run takes ~15min.
     timeout-minutes: 45
-    # Production deploys must not overlap. The live check below asserts that the
-    # public domain serves THIS run's commit; if two merges to main ran
-    # concurrently, the first job's check would see the second commit and fail
-    # spuriously (or the second deploy could be promoted over the first mid-check).
-    # Main pushes therefore share one group and queue rather than cancel
-    # (cancel-in-progress: false) so a deploy is never killed half-way. GitHub
-    # keeps only ONE pending run per group: a newer queued run supersedes an older
-    # pending one, which is cancelled. That is acceptable here because the newer
-    # commit contains the older one. PR runs (and anything that is not a push to
-    # main) get a group unique to the run so they never queue behind each other
-    # or behind a production deploy.
-    concurrency:
-      group: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && 'production-deploy' || format('ci-{0}', github.run_id) }}
-      cancel-in-progress: false
     env:
       # DATABASE_URL / DATABASE_URL_UNPOOLED are deliberately NOT set here. The
       # "Create ephemeral Neon branch" step below writes them into $GITHUB_ENV,
