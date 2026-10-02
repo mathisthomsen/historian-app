@@ -28,7 +28,7 @@ Target: university MVP validation, then commercialization.
 | Email            | Resend                                    | Verification and password-reset flows                                                                     |
 | Content          | MDX via `next-mdx-remote`                 | Changelog entries only, from `content/changelog/{version}.{locale}.mdx` — repo-authored, never user input |
 | Testing          | Vitest + Testing Library; Playwright      | Unit + E2E across Chromium and Firefox                                                                    |
-| Hosting / CI     | Vercel; GitHub Actions                    | Lint → typecheck → unit → build → E2E → deploy                                                            |
+| Hosting / CI     | Vercel; GitHub Actions                    | Lint → typecheck → unit → build → E2E → deploy (not live) → promote → assert live commit                  |
 
 ### Getting started
 

@@ -6,6 +6,29 @@ on:
   pull_request:
     branches: [main]
 
+# Production deploys must not overlap, and must run in push order. The live
+# check asserts that the public domain serves THIS run's commit; if two merges
+# to main ran concurrently, the first run's check would see the second commit
+# and fail spuriously. The group is taken at WORKFLOW level, not on the deploy
+# job: a job-level group is only acquired once that job's `needs` finish, so a
+# push whose lint/typecheck/unit jobs ran slower could reach the deploy job
+# second and promote an older commit over a newer one, rolling production
+# back. Main pushes queue rather than cancel (cancel-in-progress: false) so a
+# deploy is never killed half-way. GitHub keeps only ONE pending run per group:
+# a newer queued run supersedes an older pending one, which is cancelled. That
+# is acceptable because the newer commit contains the older one. PR runs (and
+# anything that is not a push to main) get a group unique to the run, so they
+# never queue behind each other or behind a production deploy.
+concurrency:
+  group: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && 'production-deploy' || format('ci-{0}', github.run_id) }}
+  cancel-in-progress: false
+
+env:
+  # Exact Vercel CLI version for every `vercel` invocation. It is pinned
+  # because an unpinned `pnpm dlx vercel` meant the deploy behaviour could change
+  # between two merges with nothing in the diff to explain it. Bump deliberately.
+  VERCEL_CLI_VERSION: "62.1.0"
+
 jobs:
   lint:
     name: Lint
@@ -297,12 +320,74 @@ jobs:
           DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.PRODUCTION_DATABASE_URL }}
 
-      - name: Deploy to Vercel
+      # Deploy, promote and verify are three steps on purpose. The project's
+      # "auto-assign custom domains" setting is off and is not visible in the
+      # dashboard, so a plain `vercel --prod` built a production deployment that
+      # never went live while CI stayed green (two deployments, 2026-09-30).
+      # --skip-domain makes "build, don't go live" explicit whatever that setting
+      # says; promotion then happens only in the step whose job it is, and the
+      # live check proves it. See issue #132.
+      #
+      # APP_COMMIT_SHA is --env (run-time), not --build-env: /api/health reads it
+      # from process.env when it serves, it is not inlined at build.
+      #
+      # stdout of `vercel deploy` is the deployment URL when stdout is not a TTY
+      # (progress goes to stderr). The capture still takes only the last line
+      # that looks like a URL and fails if there is none, rather than trusting
+      # the whole of stdout.
+      - name: Deploy to Vercel (production, not yet live)
+        id: deploy
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: pnpm dlx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          out="$(pnpm dlx "vercel@${VERCEL_CLI_VERSION}" deploy --prod --skip-domain --yes \
+            --env "APP_COMMIT_SHA=${GITHUB_SHA}" --token="$VERCEL_TOKEN")"
+          url="$(printf '%s\n' "$out" | grep -E '^https://[^[:space:]]+$' | tail -n 1 || true)"
+          if [ -z "$url" ]; then
+            echo "::error::vercel deploy printed no deployment URL on stdout"
+            exit 1
+          fi
+          echo "Deployment: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
         env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      # Waits for the promotion to complete (default --timeout 3m).
+      - name: Promote to evidoxa.com
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          pnpm dlx "vercel@${VERCEL_CLI_VERSION}" promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      # The only check that the public domain serves what was just deployed. The
+      # marker is attached per-request by the instance answering (not cached in
+      # Redis), so an old deployment cannot satisfy it. Polling absorbs edge
+      # propagation delay: 30 tries x 10s.
+      - name: Assert the public domain serves this commit
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          got="unreachable"
+          for i in $(seq 1 30); do
+            got="$(curl -fsS "$HEALTH_URL" | jq -r '.commit // "null"')" || got="unreachable"
+            if [ "$got" = "$GITHUB_SHA" ]; then
+              echo "live: $got"
+              exit 0
+            fi
+            echo "attempt $i/30: $HEALTH_URL serves $got, waiting for $GITHUB_SHA"
+            sleep 10
+          done
+          echo "::error::www.evidoxa.com serves $got, expected $GITHUB_SHA"
+          exit 1
+        env:
+          HEALTH_URL: https://www.evidoxa.com/api/health
 
       # always(): a failed or cancelled-mid-job run must not leak the branch.
       # A cancellation that kills the runner outright still leaks one — that is
