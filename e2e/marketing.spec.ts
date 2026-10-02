@@ -145,7 +145,9 @@ test.describe("marketing landing page", () => {
       ["Datenschutz", "/de/datenschutz"],
     ] as const) {
       await page.goto("/de");
-      await page.getByRole("link", { name }).click();
+      // Scoped to the footer: the request-access form's consent line also links
+      // "Datenschutzerklärung", and this test is about the footer's links.
+      await page.getByRole("contentinfo").getByRole("link", { name }).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
     }
   });
