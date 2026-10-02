@@ -446,6 +446,48 @@ describe("POST /api/admin/access-requests/[id]", () => {
     });
   });
 
+  describe("retention clock: only a status change moves it (I6)", () => {
+    const updateData = () =>
+      (mockTxRequestUpdate.mock.calls[0]![0] as { data: Record<string, unknown> }).data;
+
+    it("DECLINED + decline keeps status_changed_at but still records the reviewer", async () => {
+      mockRequestFindUnique.mockResolvedValue(pendingRow({ status: "DECLINED" }));
+      const res = await POST(request({ decision: "decline" }), ctx());
+      expect(res.status).toBe(200);
+      expect(updateData()).not.toHaveProperty("status_changed_at");
+      expect(updateData()).toMatchObject({
+        status: "DECLINED",
+        reviewed_at: NOW,
+        reviewed_by_id: "op-1",
+      });
+    });
+
+    it("PENDING + decline moves status_changed_at", async () => {
+      await POST(request({ decision: "decline" }), ctx());
+      expect(updateData()).toMatchObject({ status_changed_at: NOW });
+    });
+
+    it("INVITED + approve re-issues the invite without moving status_changed_at", async () => {
+      mockRequestFindUnique.mockResolvedValue(
+        pendingRow({
+          status: "INVITED",
+          invites: [{ used_at: null, expires_at: new Date(NOW.getTime() + HOUR) }],
+        }),
+      );
+      const res = await POST(request({ decision: "approve" }), ctx());
+      expect(res.status).toBe(200);
+      expect(updateData()).not.toHaveProperty("status_changed_at");
+      expect(updateData()).toMatchObject({ reviewed_at: NOW, reviewed_by_id: "op-1" });
+      expect(mockTxInviteCreate).toHaveBeenCalledTimes(1);
+      expect(mockSendInviteEmail).toHaveBeenCalledTimes(1);
+    });
+
+    it("PENDING + approve moves status_changed_at", async () => {
+      await POST(request({ decision: "approve" }), ctx());
+      expect(updateData()).toMatchObject({ status: "INVITED", status_changed_at: NOW });
+    });
+  });
+
   describe("step 8 — approve (I11, I12)", () => {
     it("updates the request FIRST, then deletes unused invites, then creates one — in one transaction, email after commit", async () => {
       const res = await POST(request({ decision: "approve" }), ctx());

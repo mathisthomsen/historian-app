@@ -104,12 +104,13 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
   // 6. An account already exists for this address: nothing to decide. Checked
   //    inside each transaction below (assertNoAccount), not here.
 
-  const reviewed = {
+  const reviewed = (newStatus: "DECLINED" | "INVITED") => ({
     reviewed_at: now,
     reviewed_by_id: userId,
-    // Every status change moves the retention clock (§3, I6).
-    status_changed_at: now,
-  };
+    // A status CHANGE moves the retention clock (§3, I6); repeating the same
+    // decision must not, or an operator could keep a row alive indefinitely.
+    ...(accessRequest.status !== newStatus ? { status_changed_at: now } : {}),
+  });
 
   // 7. Decline: DECLINED, and any invite still usable is revoked. No email.
   if (decision === "decline") {
@@ -118,7 +119,7 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
         await assertNoAccount(tx, accessRequest.email);
         await tx.accessRequest.update({
           where: { id: accessRequest.id },
-          data: { status: "DECLINED", ...reviewed },
+          data: { status: "DECLINED", ...reviewed("DECLINED") },
         });
         await tx.invite.deleteMany({ where: { email: accessRequest.email, used_at: null } });
       });
@@ -139,7 +140,7 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
       await assertNoAccount(tx, accessRequest.email);
       await tx.accessRequest.update({
         where: { id: accessRequest.id },
-        data: { status: "INVITED", ...reviewed },
+        data: { status: "INVITED", ...reviewed("INVITED") },
       });
       await tx.invite.deleteMany({ where: { email: accessRequest.email, used_at: null } });
       await tx.invite.create({
