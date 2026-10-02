@@ -6,6 +6,7 @@ import { Client } from "pg";
 // Relative, not the "@/" alias: Playwright transpiles this file outside the
 // Next build, so tsconfig path mapping is not guaranteed to apply here.
 import { purgeablePrefix } from "../../src/lib/rate-limit-key";
+import { hashToken } from "../../src/lib/security";
 
 import { assertNotProductionBranch } from "./guard";
 
@@ -143,6 +144,55 @@ export async function insertTestResetToken(email: string): Promise<string> {
       [email.toLowerCase(), tokenHash],
     );
     return rawToken;
+  } finally {
+    await client.end();
+  }
+}
+
+export interface TestInviteOptions {
+  /** Lifetime from now, in ms. Negative inserts an already-expired invite. Default 14 days. */
+  expiresInMs?: number;
+  /** Insert the invite as already redeemed. */
+  used?: boolean;
+}
+
+/**
+ * Inserts an invite for `email` and returns its RAW token, for
+ * `/auth/register?invite=<token>` or the register route's `invite` field.
+ *
+ * The raw token is random (256 bits, like the app's) and only its hash is
+ * stored, hashed with the app's own `hashToken` so a change to the hashing
+ * breaks this fixture instead of silently diverging from it. Tests insert
+ * invites directly because CI's email stub never exposes a token (plan A7).
+ */
+export async function insertTestInvite(
+  email: string,
+  opts: TestInviteOptions = {},
+): Promise<string> {
+  const rawToken = randomBytes(32).toString("hex");
+  const expiresInMs = opts.expiresInMs ?? 14 * 24 * 60 * 60 * 1000;
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    await client.query(
+      `INSERT INTO invites (id, email, token_hash, expires_at, used_at)
+         VALUES (gen_random_uuid()::text, $1, $2,
+                 NOW() + make_interval(secs => $3::float8 / 1000),
+                 CASE WHEN $4::boolean THEN NOW() ELSE NULL END)`,
+      [email.toLowerCase(), hashToken(rawToken), expiresInMs, opts.used === true],
+    );
+    return rawToken;
+  } finally {
+    await client.end();
+  }
+}
+
+/** Deletes every invite for `email` (cleanup for tests that call `insertTestInvite`). */
+export async function deleteTestInvites(email: string): Promise<void> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    await client.query("DELETE FROM invites WHERE email = $1", [email.toLowerCase()]);
   } finally {
     await client.end();
   }

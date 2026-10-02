@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -13,7 +13,7 @@ import { ResendVerification } from "@/components/auth/ResendVerification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { readErrorBody, retryAfterMinutes } from "@/lib/api-error";
+import { errorCode, readErrorBody, retryAfterMinutes, translateErrorCode } from "@/lib/api-error";
 import { REGISTER_RATE_LIMIT_MINUTES } from "@/lib/auth-errors";
 
 // Schema keys used as placeholders — translated inside the component.
@@ -24,8 +24,27 @@ type RegisterFormValues = {
   passwordConfirm: string;
 };
 
-export function RegisterForm() {
+/**
+ * The five INVITE_* refusals map onto the page-load states' copy, so the
+ * submit-time error and the preview are one sentence (spec §8, same
+ * code -> key map shape as ResetPasswordForm). No separate `errors.*` keys.
+ */
+const INVITE_ERROR_KEYS = {
+  INVITE_REQUIRED: "invite.missing",
+  INVITE_INVALID: "invite.invalid",
+  INVITE_EXPIRED: "invite.expired",
+  INVITE_USED: "invite.used",
+  INVITE_EMAIL_MISMATCH: "invite.emailMismatch",
+} as const;
+
+interface RegisterFormProps {
+  /** A `valid` invite from the page's read-only preview (spec §4.2). */
+  invite: { email: string; token: string };
+}
+
+export function RegisterForm({ invite }: RegisterFormProps) {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -56,9 +75,11 @@ export function RegisterForm() {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    // The address is bound to the invite and not editable (spec §6.2).
+    defaultValues: { email: invite.email },
   });
 
   const password = watch("password", "");
@@ -73,8 +94,21 @@ export function RegisterForm() {
           email: values.email,
           name: values.name,
           password: values.password,
+          invite: invite.token,
         }),
       });
+      if (res.status === 403) {
+        // The invite changed state between page load and submit (spec §6.2).
+        setServerError(
+          translateErrorCode(
+            errorCode(await readErrorBody(res)),
+            t,
+            INVITE_ERROR_KEYS,
+            "errors.serverError",
+          ),
+        );
+        return;
+      }
       if (res.status === 409) {
         setServerError(t("errors.emailTaken"));
         return;
@@ -173,9 +207,13 @@ export function RegisterForm() {
           id="email"
           type="email"
           autoComplete="email"
+          readOnly
           {...register("email")}
           aria-invalid={!!errors.email}
         />
+        <p className="text-muted-foreground text-xs">
+          {t("invite.invitedAs", { email: invite.email })}
+        </p>
         {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
       </div>
       <div className="space-y-1">
@@ -214,7 +252,17 @@ export function RegisterForm() {
           <p className="text-destructive text-xs">{errors.passwordConfirm.message}</p>
         )}
       </div>
-      <Button type="submit" className="w-full">
+      <p className="text-muted-foreground text-xs">
+        {t("register.privacyHint")}{" "}
+        <Link href={`/${locale}/datenschutz`} className="text-primary hover:underline">
+          {t("register.privacy")}
+        </Link>
+        .
+      </p>
+      {/* Disabled while submitting: a double click used to send two requests, and
+          the second answered INVITE_USED over the first one's success card (#112). */}
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : null}
         {t("register.submit")}
       </Button>
       <div className="text-center text-sm">

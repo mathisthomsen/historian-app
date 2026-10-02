@@ -59,8 +59,8 @@
       "title": "Sign in",
       "submit": "Sign in",
       "forgotPassword": "Forgot password?",
-      "noAccount": "Don't have an account?",
-      "register": "Register",
+      "noAccount": "No access yet?",
+      "register": "Request access",
       "resetSuccess": "Password has been reset. Please sign in."
     },
     "register": {
@@ -72,7 +72,20 @@
       "verificationSent": "Verification email sent. Please check your inbox.",
       "emailNotSentTitle": "Account created — the email could not be delivered",
       "emailNotSentMessage": "Your account exists, but the confirmation email did not go out. Request a new link below.",
-      "backToLogin": "Go to sign-in"
+      "backToLogin": "Go to sign-in",
+      "privacyHint": "How we process your data is described in the",
+      "privacy": "privacy policy"
+    },
+    "invite": {
+      "missing": "Registration is by invitation only.",
+      "invalid": "This invitation link is not valid.",
+      "expired": "This invitation link has expired.",
+      "used": "This invitation link has already been used.",
+      "emailMismatch": "The invitation is for a different address.",
+      "invitedAs": "Invited as {email}",
+      "requestAccess": "Request access",
+      "requestAgain": "Request access again",
+      "toLogin": "Go to sign-in"
     },
     "verify": {
       "title": "Confirm email",
