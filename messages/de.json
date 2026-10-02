@@ -17,7 +17,7 @@
     "loadFailed": "Daten konnten nicht geladen werden.",
     "evidenceCountFailed": "Nachweise konnten nicht geladen werden",
     "unsavedTitle": "Ungespeicherte Änderungen verwerfen?",
-    "unsavedBody": "Deine Eingaben auf dieser Seite gehen verloren. Dieser Schritt lässt sich nicht rückgängig machen.",
+    "unsavedBody": "Ihre Eingaben auf dieser Seite gehen verloren. Dieser Schritt lässt sich nicht rückgängig machen.",
     "discardChanges": "Änderungen verwerfen",
     "keepEditing": "Weiter bearbeiten",
     "certainty": {
@@ -569,7 +569,7 @@
     "delete_failed": "Relation konnte nicht gelöscht werden.",
     "year_placeholder": "Jahr",
     "month_placeholder": "Monat",
-    "evidence_attach_failed": "Die Beziehung wurde gespeichert, der Nachweis konnte aber nicht angehängt werden. Deine Quelle und dein Zitat stehen noch unten — bitte erneut anhängen.",
+    "evidence_attach_failed": "Die Beziehung wurde gespeichert, der Nachweis konnte aber nicht angehängt werden. Ihre Quelle und Ihr Zitat stehen noch unten — bitte erneut anhängen.",
     "evidence_retry": "Nachweis erneut anhängen",
     "evidence_attached_toast": "Nachweis angehängt.",
     "saved_without_evidence_toast": "Relation gespeichert — ohne Nachweis."
