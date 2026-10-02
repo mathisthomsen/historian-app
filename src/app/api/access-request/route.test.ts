@@ -295,6 +295,20 @@ describe("uniform response (I5)", () => {
     expect(existingUser).toEqual(real);
   });
 
+  it("answers a markup-only name identically whether or not the email has an account", async () => {
+    // A name that sanitises to nothing is a validation failure. It must be
+    // decided before any lookup, or the 400-vs-200 split reveals which
+    // addresses have accounts (I5).
+    const markupOnly = { name: "<b></b>" };
+    mocks.findUser.mockResolvedValueOnce({ id: "user_1" });
+    const existingUser = await bodyOf(await post(markupOnly));
+    const unknownUser = await bodyOf(await post(markupOnly));
+
+    expect(unknownUser.status).toBe(400);
+    expect(existingUser).toEqual(unknownUser);
+    expect(mocks.findUser).not.toHaveBeenCalled();
+  });
+
   it("returns the same bytes for every step-7 outcome that is not a validation failure", async () => {
     const real = await (await post()).text();
 

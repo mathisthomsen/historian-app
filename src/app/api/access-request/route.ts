@@ -122,6 +122,17 @@ export async function POST(request: Request): Promise<NextResponse> {
     return accepted();
   }
 
+  // Decided before any lookup: a name that sanitises to nothing is a
+  // validation failure, and answering it only for unknown addresses would
+  // reveal which ones have accounts (I5).
+  const name = sanitize(data.name);
+  if (name.trim() === "") {
+    // Markup only: nothing left to show an operator.
+    return jsonError(400, "VALIDATION_FAILED", {
+      details: { fields: { name: "access.errors.nameRequired" } },
+    });
+  }
+
   // Step 5 — an address that already has an account: same body, nothing written.
   const existingUser = await prisma.user.findUnique({
     where: { email: data.email },
@@ -132,13 +143,6 @@ export async function POST(request: Request): Promise<NextResponse> {
   // Step 6 — every stranger-supplied text field is sanitised BEFORE it is
   // stored. The operator notification interpolates these into HTML text nodes
   // without escaping them (`email.ts`) and relies on exactly this.
-  const name = sanitize(data.name);
-  if (name.trim() === "") {
-    // Markup only: nothing left to show an operator.
-    return jsonError(400, "VALIDATION_FAILED", {
-      details: { fields: { name: "access.errors.nameRequired" } },
-    });
-  }
   const fields = {
     name,
     institution: cleanOptional(data.institution),
