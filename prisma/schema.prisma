@@ -89,15 +89,16 @@ model User {
   failed_login_count Int       @default(0) // consecutive failures; reset on success
   locked_until       DateTime? @db.Timestamptz(3) // non-null = account temporarily locked
 
-  user_projects       UserProject[]
-  persons             Person[]            @relation("PersonCreatedBy")
-  events              Event[]             @relation("EventCreatedBy")
-  sources             Source[]            @relation("SourceCreatedBy")
-  relations           Relation[]          @relation("RelationCreatedBy")
-  email_confirmations EmailConfirmation[]
-  password_resets     PasswordReset[]
-  auth_audit_logs     AuthAuditLog[]
-  entity_activity     EntityActivity[]    @relation("EntityActivityUser")
+  user_projects            UserProject[]
+  persons                  Person[]            @relation("PersonCreatedBy")
+  events                   Event[]             @relation("EventCreatedBy")
+  sources                  Source[]            @relation("SourceCreatedBy")
+  relations                Relation[]          @relation("RelationCreatedBy")
+  email_confirmations      EmailConfirmation[]
+  password_resets          PasswordReset[]
+  auth_audit_logs          AuthAuditLog[]
+  reviewed_access_requests AccessRequest[]     @relation("AccessRequestReviewer")
+  entity_activity          EntityActivity[]    @relation("EntityActivityUser")
 
   @@map("users")
 }
@@ -132,6 +133,56 @@ model PasswordReset {
 
   @@index([user_id])
   @@map("password_resets")
+}
+
+/// Request for an account, submitted by a stranger on the public landing page.
+/// Deliberately NOT project-scoped: a requester has no account and no project yet,
+/// and the table is operator-only data. Never exposed through any project-scoped route.
+model AccessRequest {
+  id                String              @id @default(cuid())
+  email             String              @unique // lowercased by Zod before write
+  name              String
+  institution       String?
+  research_area     String?
+  tool_gap          String? // co-development field (2.6 D14)
+  locale            String // "de" | "en" — language of the invite email
+  status            AccessRequestStatus @default(PENDING)
+  consent_at        DateTime            @db.Timestamptz(3)
+  ip_hash           String? // anonymizeIp(); abuse forensics only
+  created_at        DateTime            @default(now()) @db.Timestamptz(3)
+  updated_at        DateTime            @updatedAt @db.Timestamptz(3)
+  status_changed_at DateTime            @default(now()) @db.Timestamptz(3) // retention clock (§4.6)
+  reviewed_at       DateTime?           @db.Timestamptz(3)
+  reviewed_by_id    String?
+
+  reviewed_by User?    @relation("AccessRequestReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+  invites     Invite[]
+
+  @@index([status, created_at])
+  @@map("access_requests")
+}
+
+enum AccessRequestStatus {
+  PENDING
+  INVITED
+  DECLINED
+}
+
+/// Single-use, email-bound registration invite. Raw token is only ever in the
+/// email link — never persisted. Not project-scoped (see AccessRequest).
+model Invite {
+  id                String    @id @default(cuid())
+  email             String // lowercased; must equal the registering email
+  token_hash        String    @unique // SHA-256(rawToken)
+  access_request_id String? // nullable: leaves room for direct invites later
+  expires_at        DateTime  @db.Timestamptz(3) // created_at + 14 days
+  used_at           DateTime? @db.Timestamptz(3) // single-use
+  created_at        DateTime  @default(now()) @db.Timestamptz(3)
+
+  access_request AccessRequest? @relation(fields: [access_request_id], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@map("invites")
 }
 
 /// Append-only auth event log. user_id nullable for pre-auth failures.
