@@ -355,11 +355,19 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       # Waits for the promotion to complete (default --timeout 3m).
+      #
+      # --scope pins the team. `deploy` finds it through the VERCEL_ORG_ID /
+      # VERCEL_PROJECT_ID link, but `promote` ignores that link: it compares the
+      # deployment's team against --scope, else the global CLI config (absent in
+      # CI), else the token's default team, and refuses a mismatch as "belongs
+      # to a different team" (vercel@62.1.0, getProjectByDeployment). The first
+      # run without --scope failed at this step in 3 s (#132).
       - name: Promote to evidoxa.com
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           set -euo pipefail
-          pnpm dlx "vercel@${VERCEL_CLI_VERSION}" promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
+          pnpm dlx "vercel@${VERCEL_CLI_VERSION}" promote "$DEPLOYMENT_URL" --yes \
+            --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
