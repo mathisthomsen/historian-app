@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { CtaBand } from "@/components/marketing/CtaBand";
+import { AccessRequestForm } from "@/components/marketing/AccessRequestForm";
 import { EditorialPassage } from "@/components/marketing/EditorialPassage";
 import { EvidenceCitation } from "@/components/marketing/EvidenceCitation";
 import { Hero } from "@/components/marketing/Hero";
@@ -122,7 +122,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   return (
     <>
-      <Hero locale={locale} />
+      <Hero />
 
       <div className="mt-[var(--section-gap-lg)]">
         <Reveal>
@@ -144,7 +144,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
       <div className="my-[var(--section-gap-lg)]">
         <Reveal>
-          <CtaBand locale={locale} />
+          <AccessRequestForm locale={locale} />
         </Reveal>
       </div>
 

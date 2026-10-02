@@ -4,11 +4,7 @@ import { useTranslations } from "next-intl";
 import { HeroAppFrame } from "@/components/marketing/HeroAppFrame";
 import { Button } from "@/components/ui/button";
 
-interface HeroProps {
-  locale: string;
-}
-
-export function Hero({ locale }: HeroProps) {
+export function Hero() {
   const t = useTranslations("marketing.hero");
 
   return (
@@ -21,7 +17,7 @@ export function Hero({ locale }: HeroProps) {
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button asChild size="lg">
-          <Link href={`/${locale}/auth/register`}>{t("primary")}</Link>
+          <Link href="#access">{t("primary")}</Link>
         </Button>
         <Button asChild variant="outline" size="lg">
           <Link href="#highlights">{t("secondary")}</Link>

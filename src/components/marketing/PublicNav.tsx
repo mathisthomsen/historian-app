@@ -50,7 +50,7 @@ export function PublicNav({ isSignedIn, locale }: PublicNavProps) {
               <Link href={`/${locale}/auth/login`}>{t("signIn")}</Link>
             </Button>
             <Button asChild size="sm">
-              <Link href={`/${locale}/auth/register`}>{t("register")}</Link>
+              <Link href={`/${locale}#access`}>{t("register")}</Link>
             </Button>
           </>
         )}
