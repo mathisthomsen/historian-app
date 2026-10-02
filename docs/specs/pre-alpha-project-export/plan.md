@@ -39,7 +39,7 @@ only serialises rows already in memory. A dashboard link triggers the download.
 | P2  | The spec §5 DMMF predicate selects exactly the twelve tables of §2 plus `UserProject` (spec E2).           | Measured                                     | 2026-10-02, `getDMMF` from `@prisma/internals@6.19.2` on today's `prisma/schema.prisma`, no DB connection: 18 models; predicate selects 13 — `UserProject, Person, PersonName, EventType, Event, Source, Location, Literature, RelationType, Relation, RelationEvidence, PropertyEvidence, EntityActivity`. Method: T3 runs the guard on the generated `Prisma.dmmf`, not a fixture.                                                                                                                                                     |
 | P3  | Reading through `prisma` returns soft-deleted rows.                                                        | Measured (code)                              | Only `db` carries the filter (`db.ts:21–62`); `prisma` is unextended (`db.ts:5–9`). Wrong client → X2 fails silently. Method: T3 source assertion that the export module does not reference `db`; T6 soft-deleted person present in a real download.                                                                                                                                                                                                                                                                                     |
 | P4  | Every exported value serialises as structured JSON via `JSON.stringify`, and serialising cannot throw.     | Measured (schema)                            | Same DMMF run: scalar types across the 13 models are `String, Int, Boolean, DateTime, Float, Json` and enums — no `BigInt` (would throw), `Decimal` or `Bytes`. Partial dates are `Int?` (`schema.prisma:203–205`). No field-level `@map` (only `@@map`), so Prisma field names equal column names, as X1 requires. Method: T6 parses a real download.                                                                                                                                                                                   |
-| P5  | A uniform 404 is new behaviour, not a copy of existing routes.                                             | Measured                                     | List routes answer non-members 403 (`src/app/api/persons/route.ts:49`); `[id]` routes answer 404 for a missing row but 403 for another project's row (`persons/[id]/route.ts:28,36`) — an existence oracle the export must not copy. Method: T4 asserts byte-identical bodies for nonexistent vs non-member vs soft-deleted; T6 repeats it over HTTP.                                                                                                                                                                                    |
+| P5  | A uniform 404 is new behaviour, not a copy of existing routes.                                             | Measured                                     | Existing project-scoped routes do not use one uniform refusal for every case (tracked in #144; class, impact and fix only there). The export will not copy them. Method: T4 asserts byte-identical bodies for nonexistent vs non-member vs soft-deleted; T6 repeats it over HTTP.                                                                                                                                                                                                                                                        |
 | P6  | The route's own `requireUser()` is load-bearing, not redundant.                                            | Measured                                     | Middleware answers anonymous `/api/*` with 401 (`src/auth.config.ts:129–138`), but its matcher skips any path containing a dot (`src/middleware.ts:30`). Project ids are cuids (`schema.prisma:155`), so normal URLs are gated twice; a dotted path reaches the route ungated. Method: T4 unit (anonymous → 401 with middleware absent); T6 anonymous request.                                                                                                                                                                           |
 | P7  | `REPEATABLE READ` interactive transactions work through the pooled Neon URL Prisma uses.                   | **Assumed → T6**                             | Interactive transactions already run on the pooled `url` (`src/lib/project.ts:72`, `schema.prisma:9`), but no code sets `isolationLevel` (grep of `src/`: no match). Production-bound. Method: T6 on CI's ephemeral Neon branch, which uses the pooled URL (`ci.yml:209`) — a mock cannot observe this.                                                                                                                                                                                                                                  |
 | P8  | The largest realistic project fits in one invocation's memory (spec E4).                                   | Measured (dev)                               | Spec §0 E4: ≈ 0.7 MB on `dev`; 100 000-row cap → 413.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -94,7 +94,10 @@ exist on a branch first — unless the owner picks the probe option in Q4.
 - **Depends on:** T1 approved.
 - **Tests first:** (1) §5 guard over the generated `Prisma.dmmf`; (2) on a mocked `tx`, every direct
   table's `findMany` `where` has `project_id: id`, `person_names` filters through `person`,
-  `relation_evidence` through `relation`, every call orders by `created_at, id`; (3) total > 100 000
+  `relation_evidence` through `relation`, every call orders by `created_at, id`; (2b) every `count` call carries the same scope as its
+  `findMany` — `project_id: id` on direct tables, the `person` / `relation` parent filter on
+  `person_names` / `relation_evidence` — so an unscoped count cannot sum other tenants' rows into
+  the cap; (3) total > 100 000
   → too-large result and **no** `findMany` called; (4) output keys equal §2 and `counts` equal array
   lengths; (5) the module's source never references `db` from `@/lib/db` (P3); (6) no query
   `include`s a `User` relation (X5).
@@ -107,7 +110,9 @@ exist on a branch first — unless the owner picks the probe option in Q4.
 - **Depends on:** T3. Coordinate `src/lib/api.ts` with #29.
 - **Tests first** (spec §7 route list, plus): anonymous → 401 with no membership query (P6);
   nonexistent, non-member and soft-deleted project → 404 with **identical bodies** and no
-  `$transaction` call (P5); the transaction is opened on `prisma` with the X4 options; VIEWER → 200; rate-limit key `export:{userId}` → 429; 413 before any
+  `$transaction` call (P5); the transaction is opened on `prisma` with the X4 options; `buildExport` is called **inside**
+  the callback with the callback's `tx` object (identity, not just "a client") — the snapshot
+  guarantee holds only then; VIEWER → 200; rate-limit key `export:{userId}` → 429; 413 before any
   `findMany`; headers exactly §3 step 5, including the slug fallback `projekt` for a name with no
   ASCII letters; the log line carries ids and counts only.
 - **Acceptance:** `pnpm test`, `pnpm typecheck`, `pnpm lint`; a local `pnpm build && pnpm start`
@@ -150,7 +155,9 @@ exist on a branch first — unless the owner picks the probe option in Q4.
 
 - **Depends on:** T6.
 - **Mutations — each must turn a named test red, then be reverted:** delete the membership check
-  (T4 404 tests, T6 cross-tenant); drop `project_id` from one `findMany` (T3 `where` test); swap
+  (T4 404 tests, T6 cross-tenant); drop `project_id` from one `findMany` (T3 `where` test); drop the scope from one `count` (T3
+  test 2b); pass global `prisma` instead of `tx` to `buildExport`, or call it after the callback
+  returns (T4 `tx`-identity test); swap
   `prisma` for `db` in the export path (T3 source test **and** T6 soft-deleted assertion); make the
   non-member body differ from the nonexistent body (T4, T6); add a `project_id` model to a DMMF copy
   (§5 guard); remove `isolationLevel` (T4 transaction-options assertion).
