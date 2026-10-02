@@ -401,7 +401,7 @@ test.describe("Invited registration", () => {
     await page.getByLabel("E-Mail").fill(email);
     await page.getByLabel("Passwort", { exact: true }).fill(PASSWORD);
     await page.getByRole("button", { name: "Anmelden" }).click();
-    await expect(page.getByText("Bitte bestätige zuerst deine E-Mail-Adresse.")).toBeVisible({
+    await expect(page.getByText("Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.")).toBeVisible({
       timeout: 10_000,
     });
     await expect(page).toHaveURL(/\/de\/auth\/login/);
