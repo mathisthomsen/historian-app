@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import type { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -24,6 +25,24 @@ function isJsonMediaType(contentType: string | null): boolean {
 /** Prisma's "record to update not found" — the row was purged after we read it. */
 function isRecordNotFound(err: unknown): boolean {
   return typeof err === "object" && err !== null && (err as { code?: unknown }).code === "P2025";
+}
+
+/** Thrown inside a decision transaction when a User already holds the address. */
+class EmailTakenError extends Error {}
+
+/**
+ * Step 6, inside the transaction and before any write, so a 409 leaves nothing
+ * behind. Under READ COMMITTED a redemption can still commit between this read
+ * and our commit; the residual window is bounded by A5 (`User.email` is unique),
+ * so a second account cannot result — at worst an unusable invite is issued.
+ */
+async function assertNoAccount(
+  tx: Pick<Prisma.TransactionClient, "user">,
+  email: string,
+): Promise<void> {
+  if (await tx.user.findUnique({ where: { email }, select: { id: true } })) {
+    throw new EmailTakenError();
+  }
 }
 
 /**
@@ -82,12 +101,8 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
       : { status: accessRequest.status, status_changed_at: accessRequest.status_changed_at };
   if (isExpired(retentionRow, now)) return notFoundError();
 
-  // 6. An account already exists for this address: nothing to decide.
-  const existingUser = await prisma.user.findUnique({
-    where: { email: accessRequest.email },
-    select: { id: true },
-  });
-  if (existingUser) return jsonError(409, "EMAIL_TAKEN");
+  // 6. An account already exists for this address: nothing to decide. Checked
+  //    inside each transaction below (assertNoAccount), not here.
 
   const reviewed = {
     reviewed_at: now,
@@ -100,6 +115,7 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
   if (decision === "decline") {
     try {
       await prisma.$transaction(async (tx) => {
+        await assertNoAccount(tx, accessRequest.email);
         await tx.accessRequest.update({
           where: { id: accessRequest.id },
           data: { status: "DECLINED", ...reviewed },
@@ -107,6 +123,7 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
         await tx.invite.deleteMany({ where: { email: accessRequest.email, used_at: null } });
       });
     } catch (err) {
+      if (err instanceof EmailTakenError) return jsonError(409, "EMAIL_TAKEN");
       if (isRecordNotFound(err)) return notFoundError();
       throw err;
     }
@@ -119,6 +136,7 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
   const rawToken = generateToken();
   try {
     await prisma.$transaction(async (tx) => {
+      await assertNoAccount(tx, accessRequest.email);
       await tx.accessRequest.update({
         where: { id: accessRequest.id },
         data: { status: "INVITED", ...reviewed },
@@ -134,6 +152,7 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
       });
     });
   } catch (err) {
+    if (err instanceof EmailTakenError) return jsonError(409, "EMAIL_TAKEN");
     if (isRecordNotFound(err)) return notFoundError();
     throw err;
   }

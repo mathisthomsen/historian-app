@@ -12,6 +12,7 @@ const mockAuth = vi.fn();
 const mockUserFindUnique = vi.fn();
 const mockRequestFindUnique = vi.fn();
 const mockTransaction = vi.fn();
+const mockTxUserFindUnique = vi.fn();
 const mockTxRequestUpdate = vi.fn();
 const mockTxInviteDeleteMany = vi.fn();
 const mockTxInviteCreate = vi.fn();
@@ -78,12 +79,24 @@ function arrangeDb(opts: { role?: "ADMIN" | "USER" | null; existingEmail?: strin
   mockUserFindUnique.mockImplementation(
     async (args: { where: { id?: string; email?: string } }) => {
       if (args.where.id !== undefined) return role === null ? null : { role };
-      if (args.where.email !== undefined && args.where.email === opts.existingEmail) {
-        return { id: "existing-user" };
-      }
       return null;
     },
   );
+  // The existing-account check runs INSIDE the transaction (via `tx`), so a
+  // redemption that commits between the read and the write is seen.
+  mockTxUserFindUnique.mockImplementation(async (args: { where: { email?: string } }) =>
+    args.where.email !== undefined && args.where.email === opts.existingEmail
+      ? { id: "existing-user" }
+      : null,
+  );
+}
+
+/** A 409 from inside the transaction: nothing on the request or its invites changed. */
+function expectNoTxWrites() {
+  expect(mockTxRequestUpdate).not.toHaveBeenCalled();
+  expect(mockTxInviteDeleteMany).not.toHaveBeenCalled();
+  expect(mockTxInviteCreate).not.toHaveBeenCalled();
+  expect(mockSendInviteEmail).not.toHaveBeenCalled();
 }
 
 function expectNoDbRead() {
@@ -126,6 +139,7 @@ describe("POST /api/admin/access-requests/[id]", () => {
     mockTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
       calls.push("tx:begin");
       const result = await cb({
+        user: { findUnique: mockTxUserFindUnique },
         accessRequest: { update: mockTxRequestUpdate },
         invite: { deleteMany: mockTxInviteDeleteMany, create: mockTxInviteCreate },
       });
@@ -359,14 +373,38 @@ describe("POST /api/admin/access-requests/[id]", () => {
       const res = await POST(request({ decision: "approve" }), ctx());
       expect(res.status).toBe(409);
       expect((await res.json()).error.code).toBe("EMAIL_TAKEN");
-      expectNothingWritten();
+      expect(mockTxUserFindUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { email: "ada@example.org" } }),
+      );
+      expectNoTxWrites();
+      expect(mockTopRequestUpdate).not.toHaveBeenCalled();
     });
 
     it("409 applies to decline too", async () => {
       arrangeDb({ existingEmail: "ada@example.org" });
       const res = await POST(request({ decision: "decline" }), ctx());
       expect(res.status).toBe(409);
-      expectNothingWritten();
+      expectNoTxWrites();
+    });
+
+    it("the check runs inside the transaction: an account that appears after the read still wins", async () => {
+      // Nothing at the top level knows the user; only the lookup through `tx` does.
+      arrangeDb();
+      mockTxUserFindUnique.mockResolvedValue({ id: "just-registered" });
+      const res = await POST(request({ decision: "approve" }), ctx());
+      expect(res.status).toBe(409);
+      expect(mockTransaction).toHaveBeenCalledTimes(1);
+      expectNoTxWrites();
+      expect(calls).not.toContain("tx:commit");
+    });
+
+    it("the lookup precedes every write inside the transaction", async () => {
+      mockTxUserFindUnique.mockImplementation(async () => {
+        calls.push("tx:find-user");
+        return null;
+      });
+      await POST(request({ decision: "approve" }), ctx());
+      expect(calls.slice(0, 3)).toEqual(["tx:begin", "tx:find-user", "tx:update-request"]);
     });
   });
 
