@@ -212,6 +212,68 @@ describe("authConfig.authorized", () => {
     expect(await run("/fr/dashboard", false)).toBe(true);
   });
 
+  describe("invite-gated registration routes (#29, I9)", () => {
+    const OPENED = ["/api/access-request", "/api/internal/purge-access-requests"];
+    // Near-misses of the two opened paths. Each must stay behind the anonymous
+    // 401 — a prefix-shaped allow (`startsWith`) would open every one of them.
+    const NOT_OPENED = [
+      "/api/access-requests/x",
+      "/api/access-request/x",
+      "/api/access-requests",
+      "/api/internal/purge-access-requests/x",
+      "/api/internal/x",
+    ];
+
+    it.each(OPENED)("lets an anonymous request through to %s", async (pathname) => {
+      expect(await run(pathname, false)).toBe(true);
+    });
+
+    it.each(OPENED)(
+      "lets an anonymous request through to %s under a locale prefix",
+      async (pathname) => {
+        // The match is on the locale-stripped pathname, like /api/health.
+        expect(await run(`/de${pathname}`, false)).toBe(true);
+      },
+    );
+
+    it.each(NOT_OPENED)(
+      "answers anonymous %s with 401 JSON, never a redirect",
+      async (pathname) => {
+        const res = (await run(pathname, false)) as Response;
+        expect(res).toBeInstanceOf(Response);
+        expect(res.status).toBe(401);
+        expect(res.headers.get("location")).toBeNull();
+        expect(await res.json()).toEqual({ error: "UNAUTHORIZED" });
+      },
+    );
+
+    it("lets a signed-in request to /api/admin/... through (the route does its own DB role check)", async () => {
+      expect(await run("/api/admin/access-requests/x", true)).toBe(true);
+    });
+
+    it("answers an anonymous /api/admin/... request with 401", async () => {
+      const res = (await run("/api/admin/access-requests/x", false)) as Response;
+      expect(res.status).toBe(401);
+    });
+
+    it("redirects an anonymous /de/admin page to the German login", async () => {
+      const res = (await run("/de/admin/access-requests/x", false)) as Response;
+      expect(res).toBeInstanceOf(Response);
+      expect(res.status).toBe(307);
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/de/auth/login");
+    });
+
+    it("keeps the locale when redirecting an anonymous /en/admin page", async () => {
+      const res = (await run("/en/admin/access-requests/x", false)) as Response;
+      expect(res.status).toBe(307);
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/en/auth/login");
+    });
+
+    it("lets a signed-in request to an /admin page through", async () => {
+      expect(await run("/de/admin/access-requests/x", true)).toBe(true);
+    });
+  });
+
   it("gates every directory that actually exists under (app), not a hand-maintained copy of the list", async () => {
     const segments = protectedAppSegments();
     // Guard against the directory scan itself silently finding nothing — an
