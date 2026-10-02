@@ -117,9 +117,8 @@ describe("login failure states are distinguishable", () => {
 
 describe("register reports the real wait and a degraded service", () => {
   async function submitRegister() {
-    renderWithProviders(<RegisterForm />);
+    renderWithProviders(<RegisterForm invite={{ email: "ada@example.com", token: "tok" }} />);
     await userEvent.type(screen.getByLabelText("Name"), "Ada");
-    await userEvent.type(screen.getByLabelText("E-Mail"), "ada@example.com");
     await userEvent.type(screen.getByLabelText("Passwort", { exact: true }), "ValidP@ss1");
     await userEvent.type(screen.getByLabelText("Passwort bestätigen"), "ValidP@ss1");
     await userEvent.click(screen.getByRole("button", { name: "Konto erstellen" }));

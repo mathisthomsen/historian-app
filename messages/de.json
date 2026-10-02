@@ -59,8 +59,8 @@
       "title": "Anmelden",
       "submit": "Anmelden",
       "forgotPassword": "Passwort vergessen?",
-      "noAccount": "Noch kein Konto?",
-      "register": "Registrieren",
+      "noAccount": "Noch kein Zugang?",
+      "register": "Zugang anfragen",
       "resetSuccess": "Passwort wurde zurückgesetzt. Bitte melde dich an."
     },
     "register": {
@@ -72,7 +72,20 @@
       "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfe dein Postfach.",
       "emailNotSentTitle": "Konto erstellt — E-Mail konnte nicht zugestellt werden",
       "emailNotSentMessage": "Dein Konto besteht, aber die Bestätigungs-E-Mail ist nicht rausgegangen. Fordere unten einen neuen Link an.",
-      "backToLogin": "Zur Anmeldung"
+      "backToLogin": "Zur Anmeldung",
+      "privacyHint": "Wie wir deine Daten verarbeiten, steht in der",
+      "privacy": "Datenschutzerklärung"
+    },
+    "invite": {
+      "missing": "Die Registrierung ist nur mit Einladung möglich.",
+      "invalid": "Dieser Einladungslink ist ungültig.",
+      "expired": "Dieser Einladungslink ist abgelaufen.",
+      "used": "Dieser Einladungslink wurde bereits verwendet.",
+      "emailMismatch": "Die Einladung gilt für eine andere E-Mail-Adresse.",
+      "invitedAs": "Eingeladen als {email}",
+      "requestAccess": "Zugang anfragen",
+      "requestAgain": "Zugang erneut anfragen",
+      "toLogin": "Zur Anmeldung"
     },
     "verify": {
       "title": "E-Mail bestätigen",

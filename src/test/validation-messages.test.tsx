@@ -69,16 +69,16 @@ describe("form validation messages are translated", () => {
     expectNoLeakedValidationText();
   });
 
-  it("RegisterForm rejects an empty name and malformed email in German", async () => {
-    renderWithProviders(<RegisterForm />);
+  it("RegisterForm rejects an empty name and password in German", async () => {
+    // The address comes from the invite and is read-only, so it cannot be malformed.
+    renderWithProviders(<RegisterForm invite={{ email: "ada@example.com", token: "tok" }} />);
 
-    await userEvent.type(screen.getByLabelText("E-Mail"), "ada@localhost");
     await userEvent.click(screen.getByRole("button", { name: "Konto erstellen" }));
 
     await waitFor(() =>
       expect(screen.getByText("Bitte einen Namen eingeben.")).toBeInTheDocument(),
     );
-    expect(screen.getByText("Bitte eine gültige E-Mail-Adresse eingeben.")).toBeInTheDocument();
+    expect(screen.getByText("Mindestens 8 Zeichen.")).toBeInTheDocument();
     expectNoLeakedValidationText();
   });
 

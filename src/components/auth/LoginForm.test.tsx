@@ -71,4 +71,12 @@ describe("LoginForm", () => {
     // Clean up for other tests
     mockSearchParams.delete("reset");
   });
+
+  it("links to the access request in the page's locale, not to the register page (Q2)", () => {
+    renderWithProviders(<LoginForm />);
+
+    const link = screen.getByRole("link", { name: "login.register" });
+    expect(link).toHaveAttribute("href", "/de#access");
+    expect(document.querySelector('a[href*="auth/register"]')).toBeNull();
+  });
 });
