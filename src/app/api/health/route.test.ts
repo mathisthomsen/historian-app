@@ -34,6 +34,7 @@ describe("GET /api/health", () => {
 
   afterEach(() => {
     delete process.env.DATABASE_URL;
+    vi.unstubAllEnvs();
   });
 
   it("returns status: ok when DB and Redis are both reachable", async () => {
@@ -147,14 +148,103 @@ describe("GET /api/health", () => {
       redis: { status: "ok", latencyMs: 3 },
       timestamp: "2026-01-01T00:00:00.000Z",
     };
+    vi.stubEnv("APP_COMMIT_SHA", undefined);
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", undefined);
     mockCacheGet.mockResolvedValue(cached);
 
     const response = await GET();
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body).toEqual(cached);
+    // Cached body is returned as-is, plus this deployment's commit marker.
+    expect(body).toEqual({ ...cached, commit: null });
     // Should NOT call DB or Redis ping when cache hits
     expect(mockPing).not.toHaveBeenCalled();
     expect(mockRedisPing).not.toHaveBeenCalled();
+  });
+
+  describe("commit marker", () => {
+    const cachedBody = {
+      status: "ok",
+      version: "0.1.0",
+      db: { status: "ok", latencyMs: 5, migration: "init" },
+      redis: { status: "ok", latencyMs: 3 },
+      timestamp: "2026-01-01T00:00:00.000Z",
+    };
+
+    function healthyDeps() {
+      mockPing.mockResolvedValue(5);
+      mockGetLatestMigration.mockResolvedValue("20260307121802_init");
+      mockRedisPing.mockResolvedValue("PONG");
+    }
+
+    it("fresh path: returns APP_COMMIT_SHA as commit", async () => {
+      vi.stubEnv("APP_COMMIT_SHA", "aaaa111");
+      healthyDeps();
+
+      const body = (await (await GET()).json()) as Record<string, unknown>;
+      expect(body.commit).toBe("aaaa111");
+    });
+
+    it("cache-hit path: returns THIS deployment's commit, not one from the cache", async () => {
+      vi.stubEnv("APP_COMMIT_SHA", "new-deployment");
+      // An entry written by another deployment sharing the Redis instance —
+      // even one that (wrongly) carries a commit must not leak through.
+      mockCacheGet.mockResolvedValue({ ...cachedBody, commit: "old-deployment" });
+
+      const body = (await (await GET()).json()) as Record<string, unknown>;
+      expect(body.commit).toBe("new-deployment");
+      expect(mockPing).not.toHaveBeenCalled();
+    });
+
+    it("cache-hit path: returns commit when the cached body has none", async () => {
+      vi.stubEnv("APP_COMMIT_SHA", "bbbb222");
+      mockCacheGet.mockResolvedValue(cachedBody);
+
+      const body = (await (await GET()).json()) as Record<string, unknown>;
+      expect(body.commit).toBe("bbbb222");
+    });
+
+    it("never stores commit in the shared cache", async () => {
+      vi.stubEnv("APP_COMMIT_SHA", "cccc333");
+      healthyDeps();
+
+      await GET();
+
+      expect(mockCacheSet).toHaveBeenCalledTimes(1);
+      const stored = mockCacheSet.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect("commit" in stored).toBe(false);
+      expect(JSON.stringify(stored)).not.toContain("cccc333");
+    });
+
+    it("falls back to VERCEL_GIT_COMMIT_SHA when APP_COMMIT_SHA is unset", async () => {
+      vi.stubEnv("APP_COMMIT_SHA", undefined);
+      vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "dddd444");
+      healthyDeps();
+
+      const body = (await (await GET()).json()) as Record<string, unknown>;
+      expect(body.commit).toBe("dddd444");
+    });
+
+    it("prefers APP_COMMIT_SHA over VERCEL_GIT_COMMIT_SHA", async () => {
+      vi.stubEnv("APP_COMMIT_SHA", "explicit");
+      vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "system");
+      healthyDeps();
+
+      const body = (await (await GET()).json()) as Record<string, unknown>;
+      expect(body.commit).toBe("explicit");
+    });
+
+    it("is null on both paths when neither variable is set", async () => {
+      vi.stubEnv("APP_COMMIT_SHA", undefined);
+      vi.stubEnv("VERCEL_GIT_COMMIT_SHA", undefined);
+      healthyDeps();
+
+      const fresh = (await (await GET()).json()) as Record<string, unknown>;
+      expect(fresh.commit).toBeNull();
+
+      mockCacheGet.mockResolvedValue(cachedBody);
+      const hit = (await (await GET()).json()) as Record<string, unknown>;
+      expect(hit.commit).toBeNull();
+    });
   });
 });
