@@ -104,6 +104,10 @@ dynamically.
 
 ## 4. Data Model
 
+> **Superseded for implementation (2026-10-02).** Part B was never built. Its current design is
+> `docs/specs/2-6b-invite-gated-registration/specification.md`, which changes parts of §4 and §5
+> after Epic 2.7 invalidated their premises. This section is kept as the original record.
+
 ### 4.1 `AccessRequest`
 
 Deliberately **not** `project_id`-scoped. This is a documented exception to the roadmap's
@@ -166,6 +170,10 @@ Migration is additive only — no existing table is altered, no backfill, no `US
 ---
 
 ## 5. API Contract
+
+> **Superseded for implementation (2026-10-02).** Part B was never built. Its current design is
+> `docs/specs/2-6b-invite-gated-registration/specification.md`, which changes parts of §4 and §5
+> after Epic 2.7 invalidated their premises. This section is kept as the original record.
 
 ### 5.1 `POST /api/access-request` (public)
 
