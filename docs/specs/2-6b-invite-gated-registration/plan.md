@@ -188,7 +188,9 @@ touched by #139: T3 appends a separate commented group so either merge order is 
   `marketing.cta.*`, `marketing.hero.primary`, `marketing.nav.register`; the T6 rows of §2.
 - **Implements:** §4.1, §6.1, §8. **Depends:** T3 (and P8), T4.
 - **Tests first:** both limiters before parsing (I4); trap, existing-user and real submissions
-  return identical bodies with no write and no mail (I5); every step-7 branch, which notify and
+  return byte-identical response bodies (I5) — but only trap and existing-user submissions write
+  nothing and send no mail; a real new submission creates the `PENDING` row and notifies operators
+  (§4.1), asserted separately; every step-7 branch, which notify and
   which do not; an expired row is deleted then recreated; a PENDING field update leaves
   `status_changed_at` (I6); concurrent create (Q6); notification failure → 200 (I12). Form:
   honeypot attributes, disabled while submitting, no-promise success copy, translated validation.
