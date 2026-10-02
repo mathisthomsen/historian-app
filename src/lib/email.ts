@@ -22,15 +22,24 @@ function assertStubIsSafe(): void {
   }
 }
 
+/**
+ * The send deadline elapsed. Unlike a provider error this is NOT a definite
+ * failure: the provider request may still complete, so a caller must not treat
+ * the mail as undelivered.
+ */
+export class EmailDeadlineError extends Error {
+  constructor() {
+    super("Email delivery request timed out.");
+    this.name = "EmailDeadlineError";
+  }
+}
+
 // Resend v4 does not expose an AbortSignal on emails.send. This bounds how long
 // the caller waits; the provider request can still complete after the deadline.
 async function withDeadline<T>(operation: Promise<T>): Promise<T> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_, reject) => {
-    timeout = setTimeout(
-      () => reject(new Error("Email delivery request timed out.")),
-      EMAIL_SEND_TIMEOUT_MS,
-    );
+    timeout = setTimeout(() => reject(new EmailDeadlineError()), EMAIL_SEND_TIMEOUT_MS);
   });
 
   try {

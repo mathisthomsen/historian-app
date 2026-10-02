@@ -91,6 +91,22 @@ describe("AccessRequestDecision", () => {
     expect(screen.getByRole("button", { name: "Erneut einladen" })).toBeInTheDocument();
   });
 
+  it("says delivery could not be confirmed on a deadline timeout, without prompting to re-invite", async () => {
+    mockFetch.mockResolvedValue(reply(200, { status: "INVITED", email_sent: "unknown" }));
+    renderDecision();
+    fireEvent.click(screen.getByRole("button", { name: "Einladen" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Die Zustellung der E-Mail ließ sich nicht bestätigen",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("bevor Sie erneut einladen");
+    // Not the definite-failure prompt, and not the success claim either.
+    expect(screen.queryByText(/Erneut einladen\?/)).toBeNull();
+    expect(screen.queryByText(/nicht versendet/)).toBeNull();
+    expect(screen.queryByText(/per E-Mail versendet/)).toBeNull();
+    expect(screen.getByText("Eingeladen")).toBeInTheDocument();
+  });
+
   it("says so when the invite was created but the email was not sent, and offers to re-issue", async () => {
     mockFetch.mockResolvedValue(reply(200, { status: "INVITED", email_sent: false }));
     renderDecision();

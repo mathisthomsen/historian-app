@@ -715,7 +715,8 @@
       "outcome": {
         "invited": "Die Einladung wurde angelegt und per E-Mail versendet.",
         "declined": "Die Anfrage wurde abgelehnt.",
-        "emailNotSent": "Die Einladung wurde angelegt, die E-Mail aber nicht versendet. Erneut einladen?"
+        "emailNotSent": "Die Einladung wurde angelegt, die E-Mail aber nicht versendet. Erneut einladen?",
+        "emailUnknown": "Die Einladung wurde angelegt. Die Zustellung der E-Mail ließ sich nicht bestätigen. Bitte warten Sie kurz oder fragen Sie bei der anfragenden Person nach, bevor Sie erneut einladen."
       },
       "accountExists": "Für diese Adresse besteht bereits ein Konto.",
       "errors": {

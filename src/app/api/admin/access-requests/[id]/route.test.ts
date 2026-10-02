@@ -29,7 +29,12 @@ vi.mock("@/lib/security", () => ({
   generateToken: () => "raw-invite-token",
   hashToken: () => "stored-token-hash",
 }));
-vi.mock("@/lib/email", () => ({ sendInviteEmail: mockSendInviteEmail }));
+// The deadline class is shared with the route, so `instanceof` sees the same one.
+class MockEmailDeadlineError extends Error {}
+vi.mock("@/lib/email", () => ({
+  sendInviteEmail: mockSendInviteEmail,
+  EmailDeadlineError: MockEmailDeadlineError,
+}));
 vi.mock("@/lib/db", () => ({
   prisma: {
     user: { findUnique: mockUserFindUnique },
@@ -560,6 +565,26 @@ describe("POST /api/admin/access-requests/[id]", () => {
       expect(JSON.stringify(errorSpy.mock.calls)).not.toContain("raw-invite-token");
       expect(JSON.stringify(errorSpy.mock.calls)).not.toContain("ada@example.org");
       errorSpy.mockRestore();
+    });
+
+    it('a deadline timeout reports email_sent: "unknown", not false: the provider may still deliver', async () => {
+      mockSendInviteEmail.mockRejectedValue(new MockEmailDeadlineError("timed out"));
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const res = await POST(request({ decision: "approve" }), ctx());
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ status: "INVITED", email_sent: "unknown" });
+      // The invite exists either way, and the log still carries no token or address.
+      expect(mockTxInviteCreate).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(errorSpy.mock.calls)).not.toContain("raw-invite-token");
+      expect(JSON.stringify(errorSpy.mock.calls)).not.toContain("ada@example.org");
+      errorSpy.mockRestore();
+    });
+
+    it("any other mail error is still a definite failure: email_sent: false", async () => {
+      mockSendInviteEmail.mockRejectedValue(new TypeError("fetch failed"));
+      vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const res = await POST(request({ decision: "approve" }), ctx());
+      expect(await res.json()).toEqual({ status: "INVITED", email_sent: false });
     });
 
     it("a failed transaction sends no email", async () => {

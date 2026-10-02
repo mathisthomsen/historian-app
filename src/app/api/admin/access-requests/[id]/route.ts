@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 import { isExpired } from "@/lib/access-retention";
 import { forbidden, json, jsonError, notFoundError, parseJsonBody, validateBody } from "@/lib/api";
 import { prisma } from "@/lib/db";
-import { sendInviteEmail } from "@/lib/email";
+import { EmailDeadlineError, sendInviteEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { INVITE_TTL_MS } from "@/lib/invite";
 import { isOperator } from "@/lib/operators";
@@ -160,8 +160,11 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
 
   // The email goes out AFTER the commit and never changes the outcome (I12): the
   // invite exists, and the operator can approve again to re-issue (step 9).
-  // Logged without the token or the address.
-  let emailSent = true;
+  // Logged without the token or the address. A deadline timeout is "unknown",
+  // not `false`: the provider request may still complete, and telling the
+  // operator it failed would prompt a re-invite that revokes the token in that
+  // possibly-delayed email.
+  let emailSent: boolean | "unknown" = true;
   try {
     await sendInviteEmail({
       to: accessRequest.email,
@@ -170,7 +173,7 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
       locale: accessRequest.locale,
     });
   } catch (err) {
-    emailSent = false;
+    emailSent = err instanceof EmailDeadlineError ? "unknown" : false;
     console.error("[access-request] invite email failed", {
       requestId: accessRequest.id,
       error: err instanceof Error ? err.message : String(err),

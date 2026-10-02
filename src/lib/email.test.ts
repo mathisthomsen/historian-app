@@ -193,10 +193,14 @@ describe("email transport", () => {
         error: { name: "application_error", message: "Resend API error" },
       });
       const email = await loadEmail();
-      const pending = expect(send(email)).rejects.toThrow("Resend API error");
+      const promise = send(email);
+      const pending = expect(promise).rejects.toThrow("Resend API error");
+      const notDeadline = promise.catch((err: unknown) => err);
 
       expect(vi.getTimerCount()).toBe(1);
       await pending;
+      // A definite provider error is NOT a deadline error.
+      expect(await notDeadline).not.toBeInstanceOf(email.EmailDeadlineError);
       expect(vi.getTimerCount()).toBe(0);
     },
   );
@@ -212,9 +216,12 @@ describe("email transport", () => {
     const email = await loadEmail();
     const pending = send(email);
     const timedOut = expect(pending).rejects.toThrow("Email delivery request timed out.");
+    // A caller must be able to tell "we stopped waiting" from "the provider said no".
+    const isDeadlineError = expect(pending).rejects.toBeInstanceOf(email.EmailDeadlineError);
 
     await vi.advanceTimersByTimeAsync(5_000);
     await timedOut;
+    await isDeadlineError;
     expect(vi.getTimerCount()).toBe(0);
 
     rejectLate(new Error("late provider rejection"));

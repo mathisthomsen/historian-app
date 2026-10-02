@@ -17,7 +17,7 @@ interface AccessRequestDecisionProps {
 }
 
 type Decision = "approve" | "decline";
-type Outcome = "invited" | "declined" | "emailNotSent";
+type Outcome = "invited" | "declined" | "emailNotSent" | "emailUnknown";
 type ErrorKey = "generic" | "forbidden" | "notFound" | "network";
 
 /**
@@ -56,14 +56,20 @@ export function AccessRequestDecision({
         body: JSON.stringify({ decision }),
       });
       if (res.ok) {
-        const body = (await res.json()) as { status: AccessRequestStatus; email_sent?: boolean };
+        const body = (await res.json()) as {
+          status: AccessRequestStatus;
+          email_sent?: boolean | "unknown";
+        };
         setStatus(body.status);
         setOutcome(
           body.status === "DECLINED"
             ? "declined"
             : body.email_sent === false
               ? "emailNotSent"
-              : "invited",
+              : // The provider may still deliver after our deadline: no re-invite prompt.
+                body.email_sent === "unknown"
+                ? "emailUnknown"
+                : "invited",
         );
         return;
       }

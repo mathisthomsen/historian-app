@@ -715,7 +715,8 @@
       "outcome": {
         "invited": "The invitation was created and sent by email.",
         "declined": "The request was declined.",
-        "emailNotSent": "The invitation was created, but the email was not sent. Invite again?"
+        "emailNotSent": "The invitation was created, but the email was not sent. Invite again?",
+        "emailUnknown": "The invitation was created. Delivery of the email could not be confirmed. Please wait a moment or check with the requester before inviting again."
       },
       "accountExists": "An account already exists for this address.",
       "errors": {
