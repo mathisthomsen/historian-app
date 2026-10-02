@@ -121,6 +121,8 @@ jobs:
       # silently widening the blast radius again.
       RATELIMIT_NAMESPACE: ci-${{ github.run_id }}-${{ github.run_attempt }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      # Guards an ephemeral per-run database, so a public per-run value protects nothing real.
+      PURGE_SECRET: ci-purge-${{ github.run_id }}-${{ github.run_attempt }}-padding-to-32-chars
       AUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       KV_REST_API_URL: ${{ secrets.KV_REST_API_URL }}
