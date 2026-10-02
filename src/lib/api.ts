@@ -117,6 +117,16 @@ export const ERROR_CODES = [
    */
   "TOKEN_ALREADY_USED",
   "EMAIL_TAKEN",
+  // invite-gated registration (#29) — a separate group so another epic appending
+  // to this list rebases trivially. No `errors.*` keys: the register form maps
+  // the INVITE_* codes onto `auth.invite.*` (spec §8).
+  "INVITE_REQUIRED",
+  "INVITE_INVALID",
+  "INVITE_EXPIRED",
+  "INVITE_USED",
+  "INVITE_EMAIL_MISMATCH",
+  /** A route that accepts JSON only was sent another media type (spec §4.5 step 2). */
+  "UNSUPPORTED_MEDIA_TYPE",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
