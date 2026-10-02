@@ -639,6 +639,35 @@
     "next": "Weiter",
     "page": "Seite"
   },
+  "access": {
+    "fields": {
+      "name": "Name",
+      "email": "E-Mail-Adresse",
+      "institution": "Institution (optional)",
+      "researchArea": "Forschungsgebiet (optional)",
+      "toolGap": "Was kann Ihr bisheriges Werkzeug nicht beantworten? (optional)"
+    },
+    "toolGapHint": "Eine Frage oder ein Fall genügt.",
+    "consent": "Ich habe die <privacy>Datenschutzerklärung</privacy> gelesen und bin damit einverstanden, dass meine Angaben zur Prüfung dieser Anfrage gespeichert werden.",
+    "retention": "Anfragen, über die nicht entschieden wird, werden nach 6 Stunden gelöscht.",
+    "submitting": "Wird gesendet …",
+    "success": "Danke. Wenn wir Sie einladen können, erhalten Sie in den nächsten Stunden eine E-Mail. Andernfalls wird Ihre Anfrage nach 6 Stunden gelöscht — Sie können sie jederzeit erneut stellen.",
+    "errors": {
+      "nameRequired": "Bitte einen Namen eingeben.",
+      "nameTooLong": "Name ist zu lang (höchstens 100 Zeichen).",
+      "emailInvalid": "Bitte eine gültige E-Mail-Adresse eingeben.",
+      "emailTooLong": "E-Mail-Adresse ist zu lang (höchstens 254 Zeichen).",
+      "institutionTooLong": "Institution ist zu lang (höchstens 200 Zeichen).",
+      "researchAreaTooLong": "Forschungsgebiet ist zu lang (höchstens 200 Zeichen).",
+      "toolGapTooLong": "Der Text ist zu lang (höchstens 2000 Zeichen).",
+      "consentRequired": "Ohne Ihre Einwilligung können wir die Anfrage nicht bearbeiten.",
+      "invalid": "Bitte prüfen Sie Ihre Angaben.",
+      "rateLimited": "Zu viele Anfragen. Bitte versuchen Sie es in {minutes} Minuten erneut.",
+      "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es in Kürze erneut.",
+      "serverError": "Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "networkError": "Keine Verbindung zum Server. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+    }
+  },
   "admin": {
     "accessRequest": {
       "title": "Zugangsanfrage",
@@ -688,7 +717,7 @@
     "nav": {
       "changelog": "Changelog",
       "signIn": "Anmelden",
-      "register": "Konto erstellen",
+      "register": "Zugang anfragen",
       "toApp": "Zur App",
       "label": "Hauptnavigation"
     },
@@ -703,7 +732,7 @@
     "hero": {
       "headline": "Für alles, was die Quelle nicht sagt.",
       "sub": "Eine Forschungsdatenbank, in der Ungewissheit ein Feld ist — kein Kompromiss.",
-      "primary": "Konto erstellen",
+      "primary": "Zugang anfragen",
       "secondary": "Ansehen"
     },
     "panels": {
@@ -777,9 +806,9 @@
       }
     },
     "cta": {
-      "title": "Fangen Sie mit einer Quelle an.",
-      "body": "Ein Konto genügt. Ihr erstes Projekt wird automatisch angelegt.",
-      "action": "Konto erstellen"
+      "title": "Zugang zur geschlossenen Alpha",
+      "body": "Evidoxa entsteht gemeinsam mit wenigen Forschenden. Zugang gibt es derzeit nur auf Einladung — schildern Sie uns kurz, woran Sie arbeiten.",
+      "action": "Zugang anfragen"
     },
     "changelogPage": {
       "title": "Changelog",

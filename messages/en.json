@@ -639,6 +639,35 @@
     "next": "Next",
     "page": "Page"
   },
+  "access": {
+    "fields": {
+      "name": "Name",
+      "email": "Email address",
+      "institution": "Institution (optional)",
+      "researchArea": "Research area (optional)",
+      "toolGap": "What can your current tool not answer? (optional)"
+    },
+    "toolGapHint": "One question or case is enough.",
+    "consent": "I have read the <privacy>privacy policy</privacy> and agree that my details are stored to review this request.",
+    "retention": "Requests that are not decided are deleted after 6 hours.",
+    "submitting": "Sending …",
+    "success": "Thank you. If we can invite you, you will receive an email within the next few hours. Otherwise your request is deleted after 6 hours — you can submit it again at any time.",
+    "errors": {
+      "nameRequired": "Please enter a name.",
+      "nameTooLong": "Name is too long (at most 100 characters).",
+      "emailInvalid": "Please enter a valid email address.",
+      "emailTooLong": "Email address is too long (at most 254 characters).",
+      "institutionTooLong": "Institution is too long (at most 200 characters).",
+      "researchAreaTooLong": "Research area is too long (at most 200 characters).",
+      "toolGapTooLong": "The text is too long (at most 2000 characters).",
+      "consentRequired": "Without your consent we cannot process the request.",
+      "invalid": "Please check your details.",
+      "rateLimited": "Too many requests. Please try again in {minutes} minutes.",
+      "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly.",
+      "serverError": "The request could not be sent. Please try again.",
+      "networkError": "No connection to the server. Please check your internet connection and try again."
+    }
+  },
   "admin": {
     "accessRequest": {
       "title": "Access request",
@@ -688,7 +717,7 @@
     "nav": {
       "changelog": "Changelog",
       "signIn": "Sign in",
-      "register": "Create account",
+      "register": "Request access",
       "toApp": "Open app",
       "label": "Main navigation"
     },
@@ -703,7 +732,7 @@
     "hero": {
       "headline": "For everything the source does not say.",
       "sub": "A research database where uncertainty is a field, not a compromise.",
-      "primary": "Create account",
+      "primary": "Request access",
       "secondary": "Take a look"
     },
     "panels": {
@@ -777,9 +806,9 @@
       }
     },
     "cta": {
-      "title": "Start with one source.",
-      "body": "An account is all it takes. Your first project is created automatically.",
-      "action": "Create account"
+      "title": "Access to the closed alpha",
+      "body": "Evidoxa is being built together with a small group of researchers. Access is by invitation only for now — tell us briefly what you work on.",
+      "action": "Request access"
     },
     "changelogPage": {
       "title": "Changelog",

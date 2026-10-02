@@ -16,10 +16,21 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("PublicNav", () => {
-  it("offers sign-in and registration to a guest", () => {
+  it("offers sign-in and an access request to a guest", () => {
     renderWithProviders(<PublicNav isSignedIn={false} locale="de" />);
     expect(screen.getByRole("link", { name: /anmelden/i })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /zur app/i })).not.toBeInTheDocument();
+  });
+
+  it("sends a guest's access request to the landing page's form from any marketing page", () => {
+    // The nav is also on /changelog, /roadmap and the legal pages, so the link
+    // carries the locale path: a bare `#access` would resolve against that page.
+    renderWithProviders(<PublicNav isSignedIn={false} locale="de" />);
+    expect(screen.getByRole("link", { name: /zugang anfragen/i })).toHaveAttribute(
+      "href",
+      "/de#access",
+    );
+    expect(screen.queryByRole("link", { name: /konto erstellen/i })).not.toBeInTheDocument();
   });
 
   it("offers the app instead of signup to a signed-in visitor", () => {
