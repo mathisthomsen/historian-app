@@ -198,6 +198,158 @@ export async function deleteTestInvites(email: string): Promise<void> {
   }
 }
 
+export interface TestAccessRequestOptions {
+  /** Default `PENDING`. Fixtures are never `INVITED`: that status needs a live invite to not be expired. */
+  status?: "PENDING" | "DECLINED";
+  /**
+   * How long ago `status_changed_at` (the retention clock, I6) was set, in ms.
+   * Default 0 (now). Settable so a test can place a row either side of the 6 h
+   * PENDING deadline without waiting for it.
+   */
+  statusChangedAgoMs?: number;
+  name?: string;
+  locale?: "de" | "en";
+}
+
+/**
+ * Inserts an access request for `email` and returns its id (for
+ * `/de/admin/access-requests/{id}` and the decision route).
+ *
+ * Raw SQL rather than the app's route: the route only ever sets
+ * `status_changed_at` to now, and a test must be able to age it.
+ */
+export async function insertTestAccessRequest(
+  email: string,
+  opts: TestAccessRequestOptions = {},
+): Promise<string> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    const res = await client.query<{ id: string }>(
+      `INSERT INTO access_requests
+              (id, email, name, locale, status, consent_at, created_at, updated_at, status_changed_at)
+         VALUES (gen_random_uuid()::text, $1, $2, $3, $4::"AccessRequestStatus", NOW(), NOW(), NOW(),
+                 NOW() - make_interval(secs => $5::float8 / 1000))
+         RETURNING id`,
+      [
+        email.toLowerCase(),
+        opts.name ?? "E2E Applicant",
+        opts.locale ?? "de",
+        opts.status ?? "PENDING",
+        opts.statusChangedAgoMs ?? 0,
+      ],
+    );
+    const id = res.rows[0]?.id;
+    if (!id) throw new Error(`insertTestAccessRequest: no row returned for ${email}`);
+    return id;
+  } finally {
+    await client.end();
+  }
+}
+
+/** Deletes the access request for `email` (cleanup for tests that submit or insert one). */
+export async function deleteTestAccessRequest(email: string): Promise<void> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    await client.query("DELETE FROM access_requests WHERE email = $1", [email.toLowerCase()]);
+  } finally {
+    await client.end();
+  }
+}
+
+/** The access request for `email`, or `null` when no row exists. */
+export async function getTestAccessRequest(
+  email: string,
+): Promise<{ id: string; status: "PENDING" | "INVITED" | "DECLINED"; name: string } | null> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    const res = await client.query<{
+      id: string;
+      status: "PENDING" | "INVITED" | "DECLINED";
+      name: string;
+    }>("SELECT id, status, name FROM access_requests WHERE email = $1", [email.toLowerCase()]);
+    return res.rows[0] ?? null;
+  } finally {
+    await client.end();
+  }
+}
+
+/** Every invite for `email`, oldest first. Hashes are not returned: tests never need them. */
+export async function listTestInvites(email: string): Promise<
+  {
+    email: string;
+    access_request_id: string | null;
+    used_at: Date | null;
+    expires_at: Date;
+  }[]
+> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    const res = await client.query<{
+      email: string;
+      access_request_id: string | null;
+      used_at: Date | null;
+      expires_at: Date;
+    }>(
+      `SELECT email, access_request_id, used_at, expires_at
+         FROM invites WHERE email = $1 ORDER BY created_at ASC`,
+      [email.toLowerCase()],
+    );
+    return res.rows;
+  } finally {
+    await client.end();
+  }
+}
+
+/** How many user rows exist for `email` (0 or 1: `users.email` is unique). */
+export async function countTestUsers(email: string): Promise<number> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    const res = await client.query<{ n: string }>(
+      "SELECT COUNT(*)::text AS n FROM users WHERE email = $1",
+      [email.toLowerCase()],
+    );
+    return Number(res.rows[0]?.n ?? 0);
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Sets the role of a user that `createTestUser` made, and verifies their email
+ * (an operator must be verified to be notified, §7.1).
+ *
+ * Refuses anything else. `createTestUser` names its accounts "E2E Test User";
+ * the seeded admin has a different name, so a mistyped or imported email cannot
+ * promote or DEMOTE it — the seed admin's role is shared by every spec (plan
+ * P11). Throws unless exactly one test-owned row matched.
+ */
+export async function setTestUserRole(email: string, role: "USER" | "ADMIN"): Promise<void> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    const res = await client.query(
+      `UPDATE users
+          SET role = $2::"UserRole",
+              email_verified_at = COALESCE(email_verified_at, NOW()),
+              updated_at = NOW()
+        WHERE email = $1 AND name = 'E2E Test User'`,
+      [email.toLowerCase(), role],
+    );
+    if (res.rowCount !== 1) {
+      throw new Error(
+        `setTestUserRole: ${email} is not a createTestUser account (matched ${res.rowCount ?? 0} rows). Refusing.`,
+      );
+    }
+  } finally {
+    await client.end();
+  }
+}
+
 /**
  * Clears this run's Upstash rate-limit counters for auth endpoints.
  *
