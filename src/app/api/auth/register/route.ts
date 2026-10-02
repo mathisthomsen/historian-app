@@ -128,7 +128,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     user = await prisma.$transaction(async (tx) => {
       // Consume first: a concurrent redemption that committed before us is
       // observed as `false`, and nothing below runs (I1).
-      if (!(await consumeInvite(tx, invite.id, now))) throw new InviteUsedError();
+      // A fresh clock, not `now`: hashing can outlast the invite, and the
+      // `expires_at > now` predicate must be judged at consume time (I3).
+      if (!(await consumeInvite(tx, invite.id, new Date()))) throw new InviteUsedError();
       const created = await tx.user.create({
         data: { email, name, password_hash, email_verified_at: null },
       });

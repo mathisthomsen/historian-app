@@ -417,6 +417,37 @@ describe("the register gate: single use inside the transaction", () => {
     expect(mocks.audit).not.toHaveBeenCalledWith(expect.objectContaining({ action: "REGISTER" }));
   });
 
+  it("an invite that expires while the password hashes is not consumed (fresh clock at consume)", async () => {
+    const expiresAt = new Date(NOW.getTime() + 60_000);
+    mocks.findInvite.mockResolvedValue(inviteRow({ expires_at: expiresAt }));
+    // Hashing outlasts the invite: valid at lookup, expired once the transaction runs.
+    mocks.bcryptHash.mockImplementation(async () => {
+      vi.setSystemTime(new Date(NOW.getTime() + 120_000));
+      return "password-hash";
+    });
+    // Evaluate the predicate the way the database would.
+    mocks.txUpdateManyInvite.mockImplementation(
+      async ({ where }: { where: { expires_at: { gt: Date } } }) => ({
+        count: expiresAt.getTime() > where.expires_at.gt.getTime() ? 1 : 0,
+      }),
+    );
+
+    const response = await register();
+
+    expect(response.status).toBe(403);
+    expect(await errorCodeOf(response)).toBe("INVITE_USED");
+    expect(mocks.txUpdateManyInvite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          expires_at: { gt: new Date(NOW.getTime() + 120_000) },
+        }),
+      }),
+    );
+    expect(mocks.txCreateUser).not.toHaveBeenCalled();
+    expect(mocks.txCreateConfirmation).not.toHaveBeenCalled();
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
+
   it("P2002 on the user insert is 409 EMAIL_TAKEN, not a 500", async () => {
     mocks.txCreateUser.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
