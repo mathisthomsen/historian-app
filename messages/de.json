@@ -61,7 +61,7 @@
       "forgotPassword": "Passwort vergessen?",
       "noAccount": "Noch kein Zugang?",
       "register": "Zugang anfragen",
-      "resetSuccess": "Passwort wurde zurückgesetzt. Bitte melde dich an."
+      "resetSuccess": "Passwort wurde zurückgesetzt. Bitte melden Sie sich an."
     },
     "register": {
       "title": "Konto erstellen",
@@ -69,11 +69,11 @@
       "namePlaceholder": "Vollständiger Name",
       "alreadyHaveAccount": "Bereits registriert?",
       "login": "Anmelden",
-      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfe dein Postfach.",
+      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfen Sie Ihr Postfach.",
       "emailNotSentTitle": "Konto erstellt — E-Mail konnte nicht zugestellt werden",
-      "emailNotSentMessage": "Dein Konto besteht, aber die Bestätigungs-E-Mail ist nicht rausgegangen. Fordere unten einen neuen Link an.",
+      "emailNotSentMessage": "Ihr Konto besteht, aber die Bestätigungs-E-Mail ist nicht rausgegangen. Fordern Sie unten einen neuen Link an.",
       "backToLogin": "Zur Anmeldung",
-      "privacyHint": "Wie wir deine Daten verarbeiten, steht in der",
+      "privacyHint": "Wie wir Ihre Daten verarbeiten, steht in der",
       "privacy": "Datenschutzerklärung"
     },
     "invite": {
@@ -91,16 +91,16 @@
       "title": "E-Mail bestätigen",
       "verifying": "Wird überprüft...",
       "success": "E-Mail bestätigt",
-      "successMessage": "Dein Konto ist aktiv.",
+      "successMessage": "Ihr Konto ist aktiv.",
       "loginNow": "Jetzt anmelden",
       "requestNew": "Neuen Link anfordern",
       "noTokenTitle": "Kein Bestätigungslink",
-      "noTokenMessage": "Diese Seite braucht den Link aus deiner Bestätigungs-E-Mail. Öffne den Link direkt aus der E-Mail.",
+      "noTokenMessage": "Diese Seite braucht den Link aus Ihrer Bestätigungs-E-Mail. Öffnen Sie den Link direkt aus der E-Mail.",
       "failedTitle": "Bestätigung fehlgeschlagen",
       "linkInvalidTitle": "Link ungültig",
       "retry": "Erneut versuchen",
       "alreadyVerifiedTitle": "Bereits bestätigt",
-      "alreadyVerifiedMessage": "Diese E-Mail-Adresse wurde schon bestätigt. Du kannst dich anmelden.",
+      "alreadyVerifiedMessage": "Diese E-Mail-Adresse wurde schon bestätigt. Sie können sich anmelden.",
       "resendSent": "Wenn für diese Adresse eine Bestätigung aussteht, ist ein neuer Link unterwegs.",
       "resendAction": "Neuen Bestätigungslink senden",
       "resendSending": "Wird gesendet…",
@@ -109,11 +109,11 @@
     },
     "forgot": {
       "title": "Passwort vergessen?",
-      "description": "Gib deine E-Mail-Adresse ein und wir senden dir einen Link.",
+      "description": "Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link.",
       "submit": "Link anfordern",
       "backToLogin": "Zurück zur Anmeldung",
       "emailSent": "E-Mail gesendet",
-      "emailSentMessage": "Falls ein Konto mit dieser Adresse existiert, erhältst du einen Link."
+      "emailSentMessage": "Falls ein Konto mit dieser Adresse existiert, erhalten Sie einen Link."
     },
     "reset": {
       "title": "Neues Passwort",
@@ -124,7 +124,7 @@
     },
     "dashboard": {
       "welcome": "Willkommen, {name}!",
-      "loggedIn": "Du bist angemeldet.",
+      "loggedIn": "Sie sind angemeldet.",
       "logout": "Abmelden"
     },
     "strength": {
@@ -143,9 +143,9 @@
     },
     "errors": {
       "invalidCredentials": "E-Mail oder Passwort ungültig.",
-      "emailNotVerified": "Bitte bestätige zuerst deine E-Mail-Adresse.",
+      "emailNotVerified": "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.",
       "emailTaken": "Diese E-Mail-Adresse ist bereits registriert.",
-      "tokenExpired": "Der Link ist abgelaufen. Bitte fordere einen neuen an.",
+      "tokenExpired": "Der Link ist abgelaufen. Bitte fordern Sie einen neuen an.",
       "tokenInvalid": "Ungültiger Link.",
       "rateLimited": "Zu viele Versuche. Bitte warte {minutes} Minuten.",
       "passwordTooShort": "Mindestens 8 Zeichen.",
@@ -165,7 +165,7 @@
       "loginRateLimited": "Zu viele Anmeldeversuche. Bitte warte bis zu {minutes} Minuten.",
       "tokenMalformed": "Dieser Link ist unvollständig. E-Mail-Programme brechen lange Links manchmal um — bitte den vollständigen Link kopieren oder einen neuen anfordern.",
       "networkError": "Keine Verbindung zum Server. Bitte Internetverbindung prüfen und erneut versuchen.",
-      "tokenAlreadyUsed": "Dieser Link wurde bereits verwendet. Dein Passwort ist gesetzt — du kannst dich anmelden."
+      "tokenAlreadyUsed": "Dieser Link wurde bereits verwendet. Ihr Passwort ist gesetzt — Sie können sich anmelden."
     },
     "invalidLink": "Ungültiger Link",
     "invalidLinkMessage": "Kein Verifizierungstoken gefunden."

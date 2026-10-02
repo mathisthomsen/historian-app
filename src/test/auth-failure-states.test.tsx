@@ -91,7 +91,7 @@ describe("login failure states are distinguishable", () => {
 
     await submitLogin();
 
-    expect(await alertText()).toContain("Bitte bestätige zuerst deine E-Mail-Adresse.");
+    expect(await alertText()).toContain("Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.");
   });
 
   it("still says invalid credentials for a wrong password", async () => {
@@ -233,7 +233,7 @@ describe("verify email separates a rejected link from a failed request", () => {
 
     await waitFor(() => expect(screen.getByText("Link ungültig")).toBeInTheDocument());
     expect(
-      screen.getByText("Der Link ist abgelaufen. Bitte fordere einen neuen an."),
+      screen.getByText("Der Link ist abgelaufen. Bitte fordern Sie einen neuen an."),
     ).toBeInTheDocument();
   });
 

@@ -179,7 +179,7 @@ test.describe("TC-AUTH-06: Valid email verification token", () => {
     const rawToken = await insertTestVerificationToken(unverifiedEmail);
     await page.goto(`/de/auth/verify?token=${rawToken}`);
     await expect(page.getByText("E-Mail bestätigt")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Dein Konto ist aktiv")).toBeVisible();
+    await expect(page.getByText("Ihr Konto ist aktiv")).toBeVisible();
     await expect(page.getByText("Jetzt anmelden")).toBeVisible();
   });
 });
@@ -212,7 +212,7 @@ test.describe("TC-AUTH-08: Successful login", () => {
   test("verified user logs in and reaches dashboard", async ({ page }) => {
     await loginAsAdmin(page);
     await expect(page.getByText("Evidoxa Admin")).toBeVisible();
-    await expect(page.getByText("Du bist angemeldet.")).toBeVisible();
+    await expect(page.getByText("Sie sind angemeldet.")).toBeVisible();
   });
 });
 
@@ -247,7 +247,7 @@ test.describe("TC-AUTH-12: Authenticated dashboard", () => {
   test("shows welcome message and user name", async ({ page }) => {
     await loginAsAdmin(page);
     await expect(page.getByText("Willkommen, Evidoxa Admin!")).toBeVisible();
-    await expect(page.getByText("Du bist angemeldet.")).toBeVisible();
+    await expect(page.getByText("Sie sind angemeldet.")).toBeVisible();
   });
 });
 

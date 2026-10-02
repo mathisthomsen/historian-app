@@ -73,10 +73,10 @@ export async function sendVerificationEmail(params: {
   const ctaUrl = `${env.AUTH_URL}/${locale}/auth/verify?token=${token}`;
   const isDE = locale === "de";
 
-  const subject = isDE ? "Bestätige deine E-Mail-Adresse" : "Confirm your email address";
+  const subject = isDE ? "Bestätigen Sie Ihre E-Mail-Adresse" : "Confirm your email address";
   const greeting = isDE ? `Hallo ${name},` : `Hello ${name},`;
   const body = isDE
-    ? `bitte bestätige deine E-Mail-Adresse, indem du auf den folgenden Link klickst:`
+    ? `bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie auf den folgenden Link klicken:`
     : `please confirm your email address by clicking the link below:`;
   const expiry = isDE ? "Dieser Link ist 24 Stunden gültig." : "This link is valid for 24 hours.";
   const btnLabel = isDE ? "E-Mail bestätigen" : "Confirm email";
@@ -107,7 +107,7 @@ export async function sendPasswordResetEmail(params: {
   const subject = isDE ? "Passwort zurücksetzen" : "Reset your password";
   const greeting = isDE ? `Hallo ${name},` : `Hello ${name},`;
   const body = isDE
-    ? `klicke auf den folgenden Link, um dein Passwort zurückzusetzen:`
+    ? `klicken Sie auf den folgenden Link, um Ihr Passwort zurückzusetzen:`
     : `click the link below to reset your password:`;
   const expiry = isDE ? "Dieser Link ist 1 Stunde gültig." : "This link is valid for 1 hour.";
   const btnLabel = isDE ? "Passwort zurücksetzen" : "Reset password";

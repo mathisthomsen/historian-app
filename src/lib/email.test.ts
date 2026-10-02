@@ -114,7 +114,7 @@ describe("email transport", () => {
       { from: string; to: string; subject: string; html: string; text: string },
     ];
     const call = callArgs[0];
-    expect(call.subject).toBe("Bestätige deine E-Mail-Adresse");
+    expect(call.subject).toBe("Bestätigen Sie Ihre E-Mail-Adresse");
     expect(call.html).toContain("http://localhost:3000/de/auth/verify?token=abc123");
     expect(call.text.length).toBeGreaterThan(0);
   });
