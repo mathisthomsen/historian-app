@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const PURGE_SECRET_MIN_LENGTH = 32;
+
 const server = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]),
 
@@ -27,6 +29,26 @@ const server = z.object({
   KV_REST_API_TOKEN: z.string().min(1).optional(),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+
+  // Bearer secret for POST /api/internal/purge-access-requests (#29 §4.6).
+  // Length is enforced below, and only for a real production deployment.
+  PURGE_SECRET: z.string().optional(),
+
+  // Injected by Vercel only — the deployment identity (see deployment-env.ts).
+  VERCEL_ENV: z.string().optional(),
+});
+
+const serverWithRules = server.superRefine((value, ctx) => {
+  // Keyed on VERCEL_ENV, not NODE_ENV: NODE_ENV is "production" under CI's
+  // `pnpm start` and on previews, where this secret is absent or per-run (P9).
+  if (value.VERCEL_ENV !== "production") return;
+  if (!value.PURGE_SECRET || value.PURGE_SECRET.length < PURGE_SECRET_MIN_LENGTH) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["PURGE_SECRET"],
+      message: `PURGE_SECRET must be at least ${PURGE_SECRET_MIN_LENGTH} characters in a production deployment`,
+    });
+  }
 });
 
 /** Resolves the Redis REST credentials from whichever pair is configured. */
@@ -50,7 +72,7 @@ const client = z.object({
 });
 
 export const env = {
-  ...server.parse(process.env),
+  ...serverWithRules.parse(process.env),
   ...client.parse(process.env),
 };
 

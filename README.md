@@ -68,6 +68,15 @@ production's bare key space (#124); `src/lib/cache.ts` and
 rather than doing that silently. Production itself must stay un-namespaced —
 that is its own key space.
 
+`PURGE_SECRET` is **required in production** (a Vercel deployment with
+`VERCEL_ENV=production`; at least 32 characters, checked in `src/lib/env.ts`)
+and optional elsewhere. It is the bearer secret for
+`POST /api/internal/purge-access-requests`, which deletes expired access
+requests and invites. The same value must also be a **GitHub Actions secret**
+named `PURGE_SECRET`: the hourly workflow
+`.github/workflows/purge-access-requests.yml` reads it to call that endpoint.
+Vercel binds env at deploy time, so redeploy after setting it.
+
 ---
 
 ## Scientific Background — Why the Data Model Looks Like This

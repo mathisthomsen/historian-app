@@ -1,0 +1,37 @@
+name: Purge expired access requests
+
+# Physical deletion of expired access requests and invites (#29 §4.6). Expiry is
+# enforced at read time regardless of this job; it only reclaims rows. Vercel Cron
+# on the Hobby plan runs at most daily, hence GitHub Actions.
+#
+# Scheduled workflows run from the default branch only. GitHub may delay a
+# scheduled run under load; that is acceptable (read-time expiry is the guarantee).
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  purge:
+    name: Purge
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the purge endpoint
+        env:
+          PURGE_SECRET: ${{ secrets.PURGE_SECRET }}
+        run: |
+          # Hard-coded www URL: the apex answers a 307 and curl does not follow a
+          # redirect for a POST. --fail-with-body makes any non-2xx exit non-zero
+          # (failing the run) while still printing the response body.
+          # The response carries counts only. Never echo $PURGE_SECRET; no `set -x`.
+          if [ -z "$PURGE_SECRET" ]; then
+            echo "::error::PURGE_SECRET is not set in GitHub Actions secrets"
+            exit 1
+          fi
+          curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $PURGE_SECRET" \
+            https://www.evidoxa.com/api/internal/purge-access-requests
+          echo
