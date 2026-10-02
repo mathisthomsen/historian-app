@@ -288,12 +288,12 @@ The confirmation page (§4.4) and this route treat an **expired** row (§4.6) as
 
 ### 4.6 Retention — owner's decision, 2026-10-02
 
-| Row                      | Kept for                                                                              | Clock                    |
-| ------------------------ | ------------------------------------------------------------------------------------- | ------------------------ |
-| `AccessRequest PENDING`  | **6 hours**                                                                           | `status_changed_at`      |
-| `AccessRequest DECLINED` | **48 hours**                                                                          | `status_changed_at`      |
-| `AccessRequest INVITED`  | until its invite is used or expires (≤ 14 days) — **proposed, not yet decided** (§12) | latest invite            |
-| `Invite`                 | until used or expired                                                                 | `used_at` / `expires_at` |
+| Row                      | Kept for                                                             | Clock                    |
+| ------------------------ | -------------------------------------------------------------------- | ------------------------ |
+| `AccessRequest PENDING`  | **6 hours**                                                          | `status_changed_at`      |
+| `AccessRequest DECLINED` | **48 hours**                                                         | `status_changed_at`      |
+| `AccessRequest INVITED`  | until its invite is used or expires (≤ 14 days) — decided 2026-10-02 | latest invite            |
+| `Invite`                 | until used or expired                                                | `used_at` / `expires_at` |
 
 **One definition, two enforcers.** `src/lib/access-retention.ts` exports `RETENTION` and
 `isExpired(row, now)`, plus `purgeExpired(now)` built from the same constants:
@@ -532,13 +532,11 @@ redeploy — Vercel env binds at deploy time. After deploy, confirm **live**, no
 
 ---
 
-## 12. Open questions — owner's decision
+## 12. Owner decisions
 
-1. **Retention of `INVITED` requests.** Decided: PENDING 6 h, DECLINED 48 h. Not yet decided: how
-   long an approved request is kept. The proposal in §4.6 deletes it once its invite is used or
-   expires — which also deletes its `tool_gap` answer, the co-development input 2.6 D14 built the
-   form around. Keeping `tool_gap` means either a longer retention or copying it somewhere
-   consented. Owner's call.
+1. **Retention of `INVITED` requests — decided 2026-10-02:** deleted once the invite is used or
+   expires (≤ 14 days). The `tool_gap` answer goes with it; if the owner wants it, they copy it out
+   from the confirmation page before then. No export of `tool_gap` is built.
 2. **Privacy page text** must state the periods in §4.6 (2.6 §11.2); the legal wording is the
    owner's.
 
