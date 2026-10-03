@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type * as EmailModule from "@/lib/email";
-// The REAL sanitize — deliberately not mocked (P8): the safety of stranger text
-// in the operator mail rests on what this function actually emits.
-import { sanitize } from "@/lib/sanitize";
 
 const { mockOperatorEmails, mockResend, mockSend, testEnv } = vi.hoisted(() => {
   const mockSend = vi.fn();
@@ -478,12 +475,13 @@ describe("sendAccessRequestNotification", () => {
     expect(sentMessages()[0]?.subject).not.toMatch(/[\r\n]/);
   });
 
-  // P8 — the real sanitize, then the real template. The invariant is that the
+  // P8 — the RAW payload straight into the real template, with no sanitize()
+  // first (docs/specs/150-plain-text-storage/plan.md). The invariant is that the
   // document's markup skeleton (tags and attribute names) is exactly the one a
   // benign request produces, so a stranger's text can add no element and no
   // attribute. Comparing against the benign skeleton is stronger than grepping
   // for known-bad strings.
-  describe("P8: sanitized stranger text is inert in the notification HTML", () => {
+  describe("P8: raw stranger text is inert in the notification HTML", () => {
     const payloads = [
       `<script>alert(1)</script>`,
       `<img src=x onerror=alert(1)>`,
@@ -503,15 +501,16 @@ describe("sendAccessRequestNotification", () => {
       const benign = skeleton(sentMessages()[0]?.html ?? "");
       mockSend.mockClear();
 
-      // Prefixed so a payload that sanitizes to "" does not drop the field's row
-      // and change the skeleton for a reason that has nothing to do with injection.
-      const hostile = sanitize(`Ada ${payload}`);
+      const hostile = `Ada ${payload}`;
       await email.sendAccessRequestNotification({
         ...baseRequest,
+        requestId: hostile,
         name: hostile,
+        email: hostile,
         institution: hostile,
         researchArea: hostile,
         toolGap: hostile,
+        locale: hostile,
       });
 
       const html = sentMessages()[0]?.html ?? "";
@@ -604,7 +603,7 @@ describe("sendInviteEmail", () => {
     expect(sentMessages()[0]?.text).toContain("http://localhost:3000/en/auth/register?invite=");
   });
 
-  it("P8: a sanitized hostile name adds no markup to the invite", async () => {
+  it("P8: a raw hostile name adds no markup to the invite", async () => {
     const email = await loadEmail();
     await email.sendInviteEmail({ to: "a@example.org", name: "Ada", token: RAW, locale: "de" });
     const benign = skeleton(sentMessages()[0]?.html ?? "");
@@ -612,11 +611,157 @@ describe("sendInviteEmail", () => {
 
     await email.sendInviteEmail({
       to: "a@example.org",
-      name: sanitize(`"><img src=x onerror=alert(1)><script>alert(1)</script>`),
+      name: `"><img src=x onerror=alert(1)><script>alert(1)</script>`,
       token: RAW,
       locale: "de",
     });
 
     expect(skeleton(sentMessages()[0]?.html ?? "")).toEqual(benign);
+  });
+});
+
+// Escaping contract (docs/specs/150-plain-text-storage/plan.md, T2): the HTML part
+// escapes every interpolation, callers pass RAW text, and the plain-text part and
+// the subject stay verbatim. The real templates run; only Resend, env, Prisma and
+// the operator lookup are mocked.
+describe("HTML escaping in every template", () => {
+  const RAW = "Müller & Söhne <script>alert(1)</script>";
+  // Quotes sit in the value so an attribute context would break out.
+  const HOSTILE = `${RAW} "dq" 'sq'`;
+  const ESCAPED =
+    "Müller &amp; Söhne &lt;script&gt;alert(1)&lt;/script&gt; &quot;dq&quot; &#39;sq&#39;";
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.useRealTimers();
+    testEnv.AUTH_URL = "http://localhost:3000";
+    testEnv.EMAIL_TRANSPORT = "resend";
+    mockResend.mockClear();
+    mockSend.mockClear();
+    mockSend.mockResolvedValue({ data: { id: "test-id" }, error: null });
+    mockOperatorEmails.mockReset();
+    mockOperatorEmails.mockResolvedValue(["op1@example.org"]);
+  });
+
+  /** Text nodes and attribute values of the parsed document: what a mail client shows. */
+  function renderedStrings(markup: string): string[] {
+    const doc = new DOMParser().parseFromString(markup, "text/html");
+    return Array.from(doc.querySelectorAll("*")).flatMap((el) => [
+      ...Array.from(el.attributes).map((a) => a.value),
+      ...Array.from(el.childNodes)
+        .filter((n) => n.nodeType === Node.TEXT_NODE)
+        .map((n) => n.textContent ?? ""),
+    ]);
+  }
+
+  const cases: {
+    name: string;
+    send: (email: typeof EmailModule) => Promise<void>;
+  }[] = [
+    {
+      name: "verification",
+      send: (email) =>
+        email.sendVerificationEmail({
+          to: "u@example.com",
+          name: HOSTILE,
+          token: HOSTILE,
+          locale: HOSTILE,
+        }),
+    },
+    {
+      name: "password reset",
+      send: (email) =>
+        email.sendPasswordResetEmail({
+          to: "u@example.com",
+          name: HOSTILE,
+          token: HOSTILE,
+          locale: HOSTILE,
+        }),
+    },
+    {
+      name: "invite",
+      send: (email) =>
+        email.sendInviteEmail({ to: "u@example.com", name: HOSTILE, token: HOSTILE, locale: "de" }),
+    },
+    {
+      name: "operator notification",
+      send: (email) =>
+        email.sendAccessRequestNotification({
+          requestId: HOSTILE,
+          name: HOSTILE,
+          email: HOSTILE,
+          institution: HOSTILE,
+          researchArea: HOSTILE,
+          toolGap: HOSTILE,
+          locale: HOSTILE,
+          statusChangedAt: new Date("2026-07-01T21:00:00.000Z"),
+        }),
+    },
+  ];
+
+  it.each(cases)("$name: the HTML carries the hostile value only escaped", async ({ send }) => {
+    const email = await loadEmail();
+    await send(email);
+
+    const html = sentMessages()[0]?.html ?? "";
+    expect(html).not.toMatch(/<script/i);
+    expect(html).not.toContain('"dq"');
+    expect(html).not.toContain("'sq'");
+    expect(html).not.toContain("& S");
+    expect(html).toContain("Müller &amp; Söhne");
+    expect(html).toContain(ESCAPED);
+    // Parsed back, the value is literal text, never an element.
+    expect(new DOMParser().parseFromString(html, "text/html").querySelector("script")).toBeNull();
+    expect(renderedStrings(html).some((s) => s.includes(RAW))).toBe(true);
+  });
+
+  it.each(cases)("$name: the text part stays verbatim", async ({ send }) => {
+    const email = await loadEmail();
+    await send(email);
+
+    const text = sentMessages()[0]?.text ?? "";
+    expect(text).toContain(RAW);
+    expect(text).not.toContain("&amp;");
+    expect(text).not.toContain("&lt;");
+    expect(text).not.toContain("&quot;");
+    expect(text).not.toContain("&#39;");
+  });
+
+  it("operator notification: the subject keeps the name verbatim", async () => {
+    const email = await loadEmail();
+    await email.sendAccessRequestNotification({ ...baseRequest, name: HOSTILE });
+
+    const subject = sentMessages()[0]?.subject ?? "";
+    expect(subject).toContain(RAW);
+    expect(subject).not.toContain("&amp;");
+  });
+
+  it("an ampersand in the link is &amp; in the href and & everywhere else", async () => {
+    const email = await loadEmail();
+    await email.sendVerificationEmail({
+      to: "u@example.com",
+      name: "Ada",
+      token: "a&b=c",
+      locale: "de",
+    });
+
+    const sent = sentMessages()[0];
+    expect(sent?.html).toContain('href="http://localhost:3000/de/auth/verify?token=a&amp;b=c"');
+    expect(sent?.text).toContain("http://localhost:3000/de/auth/verify?token=a&b=c");
+    const href = new DOMParser()
+      .parseFromString(sent?.html ?? "", "text/html")
+      .querySelector("a")
+      ?.getAttribute("href");
+    expect(href).toBe("http://localhost:3000/de/auth/verify?token=a&b=c");
+  });
+
+  it("operator notification: escaping one field leaves the others readable", async () => {
+    const email = await loadEmail();
+    await email.sendAccessRequestNotification({ ...baseRequest, researchArea: "Tom & Jerry" });
+
+    const html = sentMessages()[0]?.html ?? "";
+    expect(html).toContain("Tom &amp; Jerry");
+    expect(html).toContain("Royal Society");
+    expect(html).toContain("Which sources cite this letter?");
   });
 });

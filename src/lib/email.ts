@@ -2,6 +2,7 @@ import { Resend, type CreateEmailOptions } from "resend";
 
 import { pendingDeadline } from "@/lib/access-retention";
 import { env } from "@/lib/env";
+import { html, joinHtml } from "@/lib/html";
 import { operatorEmails } from "@/lib/operators";
 
 const EMAIL_SEND_TIMEOUT_MS = 5_000;
@@ -81,17 +82,20 @@ export async function sendVerificationEmail(params: {
   const expiry = isDE ? "Dieser Link ist 24 Stunden gültig." : "This link is valid for 24 hours.";
   const btnLabel = isDE ? "E-Mail bestätigen" : "Confirm email";
 
-  const html = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+  // Every interpolation is escaped by `html`. Prettier would re-indent the markup and
+  // change the mail's whitespace, so it is told to leave the template alone.
+  // prettier-ignore
+  const htmlBody = html`<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <p>${greeting}</p>
 <p>${body}</p>
 <p><a href="${ctaUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">${btnLabel}</a></p>
 <p>${expiry}</p>
 <p style="color:#888;font-size:12px">URL: ${ctaUrl}</p>
-</body></html>`;
+</body></html>`.toString();
 
   const text = `${greeting}\n\n${body}\n\n${ctaUrl}\n\n${expiry}`;
 
-  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html, text });
+  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html: htmlBody, text });
 }
 
 export async function sendPasswordResetEmail(params: {
@@ -112,17 +116,20 @@ export async function sendPasswordResetEmail(params: {
   const expiry = isDE ? "Dieser Link ist 1 Stunde gültig." : "This link is valid for 1 hour.";
   const btnLabel = isDE ? "Passwort zurücksetzen" : "Reset password";
 
-  const html = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+  // Every interpolation is escaped by `html`. Prettier would re-indent the markup and
+  // change the mail's whitespace, so it is told to leave the template alone.
+  // prettier-ignore
+  const htmlBody = html`<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <p>${greeting}</p>
 <p>${body}</p>
 <p><a href="${ctaUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">${btnLabel}</a></p>
 <p>${expiry}</p>
 <p style="color:#888;font-size:12px">URL: ${ctaUrl}</p>
-</body></html>`;
+</body></html>`.toString();
 
   const text = `${greeting}\n\n${body}\n\n${ctaUrl}\n\n${expiry}`;
 
-  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html, text });
+  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html: htmlBody, text });
 }
 
 const BERLIN_CLOCK = new Intl.DateTimeFormat("de-DE", {
@@ -141,11 +148,12 @@ function singleLine(text: string): string {
  * Operator notification about a new access request (spec §7.1). German only.
  *
  * `name`, `institution`, `researchArea` and `toolGap` come from a stranger.
- * They MUST already have passed through `sanitize()` (the route does this at
- * write time, §4.1 step 6): that strips every tag and entity-escapes `&`, `<`
- * and `>`, which is what makes interpolating them into the HTML text nodes
- * below inert (P8, measured — see `email.test.ts`). `sanitize` does not escape
- * quotes, so these values must never be interpolated into an attribute.
+ * Callers pass them RAW. The HTML part escapes every interpolation through
+ * `html` (`src/lib/html.ts`), so the text is inert in text nodes and in
+ * attributes alike (P8, see `email.test.ts`); the plain-text part and the
+ * subject are not HTML and carry the text verbatim. Do not escape before
+ * calling: that would show `&amp;` literally. See
+ * `docs/specs/150-plain-text-storage/plan.md`.
  *
  * Rejects only when no operator could be reached at all; the caller treats a
  * rejection as non-fatal (§4.1 step 8).
@@ -185,22 +193,21 @@ export async function sendAccessRequestNotification(params: {
   if (toolGap) fields.push(["Was das bisherige Werkzeug nicht beantwortet", toolGap, true]);
   fields.push(["Sprache", locale]);
 
-  const rows = fields
-    .map(
-      ([label, value, multiline]) =>
-        `<p style="margin:0 0 8px"><strong>${label}:</strong> ${
-          multiline ? `<span style="white-space:pre-wrap">${value}</span>` : value
-        }</p>`,
-    )
-    .join("\n");
+  // prettier-ignore
+  const rows = joinHtml(
+    fields.map(([label, value, multiline]) =>
+      html`<p style="margin:0 0 8px"><strong>${label}:</strong> ${multiline ? html`<span style="white-space:pre-wrap">${value}</span>` : value}</p>`),
+    "\n",
+  );
 
-  const html = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+  // prettier-ignore
+  const htmlBody = html`<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <p>${intro}</p>
 ${rows}
 <p><a href="${ctaUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">Anfrage ansehen</a></p>
 <p>${signIn}</p>
 <p style="color:#888;font-size:12px">URL: ${ctaUrl}</p>
-</body></html>`;
+</body></html>`.toString();
 
   const text = [
     intro,
@@ -213,7 +220,9 @@ ${rows}
   ].join("\n");
 
   const results = await Promise.allSettled(
-    operators.map((to) => sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html, text })),
+    operators.map((to) =>
+      sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html: htmlBody, text }),
+    ),
   );
   const failed = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
 
@@ -231,8 +240,8 @@ ${rows}
 
 /**
  * Invitation to register (spec §7.2), in the request's locale. `token` is the
- * raw invite token — it appears only in this link. `name` must already be
- * sanitized (see above).
+ * raw invite token — it appears only in this link. `name` is passed raw; the
+ * HTML part escapes it (see `sendAccessRequestNotification`).
  */
 export async function sendInviteEmail(params: {
   to: string;
@@ -255,15 +264,18 @@ export async function sendInviteEmail(params: {
     : "This invitation is valid for 14 days. It is bound to this email address, which cannot be changed.";
   const btnLabel = isDE ? "Konto anlegen" : "Create account";
 
-  const html = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+  // Every interpolation is escaped by `html`. Prettier would re-indent the markup and
+  // change the mail's whitespace, so it is told to leave the template alone.
+  // prettier-ignore
+  const htmlBody = html`<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <p>${greeting}</p>
 <p>${body}</p>
 <p><a href="${ctaUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">${btnLabel}</a></p>
 <p>${expiry}</p>
 <p style="color:#888;font-size:12px">URL: ${ctaUrl}</p>
-</body></html>`;
+</body></html>`.toString();
 
   const text = `${greeting}\n\n${body}\n\n${ctaUrl}\n\n${expiry}`;
 
-  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html, text });
+  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html: htmlBody, text });
 }
