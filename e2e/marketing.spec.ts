@@ -104,6 +104,21 @@ test.describe("marketing landing page", () => {
     }
   });
 
+  test("the certainty panel shows one record whose fields differ, each level named", async ({
+    page,
+  }) => {
+    // Stacked layout: the panel is in normal flow, so the specimen is plainly
+    // visible without driving the pinned stage (#97).
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/de");
+    const panel = page.locator('#highlights [data-slot="stage-panel"]').nth(0);
+    await expect(panel).not.toContainText("pro Feld");
+    const fields = panel.locator("dd");
+    await expect(fields).toHaveCount(2);
+    await expect(fields.nth(0)).toContainText("Möglich");
+    await expect(fields.nth(1)).toContainText("Sicher");
+  });
+
   test("keeps the highlights stacked when reduced motion is requested", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -198,7 +213,7 @@ test.describe("marketing landing page — no JS (F2)", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/de#highlight-evidence");
     const panel = page.locator("#highlights [data-slot='stage-panel']").nth(2);
-    await expect(panel).toContainText("Jede Aussage zeigt auf ihre Quelle.");
+    await expect(panel).toContainText("Woher stammt diese Angabe?");
     await expect(panel).toBeInViewport();
   });
 

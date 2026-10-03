@@ -11,12 +11,13 @@ const ROOTS = [
 /**
  * Files permitted to reach for the certainty vocabulary, and why.
  *
- * `Specimens.tsx` renders the certainty scale itself and a date whose year
- * carries a real per-field certainty. `RelationDiagram.tsx` annotates the one
- * edge that carries a relation's own certainty — the scope the model actually
- * uses. `HeroAppFrame.tsx` depicts the real application's record list, where
- * every row is a record whose field genuinely has a certainty; that is the
- * vocabulary used at exactly the scope it means. Nothing else on the marketing
+ * `Specimens.tsx` renders one record whose fields each carry their own
+ * certainty (typed against the Person columns that really have one) and a date
+ * whose certainty qualifies the whole date. `RelationDiagram.tsx` annotates the
+ * one edge that carries a relation's own certainty — the scope the model
+ * actually uses. `HeroAppFrame.tsx` depicts the real application's persons
+ * list, where each date cell genuinely has a certainty; that is the vocabulary
+ * used at exactly the scope it means. Nothing else on the marketing
  * surface is describing how well evidenced an assertion is, so nothing else may
  * use the palette.
  */

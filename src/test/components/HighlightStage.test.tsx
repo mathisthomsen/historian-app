@@ -24,7 +24,7 @@ const STEPS: StageStep[] = [
   {
     id: "evidence",
     kicker: "Belege",
-    title: "Jede Aussage zeigt auf ihre Quelle.",
+    title: "Woher stammt diese Angabe?",
     body: "Belege hängen am einzelnen Feld.",
     specimen: <p>Beleg-Spezimen</p>,
   },
