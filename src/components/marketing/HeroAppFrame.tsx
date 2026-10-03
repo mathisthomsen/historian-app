@@ -2,14 +2,57 @@ import type { Certainty } from "@prisma/client";
 
 import { CertaintyMarker } from "@/components/research/CertaintyMarker";
 
-/** Row widths are arbitrary; they stand in for record text without inventing data. */
-const ROWS: { width: string; certainty: Certainty }[] = [
-  { width: "58%", certainty: "PROBABLE" },
-  { width: "76%", certainty: "CERTAIN" },
-  { width: "44%", certainty: "UNKNOWN" },
-  { width: "66%", certainty: "POSSIBLE" },
-  { width: "82%", certainty: "CERTAIN" },
+/**
+ * One row of the depicted persons list: a name cell, then a birth-date cell and
+ * a death-date cell, each with its own certainty marker — the layout
+ * `PersonsListClient` actually renders (`DatedCell` per date column).
+ *
+ * Widths are arbitrary; they stand in for record text without inventing data.
+ * The two markers in a row deliberately differ in most rows: one record whose
+ * fields disagree is what "certainty per date, not per record" looks like.
+ */
+interface Row {
+  name: string;
+  birth: { width: string; certainty: Certainty };
+  death: { width: string; certainty: Certainty };
+}
+
+const ROWS: Row[] = [
+  {
+    name: "78%",
+    birth: { width: "70%", certainty: "PROBABLE" },
+    death: { width: "62%", certainty: "CERTAIN" },
+  },
+  {
+    name: "60%",
+    birth: { width: "58%", certainty: "UNKNOWN" },
+    death: { width: "66%", certainty: "POSSIBLE" },
+  },
+  {
+    name: "86%",
+    birth: { width: "66%", certainty: "CERTAIN" },
+    death: { width: "66%", certainty: "CERTAIN" },
+  },
+  {
+    name: "68%",
+    birth: { width: "52%", certainty: "POSSIBLE" },
+    death: { width: "74%", certainty: "PROBABLE" },
+  },
+  {
+    name: "74%",
+    birth: { width: "72%", certainty: "CERTAIN" },
+    death: { width: "56%", certainty: "UNKNOWN" },
+  },
 ];
+
+function DateCell({ width, certainty }: { width: string; certainty: Certainty }) {
+  return (
+    <div data-testid="hero-cell" className="flex min-w-0 items-center gap-2">
+      <span className="bg-muted h-2 min-w-0 rounded-sm" style={{ width }} />
+      <CertaintyMarker certainty={certainty} />
+    </div>
+  );
+}
 
 export function HeroAppFrame() {
   return (
@@ -39,9 +82,16 @@ export function HeroAppFrame() {
         </div>
         <div className="flex flex-col gap-3 p-4">
           {ROWS.map((row) => (
-            <div key={row.width} className="flex items-center gap-3">
-              <span className="bg-muted h-2 rounded-sm" style={{ width: row.width }} />
-              <CertaintyMarker certainty={row.certainty} />
+            <div
+              key={row.name}
+              data-testid="hero-row"
+              className="grid grid-cols-[1.3fr_1fr_1fr] items-center gap-3 sm:gap-6"
+            >
+              <div data-testid="hero-cell" className="min-w-0">
+                <span className="bg-muted block h-2 rounded-sm" style={{ width: row.name }} />
+              </div>
+              <DateCell {...row.birth} />
+              <DateCell {...row.death} />
             </div>
           ))}
         </div>
