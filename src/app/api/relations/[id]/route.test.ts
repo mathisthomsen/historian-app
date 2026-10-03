@@ -12,7 +12,6 @@ const mockRelationUpdate = vi.fn();
 const mockUserProjectFindFirst = vi.fn();
 const mockCacheInvalidate = vi.fn();
 const mockLogActivity = vi.fn();
-const mockSanitize = vi.fn((s: string) => s);
 
 vi.mock("@/lib/auth-guard", () => ({
   requireUser: mockRequireUser,
@@ -37,10 +36,6 @@ vi.mock("@/lib/cache", () => ({
 
 vi.mock("@/lib/activity", () => ({
   logActivity: mockLogActivity,
-}));
-
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: mockSanitize,
 }));
 
 const { GET, PUT, DELETE } = await import("./route");

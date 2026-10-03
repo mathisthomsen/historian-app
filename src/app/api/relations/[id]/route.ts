@@ -6,7 +6,6 @@ import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized 
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 
 const certaintyEnum = z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]);
 
@@ -105,7 +104,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const data = parsed.data;
 
   const updateData: Parameters<typeof prisma.relation.update>[0]["data"] = {};
-  if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
+  if (data.notes !== undefined) updateData.notes = data.notes || null;
   if (data.certainty !== undefined) updateData.certainty = data.certainty;
   if (data.valid_from_year !== undefined) updateData.valid_from_year = data.valid_from_year;
   if (data.valid_from_month !== undefined) updateData.valid_from_month = data.valid_from_month;

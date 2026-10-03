@@ -7,7 +7,6 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 import { certaintySchema } from "@/lib/schemas/person";
 
 const updateEventSchema = z
@@ -241,9 +240,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   }
 
   const updateData: Parameters<typeof prisma.event.update>[0]["data"] = {};
-  if (data.title !== undefined) updateData.title = sanitize(data.title);
-  if (data.description !== undefined)
-    updateData.description = data.description ? sanitize(data.description) : null;
+  if (data.title !== undefined) updateData.title = data.title;
+  if (data.description !== undefined) updateData.description = data.description || null;
   if (data.event_type_id !== undefined) updateData.event_type_id = data.event_type_id;
   if (data.start_year !== undefined) updateData.start_year = data.start_year;
   if (data.start_month !== undefined) updateData.start_month = data.start_month;
@@ -255,8 +253,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (data.end_day !== undefined) updateData.end_day = data.end_day;
   if (data.end_date_certainty !== undefined)
     updateData.end_date_certainty = data.end_date_certainty;
-  if (data.location !== undefined)
-    updateData.location = data.location ? sanitize(data.location) : null;
+  if (data.location !== undefined) updateData.location = data.location || null;
   if (data.location_certainty !== undefined)
     updateData.location_certainty = data.location_certainty;
 
@@ -277,7 +274,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
   }
   if (data.parent_id !== undefined) updateData.parent_id = data.parent_id;
-  if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
+  if (data.notes !== undefined) updateData.notes = data.notes || null;
 
   const updated = await prisma.event.update({
     where: { id },

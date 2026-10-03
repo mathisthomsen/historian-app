@@ -7,7 +7,6 @@ import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/a
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
 import { validateEntityExists } from "@/lib/entity-validation";
-import { sanitize } from "@/lib/sanitize";
 
 const entityTypeEnum = z.enum(["PERSON", "EVENT", "SOURCE", "LOCATION", "LITERATURE"]);
 const certaintyEnum = z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]);
@@ -171,10 +170,10 @@ export async function POST(request: NextRequest) {
       entity_id: data.entity_id,
       property: data.property,
       source_id: data.source_id,
-      notes: data.notes ? sanitize(data.notes) : null,
-      page_reference: data.page_reference ? sanitize(data.page_reference) : null,
-      quote: data.quote ? sanitize(data.quote) : null,
-      raw_transcription: data.raw_transcription ? sanitize(data.raw_transcription) : null,
+      notes: data.notes || null,
+      page_reference: data.page_reference || null,
+      quote: data.quote || null,
+      raw_transcription: data.raw_transcription || null,
       confidence: data.confidence ?? "UNKNOWN",
     },
     include: {

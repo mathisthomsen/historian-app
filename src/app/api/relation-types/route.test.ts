@@ -9,7 +9,6 @@ const mockRequireUser = vi.fn();
 const mockRelationTypeFindMany = vi.fn();
 const mockRelationTypeCreate = vi.fn();
 const mockUserProjectFindFirst = vi.fn();
-const mockSanitize = vi.fn((s: string) => s);
 
 vi.mock("@/lib/auth-guard", () => ({
   requireUser: mockRequireUser,
@@ -25,10 +24,6 @@ vi.mock("@/lib/db", () => ({
       findFirst: mockUserProjectFindFirst,
     },
   },
-}));
-
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: mockSanitize,
 }));
 
 const { GET, POST } = await import("./route");

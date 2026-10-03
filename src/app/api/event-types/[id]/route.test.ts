@@ -11,7 +11,6 @@ const mockEventTypeDelete = vi.fn();
 const mockEventTypeUpdate = vi.fn();
 const mockEventCount = vi.fn();
 const mockUserProjectFindFirst = vi.fn();
-const mockSanitize = vi.fn((s: string) => s);
 
 vi.mock("@/lib/cache", () => ({
   cache: {
@@ -39,10 +38,6 @@ vi.mock("@/lib/db", () => ({
       findFirst: mockUserProjectFindFirst,
     },
   },
-}));
-
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: mockSanitize,
 }));
 
 // Import AFTER mocks are registered

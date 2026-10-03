@@ -26,7 +26,6 @@ const mockCacheSet = vi.fn();
 const mockCacheInvalidate = vi.fn();
 const mockLogActivity = vi.fn();
 const mockValidateEntityExists = vi.fn();
-const mockSanitize = vi.fn((s: string) => s);
 
 vi.mock("@/lib/auth-guard", () => ({
   requireUser: mockRequireUser,
@@ -62,10 +61,6 @@ vi.mock("@/lib/activity", () => ({
 
 vi.mock("@/lib/entity-validation", () => ({
   validateEntityExists: mockValidateEntityExists,
-}));
-
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: mockSanitize,
 }));
 
 const { GET, POST } = await import("./route");

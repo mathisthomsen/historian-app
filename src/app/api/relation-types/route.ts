@@ -4,7 +4,6 @@ import { z } from "zod";
 import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 
 const entityTypeSchema = z.enum(["PERSON", "EVENT", "SOURCE", "LOCATION", "LITERATURE"]);
 
@@ -93,11 +92,11 @@ export async function POST(request: NextRequest) {
   const relationType = await prisma.relationType.create({
     data: {
       project_id: data.project_id,
-      name: sanitize(data.name),
-      inverse_name: data.inverse_name ? sanitize(data.inverse_name) : null,
-      description: data.description ? sanitize(data.description) : null,
+      name: data.name,
+      inverse_name: data.inverse_name || null,
+      description: data.description || null,
       color: data.color ?? null,
-      icon: data.icon ? sanitize(data.icon) : null,
+      icon: data.icon || null,
       valid_from_types: data.valid_from_types,
       valid_to_types: data.valid_to_types,
     },
