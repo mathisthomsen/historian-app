@@ -1,6 +1,8 @@
 import { Resend, type CreateEmailOptions } from "resend";
 
+import { pendingDeadline } from "@/lib/access-retention";
 import { env } from "@/lib/env";
+import { operatorEmails } from "@/lib/operators";
 
 const EMAIL_SEND_TIMEOUT_MS = 5_000;
 
@@ -20,15 +22,24 @@ function assertStubIsSafe(): void {
   }
 }
 
+/**
+ * The send deadline elapsed. Unlike a provider error this is NOT a definite
+ * failure: the provider request may still complete, so a caller must not treat
+ * the mail as undelivered.
+ */
+export class EmailDeadlineError extends Error {
+  constructor() {
+    super("Email delivery request timed out.");
+    this.name = "EmailDeadlineError";
+  }
+}
+
 // Resend v4 does not expose an AbortSignal on emails.send. This bounds how long
 // the caller waits; the provider request can still complete after the deadline.
 async function withDeadline<T>(operation: Promise<T>): Promise<T> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_, reject) => {
-    timeout = setTimeout(
-      () => reject(new Error("Email delivery request timed out.")),
-      EMAIL_SEND_TIMEOUT_MS,
-    );
+    timeout = setTimeout(() => reject(new EmailDeadlineError()), EMAIL_SEND_TIMEOUT_MS);
   });
 
   try {
@@ -62,10 +73,10 @@ export async function sendVerificationEmail(params: {
   const ctaUrl = `${env.AUTH_URL}/${locale}/auth/verify?token=${token}`;
   const isDE = locale === "de";
 
-  const subject = isDE ? "Bestätige deine E-Mail-Adresse" : "Confirm your email address";
+  const subject = isDE ? "Bestätigen Sie Ihre E-Mail-Adresse" : "Confirm your email address";
   const greeting = isDE ? `Hallo ${name},` : `Hello ${name},`;
   const body = isDE
-    ? `bitte bestätige deine E-Mail-Adresse, indem du auf den folgenden Link klickst:`
+    ? `bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie auf den folgenden Link klicken:`
     : `please confirm your email address by clicking the link below:`;
   const expiry = isDE ? "Dieser Link ist 24 Stunden gültig." : "This link is valid for 24 hours.";
   const btnLabel = isDE ? "E-Mail bestätigen" : "Confirm email";
@@ -96,10 +107,153 @@ export async function sendPasswordResetEmail(params: {
   const subject = isDE ? "Passwort zurücksetzen" : "Reset your password";
   const greeting = isDE ? `Hallo ${name},` : `Hello ${name},`;
   const body = isDE
-    ? `klicke auf den folgenden Link, um dein Passwort zurückzusetzen:`
+    ? `klicken Sie auf den folgenden Link, um Ihr Passwort zurückzusetzen:`
     : `click the link below to reset your password:`;
   const expiry = isDE ? "Dieser Link ist 1 Stunde gültig." : "This link is valid for 1 hour.";
   const btnLabel = isDE ? "Passwort zurücksetzen" : "Reset password";
+
+  const html = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+<p>${greeting}</p>
+<p>${body}</p>
+<p><a href="${ctaUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">${btnLabel}</a></p>
+<p>${expiry}</p>
+<p style="color:#888;font-size:12px">URL: ${ctaUrl}</p>
+</body></html>`;
+
+  const text = `${greeting}\n\n${body}\n\n${ctaUrl}\n\n${expiry}`;
+
+  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html, text });
+}
+
+const BERLIN_CLOCK = new Intl.DateTimeFormat("de-DE", {
+  timeZone: "Europe/Berlin",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23", // "00:05", never "24:05"
+});
+
+/** Free text from a requester belongs on one line in a subject. */
+function singleLine(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Operator notification about a new access request (spec §7.1). German only.
+ *
+ * `name`, `institution`, `researchArea` and `toolGap` come from a stranger.
+ * They MUST already have passed through `sanitize()` (the route does this at
+ * write time, §4.1 step 6): that strips every tag and entity-escapes `&`, `<`
+ * and `>`, which is what makes interpolating them into the HTML text nodes
+ * below inert (P8, measured — see `email.test.ts`). `sanitize` does not escape
+ * quotes, so these values must never be interpolated into an attribute.
+ *
+ * Rejects only when no operator could be reached at all; the caller treats a
+ * rejection as non-fatal (§4.1 step 8).
+ */
+export async function sendAccessRequestNotification(params: {
+  requestId: string;
+  name: string;
+  email: string;
+  institution: string | null;
+  researchArea: string | null;
+  toolGap: string | null;
+  locale: string;
+  /** `status_changed_at` of the request — the retention clock's start (§4.6). */
+  statusChangedAt: Date;
+}): Promise<void> {
+  const { requestId, name, email, institution, researchArea, toolGap, locale, statusChangedAt } =
+    params;
+
+  const operators = await operatorEmails();
+  if (operators.length === 0) {
+    console.error("[access-request] no operator to notify", { requestId });
+    return;
+  }
+
+  const deadline = BERLIN_CLOCK.format(pendingDeadline(statusChangedAt));
+  const ctaUrl = `${env.AUTH_URL}/de/admin/access-requests/${requestId}`;
+  const subject = singleLine(`Neue Zugangsanfrage: ${name} — verfällt ${deadline}`);
+  const signIn = "Falls Sie nicht angemeldet sind: erst anmelden, dann diesen Link erneut öffnen.";
+  const intro = `Neue Zugangsanfrage. Sie verfällt um ${deadline} Uhr (Europe/Berlin), wenn sie bis dahin nicht entschieden ist.`;
+
+  const fields: [label: string, value: string, multiline?: boolean][] = [
+    ["Name", name],
+    ["E-Mail", email],
+  ];
+  if (institution) fields.push(["Institution", institution]);
+  if (researchArea) fields.push(["Forschungsgebiet", researchArea]);
+  if (toolGap) fields.push(["Was das bisherige Werkzeug nicht beantwortet", toolGap, true]);
+  fields.push(["Sprache", locale]);
+
+  const rows = fields
+    .map(
+      ([label, value, multiline]) =>
+        `<p style="margin:0 0 8px"><strong>${label}:</strong> ${
+          multiline ? `<span style="white-space:pre-wrap">${value}</span>` : value
+        }</p>`,
+    )
+    .join("\n");
+
+  const html = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+<p>${intro}</p>
+${rows}
+<p><a href="${ctaUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">Anfrage ansehen</a></p>
+<p>${signIn}</p>
+<p style="color:#888;font-size:12px">URL: ${ctaUrl}</p>
+</body></html>`;
+
+  const text = [
+    intro,
+    "",
+    ...fields.map(([label, value]) => `${label}: ${value}`),
+    "",
+    ctaUrl,
+    "",
+    signIn,
+  ].join("\n");
+
+  const results = await Promise.allSettled(
+    operators.map((to) => sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html, text })),
+  );
+  const failed = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+
+  if (failed.length === results.length) {
+    throw failed[0]?.reason;
+  }
+  if (failed.length > 0) {
+    console.error("[access-request] notification failed for some operators", {
+      requestId,
+      failed: failed.length,
+      total: results.length,
+    });
+  }
+}
+
+/**
+ * Invitation to register (spec §7.2), in the request's locale. `token` is the
+ * raw invite token — it appears only in this link. `name` must already be
+ * sanitized (see above).
+ */
+export async function sendInviteEmail(params: {
+  to: string;
+  name: string;
+  token: string;
+  locale: string;
+}): Promise<void> {
+  const { to, name, token } = params;
+  const isDE = params.locale === "de";
+  // Only the two supported locales ever reach the path.
+  const ctaUrl = `${env.AUTH_URL}/${isDE ? "de" : "en"}/auth/register?invite=${encodeURIComponent(token)}`;
+
+  const subject = isDE ? "Ihre Einladung zu Evidoxa" : "Your invitation to Evidoxa";
+  const greeting = isDE ? `Hallo ${name},` : `Hello ${name},`;
+  const body = isDE
+    ? "Sie wurden zu Evidoxa eingeladen. Über den folgenden Link legen Sie Ihr Konto an:"
+    : "you have been invited to Evidoxa. Use the link below to create your account:";
+  const expiry = isDE
+    ? "Die Einladung ist 14 Tage gültig. Sie gilt nur für diese E-Mail-Adresse; die Adresse kann nicht geändert werden."
+    : "This invitation is valid for 14 days. It is bound to this email address, which cannot be changed.";
+  const btnLabel = isDE ? "Konto anlegen" : "Create account";
 
   const html = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <p>${greeting}</p>

@@ -17,7 +17,7 @@
     "loadFailed": "Daten konnten nicht geladen werden.",
     "evidenceCountFailed": "Nachweise konnten nicht geladen werden",
     "unsavedTitle": "Ungespeicherte Änderungen verwerfen?",
-    "unsavedBody": "Deine Eingaben auf dieser Seite gehen verloren. Dieser Schritt lässt sich nicht rückgängig machen.",
+    "unsavedBody": "Ihre Eingaben auf dieser Seite gehen verloren. Dieser Schritt lässt sich nicht rückgängig machen.",
     "discardChanges": "Änderungen verwerfen",
     "keepEditing": "Weiter bearbeiten",
     "certainty": {
@@ -59,9 +59,9 @@
       "title": "Anmelden",
       "submit": "Anmelden",
       "forgotPassword": "Passwort vergessen?",
-      "noAccount": "Noch kein Konto?",
-      "register": "Registrieren",
-      "resetSuccess": "Passwort wurde zurückgesetzt. Bitte melde dich an."
+      "noAccount": "Noch kein Zugang?",
+      "register": "Zugang anfragen",
+      "resetSuccess": "Passwort wurde zurückgesetzt. Bitte melden Sie sich an."
     },
     "register": {
       "title": "Konto erstellen",
@@ -69,25 +69,38 @@
       "namePlaceholder": "Vollständiger Name",
       "alreadyHaveAccount": "Bereits registriert?",
       "login": "Anmelden",
-      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfe dein Postfach.",
+      "verificationSent": "Verifizierungs-E-Mail gesendet. Bitte prüfen Sie Ihr Postfach.",
       "emailNotSentTitle": "Konto erstellt — E-Mail konnte nicht zugestellt werden",
-      "emailNotSentMessage": "Dein Konto besteht, aber die Bestätigungs-E-Mail ist nicht rausgegangen. Fordere unten einen neuen Link an.",
-      "backToLogin": "Zur Anmeldung"
+      "emailNotSentMessage": "Ihr Konto besteht, aber die Bestätigungs-E-Mail ist nicht rausgegangen. Fordern Sie unten einen neuen Link an.",
+      "backToLogin": "Zur Anmeldung",
+      "privacyHint": "Wie wir Ihre Daten verarbeiten, steht in der",
+      "privacy": "Datenschutzerklärung"
+    },
+    "invite": {
+      "missing": "Die Registrierung ist nur mit Einladung möglich.",
+      "invalid": "Dieser Einladungslink ist ungültig.",
+      "expired": "Dieser Einladungslink ist abgelaufen.",
+      "used": "Dieser Einladungslink wurde bereits verwendet.",
+      "emailMismatch": "Die Einladung gilt für eine andere E-Mail-Adresse.",
+      "invitedAs": "Eingeladen als {email}",
+      "requestAccess": "Zugang anfragen",
+      "requestAgain": "Zugang erneut anfragen",
+      "toLogin": "Zur Anmeldung"
     },
     "verify": {
       "title": "E-Mail bestätigen",
       "verifying": "Wird überprüft...",
       "success": "E-Mail bestätigt",
-      "successMessage": "Dein Konto ist aktiv.",
+      "successMessage": "Ihr Konto ist aktiv.",
       "loginNow": "Jetzt anmelden",
       "requestNew": "Neuen Link anfordern",
       "noTokenTitle": "Kein Bestätigungslink",
-      "noTokenMessage": "Diese Seite braucht den Link aus deiner Bestätigungs-E-Mail. Öffne den Link direkt aus der E-Mail.",
+      "noTokenMessage": "Diese Seite braucht den Link aus Ihrer Bestätigungs-E-Mail. Öffnen Sie den Link direkt aus der E-Mail.",
       "failedTitle": "Bestätigung fehlgeschlagen",
       "linkInvalidTitle": "Link ungültig",
       "retry": "Erneut versuchen",
       "alreadyVerifiedTitle": "Bereits bestätigt",
-      "alreadyVerifiedMessage": "Diese E-Mail-Adresse wurde schon bestätigt. Du kannst dich anmelden.",
+      "alreadyVerifiedMessage": "Diese E-Mail-Adresse wurde schon bestätigt. Sie können sich anmelden.",
       "resendSent": "Wenn für diese Adresse eine Bestätigung aussteht, ist ein neuer Link unterwegs.",
       "resendAction": "Neuen Bestätigungslink senden",
       "resendSending": "Wird gesendet…",
@@ -96,11 +109,11 @@
     },
     "forgot": {
       "title": "Passwort vergessen?",
-      "description": "Gib deine E-Mail-Adresse ein und wir senden dir einen Link.",
+      "description": "Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link.",
       "submit": "Link anfordern",
       "backToLogin": "Zurück zur Anmeldung",
       "emailSent": "E-Mail gesendet",
-      "emailSentMessage": "Falls ein Konto mit dieser Adresse existiert, erhältst du einen Link."
+      "emailSentMessage": "Falls ein Konto mit dieser Adresse existiert, erhalten Sie einen Link."
     },
     "reset": {
       "title": "Neues Passwort",
@@ -111,7 +124,7 @@
     },
     "dashboard": {
       "welcome": "Willkommen, {name}!",
-      "loggedIn": "Du bist angemeldet.",
+      "loggedIn": "Sie sind angemeldet.",
       "logout": "Abmelden"
     },
     "strength": {
@@ -130,9 +143,9 @@
     },
     "errors": {
       "invalidCredentials": "E-Mail oder Passwort ungültig.",
-      "emailNotVerified": "Bitte bestätige zuerst deine E-Mail-Adresse.",
+      "emailNotVerified": "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.",
       "emailTaken": "Diese E-Mail-Adresse ist bereits registriert.",
-      "tokenExpired": "Der Link ist abgelaufen. Bitte fordere einen neuen an.",
+      "tokenExpired": "Der Link ist abgelaufen. Bitte fordern Sie einen neuen an.",
       "tokenInvalid": "Ungültiger Link.",
       "rateLimited": "Zu viele Versuche. Bitte warte {minutes} Minuten.",
       "passwordTooShort": "Mindestens 8 Zeichen.",
@@ -152,7 +165,7 @@
       "loginRateLimited": "Zu viele Anmeldeversuche. Bitte warte bis zu {minutes} Minuten.",
       "tokenMalformed": "Dieser Link ist unvollständig. E-Mail-Programme brechen lange Links manchmal um — bitte den vollständigen Link kopieren oder einen neuen anfordern.",
       "networkError": "Keine Verbindung zum Server. Bitte Internetverbindung prüfen und erneut versuchen.",
-      "tokenAlreadyUsed": "Dieser Link wurde bereits verwendet. Dein Passwort ist gesetzt — du kannst dich anmelden."
+      "tokenAlreadyUsed": "Dieser Link wurde bereits verwendet. Ihr Passwort ist gesetzt — Sie können sich anmelden."
     },
     "invalidLink": "Ungültiger Link",
     "invalidLinkMessage": "Kein Verifizierungstoken gefunden."
@@ -556,7 +569,7 @@
     "delete_failed": "Relation konnte nicht gelöscht werden.",
     "year_placeholder": "Jahr",
     "month_placeholder": "Monat",
-    "evidence_attach_failed": "Die Beziehung wurde gespeichert, der Nachweis konnte aber nicht angehängt werden. Deine Quelle und dein Zitat stehen noch unten — bitte erneut anhängen.",
+    "evidence_attach_failed": "Die Beziehung wurde gespeichert, der Nachweis konnte aber nicht angehängt werden. Ihre Quelle und Ihr Zitat stehen noch unten — bitte erneut anhängen.",
     "evidence_retry": "Nachweis erneut anhängen",
     "evidence_attached_toast": "Nachweis angehängt.",
     "saved_without_evidence_toast": "Relation gespeichert — ohne Nachweis."
@@ -639,11 +652,86 @@
     "next": "Weiter",
     "page": "Seite"
   },
+  "access": {
+    "fields": {
+      "name": "Name",
+      "email": "E-Mail-Adresse",
+      "institution": "Institution (optional)",
+      "researchArea": "Forschungsgebiet (optional)",
+      "toolGap": "Was kann Ihr bisheriges Werkzeug nicht beantworten? (optional)"
+    },
+    "toolGapHint": "Eine Frage oder ein Fall genügt.",
+    "consent": "Ich habe die <privacy>Datenschutzerklärung</privacy> gelesen und bin damit einverstanden, dass meine Angaben zur Prüfung dieser Anfrage gespeichert werden.",
+    "retention": "Anfragen, über die nicht entschieden wird, werden nach 6 Stunden gelöscht.",
+    "submitting": "Wird gesendet …",
+    "success": "Danke. Wenn wir Sie einladen können, erhalten Sie in den nächsten Stunden eine E-Mail. Andernfalls wird Ihre Anfrage nach 6 Stunden gelöscht — Sie können sie jederzeit erneut stellen.",
+    "errors": {
+      "nameRequired": "Bitte einen Namen eingeben.",
+      "nameTooLong": "Name ist zu lang (höchstens 100 Zeichen).",
+      "emailInvalid": "Bitte eine gültige E-Mail-Adresse eingeben.",
+      "emailTooLong": "E-Mail-Adresse ist zu lang (höchstens 254 Zeichen).",
+      "institutionTooLong": "Institution ist zu lang (höchstens 200 Zeichen).",
+      "researchAreaTooLong": "Forschungsgebiet ist zu lang (höchstens 200 Zeichen).",
+      "toolGapTooLong": "Der Text ist zu lang (höchstens 2000 Zeichen).",
+      "consentRequired": "Ohne Ihre Einwilligung können wir die Anfrage nicht bearbeiten.",
+      "invalid": "Bitte prüfen Sie Ihre Angaben.",
+      "rateLimited": "Zu viele Anfragen. Bitte versuchen Sie es in {minutes} Minuten erneut.",
+      "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es in Kürze erneut.",
+      "serverError": "Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "networkError": "Keine Verbindung zum Server. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+    }
+  },
+  "admin": {
+    "accessRequest": {
+      "title": "Zugangsanfrage",
+      "description": "Prüfen Sie die Anfrage und entscheiden Sie, ob eine Einladung verschickt wird.",
+      "fields": {
+        "name": "Name",
+        "email": "E-Mail",
+        "institution": "Institution",
+        "researchArea": "Forschungsgebiet",
+        "toolGap": "Was das bisherige Werkzeug nicht beantwortet",
+        "locale": "Sprache der Einladung",
+        "created": "Eingegangen",
+        "status": "Status",
+        "reviewed": "Entschieden",
+        "notProvided": "Nicht angegeben"
+      },
+      "localeName": {
+        "de": "Deutsch",
+        "en": "Englisch"
+      },
+      "status": {
+        "PENDING": "Offen",
+        "INVITED": "Eingeladen",
+        "DECLINED": "Abgelehnt"
+      },
+      "reviewedBy": "{date} von {name}",
+      "reviewedByUnknown": "{date}",
+      "decisionHeading": "Entscheidung",
+      "approve": "Einladen",
+      "reinvite": "Erneut einladen",
+      "decline": "Ablehnen",
+      "outcome": {
+        "invited": "Die Einladung wurde angelegt und per E-Mail versendet.",
+        "declined": "Die Anfrage wurde abgelehnt.",
+        "emailNotSent": "Die Einladung wurde angelegt, die E-Mail aber nicht versendet. Erneut einladen?",
+        "emailUnknown": "Die Einladung wurde angelegt. Die Zustellung der E-Mail ließ sich nicht bestätigen. Bitte warten Sie kurz oder fragen Sie bei der anfragenden Person nach, bevor Sie erneut einladen."
+      },
+      "accountExists": "Für diese Adresse besteht bereits ein Konto.",
+      "errors": {
+        "generic": "Die Entscheidung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        "forbidden": "Für diese Entscheidung fehlt die Berechtigung.",
+        "notFound": "Diese Anfrage gibt es nicht mehr. Möglicherweise ist sie abgelaufen.",
+        "network": "Keine Verbindung. Bitte versuchen Sie es erneut."
+      }
+    }
+  },
   "marketing": {
     "nav": {
       "changelog": "Changelog",
       "signIn": "Anmelden",
-      "register": "Konto erstellen",
+      "register": "Zugang anfragen",
       "toApp": "Zur App",
       "label": "Hauptnavigation"
     },
@@ -658,7 +746,7 @@
     "hero": {
       "headline": "Für alles, was die Quelle nicht sagt.",
       "sub": "Eine Forschungsdatenbank, in der Ungewissheit ein Feld ist — kein Kompromiss.",
-      "primary": "Konto erstellen",
+      "primary": "Zugang anfragen",
       "secondary": "Ansehen"
     },
     "panels": {
@@ -732,9 +820,9 @@
       }
     },
     "cta": {
-      "title": "Fangen Sie mit einer Quelle an.",
-      "body": "Ein Konto genügt. Ihr erstes Projekt wird automatisch angelegt.",
-      "action": "Konto erstellen"
+      "title": "Zugang zur geschlossenen Alpha",
+      "body": "Evidoxa entsteht gemeinsam mit wenigen Forschenden. Zugang gibt es derzeit nur auf Einladung — schildern Sie uns kurz, woran Sie arbeiten.",
+      "action": "Zugang anfragen"
     },
     "changelogPage": {
       "title": "Changelog",

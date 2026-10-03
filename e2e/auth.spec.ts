@@ -3,10 +3,17 @@ import { expect, test } from "@playwright/test";
 import { loginAsAdmin, resetAuthState, SEED_EMAIL } from "./helpers/auth";
 import {
   createTestUser,
+  deleteTestInvites,
   deleteTestUser,
+  insertTestInvite,
   insertTestResetToken,
   insertTestVerificationToken,
 } from "./helpers/db";
+
+/** A unique, throw-away address for a test that registers (or is invited as) a user. */
+function uniqueEmail(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
+}
 
 // Auth tests share the seeded admin user and password_resets table — run serially
 // to prevent TC-AUTH-14 (forgot-password) and TC-AUTH-15 (reset) from racing.
@@ -32,12 +39,32 @@ test.describe("TC-AUTH-01: Login page structure", () => {
 // TC-AUTH-02: Register page
 // ---------------------------------------------------------------------------
 test.describe("TC-AUTH-02: Register page", () => {
-  test("renders registration form with password strength indicator", async ({ page }) => {
-    await page.goto("/de/auth/register");
+  let invitedEmail: string;
+
+  test.beforeEach(() => {
+    invitedEmail = uniqueEmail("e2e-invite-form");
+  });
+
+  test.afterEach(async () => {
+    await deleteTestInvites(invitedEmail);
+  });
+
+  test("renders registration form with the invited address read-only", async ({ page }) => {
+    const invite = await insertTestInvite(invitedEmail);
+    await page.goto(`/de/auth/register?invite=${invite}`);
     await expect(page.getByLabel("Name")).toBeVisible();
     await expect(page.getByLabel("E-Mail")).toBeVisible();
+    await expect(page.getByLabel("E-Mail")).toHaveValue(invitedEmail);
+    await expect(page.getByLabel("E-Mail")).not.toBeEditable();
     await expect(page.getByLabel("Passwort", { exact: true })).toBeVisible();
     await expect(page.getByLabel("Passwort bestätigen")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Datenschutzerklärung" })).toBeVisible();
+  });
+
+  test("without an invite the page says registration is by invitation only", async ({ page }) => {
+    await page.goto("/de/auth/register");
+    await expect(page.getByText("nur mit Einladung")).toBeVisible();
+    await expect(page.getByLabel("Passwort", { exact: true })).toHaveCount(0);
   });
 });
 
@@ -45,10 +72,20 @@ test.describe("TC-AUTH-02: Register page", () => {
 // TC-AUTH-03: Weak password validation
 // ---------------------------------------------------------------------------
 test.describe("TC-AUTH-03: Weak password shows field errors", () => {
+  let invitedEmail: string;
+
+  test.beforeEach(() => {
+    invitedEmail = uniqueEmail("e2e-weak-pw");
+  });
+
+  test.afterEach(async () => {
+    await deleteTestInvites(invitedEmail);
+  });
+
   test("submitting weak password shows validation errors without submitting", async ({ page }) => {
-    await page.goto("/de/auth/register");
+    const invite = await insertTestInvite(invitedEmail);
+    await page.goto(`/de/auth/register?invite=${invite}`);
     await page.getByLabel("Name").fill("Test User");
-    await page.getByLabel("E-Mail").fill("test@example.com");
     await page.getByLabel("Passwort", { exact: true }).fill("password");
     await page.getByLabel("Passwort bestätigen").fill("password");
     await page.getByRole("button", { name: "Konto erstellen" }).click();
@@ -67,17 +104,18 @@ test.describe("TC-AUTH-04: Successful registration", () => {
   let testEmail: string;
 
   test.beforeEach(() => {
-    testEmail = `e2e-reg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
+    testEmail = uniqueEmail("e2e-reg");
   });
 
   test.afterEach(async () => {
     await deleteTestUser(testEmail);
+    await deleteTestInvites(testEmail);
   });
 
   test("shows success card after registration", async ({ page }) => {
-    await page.goto("/de/auth/register");
+    const invite = await insertTestInvite(testEmail);
+    await page.goto(`/de/auth/register?invite=${invite}`);
     await page.getByLabel("Name").fill("E2E Test User");
-    await page.getByLabel("E-Mail").fill(testEmail);
     await page.getByLabel("Passwort", { exact: true }).fill("ValidP@ss1");
     await page.getByLabel("Passwort bestätigen").fill("ValidP@ss1");
     await page.getByRole("button", { name: "Konto erstellen" }).click();
@@ -91,14 +129,24 @@ test.describe("TC-AUTH-04: Successful registration", () => {
 // TC-AUTH-05: Duplicate email registration
 // ---------------------------------------------------------------------------
 test.describe("TC-AUTH-05: Duplicate email returns error", () => {
+  test.afterEach(async () => {
+    await deleteTestInvites(SEED_EMAIL);
+  });
+
   test("already-registered email shows 409 error", async ({ page }) => {
-    await page.goto("/de/auth/register");
+    // A VALID invite bound to an existing address: the existence check runs after
+    // the invite check, so only an invited caller can learn the address is taken.
+    const invite = await insertTestInvite(SEED_EMAIL);
+    await page.goto(`/de/auth/register?invite=${invite}`);
     await page.getByLabel("Name").fill("Admin");
-    await page.getByLabel("E-Mail").fill(SEED_EMAIL);
     await page.getByLabel("Passwort", { exact: true }).fill("ValidP@ss1");
     await page.getByLabel("Passwort bestätigen").fill("ValidP@ss1");
     await page.getByRole("button", { name: "Konto erstellen" }).click();
-    await expect(page.getByText("bereits registriert")).toBeVisible({ timeout: 10_000 });
+    // Scoped to the alert: the form's own "Bereits registriert?" line also matches
+    // a bare case-insensitive text query.
+    await expect(page.getByRole("alert").filter({ hasText: "bereits registriert" })).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });
 
@@ -109,10 +157,11 @@ test.describe("TC-AUTH-06: Valid email verification token", () => {
   let unverifiedEmail: string;
 
   test.beforeEach(async ({ request }) => {
-    unverifiedEmail = `e2e-unverified-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
+    unverifiedEmail = uniqueEmail("e2e-unverified");
+    const invite = await insertTestInvite(unverifiedEmail);
     // Create user via register API (creates unverified user)
     const res = await request.post("/api/auth/register", {
-      data: { email: unverifiedEmail, name: "Unverified User", password: "ValidP@ss1" },
+      data: { email: unverifiedEmail, name: "Unverified User", password: "ValidP@ss1", invite },
     });
     if (!res.ok()) {
       throw new Error(
@@ -123,13 +172,14 @@ test.describe("TC-AUTH-06: Valid email verification token", () => {
 
   test.afterEach(async () => {
     await deleteTestUser(unverifiedEmail);
+    await deleteTestInvites(unverifiedEmail);
   });
 
   test("valid token shows success state with login link", async ({ page }) => {
     const rawToken = await insertTestVerificationToken(unverifiedEmail);
     await page.goto(`/de/auth/verify?token=${rawToken}`);
     await expect(page.getByText("E-Mail bestätigt")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Dein Konto ist aktiv")).toBeVisible();
+    await expect(page.getByText("Ihr Konto ist aktiv")).toBeVisible();
     await expect(page.getByText("Jetzt anmelden")).toBeVisible();
   });
 });
@@ -162,7 +212,7 @@ test.describe("TC-AUTH-08: Successful login", () => {
   test("verified user logs in and reaches dashboard", async ({ page }) => {
     await loginAsAdmin(page);
     await expect(page.getByText("Evidoxa Admin")).toBeVisible();
-    await expect(page.getByText("Du bist angemeldet.")).toBeVisible();
+    await expect(page.getByText("Sie sind angemeldet.")).toBeVisible();
   });
 });
 
@@ -197,7 +247,7 @@ test.describe("TC-AUTH-12: Authenticated dashboard", () => {
   test("shows welcome message and user name", async ({ page }) => {
     await loginAsAdmin(page);
     await expect(page.getByText("Willkommen, Evidoxa Admin!")).toBeVisible();
-    await expect(page.getByText("Du bist angemeldet.")).toBeVisible();
+    await expect(page.getByText("Sie sind angemeldet.")).toBeVisible();
   });
 });
 
@@ -359,11 +409,21 @@ test.describe("TC-AUTH-16: Expired/invalid reset token", () => {
 // ---------------------------------------------------------------------------
 test.describe("TC-AUTH-19: i18n on auth pages", () => {
   test("all auth pages default to German", async ({ page }) => {
-    await page.goto("/de/auth/login");
-    await expect(page.getByRole("button", { name: "Anmelden" })).toBeVisible();
+    const invitedEmail = uniqueEmail("e2e-i18n");
+    const invite = await insertTestInvite(invitedEmail);
+    try {
+      await page.goto("/de/auth/login");
+      await expect(page.getByRole("button", { name: "Anmelden" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Zugang anfragen" })).toHaveAttribute(
+        "href",
+        "/de#access",
+      );
 
-    await page.goto("/de/auth/register");
-    await expect(page.getByRole("button", { name: "Konto erstellen" })).toBeVisible();
+      await page.goto(`/de/auth/register?invite=${invite}`);
+      await expect(page.getByRole("button", { name: "Konto erstellen" })).toBeVisible();
+    } finally {
+      await deleteTestInvites(invitedEmail);
+    }
 
     await page.goto("/de/auth/forgot-password");
     await expect(page.getByRole("button", { name: "Link anfordern" })).toBeVisible();

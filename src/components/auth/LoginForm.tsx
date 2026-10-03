@@ -5,7 +5,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -27,6 +27,7 @@ type LoginFormValues = {
 
 export function LoginForm() {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
@@ -164,7 +165,10 @@ export function LoginForm() {
         </div>
         <div>
           {t("login.noAccount")}{" "}
-          <Link href="/auth/register" className="text-primary hover:underline">
+          {/* Registration is invite-only: the invitee arrives through their email link
+              and never needs this. A link to a page that only says "invitation only"
+              would be a dead end, so it goes to the request form (spec §6.2). */}
+          <Link href={`/${locale}#access`} className="text-primary hover:underline">
             {t("login.register")}
           </Link>
         </div>

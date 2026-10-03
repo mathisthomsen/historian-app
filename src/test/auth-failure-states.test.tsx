@@ -91,7 +91,7 @@ describe("login failure states are distinguishable", () => {
 
     await submitLogin();
 
-    expect(await alertText()).toContain("Bitte bestätige zuerst deine E-Mail-Adresse.");
+    expect(await alertText()).toContain("Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.");
   });
 
   it("still says invalid credentials for a wrong password", async () => {
@@ -117,9 +117,8 @@ describe("login failure states are distinguishable", () => {
 
 describe("register reports the real wait and a degraded service", () => {
   async function submitRegister() {
-    renderWithProviders(<RegisterForm />);
+    renderWithProviders(<RegisterForm invite={{ email: "ada@example.com", token: "tok" }} />);
     await userEvent.type(screen.getByLabelText("Name"), "Ada");
-    await userEvent.type(screen.getByLabelText("E-Mail"), "ada@example.com");
     await userEvent.type(screen.getByLabelText("Passwort", { exact: true }), "ValidP@ss1");
     await userEvent.type(screen.getByLabelText("Passwort bestätigen"), "ValidP@ss1");
     await userEvent.click(screen.getByRole("button", { name: "Konto erstellen" }));
@@ -234,7 +233,7 @@ describe("verify email separates a rejected link from a failed request", () => {
 
     await waitFor(() => expect(screen.getByText("Link ungültig")).toBeInTheDocument());
     expect(
-      screen.getByText("Der Link ist abgelaufen. Bitte fordere einen neuen an."),
+      screen.getByText("Der Link ist abgelaufen. Bitte fordern Sie einen neuen an."),
     ).toBeInTheDocument();
   });
 

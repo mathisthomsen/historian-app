@@ -1,36 +1,42 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { CtaBand } from "@/components/marketing/CtaBand";
+import { AccessRequestForm } from "@/components/marketing/AccessRequestForm";
 import { OpenDevelopment } from "@/components/marketing/OpenDevelopment";
 
 import deMessages from "../../../messages/de.json";
 import enMessages from "../../../messages/en.json";
 import { renderWithProviders } from "../render";
 
-const FORBIDDEN_GATE_LANGUAGE =
-  /geschlossen|closed alpha|warteliste|waitlist|invite[- ]only|einladung|nur auf einladung/i;
+// The page must say what is true: registration closed with this change, so the
+// copy names the gate. (Before #29 it was the reverse — a test forbade this
+// language because the gate did not exist yet.)
+const GATE_LANGUAGE = /geschlossen|closed alpha|einladung|invitation/i;
+const OPEN_SIGNUP_LANGUAGE =
+  /konto erstellen|create account|ein konto genügt|account is all it takes/i;
 
-describe("CtaBand (Part A)", () => {
-  it("sends visitors to open registration", () => {
-    renderWithProviders(<CtaBand locale="de" />);
-    expect(screen.getByRole("link", { name: /konto erstellen/i })).toHaveAttribute(
-      "href",
-      "/de/auth/register",
-    );
+describe("AccessRequestForm band (replaces CtaBand)", () => {
+  it("is the #access band and offers a request, not registration", () => {
+    const { container } = renderWithProviders(<AccessRequestForm locale="de" />);
+    expect(container.querySelector("section#access")).not.toBeNull();
+    expect(screen.getByRole("button", { name: /zugang anfragen/i })).toBeInTheDocument();
+    expect(container.querySelector('a[href*="/auth/register"]')).toBeNull();
   });
 
-  it("does not claim a closed alpha in the rendered German copy, because registration is open in Part A", () => {
-    const { container } = renderWithProviders(<CtaBand locale="de" />);
-    expect(container.textContent).not.toMatch(FORBIDDEN_GATE_LANGUAGE);
+  it("states the closed alpha in the rendered German copy", () => {
+    const { container } = renderWithProviders(<AccessRequestForm locale="de" />);
+    expect(container.textContent).toMatch(GATE_LANGUAGE);
+    expect(container.textContent).not.toMatch(OPEN_SIGNUP_LANGUAGE);
   });
 
   it.each([
     ["de", deMessages],
     ["en", enMessages],
-  ])("%s cta copy does not claim a gate that does not exist yet", (_locale, messages) => {
+  ])("%s landing copy names the gate and no longer promises open signup", (_locale, messages) => {
     const cta = Object.values(messages.marketing.cta).join(" ");
-    expect(cta).not.toMatch(FORBIDDEN_GATE_LANGUAGE);
+    expect(cta).toMatch(GATE_LANGUAGE);
+    const entry = [cta, messages.marketing.hero.primary, messages.marketing.nav.register].join(" ");
+    expect(entry).not.toMatch(OPEN_SIGNUP_LANGUAGE);
   });
 });
 

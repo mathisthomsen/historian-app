@@ -7,20 +7,19 @@ import { renderWithProviders } from "../render";
 
 describe("Hero", () => {
   it("renders exactly one h1", () => {
-    renderWithProviders(<Hero locale="de" />);
+    renderWithProviders(<Hero />);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 
-  it("points its primary CTA at registration", () => {
-    renderWithProviders(<Hero locale="de" />);
-    expect(screen.getByRole("link", { name: /konto erstellen/i })).toHaveAttribute(
-      "href",
-      "/de/auth/register",
-    );
+  it("points its primary CTA at the access-request form, not at registration", () => {
+    renderWithProviders(<Hero />);
+    const cta = screen.getByRole("link", { name: /zugang anfragen/i });
+    expect(cta).toHaveAttribute("href", "#access");
+    expect(screen.queryByRole("link", { name: /konto erstellen/i })).not.toBeInTheDocument();
   });
 
   it("uses the marketing display tier, not the app's text scale", () => {
-    renderWithProviders(<Hero locale="de" />);
+    renderWithProviders(<Hero />);
     const h1 = screen.getByRole("heading", { level: 1 });
     // The `length:` hint is the assertion, not decoration. This test used to
     // match `text-[var(--text-display-`, which is the form Tailwind v4 resolves
@@ -30,7 +29,7 @@ describe("Hero", () => {
   });
 
   it("hides the decorative app frame from assistive technology", () => {
-    const { container } = renderWithProviders(<Hero locale="de" />);
+    const { container } = renderWithProviders(<Hero />);
     expect(container.querySelector('[data-testid="hero-app-frame"]')).toHaveAttribute(
       "aria-hidden",
       "true",

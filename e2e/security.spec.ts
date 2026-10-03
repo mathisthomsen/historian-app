@@ -67,7 +67,11 @@ test.describe("SEC-05: Rate limiting on POST /api/auth/register", () => {
     const limit = 10;
 
     let lastResponse: Awaited<ReturnType<typeof request.post>> | null = null;
+    const statuses: number[] = [];
 
+    // No `invite` is sent, so every call the limiter lets through is refused 403.
+    // The limiter is still the route's FIRST step: it must count these refusals,
+    // or the gate would be a free oracle for unlimited probing.
     for (let i = 1; i <= limit + 1; i++) {
       lastResponse = await request.post(`${BASE_URL}/api/auth/register`, {
         data: {
@@ -80,8 +84,10 @@ test.describe("SEC-05: Rate limiting on POST /api/auth/register", () => {
           "X-Forwarded-For": `198.51.100.${runId.slice(-2).padStart(3, "0").slice(0, 3)}`,
         },
       });
+      statuses.push(lastResponse.status());
     }
 
+    expect(statuses).toEqual([...Array<number>(limit).fill(403), 429]);
     expect(lastResponse!.status()).toBe(429);
     const body = (await lastResponse!.json()) as {
       error: { code: string; details: { retryAfter: number } };

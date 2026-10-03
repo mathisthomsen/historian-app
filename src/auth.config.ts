@@ -19,6 +19,7 @@ import { isSessionRevoked } from "@/lib/session-revocation";
 // there. `auth-config.test.ts` reads this directory at runtime and fails the
 // suite if a new subdirectory is missing from this set.
 const GATED_PREFIXES = new Set([
+  "admin",
   "dashboard",
   "events",
   "persons",
@@ -129,7 +130,13 @@ export const authConfig: NextAuthConfig = {
       if (pathnameWithoutLocale.startsWith("/api/")) {
         if (
           pathnameWithoutLocale.startsWith("/api/auth") ||
-          pathnameWithoutLocale === "/api/health"
+          pathnameWithoutLocale === "/api/health" ||
+          // Exact matches, never `startsWith`: a prefix here would also open
+          // `/api/access-requests/…` (the admin decision route's sibling) and
+          // anything under `/api/internal/`. #29 §4.1 (public request form)
+          // and §4.6 (purge, which authenticates itself with a bearer secret).
+          pathnameWithoutLocale === "/api/access-request" ||
+          pathnameWithoutLocale === "/api/internal/purge-access-requests"
         ) {
           return true;
         }

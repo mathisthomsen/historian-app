@@ -125,10 +125,17 @@ test.describe("marketing landing page", () => {
     expect(box!.x).toBeGreaterThan(1440 / 2 - 100);
   });
 
-  test("hero CTA goes to registration", async ({ page }) => {
+  test("hero CTA goes to the access-request form", async ({ page }) => {
+    // Registration is by invitation (#29): the landing page's way in is a
+    // request, not a signup. The first matching link is the nav's; the hero's
+    // resolves to the same anchor.
     await page.goto("/de");
-    await page.getByRole("link", { name: "Konto erstellen" }).first().click();
-    await expect(page).toHaveURL(/\/de\/auth\/register$/);
+    await expect(page.getByRole("link", { name: "Konto erstellen" })).toHaveCount(0);
+    await page.getByRole("link", { name: "Zugang anfragen" }).first().click();
+    await expect(page).toHaveURL(/\/de#access$/);
+    await expect(
+      page.locator("#access").getByRole("textbox", { name: "Name", exact: true }),
+    ).toBeVisible();
   });
 
   test("footer legal links resolve", async ({ page }) => {
@@ -138,7 +145,9 @@ test.describe("marketing landing page", () => {
       ["Datenschutz", "/de/datenschutz"],
     ] as const) {
       await page.goto("/de");
-      await page.getByRole("link", { name }).click();
+      // Scoped to the footer: the request-access form's consent line also links
+      // "Datenschutzerklärung", and this test is about the footer's links.
+      await page.getByRole("contentinfo").getByRole("link", { name }).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
     }
   });

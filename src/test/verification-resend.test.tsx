@@ -141,9 +141,8 @@ describe("registration tells the truth about the verification mail", () => {
   async function submitRegister(body: unknown) {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ status: 201, body })));
 
-    renderWithProviders(<RegisterForm />);
+    renderWithProviders(<RegisterForm invite={{ email: "ada@example.com", token: "tok" }} />);
     await userEvent.type(screen.getByLabelText("Name"), "Ada");
-    await userEvent.type(screen.getByLabelText("E-Mail"), "ada@example.com");
     await userEvent.type(screen.getByLabelText("Passwort", { exact: true }), "ValidP@ss1");
     await userEvent.type(screen.getByLabelText("Passwort bestätigen"), "ValidP@ss1");
     await userEvent.click(screen.getByRole("button", { name: "Konto erstellen" }));
