@@ -21,25 +21,28 @@ export type PersonCertaintyField = {
 type SpecimenValue =
   | { kind: "date"; year: number; month: number | null; day: number | null }
   | { kind: "text"; text: string }
-  /** No value at all. The level is the whole answer. */
+  /** No value at all — and therefore no level: there is no assertion to qualify. */
   | { kind: "none" };
 
 interface SpecimenField {
   field: PersonCertaintyField;
-  certainty: Certainty;
+  /** `null` exactly when the value is `none`, as `PersonDetailCard` renders an absent place. */
+  certainty: Certainty | null;
   labelKey: "birthDate" | "birthPlace" | "deathDate" | "deathPlace";
   value: SpecimenValue;
 }
 
 /**
- * One record, four fields, three levels in use.
+ * One record, four fields, two levels in use.
  *
  * Kaspar Hauser, because the evidence panel already cites the 1828 Nuremberg
  * police file on him. His birthplace is unidentified to this day — Nuremberg is
- * where he appeared — so it is shown as UNKNOWN with no value: an unknown is a
- * recorded answer, not a gap to fill. POSSIBLE is named in the legend instead
- * of being assigned to a field, because assigning it would mean inventing a
- * weaker belief the record does not hold.
+ * where he appeared — so it is shown empty and without a level, exactly as
+ * `PersonDetailCard` shows an absent place: certainty qualifies an assertion,
+ * and the level stored with an absent place is only a neutral default that the
+ * product never displays as an answer. POSSIBLE and UNKNOWN are named in the legend
+ * instead of being assigned to a field, because assigning one would mean
+ * inventing a belief the record does not hold.
  *
  * The birth year and the death date and place are pending the owner's
  * confirmation against a cited source (spec 2-6c, C6 / acceptance 6).
@@ -53,7 +56,7 @@ const SPECIMEN: SpecimenField[] = [
   },
   {
     field: "birth_place_certainty",
-    certainty: "UNKNOWN",
+    certainty: null,
     labelKey: "birthPlace",
     value: { kind: "none" },
   },
@@ -71,13 +74,16 @@ const SPECIMEN: SpecimenField[] = [
   },
 ];
 
+/** The levels no field in the specimen holds, named in its legend. */
+const UNASSIGNED_LEVELS: Certainty[] = ["POSSIBLE", "UNKNOWN"];
+
 /**
  * One record whose fields carry different certainties.
  *
- * The panel's claim is about *scope* — each date, place and relation holds its
- * own level — so the specimen shows the scope rather than a legend of four
- * levels: a record where the birth year is probable, the birthplace unknown and
- * the death certain. Each field names its level in words beside the marker, so
+ * The panel's claim is about *scope* — the dates and places of a life each hold
+ * their own level — so the specimen shows the scope rather than a legend of four
+ * levels: a record where the birth year is probable, the birthplace unrecorded
+ * and the death certain. Each level is named in words beside its marker, so
  * colour and shape are never the only signal.
  */
 export function RecordCertaintySpecimen() {
@@ -105,16 +111,22 @@ export function RecordCertaintySpecimen() {
                 ) : value.kind === "text" ? (
                   value.text
                 ) : (
-                  // The level beside it says "unknown"; the dash only marks the empty slot.
-                  <span aria-hidden="true" className="text-muted-foreground/50">
-                    &mdash;
-                  </span>
+                  <>
+                    <span aria-hidden="true" className="text-muted-foreground/50">
+                      &mdash;
+                    </span>
+                    <span className="sr-only">{t("noValue")}</span>
+                  </>
                 )}
               </span>
-              <span className="flex items-center gap-2 text-sm">
-                <CertaintyMarker certainty={certainty} />
-                <span data-testid="certainty-level-name">{tCommon(`certainty.${certainty}`)}</span>
-              </span>
+              {certainty !== null && (
+                <span className="flex items-center gap-2 text-sm">
+                  <CertaintyMarker certainty={certainty} />
+                  <span data-testid="certainty-level-name">
+                    {tCommon(`certainty.${certainty}`)}
+                  </span>
+                </span>
+              )}
             </dd>
           </div>
         ))}
@@ -123,10 +135,13 @@ export function RecordCertaintySpecimen() {
         data-testid="certainty-specimen-legend"
         className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
       >
-        <CertaintyMarker certainty="POSSIBLE" />
-        <span>
-          {tCommon("certainty.POSSIBLE")} — {t("legendPossible")}
-        </span>
+        {UNASSIGNED_LEVELS.map((level) => (
+          <span key={level} className="flex items-center gap-2">
+            <CertaintyMarker certainty={level} />
+            <span>{tCommon(`certainty.${level}`)}</span>
+          </span>
+        ))}
+        <span>— {t("legendUnassigned")}</span>
       </p>
     </div>
   );

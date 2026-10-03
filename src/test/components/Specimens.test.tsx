@@ -23,6 +23,9 @@ function renderSpecimen(locale: "de" | "en") {
   return { ...utils, onError };
 }
 
+/** Index of the birthplace row — the one field with no recorded value. */
+const BIRTH_PLACE = 1;
+
 /** The `<dd>`s of the specimen's description list, in document order. */
 function descriptions(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll("dd"));
@@ -51,9 +54,11 @@ describe("RecordCertaintySpecimen", () => {
         }
       });
 
-      it("gives every field a marker and a visible level name — never colour or shape alone", () => {
+      it("gives every recorded value a marker and a visible level name — never colour or shape alone", () => {
         const { container } = renderSpecimen(locale);
-        for (const dd of descriptions(container)) {
+        const valued = descriptions(container).filter((_, index) => index !== BIRTH_PLACE);
+        expect(valued).toHaveLength(3);
+        for (const dd of valued) {
           const marker = within(dd).getByRole("img");
           const name = within(dd).getByTestId("certainty-level-name");
           expect(Object.values(messages.common.certainty)).toContain(name.textContent);
@@ -66,33 +71,38 @@ describe("RecordCertaintySpecimen", () => {
       it("shows at least two different certainty levels in one record", () => {
         const { container } = renderSpecimen(locale);
         const levels = new Set(
-          descriptions(container).map((dd) =>
-            within(dd).getByRole("img").getAttribute("aria-label"),
-          ),
+          descriptions(container)
+            .filter((_, index) => index !== BIRTH_PLACE)
+            .map((dd) => within(dd).getByRole("img").getAttribute("aria-label")),
         );
         expect(levels.size).toBeGreaterThanOrEqual(2);
       });
 
-      it("shows the birthplace as unknown with no value", () => {
+      it("shows the absent birthplace with no value and no level, as PersonDetailCard does", () => {
         const { container } = renderSpecimen(locale);
-        const birthPlace = descriptionAt(container, 1);
-        expect(within(birthPlace).getByRole("img")).toHaveAttribute(
-          "aria-label",
-          expect.stringContaining(levelName("UNKNOWN")),
-        );
-        expect(birthPlace).toHaveTextContent(levelName("UNKNOWN"));
+        const birthPlace = descriptionAt(container, BIRTH_PLACE);
+        // Certainty qualifies an assertion; there is none here to qualify.
+        expect(within(birthPlace).queryByRole("img")).not.toBeInTheDocument();
+        expect(within(birthPlace).queryByTestId("certainty-level-name")).not.toBeInTheDocument();
+        for (const level of Object.values(messages.common.certainty)) {
+          expect(birthPlace).not.toHaveTextContent(level);
+        }
+        // Screen readers hear an empty slot, not a bare dash.
+        expect(birthPlace).toHaveTextContent(messages.marketing.panels.certainty.specimen.noValue);
         // No place name leaks in: Nuremberg is where he appeared, not where he was born.
         expect(birthPlace).not.toHaveTextContent(/N[uü]rnberg|Nuremberg/);
       });
 
-      it("names the possible level in a legend, though no field holds it", () => {
+      it("names the levels no field holds in a legend", () => {
         const { container } = renderSpecimen(locale);
         const legend = screen.getByTestId("certainty-specimen-legend");
-        expect(legend).toHaveTextContent(levelName("POSSIBLE"));
-        expect(within(legend).getByRole("img")).toBeInTheDocument();
-        for (const dd of descriptions(container)) {
-          expect(dd).not.toHaveTextContent(levelName("POSSIBLE"));
+        for (const level of ["POSSIBLE", "UNKNOWN"] as const) {
+          expect(legend).toHaveTextContent(levelName(level));
+          for (const dd of descriptions(container)) {
+            expect(dd).not.toHaveTextContent(levelName(level));
+          }
         }
+        expect(within(legend).getAllByRole("img")).toHaveLength(2);
       });
 
       it("formats its dates through formatPartialDate for the active locale", () => {

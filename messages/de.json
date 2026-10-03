@@ -753,14 +753,15 @@
       "certainty": {
         "kicker": "Gewissheit",
         "title": "Vier Stufen statt einer Behauptung.",
-        "body": "Gesichert, wahrscheinlich, möglich, unbekannt — für jedes Lebens- und Ereignisdatum, jeden Ort und jede Beziehung einzeln.",
+        "body": "Gesichert, wahrscheinlich, möglich, unbekannt — für die Daten und Orte eines Lebens oder Ereignisses und für jede Beziehung, jeweils einzeln.",
         "specimen": {
           "person": "Kaspar Hauser",
           "birthDate": "Geburtsdatum",
           "birthPlace": "Geburtsort",
           "deathDate": "Sterbedatum",
           "deathPlace": "Sterbeort",
-          "legendPossible": "Die vierte Stufe — hier keinem Feld zugeordnet."
+          "noValue": "kein Eintrag",
+          "legendUnassigned": "hier keinem Feld zugeordnet."
         }
       },
       "dates": {
@@ -777,8 +778,8 @@
       },
       "evidence": {
         "kicker": "Belege",
-        "title": "Jede Aussage kann auf ihre Quelle zeigen.",
-        "body": "Belege hängen am einzelnen Feld — mit Fundstelle, Zitat und diplomatischer Transkription.",
+        "title": "Eine Aussage kann auf ihre Quelle zeigen.",
+        "body": "Belege hängen am einzelnen Feld einer Person, eines Ereignisses oder einer Quelle — mit Fundstelle, Zitat und diplomatischer Transkription.",
         "sourceLabel": "Nürnberger Polizeiakte, 1828",
         "page": "Bl. 4r",
         "quote": "ist allhier den 26. Mai unverhofft angekommen",

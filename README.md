@@ -1,8 +1,8 @@
 # Evidoxa
 
 A research environment for historians: a workspace for recording people, events, and archival
-sources, the relationships between them, and — critically — the evidence and degree of confidence
-behind every claim.
+sources, the relationships between them, and — critically — how firmly their dates, places and
+relations are held, and the evidence a researcher attaches to them.
 
 The domain is deliberately complex; the UI's job is to keep that complexity away from the user.
 Target: university MVP validation, then commercialization.
@@ -107,7 +107,7 @@ Separate fields let the record state exactly what the source states, no more.
 The ordering rules (a month requires a year; a day requires a month) are enforced in the shared
 Zod schema rather than the type system, since they are a semantic constraint, not a structural one.
 
-### 2. Certainty is categorical and per-field
+### 2. Certainty is categorical and per assertion
 
 ```prisma
 enum Certainty { CERTAIN  PROBABLE  POSSIBLE  UNKNOWN }
@@ -118,10 +118,12 @@ Four deliberate choices:
 - **Categorical, not numeric.** An earlier design used decimal confidence scores. Researchers
   cannot meaningfully distinguish 0.7 from 0.75, and a number implies a statistical basis that
   does not exist. Four named states map onto how historians actually qualify claims.
-- **Per-field, not per-record.** A historian may be certain of a person's name and merely
-  guessing at their birth year. Certainty attaches to the individual assertion — birth date,
-  death date, birth place, death place, an event's location, a relation, a single piece of
-  evidence — never to the row as a whole.
+- **Per assertion, not per record.** A historian may be certain of a person's death date and
+  merely guessing at their birth year. Certainty attaches to the individual assertion — birth date,
+  death date, birth place, death place, an event's dates and location, a relation and its validity
+  dates, a single piece of evidence — never to the row as a whole. It is not on every field: names,
+  free text, `Location` records and `Source` records carry none (a `Source` has `reliability`, a
+  judgement about the document rather than a belief about the past).
 - **Places carry it too, for the same reason dates do.** A birthplace is often inferred from a
   parish register that names a region rather than a village, and an event's location from an
   itinerary or a later account. Recording the place while discarding how firmly it is held would

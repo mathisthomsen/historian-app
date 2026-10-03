@@ -753,14 +753,15 @@
       "certainty": {
         "kicker": "Certainty",
         "title": "Four levels, not one assertion.",
-        "body": "Certain, probable, possible, unknown — for each date of a life or an event, each place and each relation, separately.",
+        "body": "Certain, probable, possible, unknown — for the dates and places of a life or an event, and for each relation, separately.",
         "specimen": {
           "person": "Kaspar Hauser",
           "birthDate": "Birth date",
           "birthPlace": "Birthplace",
           "deathDate": "Death date",
           "deathPlace": "Place of death",
-          "legendPossible": "The fourth level — assigned to no field here."
+          "noValue": "no entry",
+          "legendUnassigned": "assigned to no field here."
         }
       },
       "dates": {
@@ -777,8 +778,8 @@
       },
       "evidence": {
         "kicker": "Evidence",
-        "title": "Any claim can point at its source.",
-        "body": "Evidence attaches to the individual field — with page reference, quotation and diplomatic transcription.",
+        "title": "A claim can point at its source.",
+        "body": "Evidence attaches to the individual field of a person, an event or a source — with page reference, quotation and diplomatic transcription.",
         "sourceLabel": "Nürnberger Polizeiakte, 1828",
         "page": "fol. 4r",
         "quote": "ist allhier den 26. Mai unverhofft angekommen",

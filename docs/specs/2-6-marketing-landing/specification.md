@@ -283,7 +283,9 @@ unbuilt behaviour.
 >
 > **Also forbidden (added by 2-6c, #97/#101).** "Per field" / "pro Feld" as a model-wide claim —
 > Source carries no `Certainty`; "every date" / "jedes Datum" — a Source's date is free text; and
-> any sentence implying evidence is required — a record can be complete with none. Rows 1 and 3
+> any sentence implying evidence is required — a record can be complete with none; "jeden Ort" /
+> "each place" — a `Location` record carries no certainty; and "jede Aussage" / "any claim" with
+> evidence — it attaches only to Person, Event and Source fields. Rows 1 and 3
 > above are the claims as first drafted; the shipped wording is scoped by
 > `docs/specs/2-6c-certainty-claim-scope/specification.md` §2.
 

@@ -31,11 +31,18 @@ describe("marketing certainty and evidence copy", () => {
 
     it(`${locale}: the evidence headline states a capability, not a guarantee`, () => {
       expect(panels.evidence.title).not.toMatch(/Jede Aussage zeigt|Every claim points/i);
+      // Evidence attaches to Person, Event and Source fields only, so "any" overclaims too.
+      expect(panels.evidence.title).not.toMatch(/Jede Aussage|any claim/i);
+    });
+
+    it(`${locale}: the certainty body does not claim every place carries a certainty`, () => {
+      // A Location record has no certainty; only the places of a life or an event do.
+      expect(panels.certainty.body).not.toMatch(/jeden Ort|each place/i);
     });
   }
 
   it("the evidence headline says a claim can, not must, point at its source", () => {
     expect(deMessages.marketing.panels.evidence.title).toMatch(/kann/);
-    expect(enMessages.marketing.panels.evidence.title).toMatch(/\bcan\b|\bany claim\b/i);
+    expect(enMessages.marketing.panels.evidence.title).toMatch(/\bcan\b/);
   });
 });

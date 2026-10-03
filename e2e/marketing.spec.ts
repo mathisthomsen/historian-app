@@ -116,7 +116,9 @@ test.describe("marketing landing page", () => {
     const fields = panel.locator("dd");
     await expect(fields).toHaveCount(4);
     await expect(fields.nth(0)).toContainText("Wahrscheinlich");
-    await expect(fields.nth(1)).toContainText("Unbekannt");
+    // An absent place carries no level, as on a real person's detail card.
+    await expect(fields.nth(1)).toContainText("kein Eintrag");
+    await expect(fields.nth(1)).not.toContainText("Unbekannt");
     await expect(fields.nth(2)).toContainText("Sicher");
   });
 
@@ -214,7 +216,7 @@ test.describe("marketing landing page — no JS (F2)", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/de#highlight-evidence");
     const panel = page.locator("#highlights [data-slot='stage-panel']").nth(2);
-    await expect(panel).toContainText("Jede Aussage kann auf ihre Quelle zeigen.");
+    await expect(panel).toContainText("Eine Aussage kann auf ihre Quelle zeigen.");
     await expect(panel).toBeInViewport();
   });
 
