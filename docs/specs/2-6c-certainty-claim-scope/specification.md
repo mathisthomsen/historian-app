@@ -21,7 +21,7 @@ with different certainties.
 | C3  | **The app displays per-field certainty where the copy says it does.** Persons list: separate markers on birth and death date in one row.                                                                                                         | Measured                  | `PersonsListClient.tsx:107–125` (`DatedCell` per date column), `EventsListClient.tsx:141,155`. The hero frame (§3.3) depicts this list; if the app did not render it, the picture would be the new overclaim.                                                                                                                                                                                                                                   |
 | C4  | **Evidence can be attached to individual fields of Person, Event and Source.**                                                                                                                                                                   | Measured                  | `src/app/api/property-evidence/route.ts:16–40` (`ALLOWED_PROPERTIES`), and `PropertyEvidenceBadge` mounted per field in `{Person,Event,Source}DetailCard.tsx`. Backs the evidence panel's body copy, which stays.                                                                                                                                                                                                                               |
 | C5  | **Evidence is optional.** A record can be fully filled with zero evidence.                                                                                                                                                                       | Measured (#101)           | `PropertyEvidence` has no required link from any field; `PropertyEvidenceBadge.tsx:89–101` renders "No evidence yet". Makes "Every claim points at its source" false.                                                                                                                                                                                                                                                                           |
-| C6  | **The specimen's historical facts are correct** (§3.2).                                                                                                                                                                                          | Partly confirmed by owner | Owner, 2026-10-02: Hauser's birthplace is unidentified to this day — he _appeared_ in Nuremberg, which is not a birthplace. So the specimen shows it with no value and no level (revised in review on PR #155: see §3.2). The remaining values (birth year 1812, death 17.12.1833 in Ansbach) are still to be confirmed against a cited source in the copy pass. A wrong fact on a page arguing for rigour is the very failure this spec fixes. |
+| C6  | **The specimen's historical facts are correct** (§3.2; superseded by Revision 2, sources there).                                                                                                                                                 | Partly confirmed by owner | Owner, 2026-10-02: Hauser's birthplace is unidentified to this day — he _appeared_ in Nuremberg, which is not a birthplace. So the specimen shows it with no value and no level (revised in review on PR #155: see §3.2). The remaining values (birth year 1812, death 17.12.1833 in Ansbach) are still to be confirmed against a cited source in the copy pass. A wrong fact on a page arguing for rigour is the very failure this spec fixes. |
 
 ## 0b. Blast radius and test scope
 
@@ -51,6 +51,39 @@ Three ways to make the sentence true:
 this work far out of proportion to the defect.
 
 ---
+
+## Revision 2 (owner, 2026-10-03, PR #155)
+
+The owner rewrote the copy and replaced the example. This revision supersedes the copy table in §2
+and the specimen in §3.2 where they differ. The shipped strings live in `messages/*.json`.
+
+- **Copy:**
+  - The certainty body now opens "Was ist gesichert, was bleibt offen?".
+  - The evidence title is the question "Woher stammt diese Angabe?" / "What's the source?".
+  - The German copy addresses the reader as "Sie", per the site-wide decision.
+- **Scope wording kept by the owner's choice:** the certainty body says "für jedes Datum, jeden Ort
+  und jede Beziehung" / "for each date, place and relationship". C1 and C2 make that wider than the
+  model: a `Location` record and a `Source`'s date carry no certainty. The owner chose this wording
+  knowingly. It is therefore not guarded by a test, and "jedes Datum" / "jeden Ort" were taken off
+  the forbidden-copy list in spec 2-6 §6.1. "Pro Feld" / "per field" and "jede Aussage" /
+  "any claim" stay forbidden.
+- **Specimen:** William Shakespeare, two fields.
+  - Birth date 23 April 1564 is POSSIBLE: the traditional date, not documented. This is an
+    editorial judgement for the example.
+  - Birthplace Stratford-upon-Avon is CERTAIN.
+  - The legend names PROBABLE and UNKNOWN as unused.
+  - A caption explains that the baptism is recorded and the birthday is not.
+  - The baptism is not a `Person` field, so it is not a row. It appears in the evidence panel as
+    the evidence for the birth date: parish register of Holy Trinity, Stratford-upon-Avon,
+    DR243/1, fol. 5r, 26 April 1564.
+- **Sources (C6):**
+  - Shakespeare Documented (Folger), "Parish register entry recording William Shakespeare's
+    baptism", <https://shakespearedocumented.folger.edu/node/108>.
+  - Shakespeare Birthplace Trust, "When Was Shakespeare Born?",
+    <https://www.shakespeare.org.uk/explore-shakespeare/shakespedia/william-shakespeare/when-was-shakespeare-born/>.
+  - The evidence panel's quotation and diplomatic transcription of the register entry are a draft.
+    The source page could not be fetched from the build environment, so they are still to be
+    checked against it.
 
 ## 2. Copy
 

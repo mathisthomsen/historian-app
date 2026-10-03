@@ -753,15 +753,13 @@
       "certainty": {
         "kicker": "Certainty",
         "title": "Four levels, not one assertion.",
-        "body": "Certain, probable, possible, unknown — for the dates and places of a life or an event, and for each relation, separately.",
+        "body": "Some details are certain. Others remain an open question. Record the level of certainty for each date, place and relationship: certain, probable, possible or unknown.",
         "specimen": {
-          "person": "Kaspar Hauser",
-          "birthDate": "Birth date",
-          "birthPlace": "Birthplace",
-          "deathDate": "Death date",
-          "deathPlace": "Place of death",
-          "noValue": "no entry",
-          "legendUnassigned": "assigned to no field here."
+          "person": "William Shakespeare",
+          "birthDate": "Date of birth",
+          "birthPlace": "Place of birth",
+          "legendUnassigned": "assigned to no field here.",
+          "caption": "Shakespeare’s baptism is recorded in the parish register. His exact birthday remains unknown."
         }
       },
       "dates": {
@@ -778,12 +776,12 @@
       },
       "evidence": {
         "kicker": "Evidence",
-        "title": "A claim can point at its source.",
-        "body": "Evidence attaches to the individual field of a person, an event or a source — with page reference, quotation and diplomatic transcription.",
-        "sourceLabel": "Nürnberger Polizeiakte, 1828",
-        "page": "fol. 4r",
-        "quote": "ist allhier den 26. Mai unverhofft angekommen",
-        "transcription": "ist alhier den 26. Maii ohnverhofft angekommen",
+        "title": "What’s the source?",
+        "body": "Link a specific detail about a person, event or source to the evidence behind it. Add a precise reference, a quotation or a faithful transcription so you and others can trace it back to the original.",
+        "sourceLabel": "Baptismal register, Holy Trinity Church, Stratford-upon-Avon, 1564",
+        "page": "DR243/1, fol. 5r",
+        "quote": "Gulielmus filius Johannis Shakespeare",
+        "transcription": "Gulielmus filius Johannes Shakspere",
         "quoteLabel": "Quotation",
         "transcriptionLabel": "Transcription",
         "propertyLabel": "Evidence for",

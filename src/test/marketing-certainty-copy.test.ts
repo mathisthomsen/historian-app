@@ -24,25 +24,21 @@ describe("marketing certainty and evidence copy", () => {
       expect(panels.certainty.body).not.toMatch(/pro Feld|per field/i);
     });
 
-    it(`${locale}: the certainty body does not claim every date carries a certainty`, () => {
-      // A Source's date is free text and carries none (spec C2).
-      expect(panels.certainty.body).not.toMatch(/jedes Datum|every date/i);
-    });
-
     it(`${locale}: the evidence headline states a capability, not a guarantee`, () => {
       expect(panels.evidence.title).not.toMatch(/Jede Aussage zeigt|Every claim points/i);
       // Evidence attaches to Person, Event and Source fields only, so "any" overclaims too.
       expect(panels.evidence.title).not.toMatch(/Jede Aussage|any claim/i);
     });
-
-    it(`${locale}: the certainty body does not claim every place carries a certainty`, () => {
-      // A Location record has no certainty; only the places of a life or an event do.
-      expect(panels.certainty.body).not.toMatch(/jeden Ort|each place/i);
-    });
   }
 
-  it("the evidence headline says a claim can, not must, point at its source", () => {
-    expect(deMessages.marketing.panels.evidence.title).toMatch(/kann/);
-    expect(enMessages.marketing.panels.evidence.title).toMatch(/\bcan\b/);
+  // "für jedes Datum, jeden Ort" / "each date, place" is the owner's chosen wording
+  // (PR #155, 2026-10-03), kept although Location and Source dates carry no certainty;
+  // spec 2-6c §2 records that. It is deliberately not guarded here.
+
+  it("addresses the reader as Sie in the German panels", () => {
+    const { certainty, evidence } = deMessages.marketing.panels;
+    for (const text of [certainty.body, evidence.title, evidence.body]) {
+      expect(text).not.toMatch(/\b(du|dich|dir|dein\w*|Gib)\b/);
+    }
   });
 });

@@ -20,71 +20,52 @@ export type PersonCertaintyField = {
 
 type SpecimenValue =
   | { kind: "date"; year: number; month: number | null; day: number | null }
-  | { kind: "text"; text: string }
-  /** No value at all — and therefore no level: there is no assertion to qualify. */
-  | { kind: "none" };
+  | { kind: "text"; text: string };
 
 interface SpecimenField {
   field: PersonCertaintyField;
-  /** `null` exactly when the value is `none`, as `PersonDetailCard` renders an absent place. */
-  certainty: Certainty | null;
-  labelKey: "birthDate" | "birthPlace" | "deathDate" | "deathPlace";
+  certainty: Certainty;
+  labelKey: "birthDate" | "birthPlace";
   value: SpecimenValue;
 }
 
 /**
- * One record, four fields, two levels in use.
+ * One record, two fields, two levels.
  *
- * Kaspar Hauser, because the evidence panel already cites the 1828 Nuremberg
- * police file on him. His birthplace is unidentified to this day — Nuremberg is
- * where he appeared — so it is shown empty and without a level, exactly as
- * `PersonDetailCard` shows an absent place: certainty qualifies an assertion,
- * and the level stored with an absent place is only a neutral default that the
- * product never displays as an answer. POSSIBLE and UNKNOWN are named in the legend
- * instead of being assigned to a field, because assigning one would mean
- * inventing a belief the record does not hold.
- *
- * The birth year and the death date and place are pending the owner's
- * confirmation against a cited source (spec 2-6c, C6 / acceptance 6).
+ * William Shakespeare (owner's choice, 2026-10-03, PR #155): his baptism on
+ * 26 April 1564 is recorded in the Stratford parish register, his birthday is
+ * not. 23 April is the traditional date, so the birth date is POSSIBLE, an
+ * editorial judgement for this example rather than the source's own words.
+ * The birthplace is CERTAIN. The baptism itself is not a `Person` field, so it
+ * appears where the model keeps it: as the evidence for the birth date in the
+ * evidence panel. Sources are recorded in spec 2-6c, C6.
  */
 const SPECIMEN: SpecimenField[] = [
   {
     field: "birth_date_certainty",
-    certainty: "PROBABLE",
+    certainty: "POSSIBLE",
     labelKey: "birthDate",
-    value: { kind: "date", year: 1812, month: null, day: null },
+    value: { kind: "date", year: 1564, month: 4, day: 23 },
   },
   {
     field: "birth_place_certainty",
-    certainty: null,
+    certainty: "CERTAIN",
     labelKey: "birthPlace",
-    value: { kind: "none" },
-  },
-  {
-    field: "death_date_certainty",
-    certainty: "CERTAIN",
-    labelKey: "deathDate",
-    value: { kind: "date", year: 1833, month: 12, day: 17 },
-  },
-  {
-    field: "death_place_certainty",
-    certainty: "CERTAIN",
-    labelKey: "deathPlace",
-    value: { kind: "text", text: "Ansbach" },
+    value: { kind: "text", text: "Stratford-upon-Avon" },
   },
 ];
 
 /** The levels no field in the specimen holds, named in its legend. */
-const UNASSIGNED_LEVELS: Certainty[] = ["POSSIBLE", "UNKNOWN"];
+const UNASSIGNED_LEVELS: Certainty[] = ["PROBABLE", "UNKNOWN"];
 
 /**
  * One record whose fields carry different certainties.
  *
- * The panel's claim is about *scope* — the dates and places of a life each hold
- * their own level — so the specimen shows the scope rather than a legend of four
- * levels: a record where the birth year is probable, the birthplace unrecorded
- * and the death certain. Each level is named in words beside its marker, so
- * colour and shape are never the only signal.
+ * The panel's claim is about *scope*: the fields of one record each hold their
+ * own level. So the specimen shows that scope rather than a legend of four
+ * levels: a record whose birth date is possible and whose birthplace is
+ * certain. Each level is named in words beside its marker, so colour and shape
+ * are never the only signal.
  */
 export function RecordCertaintySpecimen() {
   const t = useTranslations("marketing.panels.certainty.specimen");
@@ -106,27 +87,14 @@ export function RecordCertaintySpecimen() {
             </dt>
             <dd className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span className="min-w-[6rem] font-mono text-sm">
-                {value.kind === "date" ? (
-                  formatPartialDate(value.year, value.month, value.day, locale)
-                ) : value.kind === "text" ? (
-                  value.text
-                ) : (
-                  <>
-                    <span aria-hidden="true" className="text-muted-foreground/50">
-                      &mdash;
-                    </span>
-                    <span className="sr-only">{t("noValue")}</span>
-                  </>
-                )}
+                {value.kind === "date"
+                  ? formatPartialDate(value.year, value.month, value.day, locale)
+                  : value.text}
               </span>
-              {certainty !== null && (
-                <span className="flex items-center gap-2 text-sm">
-                  <CertaintyMarker certainty={certainty} />
-                  <span data-testid="certainty-level-name">
-                    {tCommon(`certainty.${certainty}`)}
-                  </span>
-                </span>
-              )}
+              <span className="flex items-center gap-2 text-sm">
+                <CertaintyMarker certainty={certainty} />
+                <span data-testid="certainty-level-name">{tCommon(`certainty.${certainty}`)}</span>
+              </span>
             </dd>
           </div>
         ))}
@@ -142,6 +110,9 @@ export function RecordCertaintySpecimen() {
           </span>
         ))}
         <span>— {t("legendUnassigned")}</span>
+      </p>
+      <p data-testid="certainty-specimen-caption" className="mt-3 text-sm text-pretty">
+        {t("caption")}
       </p>
     </div>
   );

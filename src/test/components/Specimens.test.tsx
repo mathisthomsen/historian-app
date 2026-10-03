@@ -23,9 +23,6 @@ function renderSpecimen(locale: "de" | "en") {
   return { ...utils, onError };
 }
 
-/** Index of the birthplace row — the one field with no recorded value. */
-const BIRTH_PLACE = 1;
-
 /** The `<dd>`s of the specimen's description list, in document order. */
 function descriptions(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll("dd"));
@@ -43,10 +40,10 @@ describe("RecordCertaintySpecimen", () => {
       const levelName = (level: keyof typeof messages.common.certainty) =>
         messages.common.certainty[level];
 
-      it("renders four dt/dd pairs, each pair inside one wrapper", () => {
+      it("renders two dt/dd pairs, each pair inside one wrapper", () => {
         const { container } = renderSpecimen(locale);
-        expect(container.querySelectorAll("dt")).toHaveLength(4);
-        expect(descriptions(container)).toHaveLength(4);
+        expect(container.querySelectorAll("dt")).toHaveLength(2);
+        expect(descriptions(container)).toHaveLength(2);
         for (const dd of descriptions(container)) {
           // The pairing pattern PartialDateSpecimen documents: <div><dt/><dd/></div>.
           expect(dd.parentElement?.tagName).toBe("DIV");
@@ -54,11 +51,9 @@ describe("RecordCertaintySpecimen", () => {
         }
       });
 
-      it("gives every recorded value a marker and a visible level name — never colour or shape alone", () => {
+      it("gives every field a marker and a visible level name — never colour or shape alone", () => {
         const { container } = renderSpecimen(locale);
-        const valued = descriptions(container).filter((_, index) => index !== BIRTH_PLACE);
-        expect(valued).toHaveLength(3);
-        for (const dd of valued) {
+        for (const dd of descriptions(container)) {
           const marker = within(dd).getByRole("img");
           const name = within(dd).getByTestId("certainty-level-name");
           expect(Object.values(messages.common.certainty)).toContain(name.textContent);
@@ -68,35 +63,17 @@ describe("RecordCertaintySpecimen", () => {
         }
       });
 
-      it("shows at least two different certainty levels in one record", () => {
+      it("shows the birth date as possible and the birthplace as certain", () => {
         const { container } = renderSpecimen(locale);
-        const levels = new Set(
-          descriptions(container)
-            .filter((_, index) => index !== BIRTH_PLACE)
-            .map((dd) => within(dd).getByRole("img").getAttribute("aria-label")),
-        );
-        expect(levels.size).toBeGreaterThanOrEqual(2);
-      });
-
-      it("shows the absent birthplace with no value and no level, as PersonDetailCard does", () => {
-        const { container } = renderSpecimen(locale);
-        const birthPlace = descriptionAt(container, BIRTH_PLACE);
-        // Certainty qualifies an assertion; there is none here to qualify.
-        expect(within(birthPlace).queryByRole("img")).not.toBeInTheDocument();
-        expect(within(birthPlace).queryByTestId("certainty-level-name")).not.toBeInTheDocument();
-        for (const level of Object.values(messages.common.certainty)) {
-          expect(birthPlace).not.toHaveTextContent(level);
-        }
-        // Screen readers hear an empty slot, not a bare dash.
-        expect(birthPlace).toHaveTextContent(messages.marketing.panels.certainty.specimen.noValue);
-        // No place name leaks in: Nuremberg is where he appeared, not where he was born.
-        expect(birthPlace).not.toHaveTextContent(/N[uü]rnberg|Nuremberg/);
+        expect(descriptionAt(container, 0)).toHaveTextContent(levelName("POSSIBLE"));
+        expect(descriptionAt(container, 1)).toHaveTextContent(levelName("CERTAIN"));
+        expect(descriptionAt(container, 1)).toHaveTextContent("Stratford-upon-Avon");
       });
 
       it("names the levels no field holds in a legend", () => {
         const { container } = renderSpecimen(locale);
         const legend = screen.getByTestId("certainty-specimen-legend");
-        for (const level of ["POSSIBLE", "UNKNOWN"] as const) {
+        for (const level of ["PROBABLE", "UNKNOWN"] as const) {
           expect(legend).toHaveTextContent(levelName(level));
           for (const dd of descriptions(container)) {
             expect(dd).not.toHaveTextContent(levelName(level));
@@ -105,13 +82,17 @@ describe("RecordCertaintySpecimen", () => {
         expect(within(legend).getAllByRole("img")).toHaveLength(2);
       });
 
+      it("explains the example beneath the card", () => {
+        renderSpecimen(locale);
+        expect(screen.getByTestId("certainty-specimen-caption")).toHaveTextContent(
+          messages.marketing.panels.certainty.specimen.caption,
+        );
+      });
+
       it("formats its dates through formatPartialDate for the active locale", () => {
         const { container } = renderSpecimen(locale);
-        const birthDate = descriptionAt(container, 0);
-        const deathDate = descriptionAt(container, 2);
-        expect(birthDate).toHaveTextContent("1812");
-        expect(deathDate).toHaveTextContent(
-          locale === "de" ? "17. Dezember 1833" : "December 17, 1833",
+        expect(descriptionAt(container, 0)).toHaveTextContent(
+          locale === "de" ? "23. April 1564" : "April 23, 1564",
         );
       });
 

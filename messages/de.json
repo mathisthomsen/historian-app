@@ -753,15 +753,13 @@
       "certainty": {
         "kicker": "Gewissheit",
         "title": "Vier Stufen statt einer Behauptung.",
-        "body": "Gesichert, wahrscheinlich, möglich, unbekannt — für die Daten und Orte eines Lebens oder Ereignisses und für jede Beziehung, jeweils einzeln.",
+        "body": "Was ist gesichert, was bleibt offen? Geben Sie für jedes Datum, jeden Ort und jede Beziehung einzeln an, wie sicher die Angaben sind: gesichert, wahrscheinlich, möglich oder unbekannt.",
         "specimen": {
-          "person": "Kaspar Hauser",
+          "person": "William Shakespeare",
           "birthDate": "Geburtsdatum",
           "birthPlace": "Geburtsort",
-          "deathDate": "Sterbedatum",
-          "deathPlace": "Sterbeort",
-          "noValue": "kein Eintrag",
-          "legendUnassigned": "hier keinem Feld zugeordnet."
+          "legendUnassigned": "hier keinem Feld zugeordnet.",
+          "caption": "Wann Shakespeare getauft wurde, steht im Kirchenregister. Wann genau er geboren wurde, wissen wir nicht."
         }
       },
       "dates": {
@@ -778,12 +776,12 @@
       },
       "evidence": {
         "kicker": "Belege",
-        "title": "Eine Aussage kann auf ihre Quelle zeigen.",
-        "body": "Belege hängen am einzelnen Feld einer Person, eines Ereignisses oder einer Quelle — mit Fundstelle, Zitat und diplomatischer Transkription.",
-        "sourceLabel": "Nürnberger Polizeiakte, 1828",
-        "page": "Bl. 4r",
-        "quote": "ist allhier den 26. Mai unverhofft angekommen",
-        "transcription": "ist alhier den 26. Maii ohnverhofft angekommen",
+        "title": "Woher stammt diese Angabe?",
+        "body": "Halten Sie direkt bei einer Angabe fest, welche Quelle sie belegt – ob es um eine Person, ein Ereignis oder eine weitere Quelle geht. Mit genauer Fundstelle, einem Zitat oder einer originalgetreuen Abschrift bleibt nachvollziehbar, worauf Sie sich stützen.",
+        "sourceLabel": "Taufregister, Holy Trinity Church, Stratford-upon-Avon, 1564",
+        "page": "DR243/1, Bl. 5r",
+        "quote": "Gulielmus filius Johannis Shakespeare",
+        "transcription": "Gulielmus filius Johannes Shakspere",
         "quoteLabel": "Zitat",
         "transcriptionLabel": "Transkription",
         "propertyLabel": "Beleg für",
