@@ -15,7 +15,6 @@ const mockEventTypeFindFirst = vi.fn();
 const mockCacheGet = vi.fn();
 const mockCacheSet = vi.fn();
 const mockCacheInvalidate = vi.fn();
-const mockSanitize = vi.fn((s: string) => s);
 
 vi.mock("@/lib/auth-guard", () => ({
   requireUser: mockRequireUser,
@@ -48,10 +47,6 @@ vi.mock("@/lib/cache", () => ({
     set: mockCacheSet,
     invalidateByPrefix: mockCacheInvalidate,
   },
-}));
-
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: mockSanitize,
 }));
 
 // Import AFTER mocks are registered

@@ -11,7 +11,6 @@ import { sendVerificationEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { consumeInvite, resolveInvite } from "@/lib/invite";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { sanitize } from "@/lib/sanitize";
 import { anonymizeIp, generateToken, hashToken } from "@/lib/security";
 
 const registerSchema = z.object({
@@ -88,8 +87,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     return jsonError(400, "VALIDATION_FAILED", { details: { fields } });
   }
 
-  const { email, password } = parsed.data;
-  const name = sanitize(parsed.data.name);
+  // The name is stored as typed (trimmed by the schema): #150, no encoding on write.
+  const { email, name, password } = parsed.data;
 
   // §4.3 steps 3-4. This read is advisory — the authoritative single-use check
   // is the conditional update inside the transaction below (I1) — but it must

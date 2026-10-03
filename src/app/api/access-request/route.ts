@@ -6,7 +6,6 @@ import { json, jsonError, parseJsonBody } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { sendAccessRequestNotification } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { sanitize } from "@/lib/sanitize";
 import { anonymizeIp } from "@/lib/security";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -60,11 +59,10 @@ function isEmailConflict(err: unknown): boolean {
   );
 }
 
-/** Sanitised, or `null` when absent or empty after sanitising. */
+/** The text as typed, or `null` when absent or blank (Zod has already trimmed it). */
 function cleanOptional(value: string | undefined): string | null {
-  if (!value) return null;
-  const clean = sanitize(value);
-  return clean.trim() === "" ? null : clean;
+  if (value === undefined || value.trim() === "") return null;
+  return value;
 }
 
 /**
@@ -122,16 +120,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     return accepted();
   }
 
-  // Decided before any lookup: a name that sanitises to nothing is a
-  // validation failure, and answering it only for unknown addresses would
-  // reveal which ones have accounts (I5).
-  const name = sanitize(data.name);
-  if (name.trim() === "") {
-    // Markup only: nothing left to show an operator.
-    return jsonError(400, "VALIDATION_FAILED", {
-      details: { fields: { name: "access.errors.nameRequired" } },
-    });
-  }
+  // A blank name is a validation failure, and it is decided by the schema above
+  // (`trim().min(1)`), before any lookup: answering it only for unknown
+  // addresses would reveal which ones have accounts (I5). The text is stored as
+  // typed (#150), so markup is not "nothing" and no second check is needed.
 
   // Step 5 — an address that already has an account: same body, nothing written.
   const existingUser = await prisma.user.findUnique({
@@ -140,11 +132,12 @@ export async function POST(request: Request): Promise<NextResponse> {
   });
   if (existingUser) return accepted();
 
-  // Step 6 — every stranger-supplied text field is sanitised BEFORE it is
-  // stored. The operator notification interpolates these into HTML text nodes
-  // without escaping them (`email.ts`) and relies on exactly this.
+  // Step 6 — stranger-supplied text is stored exactly as typed, trimmed by
+  // the schema and nothing else (#150, docs/specs/150-plain-text-storage/plan.md).
+  // Nothing relies on it being pre-escaped: the operator notification escapes
+  // every interpolation itself (`email.ts`, `html.ts`).
   const fields = {
-    name,
+    name: data.name,
     institution: cleanOptional(data.institution),
     research_area: cleanOptional(data.research_area),
     tool_gap: cleanOptional(data.tool_gap),

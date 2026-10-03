@@ -6,7 +6,6 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 import { updatePersonSchema } from "@/lib/schemas/person";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -100,17 +99,14 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const data = parsed.data;
 
   const updateData: Parameters<typeof prisma.person.update>[0]["data"] = {};
-  if (data.first_name !== undefined)
-    updateData.first_name = data.first_name ? sanitize(data.first_name) : null;
-  if (data.last_name !== undefined)
-    updateData.last_name = data.last_name ? sanitize(data.last_name) : null;
+  if (data.first_name !== undefined) updateData.first_name = data.first_name || null;
+  if (data.last_name !== undefined) updateData.last_name = data.last_name || null;
   if (data.birth_year !== undefined) updateData.birth_year = data.birth_year;
   if (data.birth_month !== undefined) updateData.birth_month = data.birth_month;
   if (data.birth_day !== undefined) updateData.birth_day = data.birth_day;
   if (data.birth_date_certainty !== undefined)
     updateData.birth_date_certainty = data.birth_date_certainty;
-  if (data.birth_place !== undefined)
-    updateData.birth_place = data.birth_place ? sanitize(data.birth_place) : null;
+  if (data.birth_place !== undefined) updateData.birth_place = data.birth_place || null;
   if (data.birth_place_certainty !== undefined)
     updateData.birth_place_certainty = data.birth_place_certainty;
   if (data.death_year !== undefined) updateData.death_year = data.death_year;
@@ -118,11 +114,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (data.death_day !== undefined) updateData.death_day = data.death_day;
   if (data.death_date_certainty !== undefined)
     updateData.death_date_certainty = data.death_date_certainty;
-  if (data.death_place !== undefined)
-    updateData.death_place = data.death_place ? sanitize(data.death_place) : null;
+  if (data.death_place !== undefined) updateData.death_place = data.death_place || null;
   if (data.death_place_certainty !== undefined)
     updateData.death_place_certainty = data.death_place_certainty;
-  if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
+  if (data.notes !== undefined) updateData.notes = data.notes || null;
 
   // A place and its certainty must agree after the merge, not just within the
   // request: clearing a place while leaving its selector untouched used to keep
@@ -177,7 +172,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
             prisma.personName.createMany({
               data: data.names.map((n) => ({
                 person_id: id,
-                name: sanitize(n.name),
+                name: n.name,
                 language: n.language ?? null,
                 is_primary: n.is_primary ?? false,
               })),

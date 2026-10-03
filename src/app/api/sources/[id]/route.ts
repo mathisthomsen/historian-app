@@ -6,7 +6,6 @@ import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized 
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 
 const updateSourceSchema = z.object({
   title: z.string().min(1).optional(),
@@ -111,17 +110,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const data = parsed.data;
 
   const updateData: Parameters<typeof prisma.source.update>[0]["data"] = {};
-  if (data.title !== undefined) updateData.title = sanitize(data.title);
-  if (data.type !== undefined) updateData.type = sanitize(data.type);
-  if (data.author !== undefined) updateData.author = data.author ? sanitize(data.author) : null;
-  if (data.date !== undefined) updateData.date = data.date ? sanitize(data.date) : null;
-  if (data.repository !== undefined)
-    updateData.repository = data.repository ? sanitize(data.repository) : null;
-  if (data.call_number !== undefined)
-    updateData.call_number = data.call_number ? sanitize(data.call_number) : null;
+  if (data.title !== undefined) updateData.title = data.title;
+  if (data.type !== undefined) updateData.type = data.type;
+  if (data.author !== undefined) updateData.author = data.author || null;
+  if (data.date !== undefined) updateData.date = data.date || null;
+  if (data.repository !== undefined) updateData.repository = data.repository || null;
+  if (data.call_number !== undefined) updateData.call_number = data.call_number || null;
   if (data.url !== undefined) updateData.url = data.url;
   if (data.reliability !== undefined) updateData.reliability = data.reliability;
-  if (data.notes !== undefined) updateData.notes = data.notes ? sanitize(data.notes) : null;
+  if (data.notes !== undefined) updateData.notes = data.notes || null;
 
   const updated = await prisma.source.update({
     where: { id },

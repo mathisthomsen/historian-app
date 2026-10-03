@@ -10,7 +10,6 @@ const mockSourceFindFirst = vi.fn();
 const mockSourceUpdate = vi.fn();
 const mockUserProjectFindFirst = vi.fn();
 const mockCacheInvalidate = vi.fn();
-const mockSanitize = vi.fn((s: string) => s);
 
 vi.mock("@/lib/auth-guard", () => ({
   requireUser: mockRequireUser,
@@ -39,10 +38,6 @@ vi.mock("@/lib/cache", () => ({
     set: vi.fn(),
     invalidateByPrefix: mockCacheInvalidate,
   },
-}));
-
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: mockSanitize,
 }));
 
 vi.mock("@/lib/activity", () => ({
@@ -147,7 +142,7 @@ describe("PUT /api/sources/[id]", () => {
     mockCacheInvalidate.mockResolvedValue(undefined);
   });
 
-  it("updates fields and sanitizes text inputs", async () => {
+  it("updates fields and passes the text inputs to Prisma", async () => {
     mockSourceFindFirst.mockResolvedValue(makeBaseSource());
     const updatedSource = makeBaseSource({ title: "Updated Title", notes: "Updated notes" });
     mockSourceUpdate.mockResolvedValue(updatedSource);
@@ -163,8 +158,11 @@ describe("PUT /api/sources/[id]", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { title: string; notes: string };
     expect(body.title).toBe("Updated Title");
-    expect(mockSanitize).toHaveBeenCalledWith("Updated Title");
-    expect(mockSanitize).toHaveBeenCalledWith("Updated notes");
+    expect(mockSourceUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ title: "Updated Title", notes: "Updated notes" }),
+      }),
+    );
   });
 
   it("returns 400 for invalid URL format", async () => {

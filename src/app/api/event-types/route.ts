@@ -5,7 +5,6 @@ import { z } from "zod";
 import { forbidden, json, jsonError, parseJsonBody, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 
 const COLOR_PALETTE = [
   "#dc2626",
@@ -96,9 +95,9 @@ export async function POST(request: NextRequest) {
     eventType = await prisma.eventType.create({
       data: {
         project_id: data.project_id,
-        name: sanitize(data.name),
+        name: data.name,
         color: data.color ?? null,
-        icon: data.icon ? sanitize(data.icon) : null,
+        icon: data.icon || null,
       },
     });
   } catch (err) {

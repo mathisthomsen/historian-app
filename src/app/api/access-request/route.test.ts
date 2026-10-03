@@ -4,9 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Prisma, Redis and email are mocked (plan §1: a unit test must never reach
 // `src/lib/redis.ts` — the CI unit job holds real Upstash credentials). The
-// REAL `sanitize`, `anonymizeIp`, `isExpired` and `jsonError` are used: the
-// security argument rests on `sanitize` actually running at write time (P8),
-// and a mocked one could not show it.
+// REAL `anonymizeIp`, `isExpired` and `jsonError` are used. Stranger text is
+// stored verbatim (#150, `docs/specs/150-plain-text-storage/plan.md`): nothing
+// is encoded or stripped on write, so the arguments handed to Prisma and to the
+// notification are asserted against the raw input.
 const mocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(),
   findUser: vi.fn(),
@@ -48,8 +49,8 @@ vi.mock("@/lib/access-retention", async (importOriginal) => {
 });
 
 import type * as Retention from "@/lib/access-retention";
-import { sanitize } from "@/lib/sanitize";
 import { anonymizeIp } from "@/lib/security";
+import { verbatimCases } from "@/test/verbatim-text";
 
 import { POST } from "./route";
 
@@ -280,8 +281,8 @@ describe("request shape", () => {
     expect(anyWriteOrMail()).toBe(false);
   });
 
-  it("rejects a name that is only markup (empty after sanitising) instead of storing it", async () => {
-    const res = await post({ name: "<b></b>" });
+  it("rejects a name that is blank after trimming instead of storing it", async () => {
+    const res = await post({ name: " \t " });
 
     expect(res.status).toBe(400);
     expect((await res.json()).error.details.fields).toHaveProperty("name");
@@ -316,14 +317,15 @@ describe("uniform response (I5)", () => {
     expect(existingUser).toEqual(real);
   });
 
-  it("answers a markup-only name identically whether or not the email has an account", async () => {
-    // A name that sanitises to nothing is a validation failure. It must be
-    // decided before any lookup, or the 400-vs-200 split reveals which
-    // addresses have accounts (I5).
-    const markupOnly = { name: "<b></b>" };
+  it("answers an empty name identically whether or not the email has an account", async () => {
+    // A name with nothing in it (blank after trim) is a validation failure. It
+    // must be decided before any lookup, or the 400-vs-200 split reveals which
+    // addresses have accounts (I5). Markup is no longer "nothing": `<b></b>`
+    // is stored as typed, so it is accepted (see the verbatim tests below).
+    const blank = { name: "   " };
     mocks.findUser.mockResolvedValueOnce({ id: "user_1" });
-    const existingUser = await bodyOf(await post(markupOnly));
-    const unknownUser = await bodyOf(await post(markupOnly));
+    const existingUser = await bodyOf(await post(blank));
+    const unknownUser = await bodyOf(await post(blank));
 
     expect(unknownUser.status).toBe(400);
     expect(existingUser).toEqual(unknownUser);
@@ -680,66 +682,76 @@ describe("notification failure (I12)", () => {
   });
 });
 
-describe("stranger text is sanitised before it is written (P8)", () => {
-  // The operator notification interpolates these fields into HTML text nodes
-  // WITHOUT escaping them (`email.ts`): it relies on this route having passed
-  // every one through `sanitize()` before storing it.
+describe("stranger text is stored verbatim (#150)", () => {
+  // Nothing is encoded or stripped on write. The operator notification escapes
+  // every interpolation itself (`src/lib/html.ts`, #150 T2), so the stored
+  // value and the value handed to it are the raw input, trimmed by Zod.
   const hostile = {
     name: 'Ada <b>"the"</b> <script>alert(1)</script>& Co',
     institution: 'Inst <img src=x onerror="alert(1)"> "quoted"',
     research_area: '<a href="http://evil.example">area</a> & "more"',
     tool_gap: 'Line one <i>two</i>\n"three" <svg onload=alert(1)>',
   };
-  const expected = {
-    name: sanitize(hostile.name),
-    institution: sanitize(hostile.institution),
-    research_area: sanitize(hostile.research_area),
-    tool_gap: sanitize(hostile.tool_gap),
-  };
 
-  it("the payload is hostile in the first place", () => {
-    for (const [key, value] of Object.entries(hostile)) {
-      expect(value, key).not.toBe(sanitize(value));
-    }
-    expect(expected.name).not.toContain("<b>");
-    expect(expected.name).toContain('"');
-  });
+  it.each(verbatimCases("access_requests"))(
+    "%s: %j reaches create unchanged",
+    async (column, payload) => {
+      await post({ [column]: payload });
 
-  it("create: the stored value equals sanitize(input) for every free-text field", async () => {
+      expect(mocks.createRequest.mock.calls[0]![0].data[column]).toBe(payload);
+    },
+  );
+
+  it("create: every free-text field is stored as typed", async () => {
     await post(hostile);
 
     const { data } = mocks.createRequest.mock.calls[0]![0];
-    expect(data.name).toBe(expected.name);
-    expect(data.institution).toBe(expected.institution);
-    expect(data.research_area).toBe(expected.research_area);
-    expect(data.tool_gap).toBe(expected.tool_gap);
-    expect(data.name).not.toContain("<");
-    expect(data.name).not.toContain("<b>");
+    expect(data.name).toBe(hostile.name);
+    expect(data.institution).toBe(hostile.institution);
+    expect(data.research_area).toBe(hostile.research_area);
+    expect(data.tool_gap).toBe(hostile.tool_gap);
   });
 
-  it("create: the notification receives the sanitised values, not the raw ones", async () => {
+  it("a name that is only markup is a name, stored as typed", async () => {
+    // It used to be stripped to nothing and refused. Markup is text now.
+    const res = await post({ name: "<b></b>" });
+
+    expect(res.status).toBe(200);
+    expect(mocks.createRequest.mock.calls[0]![0].data.name).toBe("<b></b>");
+  });
+
+  it("an optional field that is blank after trim is stored as null", async () => {
+    await post({ institution: "   ", research_area: "", tool_gap: "\n" });
+
+    const { data } = mocks.createRequest.mock.calls[0]![0];
+    expect(data.institution).toBeNull();
+    expect(data.research_area).toBeNull();
+    expect(data.tool_gap).toBeNull();
+  });
+
+  it("create: the notification receives the raw values", async () => {
     await post(hostile);
 
     const params = mocks.notify.mock.calls[0]![0];
-    expect(params.name).toBe(expected.name);
-    expect(params.institution).toBe(expected.institution);
-    expect(params.researchArea).toBe(expected.research_area);
-    expect(params.toolGap).toBe(expected.tool_gap);
+    expect(params.name).toBe(hostile.name);
+    expect(params.institution).toBe(hostile.institution);
+    expect(params.researchArea).toBe(hostile.research_area);
+    expect(params.toolGap).toBe(hostile.tool_gap);
   });
 
-  it("PENDING update: the stored value equals sanitize(input)", async () => {
+  it("PENDING update: the stored value is the input", async () => {
     mocks.findRequest.mockResolvedValue(row());
 
     await post(hostile);
 
     const { data } = mocks.updateRequest.mock.calls[0]![0];
-    expect(data.name).toBe(expected.name);
-    expect(data.institution).toBe(expected.institution);
-    expect(data.research_area).toBe(expected.research_area);
-    expect(data.tool_gap).toBe(expected.tool_gap);
+    expect(data.name).toBe(hostile.name);
+    expect(data.institution).toBe(hostile.institution);
+    expect(data.research_area).toBe(hostile.research_area);
+    expect(data.tool_gap).toBe(hostile.tool_gap);
   });
 
-  it("DECLINED re-open: the stored and the notified values equal sanitize(input)", async () => {
+  it("DECLINED re-open: the stored value is the input", async () => {
     mocks.findRequest.mockResolvedValue(
       row({ status: "DECLINED", status_changed_at: new Date(NOW.getTime() - HOUR) }),
     );
@@ -747,9 +759,9 @@ describe("stranger text is sanitised before it is written (P8)", () => {
     await post(hostile);
 
     const { data } = mocks.updateRequest.mock.calls[0]![0];
-    expect(data.name).toBe(expected.name);
-    expect(data.institution).toBe(expected.institution);
-    expect(data.research_area).toBe(expected.research_area);
-    expect(data.tool_gap).toBe(expected.tool_gap);
+    expect(data.name).toBe(hostile.name);
+    expect(data.institution).toBe(hostile.institution);
+    expect(data.research_area).toBe(hostile.research_area);
+    expect(data.tool_gap).toBe(hostile.tool_gap);
   });
 });

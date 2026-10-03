@@ -6,7 +6,6 @@ import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized 
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 
 const createEvidenceSchema = z.object({
   source_id: z.string().min(1),
@@ -123,9 +122,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       data: {
         relation_id: id,
         source_id: data.source_id,
-        notes: data.notes ? sanitize(data.notes) : null,
-        page_reference: data.page_reference ? sanitize(data.page_reference) : null,
-        quote: data.quote ? sanitize(data.quote) : null,
+        notes: data.notes || null,
+        page_reference: data.page_reference || null,
+        quote: data.quote || null,
         confidence: data.confidence ?? "UNKNOWN",
       },
       include: {

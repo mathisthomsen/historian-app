@@ -47,10 +47,6 @@ vi.mock("@/lib/cache", () => ({
   },
 }));
 
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: vi.fn((s: string) => s),
-}));
-
 vi.mock("@/lib/activity", () => ({
   logActivity: mockLogActivity,
 }));
