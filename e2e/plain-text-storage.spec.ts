@@ -381,7 +381,7 @@ test.describe("Source", () => {
 
     await page.locator("#title").fill(source.title);
     // `sources.type` is free text, but typing a value that matches no suggestion
-    // crashes the form (React #185, measured: SourceForm.tsx, unrelated to #150),
+    // crashes the form (React #185, measured: SourceForm.tsx, unrelated to #150; tracked in #159),
     // so the payloads cannot go through this field and a suggestion is picked.
     await page.getByRole("combobox").first().click();
     await page.getByRole("option", { name: "Brief" }).click();
