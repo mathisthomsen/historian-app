@@ -753,7 +753,15 @@
       "certainty": {
         "kicker": "Certainty",
         "title": "Four levels, not one assertion.",
-        "body": "Certain, probable, possible, unknown — for each date of a life or an event, each place and each relation, separately."
+        "body": "Certain, probable, possible, unknown — for each date of a life or an event, each place and each relation, separately.",
+        "specimen": {
+          "person": "Kaspar Hauser",
+          "birthDate": "Birth date",
+          "birthPlace": "Birthplace",
+          "deathDate": "Death date",
+          "deathPlace": "Place of death",
+          "legendPossible": "The fourth level — assigned to no field here."
+        }
       },
       "dates": {
         "kicker": "Dating",

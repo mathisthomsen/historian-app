@@ -9,7 +9,7 @@ import { HighlightStage, type StageStep } from "@/components/marketing/Highlight
 import { OpenDevelopment } from "@/components/marketing/OpenDevelopment";
 import { RelationDiagram } from "@/components/marketing/RelationDiagram";
 import { Reveal } from "@/components/marketing/Reveal";
-import { CertaintyScale, PartialDateSpecimen } from "@/components/marketing/Specimens";
+import { PartialDateSpecimen, RecordCertaintySpecimen } from "@/components/marketing/Specimens";
 import { env } from "@/lib/env";
 
 export async function generateMetadata({
@@ -73,7 +73,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       kicker: t("certainty.kicker"),
       title: t("certainty.title"),
       body: t("certainty.body"),
-      specimen: <CertaintyScale />,
+      specimen: <RecordCertaintySpecimen />,
     },
     {
       id: "dates",
