@@ -651,6 +651,26 @@ Approved by the owner before T2 starts (G0).
 - **G4 — Apply on production** at C6, inside the freeze, only when `/api/health` reports the T3
   merge SHA and PR A's deploy preceded it. Then the C8 rechecks, and the rollback rule from then on.
 
+## Decisions (G0)
+
+The owner approved the plan on PR #153 ("all approved", 2026-10-03). That approval takes each
+recommendation below as decided:
+
+- **D1 / Q1:** store verbatim (ii). T3 deletes `sanitize()` and `sanitize-html`.
+- **[R5]:** decode ambiguous rows by default. The G1b review list still runs, and `--keep-encoded`
+  stays available.
+- **Q2:** decode the activity snapshots.
+- **Q3:** keep the `data_backfills` marker table.
+- **Q4:** second recheck at N = 14 days. Stale saves are fixed per row, by hand.
+- **Q5:** the backfill writes no `entity_activity` rows.
+- **Q8:** drop `backfill_150_originals` after the 14-day recheck.
+
+Two questions carried no recommendation, so the approval does not settle them:
+
+- **Q6 (U+0000)** stays open. T3 keeps today's behaviour (no new rule), so it is not on this
+  plan's critical path.
+- **Q7 (deleting pre-T2 deployments)** is destructive and stays the owner's call at G4.
+
 ## Open questions for review
 
 1. **D1** — verbatim (recommended) or strip-then-decode?
