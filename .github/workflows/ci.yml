@@ -354,20 +354,51 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      # Waits for the promotion to complete (default --timeout 3m).
-      #
-      # --scope pins the team. `deploy` finds it through the VERCEL_ORG_ID /
-      # VERCEL_PROJECT_ID link, but `promote` ignores that link: it compares the
-      # deployment's team against --scope, else the global CLI config (absent in
-      # CI), else the token's default team, and refuses a mismatch as "belongs
-      # to a different team" (vercel@62.1.0, getProjectByDeployment). The first
-      # run without --scope failed at this step in 3 s (#132).
+      # Promotion goes through the REST API, not `vercel promote`. The CLI's promote
+      # command first loads the token's user (GET /v2/user), and this project's
+      # token has none: the step failed with "Not able to load user because of
+      # unexpected error: User not found. (404)" (#132, run 37112551983). `deploy`
+      # never needs the user, which is why it works. These are the two calls
+      # vercel@62.1.0's promote makes after that lookup (getDeployment,
+      # requestPromote): resolve the deployment id from its URL, then
+      # POST /v10/projects/{project}/promote/{deployment}. The API answers before
+      # the alias moves; the live check below is what waits for and proves it.
+      # Failures are written as ::error:: annotations so they are readable from
+      # the API, not only from the step log.
       - name: Promote to evidoxa.com
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           set -euo pipefail
-          pnpm dlx "vercel@${VERCEL_CLI_VERSION}" promote "$DEPLOYMENT_URL" --yes \
-            --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
+          api="https://api.vercel.com"
+          team=""
+          case "$VERCEL_ORG_ID" in team_*) team="teamId=$VERCEL_ORG_ID" ;; esac
+          host="${DEPLOYMENT_URL#https://}"
+          host="${host%%/*}"
+
+          code="$(curl -sS -o deployment.json -w '%{http_code}' \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "$api/v13/deployments/$host?$team")"
+          if [ "$code" != "200" ]; then
+            echo "::error::deployment lookup for $host returned HTTP $code: $(head -c 300 deployment.json)"
+            exit 1
+          fi
+          id="$(jq -r '.id // empty' deployment.json)"
+          target="$(jq -r '.target // empty' deployment.json)"
+          if [ -z "$id" ] || [ "$target" != "production" ]; then
+            echo "::error::deployment $host has id='$id' target='$target'; expected a production deployment"
+            exit 1
+          fi
+
+          code="$(curl -sS -o promote.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" -d '{}' \
+            "$api/v10/projects/$VERCEL_PROJECT_ID/promote/$id?$team")"
+          case "$code" in
+            200|201|202) echo "Promotion of $id requested (HTTP $code)." ;;
+            *)
+              echo "::error::promote of $id returned HTTP $code: $(head -c 300 promote.json)"
+              exit 1
+              ;;
+          esac
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
