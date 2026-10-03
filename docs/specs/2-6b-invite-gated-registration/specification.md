@@ -20,16 +20,17 @@ after Epic 2.7 had changed `authorized()`. The questions and the rejected option
 
 ## 0. Load-bearing assumptions
 
-| #   | Premise                                                                                                                               | State                                                   | Evidence / what breaks if false                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A1  | **At least one verified `ADMIN` user exists in production** at the moment this ships.                                                 | **Reported by owner** (2026-10-02) — not agent-measured | The owner ran the guarded promotion (§10.1) and reports it done. Before merge, confirm the count and that `email_verified_at` is set, and record it on #29. Before that: #29 recorded **0 ADMIN accounts** in production as of 2026-08-09. False → notifications go to nobody, nobody can approve, and registration is closed with no way in. Production-bound, so it must be **measured** before implementation (§10.1), and if it is false, an operator account must be promoted — a production write that needs the owner's explicit go-ahead. |
-| A2  | **The session's `role` is not current** — so authorisation must read `User.role` from the database.                                   | Measured                                                | `src/auth.config.ts:43–45`: `token.role = user.role` runs only inside `if (user)`, i.e. at sign-in. A design trusting the session role would let a demoted admin keep approving for up to 30 days.                                                                                                                                                                                                                                                                                                                                                |
-| A3  | **An anonymous `/api/*` request gets 401 JSON, not a login redirect.**                                                                | Measured                                                | `src/auth.config.ts:128–139`. This is what invalidated 2.6 §5.3's GET approve link (it assumed a redirect). It also means `/api/access-request` must be explicitly allow-listed, or guests get 401.                                                                                                                                                                                                                                                                                                                                               |
-| A4  | **The session cookie is `SameSite=Lax`**, so a cross-site `POST` to the decision route carries no session — the route's CSRF defence. | Measured (source)                                       | `@auth/core@0.41.3` `lib/utils/cookie.js:48–55` sets `sameSite: "lax"`; neither `src/auth.ts` nor `src/auth.config.ts` overrides `cookies`. False → a third-party page could make a signed-in admin approve a request. Re-measured on a real response in §9 (E2E asserts the attribute).                                                                                                                                                                                                                                                          |
-| A5  | **`User.email` is unique**, so two concurrent redemptions of one invite cannot create two accounts.                                   | Measured                                                | `prisma/schema.prisma:79` `email String @unique`; the invite binds the email (§4.3). This — not the transaction — is the hard backstop against double redemption. The conditional consume (§4.3 step 7) makes the second request fail cleanly instead of at the constraint.                                                                                                                                                                                                                                                                       |
-| A6  | **Invite and verification emails reach an inbox.**                                                                                    | **Measured false** today                                | `dig +short TXT evidoxa.com` → empty (2026-10-02): no SPF record, DMARC `p=none` — #13. Does not break correctness, but a production rollout that assumes delivery fails silently: approved researchers never see the link. Does not block merge; blocks **inviting anyone** (§10.2).                                                                                                                                                                                                                                                             |
-| A7  | **CI E2E runs isolated**: ephemeral Neon branch, namespaced Redis keys, production build, stubbed email.                              | Measured                                                | `.github/workflows/ci.yml:91,99` (`CACHE_NAMESPACE` / `RATELIMIT_NAMESPACE` per run), `:154` (ephemeral branch), `:108` (`EMAIL_TRANSPORT: "stub"`), `:257` (`pnpm build`). Consequence for method: no test can read a raw invite token out of an email — fixtures insert invites directly (§9).                                                                                                                                                                                                                                                  |
-| A8  | **A purge job can run often enough to honour a 6-hour retention.**                                                                    | Measured (plan) / documented (limit)                    | `vercel api /v2/teams/mathis-thomsens-projects` → `billing.plan = hobby` (2026-10-02). Vercel documents Hobby cron jobs as at most once per day — not measured here. A daily cron would hold PENDING rows up to ~30 h. Hence: expiry is enforced **at read time** (§4.6), so an expired row is never used regardless of when it is physically deleted, and deletion runs **hourly from GitHub Actions**. GitHub documents that scheduled runs can be delayed under load — assumed acceptable.                                                     |
+| #   | Premise                                                                                                                                                                 | State                                                   | Evidence / what breaks if false                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | **At least one verified `ADMIN` user exists in production** at the moment this ships.                                                                                   | **Reported by owner** (2026-10-02) — not agent-measured | The owner ran the guarded promotion (§10.1) and reports it done. Before merge, confirm the count and that `email_verified_at` is set, and record it on #29. Before that: #29 recorded **0 ADMIN accounts** in production as of 2026-08-09. False → notifications go to nobody, nobody can approve, and registration is closed with no way in. Production-bound, so it must be **measured**; if it is false, an operator account must be promoted — a production write that needs the owner's explicit go-ahead. _Amended 2026-10-02 (owner, PR #146, Q8): it gates **merge**, not implementation — nothing in development needs the production operator, and merging is what closes registration (§10.1)._ |
+| A2  | **The session's `role` is not current** — so authorisation must read `User.role` from the database.                                                                     | Measured                                                | `src/auth.config.ts:43–45`: `token.role = user.role` runs only inside `if (user)`, i.e. at sign-in. A design trusting the session role would let a demoted admin keep approving for up to 30 days.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| A3  | **An anonymous `/api/*` request gets 401 JSON, not a login redirect.**                                                                                                  | Measured                                                | `src/auth.config.ts:128–139`. This is what invalidated 2.6 §5.3's GET approve link (it assumed a redirect). It also means `/api/access-request` must be explicitly allow-listed, or guests get 401.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| A4  | **The session cookie is `SameSite=Lax`**, so a cross-site `POST` to the decision route carries no session — **necessary, not sufficient** for the route's CSRF defence. | Measured (source)                                       | `@auth/core@0.41.3` `lib/utils/cookie.js:48–55` sets `sameSite: "lax"`; neither `src/auth.ts` nor `src/auth.config.ts` overrides `cookies`. False → a third-party page could make a signed-in admin approve a request. Re-measured on a real response in §9 (E2E asserts the attribute). _Amended 2026-10-02 (owner, PR #146, Q3):_ SameSite is **site**-scoped, not origin-scoped — a `POST` from any host under the same registrable domain is same-site and carries the Lax cookie. The decision route therefore also enforces `Content-Type` and `Origin` (§4.5): defence in depth, so the route does not depend on every same-site host staying locked down.                                          |
+| A5  | **`User.email` is unique**, so two concurrent redemptions of one invite cannot create two accounts.                                                                     | Measured                                                | `prisma/schema.prisma:79` `email String @unique`; the invite binds the email (§4.3). This — not the transaction — is the hard backstop against double redemption. The conditional consume (§4.3 step 7) makes the second request fail cleanly instead of at the constraint.                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| A6  | **Invite and verification emails reach an inbox.**                                                                                                                      | **Measured false** today                                | `dig +short TXT evidoxa.com` → empty (2026-10-02): no SPF record, DMARC `p=none` — #13. Does not break correctness, but a production rollout that assumes delivery fails silently: approved researchers never see the link. Does not block merge; blocks **inviting anyone** (§10.2).                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| A7  | **CI E2E runs isolated**: ephemeral Neon branch, namespaced Redis keys, production build, stubbed email.                                                                | Measured                                                | `.github/workflows/ci.yml:91,99` (`CACHE_NAMESPACE` / `RATELIMIT_NAMESPACE` per run), `:154` (ephemeral branch), `:108` (`EMAIL_TRANSPORT: "stub"`), `:257` (`pnpm build`). Consequence for method: no test can read a raw invite token out of an email — fixtures insert invites directly (§9).                                                                                                                                                                                                                                                                                                                                                                                                           |
+| A8  | **A purge job can run often enough to honour a 6-hour retention.**                                                                                                      | Measured (plan) / documented (limit)                    | `vercel api /v2/teams/mathis-thomsens-projects` → `billing.plan = hobby` (2026-10-02). Vercel documents Hobby cron jobs as at most once per day — not measured here. A daily cron would hold PENDING rows up to ~30 h. Hence: expiry is enforced **at read time** (§4.6), so an expired row is never used regardless of when it is physically deleted, and deletion runs **hourly from GitHub Actions**. GitHub documents that scheduled runs can be delayed under load — assumed acceptable.                                                                                                                                                                                                              |
+| A9  | **In production, `new URL(env.AUTH_URL).origin` is the origin the operator's browser is on** — added 2026-10-02 (PR #146) with §4.5 step 3.                             | **Assumed**                                             | Not measured. A mail link built from `AUTH_URL` working (§7) does not settle it: an apex link redirected to `www` also works. False → every legitimate decision is refused with 403 — fails closed, not a security hole, but no one can be invited. In CI both are the Playwright origin (`playwright.config.ts:33,80`), so CI cannot observe it; the owner checks the production value before merge.                                                                                                                                                                                                                                                                                                      |
 
 Not listed, deliberately: the client IP used for rate-limit keys (#29 records Vercel's
 `X-Forwarded-For` as trustworthy, measured); the token helpers (`generateToken`/`hashToken` are the
@@ -56,6 +57,8 @@ E2E, not the diff.
 - **A3** — E2E anonymous `request.post("/api/access-request")` returns 200, and anonymous
   `request.post("/api/access-requests/x")` (note the `s`) returns 401.
 - **A4** — E2E reads the session cookie from the browser context and asserts `sameSite: "Lax"`.
+  The `Content-Type` and `Origin` checks that complement it (§4.5) are unit-tested (§9); the E2E
+  approve in a real browser shows that a legitimate same-origin `fetch` passes them.
 - **A5** — E2E fires two parallel `POST /api/auth/register` with the same invite against the CI
   ephemeral branch: exactly one 201, one 403 or 409, one user row.
 - Unit tests mock Prisma, Redis and email. The `pnpm test` job holds real Upstash credentials and
@@ -153,7 +156,8 @@ change**, never on a plain field update — which is what retention counts from 
 ## 4. API contract
 
 New error codes, added to `ERROR_CODES` in `src/lib/api.ts`:
-`INVITE_REQUIRED`, `INVITE_INVALID`, `INVITE_EXPIRED`, `INVITE_USED`, `INVITE_EMAIL_MISMATCH`.
+`INVITE_REQUIRED`, `INVITE_INVALID`, `INVITE_EXPIRED`, `INVITE_USED`, `INVITE_EMAIL_MISMATCH`, and
+`UNSUPPORTED_MEDIA_TYPE` for §4.5's 415 (amended 2026-10-02, PR #146).
 
 ### 4.1 `POST /api/access-request` — public
 
@@ -181,7 +185,10 @@ Order, each step required:
 
 1. `ip = anonymizeIp(...)`, extracted exactly as the register route does.
 2. `checkRateLimit("access-request:{ip}", 3, 1h)` then `checkRateLimit("access-request:global", 30, 1h)`.
-   Either → 429 `RATE_LIMITED` (reveals nothing about any address).
+   Either → 429 `RATE_LIMITED` (reveals nothing about any address). _Amended 2026-10-02 (owner,
+   PR #146, Q9):_ the 30/h global cap is accepted for the alpha — with 6 h `PENDING` retention it
+   bounds the queue at 180 rows, and during a spam burst it also turns real requesters away. Every
+   429 is logged (which limiter, no PII) so a burst is visible.
 3. Parse JSON; invalid → 400 `INVALID_JSON`. Zod-validate all fields except `company`; failure →
    400 `VALIDATION_FAILED` with field-keyed i18n codes (register route's convention).
 4. **Trap:** `company` non-empty, or `Date.now() - rendered_at < 2000` → return the 200 body, write
@@ -196,6 +203,11 @@ Order, each step required:
    - **existing `INVITED` with a live invite** (unused, unexpired) → no change;
    - **existing `INVITED` without a live invite, or `DECLINED`** → update fields, set `PENDING`,
      clear `reviewed_*`, notify operators.
+
+   _Amended 2026-10-02 (owner, PR #146, Q6):_ two first requests for one new email can race on
+   `access_requests.email @unique`. A Prisma `P2002` on that column is treated as an **existing
+   `PENDING` row**: the uniform 200, and **no** second notification.
+
 8. Notification failure is logged (`console.error`, request id only, no PII) and does **not** change
    the response.
 9. 200 `{ ok: true }`.
@@ -226,7 +238,10 @@ Body gains `invite: string` (`z.string().min(1)`; a missing field → 403 `INVIT
 400 field error). New order:
 
 1. Rate limit — **unchanged and still first** (SEC-05 depends on it).
-2. Parse + Zod.
+2. Parse JSON (invalid → 400 `INVALID_JSON`); then invite **presence** — `invite` absent, not a
+   string, or empty → 403 `INVITE_REQUIRED`; then Zod. _Amended 2026-10-02 (owner, PR #146, Q4):_
+   presence comes before Zod so an uninvited caller gets the one answer that applies to them,
+   whatever else the body holds — not because the password policy is secret (it is on the page).
 3. `row = invite.findUnique({ token_hash: hashToken(invite) })`.
 4. Reject, each with an `INVALID_TOKEN` audit row (`metadata.token_type = "invite"`, `reason`):
    | Condition | Response |
@@ -270,19 +285,28 @@ interface DecisionBody {
 ```
 
 1. No session → 401 (middleware, A3).
-2. Re-read role from the database; not `ADMIN` → 403 `FORBIDDEN`.
-3. Zod; unknown id → 404 `NOT_FOUND`.
-4. A `User` already exists for the email → 409 `EMAIL_TAKEN`, nothing written.
-5. **decline** → `status = DECLINED`, `reviewed_at`, `reviewed_by_id`. No email.
-6. **approve** → in one transaction: delete unused invites for this email; create `Invite`
+2. `Content-Type` media type (parameters such as `charset` ignored, case-insensitive) is not
+   `application/json` → 415 `UNSUPPORTED_MEDIA_TYPE`.
+3. `Origin` header absent, or not equal to `new URL(env.AUTH_URL).origin` → 403 `FORBIDDEN`.
+4. Re-read role from the database; not `ADMIN` → 403 `FORBIDDEN`.
+5. Zod; unknown id → 404 `NOT_FOUND`.
+6. A `User` already exists for the email → 409 `EMAIL_TAKEN`, nothing written.
+7. **decline** → `status = DECLINED`, `reviewed_at`, `reviewed_by_id`. No email.
+8. **approve** → in one transaction: delete unused invites for this email; create `Invite`
    (`expires_at = now + 14d`); `status = INVITED`, `reviewed_*`. Then send the invite email (§7.2) in
    `request.locale`. Failure is reported as `email_sent: false` (the register route's #43 pattern)
    — the invite exists and the operator can approve again to re-issue.
-7. Approving an `INVITED` request re-issues (step 6 deletes the old invite). Declining an `INVITED`
+9. Approving an `INVITED` request re-issues (step 8 deletes the old invite). Declining an `INVITED`
    one deletes its unused invites.
 
-CSRF: `SameSite=Lax` (A4) plus a JSON body — a cross-site form cannot send `application/json`
-without a CORS preflight, which this route does not answer.
+CSRF — _amended 2026-10-02 (owner, PR #146, Q3)._ Three layers: `SameSite=Lax` (A4) keeps the
+session off cross-site requests; step 2 means a plain HTML form or a CORS-safelisted `text/plain`
+body cannot reach the decision, since `application/json` from another origin needs a CORS
+preflight, which this route does not answer; step 3 pins the request to the application's own
+origin. Lax alone is not enough because SameSite is **site**-scoped, not origin-scoped: a request
+from any host under the same registrable domain is same-site and carries the cookie. The `Origin`
+check is defence in depth, so the route does not depend on every same-site host staying locked
+down. Steps 2–3 run before any database read.
 
 The confirmation page (§4.4) and this route treat an **expired** row (§4.6) as not found.
 
@@ -316,6 +340,17 @@ must not promise a reply (§6.1).
 outside production) and a GitHub Actions secret. Per `CLAUDE.md`, the README's env section is
 updated in the same commit.
 
+_Amended 2026-10-02 (owner, PR #146, Q7):_
+
+- **The scheduled workflow** reads the GitHub secret `PURGE_SECRET` and posts to the hard-coded,
+  reviewable URL `https://www.evidoxa.com/api/internal/purge-access-requests` — `www`, because the
+  apex answers a 307 redirect and `curl` does not follow a redirect for a `POST` unless told to. A
+  non-2xx response fails the run loudly; it is never swallowed.
+- **CI's E2E job** sets a non-secret, per-run `PURGE_SECRET` of at least 32 characters in the job
+  env (built from `github.run_id` and `github.run_attempt`, padded). It guards an ephemeral
+  database, so a public value protects nothing real, and the production secret is not spread into
+  CI for no gain.
+
 ---
 
 ## 5. Files
@@ -340,10 +375,12 @@ src/app/[locale]/(app)/admin/access-requests/[id]/page.tsx       new, server com
 src/components/admin/AccessRequestDecision.tsx                   new, client — two buttons + result
 src/components/auth/RegisterForm.tsx                             props { invite }, email read-only, sends invite
 src/components/auth/InviteStateCard.tsx                          new — missing/invalid/used/expired states
+src/components/auth/LoginForm.tsx                                register link → request access (§6.2)
+.github/workflows/ci.yml                                         + per-run PURGE_SECRET in the E2E job (§4.6)
 src/components/marketing/AccessRequestForm.tsx                   new, client — replaces CtaBand
 src/components/marketing/CtaBand.tsx                             deleted
 src/components/marketing/Hero.tsx, PublicNav.tsx                 primary CTA → #access
-messages/de.json, messages/en.json                               access.*, auth.invite.*, admin.accessRequest.*, marketing copy flip
+messages/de.json, messages/en.json                               access.*, auth.invite.*, auth.login.*, admin.accessRequest.*, marketing copy flip
 e2e/helpers/db.ts                                                + insertTestInvite(email, opts?)
 ```
 
@@ -379,6 +416,14 @@ gelöscht — Sie können sie jederzeit erneut stellen." Zod schema built inside
 
 The same messages map from the 403 codes in §4.3 if the state changes between page load and submit.
 The existing privacy link gap (#112 item 2) is fixed here, since the form is rewritten anyway.
+_Amended 2026-10-02 (owner, PR #146, Q10):_ so is #112 item 1 — submit is disabled while
+submitting, so a double click cannot overwrite the success card with `INVITE_USED`. The
+implementing PR closes #112.
+
+_Amended 2026-10-02 (owner, PR #146, Q2):_ the login page's register link (`LoginForm`) is
+retargeted and relabelled — "Noch kein Zugang? Zugang anfragen" / "No access yet? Request access"
+→ `/{locale}#access`. Invitees arrive through their email link and never need it; a link to a page
+that only says "invitation only" is a dead end.
 
 ### 6.3 Confirmation page
 
@@ -399,12 +444,17 @@ Both via `sendEmail` in `src/lib/email.ts`, so the stub and the 5-second deadlin
 **7.1 Operator notification** — to `operatorEmails()` (verified `ADMIN` users). If the list is
 empty, `console.error("[access-request] no operator to notify", { requestId })` and return. Subject
 "Neue Zugangsanfrage: {name} — verfällt {HH:MM}". Body: the deadline (Europe/Berlin), the request fields and the link
-`{NEXT_PUBLIC_APP_URL}/de/admin/access-requests/{id}` with the line "Falls Sie nicht angemeldet sind:
+`{AUTH_URL}/de/admin/access-requests/{id}` with the line "Falls Sie nicht angemeldet sind:
 erst anmelden, dann diesen Link erneut öffnen." Operator mail is German only.
 
 **7.2 Invite** — to the request email, in `request.locale`. Link
-`{NEXT_PUBLIC_APP_URL}/{locale}/auth/register?invite={raw}`, states the 14-day expiry and that the
+`{AUTH_URL}/{locale}/auth/register?invite={raw}`, states the 14-day expiry and that the
 address cannot be changed.
+
+_Amended 2026-10-02 (owner, PR #146, Q5):_ both links are built from `env.AUTH_URL`, as the
+existing verification and reset mails are (`src/lib/email.ts`), not from `NEXT_PUBLIC_APP_URL`.
+The owner reports a verification link built that way delivered and working on production on
+2026-10-02.
 
 ---
 
@@ -412,8 +462,9 @@ address cannot be changed.
 
 New namespaces in both `messages/de.json` and `messages/en.json`: `access.*` (form labels, hints,
 errors, success), `auth.invite.*` (the five states of §6.2, the "Eingeladen als" line),
-`admin.accessRequest.*` (field labels, buttons, outcomes), `errors.*` entries for the five new codes,
-and the rewritten `marketing.cta.*`, `marketing.hero.primary`, `marketing.nav.register`. Copy is
+`admin.accessRequest.*` (field labels, buttons, outcomes), the relabelled `auth.login.noAccount` /
+`auth.login.register` (§6.2), and the rewritten `marketing.cta.*`, `marketing.hero.primary`,
+`marketing.nav.register`. Copy is
 drafted by Claude against `skills/platforms/evidoxa.md` § Brand Voice and edited by the owner (2.6
 D12). Key values for the gate itself:
 
@@ -425,6 +476,12 @@ D12). Key values for the gate itself:
 | `auth.invite.used`          | Dieser Einladungslink wurde bereits verwendet.     | This invitation link has already been used. |
 | `auth.invite.emailMismatch` | Die Einladung gilt für eine andere E-Mail-Adresse. | The invitation is for a different address.  |
 
+_Amended 2026-10-02 (owner, PR #146, Q1):_ the five `INVITE_*` codes get **no** separate error
+keys. `RegisterForm` maps them onto these `auth.invite.*` keys — `INVITE_REQUIRED` → `missing`,
+`INVITE_INVALID` → `invalid`, `INVITE_EXPIRED` → `expired`, `INVITE_USED` → `used`,
+`INVITE_EMAIL_MISMATCH` → `emailMismatch` — with the code-to-key map shape `ResetPasswordForm`
+uses. The submit-time error and the page-load state are the same sentence: one copy, two readers.
+
 ---
 
 ## 9. Testing
@@ -432,14 +489,18 @@ D12). Key values for the gate itself:
 **Unit (Vitest; Prisma, Redis, email mocked — §0b)**
 
 - `resolveInvite`: missing / invalid / used / expired / valid, including expiry exactly at `now`.
-- Register route: each of the five 403 codes; rate limit precedes invite validation; `updateMany`
+- Register route: each of the five 403 codes; rate limit precedes invite validation; a missing
+  invite with an otherwise invalid body → 403 `INVITE_REQUIRED`, not 400; `updateMany`
   returning `count: 0` → 403 `INVITE_USED`; `P2002` → 409; success writes user, confirmation and
   invite consumption in one transaction.
 - Access-request route: each upsert branch of §4.1 step 7 — which ones notify and which do not;
   trap and existing-user cases return the identical body and call neither Prisma write nor email;
-  global limit; notification failure still returns 200.
+  global limit, and each 429 is logged; a `P2002` on create → the uniform 200 and no notification;
+  notification failure still returns 200.
 - Decision route: non-ADMIN 403 when the **database** says USER even if the session says ADMIN;
-  approve deletes previous unused invites; decline; existing user → 409; `email_sent: false`.
+  approve deletes previous unused invites; decline; existing user → 409; `email_sent: false`; a
+  `text/plain` body carrying valid JSON → 415; `Origin` absent or foreign → 403 — each before any
+  database read.
 - Retention: `isExpired` at each boundary (6 h, 48 h, exactly-at, and a `PENDING` field update that
   must not move `status_changed_at`); `purgeExpired` deletes exactly the expired rows; purge route
   401 on missing/wrong secret, 200 with counts only.
@@ -479,7 +540,11 @@ running before review.
 
 Ordering matters because merging closes the only way in.
 
-### 10.1 Before implementation — measure A1
+### 10.1 Before merge — measure A1
+
+_Amended 2026-10-02 (owner, PR #146, Q8):_ previously "before implementation". A1 gates **merge**:
+nothing in development needs the production operator, and merging is what closes registration. The
+owner confirms it on PR #146 before merge.
 
 On the production branch, guarded by `SELECT current_setting('neon.branch_id')` matching
 `br-old-grass-a9acitgb` (the endpoint names mislead — see the project memory):
@@ -492,7 +557,7 @@ FROM users;
 **Decided 2026-10-02:** the owner created the operator account and asked for it to be promoted. The
 promotion is a guarded production `UPDATE` run by the owner (an agent was refused production
 credentials, correctly). Record the before/after count and date — not the address — on #29.
-A1 stays a blocker until that count is recorded as ≥ 1 **with** `email_verified_at` set; an
+A1 blocks merge until that count is recorded as ≥ 1 **with** `email_verified_at` set; an
 unverified admin receives no notifications (§7.1).
 
 ### 10.2 Before inviting anyone — #13
@@ -524,8 +589,10 @@ redeploy — Vercel env binds at deploy time. After deploy, confirm **live**, no
    body as a real one and write nothing.
 7. A signed-out visit to the confirmation link lands on login; a signed-in USER gets 404.
 8. An ADMIN can approve (invite email sent, status `INVITED`) and decline (status `DECLINED`);
-   demoting that admin in the database takes effect without them signing out.
-9. No landing-page link points at `/auth/register`; the hero and nav say "Zugang anfragen".
+   demoting that admin in the database takes effect without them signing out. A decision request
+   with a non-JSON content type gets 415, and one with no or a foreign `Origin` gets 403.
+9. No landing-page or login-page link points at `/auth/register`; the hero, nav and login page say
+   "Zugang anfragen".
 10. A `PENDING` request older than 6 h, or a `DECLINED` one older than 48 h, is unreachable at once
     and physically gone within ~1 h (the workflow's run log shows the counts).
 11. The full unit and E2E suites pass in CI.
@@ -538,7 +605,9 @@ redeploy — Vercel env binds at deploy time. After deploy, confirm **live**, no
    expires (≤ 14 days). The `tool_gap` answer goes with it; if the owner wants it, they copy it out
    from the confirmation page before then. No export of `tool_gap` is built.
 2. **Privacy page text** must state the periods in §4.6 (2.6 §11.2); the legal wording is the
-   owner's.
+   owner's. _Amended 2026-10-02 (owner, PR #146, Q8):_ it **gates merge**. The form collects
+   personal data the moment it is live, and its consent checkbox links to `/datenschutz`, which must
+   by then describe `access_requests` and the 6 h / 48 h / invite-lifetime retention.
 
 ## 13. Out of scope
 
