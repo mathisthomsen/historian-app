@@ -27,7 +27,7 @@ import {
   type BackfillReport,
 } from "./backfill";
 import { BACKFILL_MARKER, ACTIVITY_SCOPE, BACKFILL_COLUMNS, columnKey } from "./columns";
-import { assertLocalUrl, Refusal } from "./db";
+import { assertLocalUrl, parseCutoff, Refusal } from "./db";
 import { decodeEntities, decodeSql } from "./decode";
 
 const ENC = "Müller &amp; Söhne";
@@ -873,5 +873,26 @@ describe("output", () => {
     for (const needle of ["SENTINEL", "Müller", "&amp;"]) {
       expect(text, needle).not.toContain(needle);
     }
+  });
+});
+
+describe("--cutoff parsing", () => {
+  it("keeps a valid instant and converts its offset to UTC", () => {
+    expect(parseCutoff("2026-10-03T19:59:14Z")).toBe("2026-10-03T19:59:14.000Z");
+    expect(parseCutoff("2026-10-03T21:59:14+02:00")).toBe("2026-10-03T19:59:14.000Z");
+    expect(parseCutoff("2026-10-03T19:59:14.123456Z")).toBe("2026-10-03T19:59:14.123Z");
+  });
+
+  it("refuses an impossible date instead of rolling it forward", () => {
+    // `new Date()` turns these into 2026-10-01 and 2026-03-01: a later cutoff.
+    expect(() => parseCutoff("2026-09-31T12:00:00Z")).toThrow(Refusal);
+    expect(() => parseCutoff("2026-02-30T00:00:00+02:00")).toThrow(Refusal);
+    expect(() => parseCutoff("2026-10-03T24:00:00Z")).toThrow(Refusal);
+  });
+
+  it("refuses a timestamp without an explicit zone, or not in ISO form", () => {
+    expect(() => parseCutoff("2026-10-03T19:59:14")).toThrow(Refusal);
+    expect(() => parseCutoff("03.10.2026 19:59 Z")).toThrow(Refusal);
+    expect(() => parseCutoff("")).toThrow(Refusal);
   });
 });

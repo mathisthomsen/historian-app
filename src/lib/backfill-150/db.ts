@@ -129,18 +129,44 @@ export function parseCutoff(value: string | undefined): string {
     );
   }
   const trimmed = value.trim();
-  const hasZone = /(Z|[+-]\d{2}(:?\d{2})?)$/i.test(trimmed);
-  const parsed = new Date(trimmed);
-  if (!hasZone || !/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+  const m =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,6}))?)?(Z|([+-])(\d{2}):?(\d{2}))$/i.exec(
+      trimmed,
+    );
+  if (!m) {
     throw new Refusal(
       `--cutoff must be an ISO-8601 timestamp with an explicit zone, e.g. 2026-10-10T12:00:00Z (got: ${trimmed}).`,
     );
   }
-  if (Number.isNaN(parsed.getTime())) {
+  // `new Date()` silently rolls an impossible date forward (2026-09-31 becomes
+  // 2026-10-01), which would move the cutoff later and decode rows written
+  // verbatim in between. So every calendar component must survive a round trip.
+  const [y, mo, d, h, mi, s] = [m[1], m[2], m[3], m[4], m[5], m[6] ?? "0"].map(Number) as [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ];
+  const ms = Number((m[7] ?? "0").padEnd(3, "0").slice(0, 3));
+  const local = new Date(Date.UTC(y, mo - 1, d, h, mi, s, ms));
+  const valid =
+    local.getUTCFullYear() === y &&
+    local.getUTCMonth() === mo - 1 &&
+    local.getUTCDate() === d &&
+    local.getUTCHours() === h &&
+    local.getUTCMinutes() === mi &&
+    local.getUTCSeconds() === s;
+  const offsetMinutes =
+    m[8]!.toUpperCase() === "Z"
+      ? 0
+      : (m[9] === "-" ? -1 : 1) * (Number(m[10]) * 60 + Number(m[11]));
+  if (!valid || Math.abs(offsetMinutes) > 14 * 60) {
     throw new Refusal(`--cutoff is not a valid timestamp (got: ${trimmed}).`);
   }
   // Normalised so every query binds the same instant in UTC.
-  return parsed.toISOString();
+  return new Date(local.getTime() - offsetMinutes * 60_000).toISOString();
 }
 
 /** Runs `fn` inside a transaction; always rolls back on error. */

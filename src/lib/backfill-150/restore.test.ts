@@ -112,6 +112,19 @@ beforeEach(async () => {
     email: "plain@example.test",
     name: "Plain Name",
   });
+  // Encoded on the G3 branch, then re-submitted verbatim before the backfill:
+  // it decodes cleanly, but the backfill did not change it and production
+  // holds newer data, so a restore must leave it alone (#158 review).
+  await insertRow(branchDb, "access_requests", {
+    id: "ar-resubmitted",
+    email: "resubmit@example.test",
+    name: ENC,
+  });
+  await insertRow(db, "access_requests", {
+    id: "ar-resubmitted",
+    email: "resubmit@example.test",
+    name: DEC,
+  });
 
   const preview = await runBackfill(pgliteClient(db), {
     expectBranch: BRANCH,
@@ -301,7 +314,10 @@ describe("selection", () => {
 
   it("refuses unclear selections", async () => {
     await expect(restore({ all: false })).rejects.toThrow(/exactly one of/);
-    await expect(restore({ ids: [] })).rejects.toThrow(/exactly one of/);
+    // An empty or comment-only --ids file must not "succeed" with nothing restored.
+    await expect(restore({ ids: [] })).rejects.toThrow(/exactly one of/); // with the helper's --all
+    await expect(restore({ ids: [], all: false })).rejects.toThrow(/names no rows/);
+    expect(parseIdsFile("# only a comment\n\n")).toEqual([]);
     await expect(restore({ column: "notes" })).rejects.toThrow(/--column requires --table/);
     await expect(restore({ table: "locations" })).rejects.toThrow(/not a backfill table/);
     expect(() => parseIdsFile("persons.notes p-r1")).toThrow(Refusal);
@@ -388,6 +404,7 @@ describe("access_requests (restore source: the G3 backup branch)", () => {
       expect(await cell(db, "access_requests", column, ids["access_requests"]!), column).toBe(ENC);
     }
     expect(await cell(db, "access_requests", "name", "ar-untouched")).toBe("Plain Name");
+    expect(await cell(db, "access_requests", "name", "ar-resubmitted")).toBe(DEC);
     expect(classOf(report, "access_requests.name").restorable).toEqual([ids["access_requests"]]);
     expect(lines.join("\n")).not.toContain("Müller");
   });

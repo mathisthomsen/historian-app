@@ -9,7 +9,7 @@ import {
   type SqlClient,
 } from "./db";
 import { decodeSql, ENTITY_PATTERN_SQL } from "./decode";
-import { TARGETS, type Target } from "./targets";
+import { findTarget, TARGETS, type Target } from "./targets";
 
 /**
  * The guarded, owner-run backfill of #150: decode the entities `sanitize()`
@@ -721,6 +721,11 @@ function markerReport(report: BackfillReport) {
           kept_encoded: t.keptEncoded,
           checksum_before: t.checksumBefore,
           checksum_after: t.checksumAfter ?? null,
+          // Columns without a backup row (access_requests) are restored from
+          // the G3 branch. Only these ids were changed here, so only these may
+          // be restored from it: a request re-submitted after G3 also decodes
+          // cleanly but holds newer data (#158 review). Ids only, no values.
+          ...(findTarget(t.key)?.backup === false ? { changed_ids: t.decodeIds } : {}),
         },
       ]),
     ),

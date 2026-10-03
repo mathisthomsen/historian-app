@@ -78,8 +78,11 @@ async function main(): Promise<number> {
     CONNECTION_ENV,
     options.local === true,
   );
-  const fromConnection = fromUrl ? await connect(fromUrl, FROM_ENV, false) : undefined;
+  // Opened inside the try, so a failing backup connection still closes the
+  // primary one instead of leaving the process hanging on an open socket.
+  let fromConnection: Awaited<ReturnType<typeof connect>> | undefined;
   try {
+    fromConnection = fromUrl ? await connect(fromUrl, FROM_ENV, false) : undefined;
     if (fromConnection) options.fromClient = fromConnection.client;
     await runRestore(connection.client, options, (line) => console.log(line));
     return 0;

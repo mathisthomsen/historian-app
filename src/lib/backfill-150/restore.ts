@@ -87,6 +87,10 @@ export function validateRestoreOptions(options: RestoreOptions): void {
     // both given, or neither
     throw new Refusal("Give exactly one of --ids <file> or --all.");
   }
+  if (ids !== undefined && ids.length === 0) {
+    // An empty file would "restore" nothing and still write a success marker.
+    throw new Refusal("--ids names no rows: the file is empty or holds only comments.");
+  }
   if (column !== undefined && table === undefined) {
     throw new Refusal("--column requires --table.");
   }
@@ -179,6 +183,11 @@ async function classifyBackedUp(
   return result;
 }
 
+/** The part of the backfill's run marker the restore reads. */
+interface MarkerReport {
+  columns?: Record<string, { changed_ids?: unknown } | undefined>;
+}
+
 interface BranchRow {
   id: string;
   original: string;
@@ -191,6 +200,7 @@ async function loadBranchRows(
   fromClient: SqlClient,
   target: Target,
   ids: string[] | null,
+  changedByBackfill: ReadonlySet<string>,
 ): Promise<BranchRow[]> {
   const col = ident(target.column);
   const { rows: originals } = await fromClient.query<{
@@ -201,9 +211,14 @@ async function loadBranchRows(
       WHERE ${col} IS NOT NULL AND ($1::text[] IS NULL OR id = ANY($1::text[])) ORDER BY id`,
     [ids],
   );
-  // Only rows the backfill would have changed.
+  // Only rows the backfill actually changed, as recorded in its marker. A row
+  // that merely decodes cleanly may have been re-submitted since the branch
+  // was taken, and its current value is then newer data, not the backfill's.
   const changed = originals.filter(
-    (r) => r.original !== null && decodeEntities(r.original) !== r.original,
+    (r) =>
+      changedByBackfill.has(r.id) &&
+      r.original !== null &&
+      decodeEntities(r.original) !== r.original,
   );
   const { rows: currents } = await client.query<{
     id: string;
@@ -351,12 +366,11 @@ async function restoreInTransaction(
       await client.query("SET LOCAL lock_timeout = '5s'");
       await client.query("SET LOCAL statement_timeout = '60s'");
 
-      const marker = await countOf(
-        client,
-        "SELECT count(*)::int AS n FROM data_backfills WHERE name = $1",
+      const { rows: markerRows } = await client.query<{ report: MarkerReport }>(
+        "SELECT report FROM data_backfills WHERE name = $1",
         [BACKFILL_MARKER],
       );
-      if (marker !== 1) {
+      if (markerRows.length !== 1) {
         throw new Refusal(
           `Restore refused: data_backfills has no "${BACKFILL_MARKER}" marker, so there is nothing to restore here.`,
         );
@@ -379,7 +393,19 @@ async function restoreInTransaction(
         if (target.backup) {
           classes = await classifyBackedUp(client, target, ids);
         } else {
-          const rows = await loadBranchRows(client, options.fromClient!, target, ids);
+          const changedIds = markerRows[0]!.report.columns?.[target.key]?.changed_ids;
+          if (!Array.isArray(changedIds)) {
+            throw new Refusal(
+              `Restore refused: the run marker records no changed ids for ${target.key}, so rows the backfill changed cannot be told apart from rows written later.`,
+            );
+          }
+          const rows = await loadBranchRows(
+            client,
+            options.fromClient!,
+            target,
+            ids,
+            new Set(changedIds),
+          );
           branchRows.set(target.key, rows);
           classes = emptyIds();
           for (const row of rows) classes[classifyBranchRow(row)].push(row.id);
