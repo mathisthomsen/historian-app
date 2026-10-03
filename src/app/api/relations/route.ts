@@ -8,7 +8,6 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
 import { validateEntityExists } from "@/lib/entity-validation";
-import { sanitize } from "@/lib/sanitize";
 
 const entityTypeEnum = z.enum(["PERSON", "EVENT", "SOURCE", "LOCATION", "LITERATURE"]);
 const certaintyEnum = z.enum(["CERTAIN", "PROBABLE", "POSSIBLE", "UNKNOWN"]);
@@ -325,7 +324,7 @@ export async function POST(request: NextRequest) {
       to_type: data.to_type,
       to_id: data.to_id,
       relation_type_id: data.relation_type_id,
-      notes: data.notes ? sanitize(data.notes) : null,
+      notes: data.notes || null,
       certainty: data.certainty ?? "UNKNOWN",
       valid_from_year: data.valid_from_year ?? null,
       valid_from_month: data.valid_from_month ?? null,

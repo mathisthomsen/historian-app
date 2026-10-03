@@ -27,11 +27,10 @@ describe("certaintyForValue", () => {
     expect(certaintyForValue("   ", "CERTAIN")).toBe("UNKNOWN");
   });
 
-  it("treats a value that sanitises away as absent (issue #79 review)", () => {
-    // sanitize("<b></b>") is "", so the STORED place renders as nothing while
-    // the raw input was non-empty. Callers must normalise against the
-    // sanitised value; this asserts the helper's half of that contract.
-    expect(certaintyForValue("", "CERTAIN")).toBe("UNKNOWN");
+  it("keeps the level for markup-looking text: it is a value as typed (#150)", () => {
+    // Text is stored verbatim, so `<b></b>` is a place like any other. The old
+    // test here covered a value that sanitize() stripped to "" (issue #79).
+    expect(certaintyForValue("<b></b>", "CERTAIN")).toBe("CERTAIN");
   });
 
   it("stays undefined when no level was supplied, so a PATCH-style merge is not forced to write one", () => {

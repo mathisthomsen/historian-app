@@ -7,7 +7,6 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 import { certaintySchema } from "@/lib/schemas/person";
 
 const listQuerySchema = z.object({
@@ -250,16 +249,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Sanitised once, so the stored value and the value certainty is normalised
-  // against are the same string.
-  const eventLocation = data.location ? sanitize(data.location) : null;
+  // Text is stored exactly as typed (#150, docs/specs/150-plain-text-storage/plan.md):
+  // no encoding or stripping on write. Computed once, so the stored value and the
+  // value certainty is normalised against are the same string.
+  const eventLocation = data.location || null;
 
   const event = await prisma.event.create({
     data: {
       project_id: data.project_id,
       created_by_id: user.id,
-      title: sanitize(data.title),
-      description: data.description ? sanitize(data.description) : null,
+      title: data.title,
+      description: data.description || null,
       event_type_id: data.event_type_id ?? null,
       start_year: data.start_year ?? null,
       start_month: data.start_month ?? null,
@@ -271,12 +271,11 @@ export async function POST(request: NextRequest) {
       end_date_certainty: data.end_date_certainty ?? "UNKNOWN",
       location: eventLocation,
       // Certainty qualifies an assertion; with no location there is nothing to
-      // qualify (see certaintyForValue). Normalised against the SANITISED
-      // value: "<b></b>" is non-empty input that sanitises to "", so the raw
-      // string preserved a CERTAIN against a location that renders as nothing.
+      // qualify (see certaintyForValue). Normalised against the value that is
+      // stored, so the two cannot disagree.
       location_certainty: certaintyForValue(eventLocation, data.location_certainty) ?? "UNKNOWN",
       parent_id: data.parent_id ?? null,
-      notes: data.notes ? sanitize(data.notes) : null,
+      notes: data.notes || null,
     },
     include: {
       event_type: { select: { id: true, name: true, color: true } },

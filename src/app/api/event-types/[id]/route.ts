@@ -6,7 +6,6 @@ import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized 
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 
 const COLOR_PALETTE = [
   "#dc2626",
@@ -63,9 +62,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const data = parsed.data;
 
   const updateData: Parameters<typeof prisma.eventType.update>[0]["data"] = {};
-  if (data.name !== undefined) updateData.name = sanitize(data.name);
+  if (data.name !== undefined) updateData.name = data.name;
   if (data.color !== undefined) updateData.color = data.color;
-  if (data.icon !== undefined) updateData.icon = data.icon ? sanitize(data.icon) : null;
+  if (data.icon !== undefined) updateData.icon = data.icon || null;
 
   let updated: { id: string; name: string; color: string | null; icon: string | null };
   try {

@@ -625,3 +625,41 @@ model EntityActivity {
   @@index([created_at])
   @@map("entity_activity")
 }
+
+// ---------------------------------------------------------------------------
+// Owner-run data backfills (#150)
+// ---------------------------------------------------------------------------
+
+/// Run-once marker for owner-run data backfills. A backfill that is not
+/// idempotent (the #150 entity decode is not: `&amp;lt;` -> `&lt;` -> `<`)
+/// refuses to run while its row is present. `report` holds counts and
+/// per-column checksums only, never text values.
+/// Deliberately NOT project-scoped; never exposed through any route.
+model DataBackfill {
+  name       String   @id
+  applied_at DateTime @default(now()) @db.Timestamptz(3)
+  report     Json
+
+  @@map("data_backfills")
+}
+
+/// Per-cell originals of the #150 plain-text backfill, kept so any row can be
+/// put back by `scripts/restore-150-plain-text.ts`. One row per changed
+/// (table, column, row id). Text columns use original_text/decoded_text;
+/// entity_activity JSONB snapshots use original_json/decoded_json.
+/// Copies research text and users.name, so it is dropped by a later migration
+/// after the 14-day recheck. Deliberately NOT project-scoped and not exported;
+/// never exposed through any route. access_requests are never copied here.
+model Backfill150Original {
+  table_name    String
+  column_name   String
+  row_id        String
+  original_text String?
+  decoded_text  String?
+  original_json Json?
+  decoded_json  Json?
+  created_at    DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([table_name, column_name, row_id])
+  @@map("backfill_150_originals")
+}
