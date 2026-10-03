@@ -753,7 +753,7 @@
       "certainty": {
         "kicker": "Gewissheit",
         "title": "Vier Stufen statt einer Behauptung.",
-        "body": "Gesichert, wahrscheinlich, möglich, unbekannt — pro Feld, nicht pro Datensatz."
+        "body": "Gesichert, wahrscheinlich, möglich, unbekannt — für jedes Lebens- und Ereignisdatum, jeden Ort und jede Beziehung einzeln."
       },
       "dates": {
         "kicker": "Datierung",
@@ -769,7 +769,7 @@
       },
       "evidence": {
         "kicker": "Belege",
-        "title": "Jede Aussage zeigt auf ihre Quelle.",
+        "title": "Jede Aussage kann auf ihre Quelle zeigen.",
         "body": "Belege hängen am einzelnen Feld — mit Fundstelle, Zitat und diplomatischer Transkription.",
         "sourceLabel": "Nürnberger Polizeiakte, 1828",
         "page": "Bl. 4r",

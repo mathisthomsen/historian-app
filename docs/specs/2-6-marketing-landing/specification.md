@@ -280,6 +280,12 @@ unbuilt behaviour.
 > **Explicitly forbidden copy.** Earlier drafts claimed circa dates, decades, date ranges and
 > _terminus ante quem_. **None of these exist** — the model has nullable y/m/d triples and nothing
 > more. Any copy implying fuzzy date arithmetic is a false claim and must be rejected in review.
+>
+> **Also forbidden (added by 2-6c, #97/#101).** "Per field" / "pro Feld" as a model-wide claim —
+> Source carries no `Certainty`; "every date" / "jedes Datum" — a Source's date is free text; and
+> any sentence implying evidence is required — a record can be complete with none. Rows 1 and 3
+> above are the claims as first drafted; the shipped wording is scoped by
+> `docs/specs/2-6c-certainty-claim-scope/specification.md` §2.
 
 ---
 

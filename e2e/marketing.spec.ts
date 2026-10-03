@@ -198,7 +198,7 @@ test.describe("marketing landing page — no JS (F2)", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/de#highlight-evidence");
     const panel = page.locator("#highlights [data-slot='stage-panel']").nth(2);
-    await expect(panel).toContainText("Jede Aussage zeigt auf ihre Quelle.");
+    await expect(panel).toContainText("Jede Aussage kann auf ihre Quelle zeigen.");
     await expect(panel).toBeInViewport();
   });
 
