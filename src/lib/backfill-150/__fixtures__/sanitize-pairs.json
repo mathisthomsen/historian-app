@@ -1,5 +1,5 @@
 {
-  "generator": "generate-sanitize-pairs.mjs",
+  "generator": "src/lib/backfill-150/__fixtures__/generate-sanitize-pairs.mjs at commit 6825f11, removed with sanitize-html (#150 T3); run it from that commit to regenerate",
   "sanitizeHtml": "2.17.1",
   "options": {
     "allowedTags": [],
