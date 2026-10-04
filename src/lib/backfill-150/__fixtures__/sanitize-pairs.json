@@ -1,0 +1,1819 @@
+{
+  "generator": "src/lib/backfill-150/__fixtures__/generate-sanitize-pairs.mjs at commit 6825f11, removed with sanitize-html (#150 T3); run it from that commit to regenerate",
+  "sanitizeHtml": "2.17.1",
+  "options": {
+    "allowedTags": [],
+    "allowedAttributes": {}
+  },
+  "seed": 150,
+  "pairs": [
+    {
+      "input": "Müller & Söhne",
+      "stored": "Müller &amp; Söhne"
+    },
+    {
+      "input": "Briefe 1848 < 1850",
+      "stored": "Briefe 1848 &lt; 1850"
+    },
+    {
+      "input": "x > y",
+      "stored": "x &gt; y"
+    },
+    {
+      "input": "\"Faust\"",
+      "stored": "\"Faust\""
+    },
+    {
+      "input": "Gretchen's",
+      "stored": "Gretchen's"
+    },
+    {
+      "input": "<b>x</b>",
+      "stored": "x"
+    },
+    {
+      "input": "<script>alert(1)</script>",
+      "stored": ""
+    },
+    {
+      "input": "a<b",
+      "stored": "a"
+    },
+    {
+      "input": "x<y and more text",
+      "stored": "x"
+    },
+    {
+      "input": "fol. 12r <sic>",
+      "stored": "fol. 12r "
+    },
+    {
+      "input": "[sic] <unclear>Wort</unclear>",
+      "stored": "[sic] Wort"
+    },
+    {
+      "input": "&amp;",
+      "stored": "&amp;"
+    },
+    {
+      "input": "&lt;script&gt;",
+      "stored": "&lt;script&gt;"
+    },
+    {
+      "input": "&lt;",
+      "stored": "&lt;"
+    },
+    {
+      "input": "&gt;",
+      "stored": "&gt;"
+    },
+    {
+      "input": "&amp;lt;",
+      "stored": "&amp;lt;"
+    },
+    {
+      "input": "&amp;amp;",
+      "stored": "&amp;amp;"
+    },
+    {
+      "input": "&amp;gt;",
+      "stored": "&amp;gt;"
+    },
+    {
+      "input": "&lt;&amp;&gt;",
+      "stored": "&lt;&amp;&gt;"
+    },
+    {
+      "input": "&copy;",
+      "stored": "©"
+    },
+    {
+      "input": "&#65;",
+      "stored": "A"
+    },
+    {
+      "input": "&nbsp;",
+      "stored": " "
+    },
+    {
+      "input": "&quot;",
+      "stored": "\""
+    },
+    {
+      "input": "&foo;",
+      "stored": "&amp;foo;"
+    },
+    {
+      "input": "AT&T",
+      "stored": "AT&amp;T"
+    },
+    {
+      "input": "R&D & Q&A",
+      "stored": "R&amp;D &amp; Q&amp;A"
+    },
+    {
+      "input": "Tom & Jerry & Co.",
+      "stored": "Tom &amp; Jerry &amp; Co."
+    },
+    {
+      "input": "a && b",
+      "stored": "a &amp;&amp; b"
+    },
+    {
+      "input": "1 < 2 > 0",
+      "stored": "1 &lt; 2 &gt; 0"
+    },
+    {
+      "input": "<<",
+      "stored": "&lt;&lt;"
+    },
+    {
+      "input": "<</",
+      "stored": "&lt;&lt;/"
+    },
+    {
+      "input": "< /b>",
+      "stored": "&lt; /b&gt;"
+    },
+    {
+      "input": "<!-- c -->",
+      "stored": ""
+    },
+    {
+      "input": "<?xml?>",
+      "stored": ""
+    },
+    {
+      "input": "3 &lt; 4",
+      "stored": "3 &lt; 4"
+    },
+    {
+      "input": "Ludwig van Beethoven & Söhne (Wien) <1827>",
+      "stored": "Ludwig van Beethoven &amp; Söhne (Wien) &lt;1827&gt;"
+    },
+    {
+      "input": "",
+      "stored": ""
+    },
+    {
+      "input": " ",
+      "stored": " "
+    },
+    {
+      "input": "plain text",
+      "stored": "plain text"
+    },
+    {
+      "input": "Köln & Düsseldorf; Straße & Platz",
+      "stored": "Köln &amp; Düsseldorf; Straße &amp; Platz"
+    },
+    {
+      "input": "&&&&",
+      "stored": "&amp;&amp;&amp;&amp;"
+    },
+    {
+      "input": "<<<>>>",
+      "stored": "&lt;&lt;&lt;&gt;&gt;&gt;"
+    },
+    {
+      "input": "a & b & c & d & e & f & g & h & i & j & k & l",
+      "stored": "a &amp; b &amp; c &amp; d &amp; e &amp; f &amp; g &amp; h &amp; i &amp; j &amp; k &amp; l"
+    },
+    {
+      "input": "&#38;amp;",
+      "stored": "&amp;amp;"
+    },
+    {
+      "input": "&#x26;lt;",
+      "stored": "&amp;lt;"
+    },
+    {
+      "input": "&AMP;",
+      "stored": "&amp;"
+    },
+    {
+      "input": "&Lt;",
+      "stored": "≪"
+    },
+    {
+      "input": "x &lt;b&gt;y&lt;/b&gt; z",
+      "stored": "x &lt;b&gt;y&lt;/b&gt; z"
+    },
+    {
+      "input": "&amp;lt;b&amp;gt;",
+      "stored": "&amp;lt;b&amp;gt;"
+    },
+    {
+      "input": "emoji 😀 & 𝔘𝔫𝔦",
+      "stored": "emoji 😀 &amp; 𝔘𝔫𝔦"
+    },
+    {
+      "input": "line one\nline & two\r\nline < three",
+      "stored": "line one\nline &amp; two\r\nline &lt; three"
+    },
+    {
+      "input": "tab\t&\t<",
+      "stored": "tab\t&amp;\t&lt;"
+    },
+    {
+      "input": "quot<script>&#38;gtscript<<script>x!",
+      "stored": "quot"
+    },
+    {
+      "input": "&/gt&amp;amp;<b>?-&amp;<b>",
+      "stored": "&amp;/gt&amp;amp;?-&amp;"
+    },
+    {
+      "input": "#<br/>#Söhne&amp;amp;1-",
+      "stored": "##Söhne&amp;amp;1-"
+    },
+    {
+      "input": "&<sic>/;",
+      "stored": "&amp;/;"
+    },
+    {
+      "input": "sic i",
+      "stored": "sic i"
+    },
+    {
+      "input": "/&#x3c;'Söhne ! &#38;\n#>/",
+      "stored": "/&lt;'Söhne ! &amp;\n#&gt;/"
+    },
+    {
+      "input": "&lt;a;<sic>#<br/>script-&#38;b;&copy;",
+      "stored": "&lt;a;#script-&amp;b;©"
+    },
+    {
+      "input": "sic&amp;amp;",
+      "stored": "sic&amp;amp;"
+    },
+    {
+      "input": "/B</b>'Söhne<script>&amp;-->&amp;&/b",
+      "stored": "/B'Söhne"
+    },
+    {
+      "input": "'<sic>",
+      "stored": "'"
+    },
+    {
+      "input": "x",
+      "stored": "x"
+    },
+    {
+      "input": "Söhne>script<bamp Söhne&amp;lt; ",
+      "stored": "Söhne&gt;script"
+    },
+    {
+      "input": "'&amp;lt;/>\n&lt;&amp;&amp;amp;gt\n<script>B",
+      "stored": "'&amp;lt;/&gt;\n&lt;&amp;&amp;amp;gt\n"
+    },
+    {
+      "input": "?B<!--x&amp;?<sic>quot",
+      "stored": "?B"
+    },
+    {
+      "input": "lti",
+      "stored": "lti"
+    },
+    {
+      "input": "Söhnelt<br/>>",
+      "stored": "Söhnelt&gt;"
+    },
+    {
+      "input": "a&amp;amp;>'amp</script>Söhne",
+      "stored": "a&amp;amp;&gt;'ampSöhne"
+    },
+    {
+      "input": "</script>&#38;script",
+      "stored": "&amp;script"
+    },
+    {
+      "input": " -ya",
+      "stored": " -ya"
+    },
+    {
+      "input": "?x&copy;Söhne >script<!--",
+      "stored": "?x©Söhne &gt;script"
+    },
+    {
+      "input": "&",
+      "stored": "&amp;"
+    },
+    {
+      "input": "\n",
+      "stored": "\n"
+    },
+    {
+      "input": "<script></b><&amp; &#x3c;",
+      "stored": ""
+    },
+    {
+      "input": "-->?gt'&#38;",
+      "stored": "--&gt;?gt'&amp;"
+    },
+    {
+      "input": "&\n&amp;amp;=amp\n",
+      "stored": "&amp;\n&amp;amp;=amp\n"
+    },
+    {
+      "input": "&amp;MüllerMüllerx-->&",
+      "stored": "&amp;MüllerMüllerx--&gt;&amp;"
+    },
+    {
+      "input": "Müller&</b>Müller<br/>&amp;amp;i",
+      "stored": "Müller&amp;Müller&amp;amp;i"
+    },
+    {
+      "input": "gt<&#x3c;!1",
+      "stored": "gt&lt;&lt;!1"
+    },
+    {
+      "input": "quot</b><sic>;Müller1Söhne&amp;B",
+      "stored": "quot;Müller1Söhne&amp;B"
+    },
+    {
+      "input": "\"&#x3c;",
+      "stored": "\"&lt;"
+    },
+    {
+      "input": "a-->xa&amp;y bSöhne><b>",
+      "stored": "a--&gt;xa&amp;y bSöhne&gt;"
+    },
+    {
+      "input": "42Müller\"1<script> ",
+      "stored": "42Müller\"1"
+    },
+    {
+      "input": "&gt;ampx?gtscript&#38;",
+      "stored": "&gt;ampx?gtscript&amp;"
+    },
+    {
+      "input": "&#amp\"</b>gt&amp;lt;a<;>/",
+      "stored": "&amp;#amp\"gt&amp;lt;a&lt;;&gt;/"
+    },
+    {
+      "input": "#",
+      "stored": "#"
+    },
+    {
+      "input": "<br/>",
+      "stored": ""
+    },
+    {
+      "input": "SöhnescriptMüller\"<b>y&lt;-lt",
+      "stored": "SöhnescriptMüller\"y&lt;-lt"
+    },
+    {
+      "input": "lt&#38;42B!quot\"<!--",
+      "stored": "lt&amp;42B!quot\""
+    },
+    {
+      "input": "1",
+      "stored": "1"
+    },
+    {
+      "input": "&#38;>&gt;&gt;\n&'amp",
+      "stored": "&amp;&gt;&gt;&gt;\n&amp;'amp"
+    },
+    {
+      "input": "\"Müller&gt<\n<br/>&#x3c;&amp;amp;b",
+      "stored": "\"Müller&gt;&lt;\n&lt;&amp;amp;b"
+    },
+    {
+      "input": "&lt;&\n",
+      "stored": "&lt;&amp;\n"
+    },
+    {
+      "input": "-&gt;",
+      "stored": "-&gt;"
+    },
+    {
+      "input": "\n&copy;",
+      "stored": "\n©"
+    },
+    {
+      "input": "=<b>/a'bMüller",
+      "stored": "=/a'bMüller"
+    },
+    {
+      "input": " &#38;i;&#x3c;<!--<br/>x&amp;&gt;",
+      "stored": " &amp;i;&lt;"
+    },
+    {
+      "input": "Bamp=quot&amp;lt;-->quotquotgt&amp;",
+      "stored": "Bamp=quot&amp;lt;--&gt;quotquotgt&amp;"
+    },
+    {
+      "input": "/",
+      "stored": "/"
+    },
+    {
+      "input": "x<!--<br/>&amp;<sic>&amp;amp;&copy;'",
+      "stored": "x"
+    },
+    {
+      "input": "&amp;lt; ",
+      "stored": "&amp;lt; "
+    },
+    {
+      "input": "scriptsicy</script>&gt;&amp;",
+      "stored": "scriptsicy&gt;&amp;"
+    },
+    {
+      "input": "script42B",
+      "stored": "script42B"
+    },
+    {
+      "input": "i</b>42sica<script></b>a</script>",
+      "stored": "i42sica"
+    },
+    {
+      "input": "= ><b>Söhne&amp;lt;<42\n</script>1",
+      "stored": "= &gt;Söhne&amp;lt;&lt;42\n1"
+    },
+    {
+      "input": "<b>",
+      "stored": ""
+    },
+    {
+      "input": "42</script>script",
+      "stored": "42script"
+    },
+    {
+      "input": "y&lt;=lt",
+      "stored": "y&lt;=lt"
+    },
+    {
+      "input": "quot&amp;amp;-42",
+      "stored": "quot&amp;amp;-42"
+    },
+    {
+      "input": "sic1'&&#x3c;",
+      "stored": "sic1'&amp;&lt;"
+    },
+    {
+      "input": "-sic/#B/",
+      "stored": "-sic/#B/"
+    },
+    {
+      "input": "&gt;<sic>1'&lt;&gt;-->&copy;<!--&1",
+      "stored": "&gt;1'&lt;&gt;--&gt;©"
+    },
+    {
+      "input": "&amp;42-amp",
+      "stored": "&amp;42-amp"
+    },
+    {
+      "input": "i->!-->&&amp;amp;\"",
+      "stored": "i-&gt;!--&gt;&amp;&amp;amp;\""
+    },
+    {
+      "input": "-->igt&i",
+      "stored": "--&gt;igt&amp;i"
+    },
+    {
+      "input": "&gt;<br/>Söhne42 &#x3c; <sic>&#x3c;\"&#38;",
+      "stored": "&gt;Söhne42 &lt; &lt;\"&amp;"
+    },
+    {
+      "input": "-->;#' <script>-->lt'&lt;Müller&lt;",
+      "stored": "--&gt;;#' "
+    },
+    {
+      "input": "&lt;></script>&amp;a&#38;",
+      "stored": "&lt;&gt;&amp;a&amp;"
+    },
+    {
+      "input": "bb&#38;",
+      "stored": "bb&amp;"
+    },
+    {
+      "input": ">\"&",
+      "stored": "&gt;\"&amp;"
+    },
+    {
+      "input": "!lt<sic><b>!amp",
+      "stored": "!lt!amp"
+    },
+    {
+      "input": "&amp;amp;&#38;&#38;</b>",
+      "stored": "&amp;amp;&amp;&amp;"
+    },
+    {
+      "input": "<b></b>/ --> &lt;<sic&amp;<!--&amp;amp;",
+      "stored": "/ --&gt; &lt;"
+    },
+    {
+      "input": "/<script>-->&lt;&copy;&lt; -->&copy;='!",
+      "stored": "/"
+    },
+    {
+      "input": "42",
+      "stored": "42"
+    },
+    {
+      "input": "&#x3c;?gt amp-<b>",
+      "stored": "&lt;?gt amp-"
+    },
+    {
+      "input": "lt&#x3c;lt'#y'gt/-/",
+      "stored": "lt&lt;lt'#y'gt/-/"
+    },
+    {
+      "input": "</script>a Müller<<br/><>\n&",
+      "stored": "a Müller&lt;&lt;&gt;\n&amp;"
+    },
+    {
+      "input": "<br/>i",
+      "stored": "i"
+    },
+    {
+      "input": "gt</script>quotscript/",
+      "stored": "gtquotscript/"
+    },
+    {
+      "input": ";Müller <sic>//-->/&amp;amp;",
+      "stored": ";Müller //--&gt;/&amp;amp;"
+    },
+    {
+      "input": "sic<b>&#x3c;</script>gt",
+      "stored": "sic&lt;gt"
+    },
+    {
+      "input": "&<br/>sicMüller!",
+      "stored": "&amp;sicMüller!"
+    },
+    {
+      "input": "<br/>sic&amp;&gt;i&#38;&gt;--></b>quot",
+      "stored": "sic&amp;&gt;i&amp;&gt;--&gt;quot"
+    },
+    {
+      "input": "&amp;lt;xb",
+      "stored": "&amp;lt;xb"
+    },
+    {
+      "input": "<!--&lt; /1&copy;x",
+      "stored": ""
+    },
+    {
+      "input": "/&amp;lt;<sic>quot?=\n!ampy<sic>",
+      "stored": "/&amp;lt;quot?=\n!ampy"
+    },
+    {
+      "input": "&#38;Müller<!--sic;#b =agt",
+      "stored": "&amp;Müller"
+    },
+    {
+      "input": "&gt;<b>\n",
+      "stored": "&gt;\n"
+    },
+    {
+      "input": "-->&gt;-->&amp;lt;42",
+      "stored": "--&gt;&gt;--&gt;&amp;lt;42"
+    },
+    {
+      "input": "amp;\" </script>gt </script>y x",
+      "stored": "amp;\" gt y x"
+    },
+    {
+      "input": "<Söhnegt\"?x",
+      "stored": ""
+    },
+    {
+      "input": "&#x3c;'quot-->sic&#x3c;'#",
+      "stored": "&lt;'quot--&gt;sic&lt;'#"
+    },
+    {
+      "input": "iquot&!&copy;",
+      "stored": "iquot&amp;!©"
+    },
+    {
+      "input": "&<sic></script>&y&copy;bamp!",
+      "stored": "&amp;&amp;y©bamp!"
+    },
+    {
+      "input": "&amp; ",
+      "stored": "&amp; "
+    },
+    {
+      "input": "gt>&amp;/x>=b",
+      "stored": "gt&gt;&amp;/x&gt;=b"
+    },
+    {
+      "input": "- <br/>=\nMüller<sic>",
+      "stored": "- =\nMüller"
+    },
+    {
+      "input": "&copy;  sic",
+      "stored": "©  sic"
+    },
+    {
+      "input": "-->y<!--</script>",
+      "stored": "--&gt;y"
+    },
+    {
+      "input": "&gt;1?</script>-<b>",
+      "stored": "&gt;1?-"
+    },
+    {
+      "input": "--><!--#b",
+      "stored": "--&gt;"
+    },
+    {
+      "input": "!amp",
+      "stored": "!amp"
+    },
+    {
+      "input": "i;MülleryMüller/<b>&copy; ",
+      "stored": "i;MülleryMüller/© "
+    },
+    {
+      "input": "lt42&#x3c;#&sic?!<",
+      "stored": "lt42&lt;#&amp;sic?!&lt;"
+    },
+    {
+      "input": "1gt&gt;a&copy;\"b",
+      "stored": "1gt&gt;a©\"b"
+    },
+    {
+      "input": "=\n&",
+      "stored": "=\n&amp;"
+    },
+    {
+      "input": " i42quotB<script>quotamp; < ",
+      "stored": " i42quotB"
+    },
+    {
+      "input": "y42<!--<br/>gtampgt&lt;<b>",
+      "stored": "y42"
+    },
+    {
+      "input": "'script</b>ltMüllerquotlt<sic>",
+      "stored": "'scriptltMüllerquotlt"
+    },
+    {
+      "input": "Müller\"??&#x3c;&amp;amp;!B",
+      "stored": "Müller\"??&lt;&amp;amp;!B"
+    },
+    {
+      "input": "\n&amp;amp;'&gt;&#38; &lt;#-->",
+      "stored": "\n&amp;amp;'&gt;&amp; &lt;#--&gt;"
+    },
+    {
+      "input": "script&amp;amp;&&#x3c;;&#x3c;bgtamp<script>",
+      "stored": "script&amp;amp;&amp;&lt;;&lt;bgtamp"
+    },
+    {
+      "input": "Müller<br/>&copy;=<br/>script&gt;&#38;sic&",
+      "stored": "Müller©=script&gt;&amp;sic&amp;"
+    },
+    {
+      "input": "Müller\"'/&gt;scriptsic&gt; &copy;&copy;",
+      "stored": "Müller\"'/&gt;scriptsic&gt; ©©"
+    },
+    {
+      "input": "; i<!--sicMüllerMüller",
+      "stored": "; i"
+    },
+    {
+      "input": "a",
+      "stored": "a"
+    },
+    {
+      "input": "ylt>",
+      "stored": "ylt&gt;"
+    },
+    {
+      "input": "quot<br/>=Blt </script><b><script>&copy;",
+      "stored": "quot=Blt "
+    },
+    {
+      "input": "&gt;&lt;-->&amp;",
+      "stored": "&gt;&lt;--&gt;&amp;"
+    },
+    {
+      "input": "siclt gtB;",
+      "stored": "siclt gtB;"
+    },
+    {
+      "input": "1&amp;lt;';\n&",
+      "stored": "1&amp;lt;';\n&amp;"
+    },
+    {
+      "input": "b&#38;\n-->?<b>",
+      "stored": "b&amp;\n--&gt;?"
+    },
+    {
+      "input": "<=&&copy;<",
+      "stored": "&lt;=&amp;©&lt;"
+    },
+    {
+      "input": "quot",
+      "stored": "quot"
+    },
+    {
+      "input": "amp",
+      "stored": "amp"
+    },
+    {
+      "input": "B--></b>&b<sic>sic<br/>/script",
+      "stored": "B--&gt;&amp;bsic/script"
+    },
+    {
+      "input": "xMüller&lt;42;-B",
+      "stored": "xMüller&lt;42;-B"
+    },
+    {
+      "input": "&amp;bquot  gt",
+      "stored": "&amp;bquot  gt"
+    },
+    {
+      "input": "sic!Müller<&gt;;&#38;>sic",
+      "stored": "sic!Müller&lt;&gt;;&amp;&gt;sic"
+    },
+    {
+      "input": "/<!--\"</script>&</b>agt/a'",
+      "stored": "/"
+    },
+    {
+      "input": "-& b-<b>quoty#/",
+      "stored": "-&amp; b-quoty#/"
+    },
+    {
+      "input": "  <script>b bB",
+      "stored": "  "
+    },
+    {
+      "input": "Müllera -/ampa-amp",
+      "stored": "Müllera -/ampa-amp"
+    },
+    {
+      "input": "&quotxx</b><\n\n",
+      "stored": "\"xx&lt;\n\n"
+    },
+    {
+      "input": "lt<&amp;amp;script<!--##<br/><script>&amp;amp;&amp;amp;&copy;",
+      "stored": "lt&lt;&amp;amp;script"
+    },
+    {
+      "input": "#gt&copy;&lt;isic</script>",
+      "stored": "#gt©&lt;isic"
+    },
+    {
+      "input": "-&amp;",
+      "stored": "-&amp;"
+    },
+    {
+      "input": "&&gt;\"1<script>&amp;amp;&amp;lt;xxMüller1",
+      "stored": "&amp;&gt;\"1"
+    },
+    {
+      "input": "sic&?quotx</b><sic>lt",
+      "stored": "sic&amp;?quotxlt"
+    },
+    {
+      "input": "</script>",
+      "stored": ""
+    },
+    {
+      "input": "a&#x3c;42Söhnea;42&copy;#&lt; ",
+      "stored": "a&lt;42Söhnea;42©#&lt; "
+    },
+    {
+      "input": ">#=x",
+      "stored": "&gt;#=x"
+    },
+    {
+      "input": "y&copy;-\n</script><!--<b></b>-->?",
+      "stored": "y©-\n?"
+    },
+    {
+      "input": "x&=",
+      "stored": "x&amp;="
+    },
+    {
+      "input": "! / sic42",
+      "stored": "! / sic42"
+    },
+    {
+      "input": "i/42 ",
+      "stored": "i/42 "
+    },
+    {
+      "input": "&#x3c;b<-&amp;sicx&lt; iscript",
+      "stored": "&lt;b&lt;-&amp;sicx&lt; iscript"
+    },
+    {
+      "input": "a>Söhne",
+      "stored": "a&gt;Söhne"
+    },
+    {
+      "input": "&copy;<b> <&lt;<sic>&amp;amp;<&copy;",
+      "stored": "© &lt;&lt;&amp;amp;&lt;©"
+    },
+    {
+      "input": "amp<!--&amp;amp;<",
+      "stored": "amp"
+    },
+    {
+      "input": "'amp1",
+      "stored": "'amp1"
+    },
+    {
+      "input": "&gt;Müller &&copy;script",
+      "stored": "&gt;Müller &amp;©script"
+    },
+    {
+      "input": "b <sic>&#x3c;b; <br/>y&y",
+      "stored": "b &lt;b; y&amp;y"
+    },
+    {
+      "input": "script?",
+      "stored": "script?"
+    },
+    {
+      "input": "<b>&lt; ",
+      "stored": "&lt; "
+    },
+    {
+      "input": "Bgt42\n",
+      "stored": "Bgt42\n"
+    },
+    {
+      "input": "&amp;lt;Müller\n1a&#x3c;&amp;lt;<b>gt;&amp;amp;",
+      "stored": "&amp;lt;Müller\n1a&lt;&amp;lt;gt;&amp;amp;"
+    },
+    {
+      "input": "42<script><script>#&#38;gt-Söhnelt",
+      "stored": "42"
+    },
+    {
+      "input": "-x&amp;amp;&\nMüller <sic>&lt;",
+      "stored": "-x&amp;amp;&amp;\nMüller &lt;"
+    },
+    {
+      "input": "Söhney&-quota?<sic><script> ",
+      "stored": "Söhney&amp;-quota?"
+    },
+    {
+      "input": "bquotgt/&gt;Müller<amp\n</script>",
+      "stored": "bquotgt/&gt;Müller"
+    },
+    {
+      "input": "b &amp;amp;x&amp;lt;y&copy;=\n'1amp",
+      "stored": "b &amp;amp;x&amp;lt;y©=\n'1amp"
+    },
+    {
+      "input": "?&amp;lt;b",
+      "stored": "?&amp;lt;b"
+    },
+    {
+      "input": "a?",
+      "stored": "a?"
+    },
+    {
+      "input": "sicb",
+      "stored": "sicb"
+    },
+    {
+      "input": "gtMüllersic&gt;= 1&#38;script&amp;B=",
+      "stored": "gtMüllersic&gt;= 1&amp;script&amp;B="
+    },
+    {
+      "input": " '&amp;amp; lt</script><!--<!--&lt;&/y",
+      "stored": " '&amp;amp; lt"
+    },
+    {
+      "input": "42<!--'42;",
+      "stored": "42"
+    },
+    {
+      "input": "! -->'<script>&#x3c;",
+      "stored": "! --&gt;'"
+    },
+    {
+      "input": "i&Müller&#38;&lt;= 1<!--&&",
+      "stored": "i&amp;Müller&amp;&lt;= 1"
+    },
+    {
+      "input": "x&gt;sic&#x3c;amp",
+      "stored": "x&gt;sic&lt;amp"
+    },
+    {
+      "input": "i42-&#38;/a<xx &amp;lt;",
+      "stored": "i42-&amp;/a"
+    },
+    {
+      "input": "sic",
+      "stored": "sic"
+    },
+    {
+      "input": "&amp;lt;?&amp;sic-->1",
+      "stored": "&amp;lt;?&amp;sic--&gt;1"
+    },
+    {
+      "input": "!/ai-->42\"&",
+      "stored": "!/ai--&gt;42\"&amp;"
+    },
+    {
+      "input": "&#38;>42",
+      "stored": "&amp;&gt;42"
+    },
+    {
+      "input": " ><b>&lt;",
+      "stored": " &gt;&lt;"
+    },
+    {
+      "input": "sic-&#x3c;<Ba-->ib",
+      "stored": "sic-&lt;ib"
+    },
+    {
+      "input": "i42xbsicB=42ltlt",
+      "stored": "i42xbsicB=42ltlt"
+    },
+    {
+      "input": "quot?y-!</b><!--1quot;&",
+      "stored": "quot?y-!"
+    },
+    {
+      "input": "quot#<b>b;&amp;amp;&amp;amp;lt&gt;/i",
+      "stored": "quot#b;&amp;amp;&amp;amp;lt&gt;/i"
+    },
+    {
+      "input": "42y<script></b>>&<b>>",
+      "stored": "42y"
+    },
+    {
+      "input": "ampB&? -",
+      "stored": "ampB&amp;? -"
+    },
+    {
+      "input": "x=<br/>&gt;<b>&#x3c;&amp;lt;&copy;B&\"",
+      "stored": "x=&gt;&lt;&amp;lt;©B&amp;\""
+    },
+    {
+      "input": "&lt;?&amp;amp;&<sic>&amp;amp;",
+      "stored": "&lt;?&amp;amp;&amp;&amp;amp;"
+    },
+    {
+      "input": "y&#38;x=&amp;amp;Söhnex&copy;'42Söhne<",
+      "stored": "y&amp;x=&amp;amp;Söhnex©'42Söhne&lt;"
+    },
+    {
+      "input": "-><=&&amp;lt;<b>quot&lt;#",
+      "stored": "-&gt;&lt;=&amp;&amp;lt;quot&lt;#"
+    },
+    {
+      "input": "bquot-!quot<? ",
+      "stored": "bquot-!quot "
+    },
+    {
+      "input": " aSöhne&&amp;amp;",
+      "stored": " aSöhne&amp;&amp;amp;"
+    },
+    {
+      "input": "=</script></script>",
+      "stored": "="
+    },
+    {
+      "input": "& =\"\nB< <br/> </b>&amp;amp;",
+      "stored": "&amp; =\"\nB&lt;  &amp;amp;"
+    },
+    {
+      "input": "\n&amp;lt;&amp;amp;&#x3c;<",
+      "stored": "\n&amp;lt;&amp;amp;&lt;&lt;"
+    },
+    {
+      "input": "sicSöhney'<b>Bampi&#38;\" ",
+      "stored": "sicSöhney'Bampi&amp;\" "
+    },
+    {
+      "input": "sicB",
+      "stored": "sicB"
+    },
+    {
+      "input": "Söhne&&#x3c;?-xscript ",
+      "stored": "Söhne&amp;&lt;?-xscript "
+    },
+    {
+      "input": "#b=<br/></script> </script>B>&lt;",
+      "stored": "#b= B&gt;&lt;"
+    },
+    {
+      "input": "&gt;BSöhne&amp;lt;&#x3c;&gt; ",
+      "stored": "&gt;BSöhne&amp;lt;&lt;&gt; "
+    },
+    {
+      "input": "-<!--gtltscript",
+      "stored": "-"
+    },
+    {
+      "input": "<br/> Mülleri<b><sic- ; &copy;",
+      "stored": " Mülleri"
+    },
+    {
+      "input": " B&gt;",
+      "stored": " B&gt;"
+    },
+    {
+      "input": "ya'&amp;amp;</b>",
+      "stored": "ya'&amp;amp;"
+    },
+    {
+      "input": "gt&amp;amp;-->biasic&</b>",
+      "stored": "gt&amp;amp;--&gt;biasic&amp;"
+    },
+    {
+      "input": "&&sic- script",
+      "stored": "&amp;&amp;sic- script"
+    },
+    {
+      "input": "Söhne",
+      "stored": "Söhne"
+    },
+    {
+      "input": "Söhne</b>&amp;lt;'b/<!--siclt",
+      "stored": "Söhne&amp;lt;'b/"
+    },
+    {
+      "input": "&lt;<b>>lt</b>;script\";;",
+      "stored": "&lt;&gt;lt;script\";;"
+    },
+    {
+      "input": "y&<<b-&lt;scriptMüller</b><!--",
+      "stored": "y&amp;&lt;"
+    },
+    {
+      "input": "42&copy;=",
+      "stored": "42©="
+    },
+    {
+      "input": "' script<b>&amp;amp; ;<sic>= 'B",
+      "stored": "' script&amp;amp; ;= 'B"
+    },
+    {
+      "input": "script&amp;amp;&gt;xSöhnei- ? &amp;amp;script",
+      "stored": "script&amp;amp;&gt;xSöhnei- ? &amp;amp;script"
+    },
+    {
+      "input": "&#x3c;>sic&#x3c;",
+      "stored": "&lt;&gt;sic&lt;"
+    },
+    {
+      "input": "quot1ltx&gt;<!--&amp;amp;<script>",
+      "stored": "quot1ltx&gt;"
+    },
+    {
+      "input": "<script>Söhne&amp;amp;<br/>",
+      "stored": ""
+    },
+    {
+      "input": "!42&amp;&#38;<script>&amp;amp;xamp'</script>?",
+      "stored": "!42&amp;&amp;?"
+    },
+    {
+      "input": " -->??&amp;amp;&copy;quot",
+      "stored": " --&gt;??&amp;amp;©quot"
+    },
+    {
+      "input": "y/iB",
+      "stored": "y/iB"
+    },
+    {
+      "input": "&#38;<br/>#",
+      "stored": "&amp;#"
+    },
+    {
+      "input": "B",
+      "stored": "B"
+    },
+    {
+      "input": " &amp;amp;",
+      "stored": " &amp;amp;"
+    },
+    {
+      "input": "&amp;amp;=yamp",
+      "stored": "&amp;amp;=yamp"
+    },
+    {
+      "input": "gt&amp;</script>\n<br/>1",
+      "stored": "gt&amp;\n1"
+    },
+    {
+      "input": "<script>amp",
+      "stored": ""
+    },
+    {
+      "input": "-1>a<script> &#38;' 1amp",
+      "stored": "-1&gt;a"
+    },
+    {
+      "input": " &lt;<sic>&<b>&amp;amp;\"&amp;lt;ltb",
+      "stored": " &lt;&amp;&amp;amp;\"&amp;lt;ltb"
+    },
+    {
+      "input": "&lt; &<br/>Söhne",
+      "stored": "&lt; &amp;Söhne"
+    },
+    {
+      "input": "\n<script>quot&copy;gt#quot",
+      "stored": "\n"
+    },
+    {
+      "input": "B&#x3c;<script>\n x42&\" &#38;/",
+      "stored": "B&lt;"
+    },
+    {
+      "input": "/?&gt;-'&1gt&amp;lt;Müller",
+      "stored": "/?&gt;-'&amp;1gt&amp;lt;Müller"
+    },
+    {
+      "input": "b",
+      "stored": "b"
+    },
+    {
+      "input": "lt ",
+      "stored": "lt "
+    },
+    {
+      "input": " &&amp;b&amp;lt;scriptiamp<!--42<sic>\"",
+      "stored": " &amp;&amp;b&amp;lt;scriptiamp"
+    },
+    {
+      "input": "&copy;;<!--'y<!-- sic?&iy",
+      "stored": "©;"
+    },
+    {
+      "input": "&amp;script&copy;",
+      "stored": "&amp;script©"
+    },
+    {
+      "input": " Bisic&amp;iSöhne lty&#38;Müller",
+      "stored": " Bisic&amp;iSöhne lty&amp;Müller"
+    },
+    {
+      "input": ">quotscript42",
+      "stored": "&gt;quotscript42"
+    },
+    {
+      "input": "&lt;&&&amp;lt;&copy;&#x3c;<br/>?ampsic?</script>",
+      "stored": "&lt;&amp;&amp;&amp;lt;©&lt;?ampsic?"
+    },
+    {
+      "input": "<!-- \n!\n lt!=\nsic",
+      "stored": ""
+    },
+    {
+      "input": "  &amp;lt;a",
+      "stored": "  &amp;lt;a"
+    },
+    {
+      "input": "&gt;\n\n\n",
+      "stored": "&gt;\n\n\n"
+    },
+    {
+      "input": "&copy;?</b>&Müller",
+      "stored": "©?&amp;Müller"
+    },
+    {
+      "input": "&quot\nagt&lt;&gt;Müllerlt1lt",
+      "stored": "\"\nagt&lt;&gt;Müllerlt1lt"
+    },
+    {
+      "input": "\n<sic>b",
+      "stored": "\nb"
+    },
+    {
+      "input": "'<br/>&amp;gt1ab<script>!<b>/ ",
+      "stored": "'&amp;gt1ab"
+    },
+    {
+      "input": "&lt;Müller!",
+      "stored": "&lt;Müller!"
+    },
+    {
+      "input": "quot&copy;gt#",
+      "stored": "quot©gt#"
+    },
+    {
+      "input": "</script>;B&</script> xlt&amp;",
+      "stored": ";B&amp; xlt&amp;"
+    },
+    {
+      "input": "<&gt;!<script>",
+      "stored": "&lt;&gt;!"
+    },
+    {
+      "input": "</b>  '<br/>1<br/>script#scriptxy",
+      "stored": "  '1script#scriptxy"
+    },
+    {
+      "input": "'</script>?",
+      "stored": "'?"
+    },
+    {
+      "input": "&#38;i",
+      "stored": "&amp;i"
+    },
+    {
+      "input": "scriptscriptquotquot</script></b>&/quot&<!--&amp;",
+      "stored": "scriptscriptquotquot&amp;/quot&amp;"
+    },
+    {
+      "input": "<script>&lt;-<script>aMüller&gt;",
+      "stored": ""
+    },
+    {
+      "input": "1</b> <sic>;&copy;scripti  <br/><sic>",
+      "stored": "1 ;©scripti  "
+    },
+    {
+      "input": "&#38;&amp;</b>!",
+      "stored": "&amp;&amp;!"
+    },
+    {
+      "input": "a1&amp;lt;&copy;/i",
+      "stored": "a1&amp;lt;©/i"
+    },
+    {
+      "input": "script",
+      "stored": "script"
+    },
+    {
+      "input": "ltb-->y=&#38;",
+      "stored": "ltb--&gt;y=&amp;"
+    },
+    {
+      "input": "Müllerquot?",
+      "stored": "Müllerquot?"
+    },
+    {
+      "input": "&<sic><script> &copy;b1",
+      "stored": "&amp;"
+    },
+    {
+      "input": "&amp;lt;&amp;amp;?x<br/>scripty",
+      "stored": "&amp;lt;&amp;amp;?xscripty"
+    },
+    {
+      "input": ">1&#38;&amp;",
+      "stored": "&gt;1&amp;&amp;"
+    },
+    {
+      "input": "<b>=gt&copy;</b></b><</script><br/> ?",
+      "stored": "=gt©&lt; ?"
+    },
+    {
+      "input": "\"#",
+      "stored": "\"#"
+    },
+    {
+      "input": "&#x3c;1</b>quot <sic>",
+      "stored": "&lt;1quot "
+    },
+    {
+      "input": "&copy;Müllery&copy;&'</b>&amp;amp;",
+      "stored": "©Müllery©&amp;'&amp;amp;"
+    },
+    {
+      "input": "'/Söhne\n&#x3c;4242B",
+      "stored": "'/Söhne\n&lt;4242B"
+    },
+    {
+      "input": " <b> sic&amp;lt;b> </b> ",
+      "stored": "  sic&amp;lt;b&gt;  "
+    },
+    {
+      "input": "B<!--<b>&amp;lt;&i'<br/>",
+      "stored": "B"
+    },
+    {
+      "input": "</script>Müller&#38;-<=&copy;",
+      "stored": "Müller&amp;-&lt;=©"
+    },
+    {
+      "input": "a\"quot\" Söhneyquotscript<sic>",
+      "stored": "a\"quot\" Söhneyquotscript"
+    },
+    {
+      "input": "b--><!---->\"quot<br/>=",
+      "stored": "b--&gt;\"quot="
+    },
+    {
+      "input": "!?ab#!",
+      "stored": "!?ab#!"
+    },
+    {
+      "input": "=</script>ltB",
+      "stored": "=ltB"
+    },
+    {
+      "input": "B<b>'# ",
+      "stored": "B'# "
+    },
+    {
+      "input": "&amp;lt;&amp;lt;<b>&amp;lt;42<gtiB",
+      "stored": "&amp;lt;&amp;lt;&amp;lt;42"
+    },
+    {
+      "input": "<br/>==</b>;&copy;<b>1script42?&lt;",
+      "stored": "==;©1script42?&lt;"
+    },
+    {
+      "input": "y=?&\n&amp;lt;1;1\n>",
+      "stored": "y=?&amp;\n&amp;lt;1;1\n&gt;"
+    },
+    {
+      "input": "x?&amp;lt;<script>b",
+      "stored": "x?&amp;lt;"
+    },
+    {
+      "input": "y&",
+      "stored": "y&amp;"
+    },
+    {
+      "input": "<!--!",
+      "stored": ""
+    },
+    {
+      "input": "\n&amp;lt;&a=xi",
+      "stored": "\n&amp;lt;&amp;a=xi"
+    },
+    {
+      "input": "&amp;amp; <script></script> amp",
+      "stored": "&amp;amp;  amp"
+    },
+    {
+      "input": "y&<br/>&#x3c;</b>scriptgt&lt;",
+      "stored": "y&amp;&lt;scriptgt&lt;"
+    },
+    {
+      "input": "#B /&</script>&amp;<!--/yb",
+      "stored": "#B /&amp;&amp;"
+    },
+    {
+      "input": "\"script</b>#quot&copy;&copy;\n1y ",
+      "stored": "\"script#quot©©\n1y "
+    },
+    {
+      "input": "<br/>&amp;lt;&#38;/&amp;amp;>gt/#?",
+      "stored": "&amp;lt;&amp;/&amp;amp;&gt;gt/#?"
+    },
+    {
+      "input": "a<br/>  &#x3c;a",
+      "stored": "a  &lt;a"
+    },
+    {
+      "input": "xsic</b>i&amp;lt;<1<b>?</b>&amp;amp;!",
+      "stored": "xsici&amp;lt;&lt;1?&amp;amp;!"
+    },
+    {
+      "input": ";\n",
+      "stored": ";\n"
+    },
+    {
+      "input": "\"/Söhneii<b>script",
+      "stored": "\"/Söhneiiscript"
+    },
+    {
+      "input": "b&lt;'i",
+      "stored": "b&lt;'i"
+    },
+    {
+      "input": "B<script><!--script</script>\"<br/>x",
+      "stored": "B\"x"
+    },
+    {
+      "input": " Söhne&#38;&amp;lt;-->&amp; #;y",
+      "stored": " Söhne&amp;&amp;lt;--&gt;&amp; #;y"
+    },
+    {
+      "input": "&amp;amp;<",
+      "stored": "&amp;amp;&lt;"
+    },
+    {
+      "input": "scripty&copy;'x&copy;\" 42ylt",
+      "stored": "scripty©'x©\" 42ylt"
+    },
+    {
+      "input": "gt!&amp;amp;;\"",
+      "stored": "gt!&amp;amp;;\""
+    },
+    {
+      "input": "<script>\n?&gt;\n<b>>&copy;&amp; &amp;lt;",
+      "stored": ""
+    },
+    {
+      "input": "<script> &#x3c;-->quot#",
+      "stored": ""
+    },
+    {
+      "input": "i Bylt=&#x3c; ;a=!",
+      "stored": "i Bylt=&lt; ;a=!"
+    },
+    {
+      "input": "sicy#1;x42-->",
+      "stored": "sicy#1;x42--&gt;"
+    },
+    {
+      "input": "<&amp;lt;<b>&amp;lt;= script&#38;quot'quot",
+      "stored": "&lt;&amp;lt;&amp;lt;= script&amp;quot'quot"
+    },
+    {
+      "input": "&amp;amp;xB?42b!x<script>",
+      "stored": "&amp;amp;xB?42b!x"
+    },
+    {
+      "input": "&#x3c;&lt;1-<b>B&amp;lt;<axgt",
+      "stored": "&lt;&lt;1-B&amp;lt;"
+    },
+    {
+      "input": "Bsicgt&amp;lt;B",
+      "stored": "Bsicgt&amp;lt;B"
+    },
+    {
+      "input": "a<sic><br/> #<sic> ",
+      "stored": "a # "
+    },
+    {
+      "input": "</b>script&#x3c;&amp;Müller&copy;-->-->ltB</b>&lt;",
+      "stored": "script&lt;&amp;Müller©--&gt;--&gt;ltB&lt;"
+    },
+    {
+      "input": "</Müller&1&amp;amp; &amp;amp;x&copy;&",
+      "stored": "&amp;"
+    },
+    {
+      "input": "y",
+      "stored": "y"
+    },
+    {
+      "input": "#&&#38;",
+      "stored": "#&amp;&amp;"
+    },
+    {
+      "input": "/!#Müller",
+      "stored": "/!#Müller"
+    },
+    {
+      "input": "&#38; &copy;",
+      "stored": "&amp; ©"
+    },
+    {
+      "input": "Müller&lt;42script ",
+      "stored": "Müller&lt;42script "
+    },
+    {
+      "input": "=&amp;lt;amp\n'",
+      "stored": "=&amp;lt;amp\n'"
+    },
+    {
+      "input": "Müllerlt&gt</script>ampamp!&&x&",
+      "stored": "Müllerlt&gt;ampamp!&amp;&amp;x&amp;"
+    },
+    {
+      "input": "</b>?y&gt; <sic>a",
+      "stored": "?y&gt; a"
+    },
+    {
+      "input": "&copy;--></b>1'\"igtB&amp;lt;",
+      "stored": "©--&gt;1'\"igtB&amp;lt;"
+    },
+    {
+      "input": "/!;x&lt;gt</b>&copy;",
+      "stored": "/!;x&lt;gt©"
+    },
+    {
+      "input": "xMüller<b>>?11&amp;lt;Müllerquot<!--",
+      "stored": "xMüller&gt;?11&amp;lt;Müllerquot"
+    },
+    {
+      "input": "&sicquot<sicb",
+      "stored": "&amp;sicquot"
+    },
+    {
+      "input": "BquotSöhnescript&gt;&i",
+      "stored": "BquotSöhnescript&gt;&amp;i"
+    },
+    {
+      "input": "&amp;lt;<!--",
+      "stored": "&amp;lt;"
+    },
+    {
+      "input": "<script>yb&&amp;amp;<sic> </b></b>",
+      "stored": ""
+    },
+    {
+      "input": "'ba>a</script>&copy;&#x3c;quotsica",
+      "stored": "'ba&gt;a©&lt;quotsica"
+    },
+    {
+      "input": "<br/>Söhne&lt;b1",
+      "stored": "Söhne&lt;b1"
+    },
+    {
+      "input": ">&gt;",
+      "stored": "&gt;&gt;"
+    },
+    {
+      "input": "sic&#38;<b>aamp#&gt;&;&#x3c;",
+      "stored": "sic&amp;aamp#&gt;&amp;;&lt;"
+    },
+    {
+      "input": "<b>>ampB&&lt;<<\"&gt;",
+      "stored": "&gt;ampB&amp;&lt;&lt;&lt;\"&gt;"
+    },
+    {
+      "input": "-&copy;&amp; -->&#x3c;a",
+      "stored": "-©&amp; --&gt;&lt;a"
+    },
+    {
+      "input": "Müllerscript",
+      "stored": "Müllerscript"
+    },
+    {
+      "input": "&amp;lt;<script>",
+      "stored": "&amp;lt;"
+    },
+    {
+      "input": "<sic>&amp;lt;\"<script>';",
+      "stored": "&amp;lt;\""
+    },
+    {
+      "input": "sic\"42! '-->",
+      "stored": "sic\"42! '--&gt;"
+    },
+    {
+      "input": "-- ",
+      "stored": "-- "
+    },
+    {
+      "input": "-->>=Baquotamp/<<b>",
+      "stored": "--&gt;&gt;=Baquotamp/&lt;"
+    },
+    {
+      "input": "&copy;&<&#x3c;script",
+      "stored": "©&amp;&lt;&lt;script"
+    },
+    {
+      "input": "sic -->-->?<!--lt/",
+      "stored": "sic --&gt;--&gt;?"
+    },
+    {
+      "input": "=&#38; <br/>&amp;&lt;&<script>&",
+      "stored": "=&amp; &amp;&lt;&amp;"
+    },
+    {
+      "input": "y\ni&</b></b>",
+      "stored": "y\ni&amp;"
+    },
+    {
+      "input": "&lt;i\"amp",
+      "stored": "&lt;i\"amp"
+    },
+    {
+      "input": "B!amp?b",
+      "stored": "B!amp?b"
+    },
+    {
+      "input": "1/sic&lt;aMüller &copy;Söhne?&lt;#",
+      "stored": "1/sic&lt;aMüller ©Söhne?&lt;#"
+    },
+    {
+      "input": "  ",
+      "stored": "  "
+    },
+    {
+      "input": "=Müller<br/>",
+      "stored": "=Müller"
+    },
+    {
+      "input": " scriptx&",
+      "stored": " scriptx&amp;"
+    },
+    {
+      "input": "<br/>Söhne!a=xquot'</b>",
+      "stored": "Söhne!a=xquot'"
+    },
+    {
+      "input": " &amp;&amp;amp;",
+      "stored": " &amp;&amp;amp;"
+    },
+    {
+      "input": "</script>/42&#38;quot <</script>Müller",
+      "stored": "/42&amp;quot &lt;Müller"
+    },
+    {
+      "input": "-!</script>&gt;&copy;<<sic>B>&amp;lt;script",
+      "stored": "-!&gt;©&lt;B&gt;&amp;lt;script"
+    },
+    {
+      "input": "&lt;/ Bb\n<br/>gt &#38;;",
+      "stored": "&lt;/ Bb\ngt &amp;;"
+    },
+    {
+      "input": "&amp;lt;;",
+      "stored": "&amp;lt;;"
+    },
+    {
+      "input": ";x\n?<script>&amp;amp;amp<sic>gt&amp;lt;",
+      "stored": ";x\n?"
+    },
+    {
+      "input": "!",
+      "stored": "!"
+    },
+    {
+      "input": "yxMüller quotamp ",
+      "stored": "yxMüller quotamp "
+    },
+    {
+      "input": "B\"</script>xscriptxMüller-->>script",
+      "stored": "B\"xscriptxMüller--&gt;&gt;script"
+    },
+    {
+      "input": "scriptB&lt;amp#b/</script>\n&lt;&amp;&lt;",
+      "stored": "scriptB&lt;amp#b/\n&lt;&amp;&lt;"
+    },
+    {
+      "input": "?quot",
+      "stored": "?quot"
+    },
+    {
+      "input": "&amp;&#38;quot ?",
+      "stored": "&amp;&amp;quot ?"
+    },
+    {
+      "input": "<!--ltquot",
+      "stored": ""
+    },
+    {
+      "input": "42absic\nampa<",
+      "stored": "42absic\nampa&lt;"
+    },
+    {
+      "input": "gt&#38;&&y&#x3c;&#38;&gt;b<b&amp;",
+      "stored": "gt&amp;&amp;&amp;y&lt;&amp;&gt;b"
+    },
+    {
+      "input": ">&--><script>ltgt?",
+      "stored": "&gt;&amp;--&gt;"
+    },
+    {
+      "input": "&gt;&gt;&amp;lt;?&&script<\"<script><!--42",
+      "stored": "&gt;&gt;&amp;lt;?&amp;&amp;script&lt;\""
+    },
+    {
+      "input": "->gt Söhne&&a",
+      "stored": "-&gt;gt Söhne&amp;&amp;a"
+    },
+    {
+      "input": "xx&lt;&copy;B&amp;asicMüller<b>&copy;&amp;amp;",
+      "stored": "xx&lt;©B&amp;asicMüller©&amp;amp;"
+    },
+    {
+      "input": "\ni<b>Müllera\"quot",
+      "stored": "\niMüllera\"quot"
+    },
+    {
+      "input": "sic-->a</b>",
+      "stored": "sic--&gt;a"
+    },
+    {
+      "input": "#&",
+      "stored": "#&amp;"
+    },
+    {
+      "input": "&copy;i&#x3c; '<b>",
+      "stored": "©i&lt; '"
+    },
+    {
+      "input": "&#38;!MüllerSöhnescript<",
+      "stored": "&amp;!MüllerSöhnescript&lt;"
+    },
+    {
+      "input": "42sic&amp;-->&copy;-->#<script>'!x</script>",
+      "stored": "42sic&amp;--&gt;©--&gt;#"
+    },
+    {
+      "input": "=<sic>quot&amp;<sic><sic>lt&amp;&#x3c;",
+      "stored": "=quot&amp;lt&amp;&lt;"
+    },
+    {
+      "input": "</script>'",
+      "stored": "'"
+    },
+    {
+      "input": "&b42 <script>Müller&copy;\"<=<sic>",
+      "stored": "&amp;b42 "
+    },
+    {
+      "input": "B;=Müller",
+      "stored": "B;=Müller"
+    },
+    {
+      "input": " igt> ",
+      "stored": " igt&gt; "
+    },
+    {
+      "input": "</b>&&copy;",
+      "stored": "&amp;©"
+    },
+    {
+      "input": "\"<!--",
+      "stored": "\""
+    },
+    {
+      "input": "</b>sic",
+      "stored": "sic"
+    },
+    {
+      "input": "?gtlt&amp;lt;&amp;amp;&lt;/&copy;;&amp;lt;",
+      "stored": "?gtlt&amp;lt;&amp;amp;&lt;/©;&amp;lt;"
+    },
+    {
+      "input": "x<sic><sic>?&amp;amp;&copy;B&amp;<script>-->y",
+      "stored": "x?&amp;amp;©B&amp;"
+    },
+    {
+      "input": "ampx;<",
+      "stored": "ampx;&lt;"
+    },
+    {
+      "input": "&#x3c;/42amp&&amp;amp;#'",
+      "stored": "&lt;/42amp&amp;&amp;amp;#'"
+    },
+    {
+      "input": "-->b-ya&42-->#quot</b>",
+      "stored": "--&gt;b-ya&amp;42--&gt;#quot"
+    },
+    {
+      "input": "<quot</script>=&#38;&",
+      "stored": "=&amp;&amp;"
+    },
+    {
+      "input": "i<b>aB#=Söhne#/<b>",
+      "stored": "iaB#=Söhne#/"
+    },
+    {
+      "input": "'42Müllery&amp;lt;<b> <sic>BMüller",
+      "stored": "'42Müllery&amp;lt; BMüller"
+    },
+    {
+      "input": "</b>;&#42-->xamp&amp;-->\"",
+      "stored": ";*--&gt;xamp&amp;--&gt;\""
+    },
+    {
+      "input": " \"</b><script>gt",
+      "stored": " \""
+    },
+    {
+      "input": "=sic42&gt;gt\">amp<gt</script>",
+      "stored": "=sic42&gt;gt\"&gt;amp"
+    },
+    {
+      "input": "&</b>yb&gt;&#x3c;&copy;<script>42",
+      "stored": "&amp;yb&gt;&lt;©"
+    },
+    {
+      "input": "<br/><&amp;&gt;&lt;=B",
+      "stored": "&lt;&amp;&gt;&lt;=B"
+    },
+    {
+      "input": "<b>42b&</b>&amp;=<br/>quotb",
+      "stored": "42b&amp;&amp;=quotb"
+    },
+    {
+      "input": "?!'Söhne\"<!--<",
+      "stored": "?!'Söhne\""
+    },
+    {
+      "input": "'bi<!--#</script><sic>&amp;lt;<<script>&amp;",
+      "stored": "'bi"
+    },
+    {
+      "input": "\n;?/;",
+      "stored": "\n;?/;"
+    },
+    {
+      "input": "\"<sic>/gt></b>-&lt;>\n",
+      "stored": "\"/gt&gt;-&lt;&gt;\n"
+    },
+    {
+      "input": "</b>",
+      "stored": ""
+    },
+    {
+      "input": "&amp;</b><script>#&amp;amp;\n1",
+      "stored": "&amp;"
+    },
+    {
+      "input": "42&copy;script",
+      "stored": "42©script"
+    },
+    {
+      "input": "</script>&&#38;&#x3c;=&copy;Söhne</script>",
+      "stored": "&amp;&amp;&lt;=©Söhne"
+    }
+  ]
+}

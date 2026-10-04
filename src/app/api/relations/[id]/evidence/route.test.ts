@@ -11,7 +11,6 @@ const mockRelationEvidenceFindMany = vi.fn();
 const mockRelationEvidenceCreate = vi.fn();
 const mockSourceFindFirst = vi.fn();
 const mockUserProjectFindFirst = vi.fn();
-const mockSanitize = vi.fn((s: string) => s);
 
 vi.mock("@/lib/cache", () => ({
   cache: {
@@ -37,10 +36,6 @@ vi.mock("@/lib/db", () => ({
     source: { findFirst: mockSourceFindFirst },
     userProject: { findFirst: mockUserProjectFindFirst },
   },
-}));
-
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: mockSanitize,
 }));
 
 const { GET, POST } = await import("./route");

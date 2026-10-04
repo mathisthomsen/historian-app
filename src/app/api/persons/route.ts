@@ -17,7 +17,6 @@ import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { certaintyForValue } from "@/lib/certainty";
 import { db, prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 import { createPersonSchema } from "@/lib/schemas/person";
 
 const listQuerySchema = z.object({
@@ -133,16 +132,17 @@ export async function POST(request: NextRequest) {
     return forbidden();
   }
 
-  // Sanitised once, so the stored value and the value certainty is normalised
-  // against are the same string.
-  const birthPlace = data.birth_place ? sanitize(data.birth_place) : null;
-  const deathPlace = data.death_place ? sanitize(data.death_place) : null;
+  // Text is stored exactly as typed (#150, docs/specs/150-plain-text-storage/plan.md):
+  // no encoding or stripping on write. Computed once, so the stored value and the
+  // value certainty is normalised against are the same string.
+  const birthPlace = data.birth_place || null;
+  const deathPlace = data.death_place || null;
 
   const createData: Prisma.PersonUncheckedCreateInput = {
     project_id: data.project_id,
     created_by_id: user.id,
-    first_name: data.first_name ? sanitize(data.first_name) : null,
-    last_name: data.last_name ? sanitize(data.last_name) : null,
+    first_name: data.first_name || null,
+    last_name: data.last_name || null,
     birth_year: data.birth_year ?? null,
     birth_month: data.birth_month ?? null,
     birth_day: data.birth_day ?? null,
@@ -150,9 +150,8 @@ export async function POST(request: NextRequest) {
     birth_place: birthPlace,
     // Certainty qualifies an assertion; with no place there is nothing to
     // qualify, so it is forced to UNKNOWN rather than stored against an
-    // em-dash (see certaintyForValue). Normalised against the SANITISED value:
-    // "<b></b>" is non-empty input that sanitises to "", so passing the raw
-    // string here preserved a CERTAIN against a place that renders as nothing.
+    // em-dash (see certaintyForValue). Normalised against the value that is
+    // stored, so the two cannot disagree.
     birth_place_certainty: certaintyForValue(birthPlace, data.birth_place_certainty) ?? "UNKNOWN",
     death_year: data.death_year ?? null,
     death_month: data.death_month ?? null,
@@ -160,13 +159,13 @@ export async function POST(request: NextRequest) {
     death_date_certainty: data.death_date_certainty ?? "UNKNOWN",
     death_place: deathPlace,
     death_place_certainty: certaintyForValue(deathPlace, data.death_place_certainty) ?? "UNKNOWN",
-    notes: data.notes ? sanitize(data.notes) : null,
+    notes: data.notes || null,
   };
 
   if (data.names && data.names.length > 0) {
     createData.names = {
       create: data.names.map((n) => ({
-        name: sanitize(n.name),
+        name: n.name,
         language: n.language ?? null,
         is_primary: n.is_primary ?? false,
       })),

@@ -6,7 +6,6 @@ import { forbidden, json, jsonError, notFoundError, parseJsonBody, unauthorized 
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 
 const entityTypeSchema = z.enum(["PERSON", "EVENT", "SOURCE", "LOCATION", "LITERATURE"]);
 
@@ -58,13 +57,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const data = parsed.data;
 
   const updateData: Parameters<typeof prisma.relationType.update>[0]["data"] = {};
-  if (data.name !== undefined) updateData.name = sanitize(data.name);
-  if (data.inverse_name !== undefined)
-    updateData.inverse_name = data.inverse_name ? sanitize(data.inverse_name) : null;
-  if (data.description !== undefined)
-    updateData.description = data.description ? sanitize(data.description) : null;
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.inverse_name !== undefined) updateData.inverse_name = data.inverse_name || null;
+  if (data.description !== undefined) updateData.description = data.description || null;
   if (data.color !== undefined) updateData.color = data.color;
-  if (data.icon !== undefined) updateData.icon = data.icon ? sanitize(data.icon) : null;
+  if (data.icon !== undefined) updateData.icon = data.icon || null;
   if (data.valid_from_types !== undefined) updateData.valid_from_types = data.valid_from_types;
   if (data.valid_to_types !== undefined) updateData.valid_to_types = data.valid_to_types;
 

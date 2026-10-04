@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { verbatimCases } from "@/test/verbatim-text";
+
 const mocks = vi.hoisted(() => ({
   send: vi.fn(),
   findUser: vi.fn(),
@@ -500,5 +502,17 @@ describe("the register gate: rate limit first (I4)", () => {
     expect(mocks.rateLimit.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.findInvite.mock.invocationCallOrder[0]!,
     );
+  });
+});
+
+// #150 T3 — the name reaches `users.name` exactly as typed (trimmed by Zod,
+// nothing else). Nothing mocks a sanitiser; the arguments of the transaction's
+// `user.create` are asserted.
+describe("the register gate: the name is stored verbatim (#150)", () => {
+  it.each(verbatimCases("users"))("%s: %j reaches user.create unchanged", async (_column, name) => {
+    const response = await register({ name });
+
+    expect(response.status).toBe(201);
+    expect(mocks.txCreateUser.mock.calls[0]![0].data.name).toBe(name);
   });
 });

@@ -6,7 +6,6 @@ import { forbidden, json, jsonError, paginated, parseJsonBody, unauthorized } fr
 import { requireUser } from "@/lib/auth-guard";
 import { cache } from "@/lib/cache";
 import { db, prisma } from "@/lib/db";
-import { sanitize } from "@/lib/sanitize";
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -149,15 +148,15 @@ export async function POST(request: NextRequest) {
     data: {
       project_id: data.project_id,
       created_by_id: user.id,
-      title: sanitize(data.title),
-      type: sanitize(data.type),
-      author: data.author ? sanitize(data.author) : null,
-      date: data.date ? sanitize(data.date) : null,
-      repository: data.repository ? sanitize(data.repository) : null,
-      call_number: data.call_number ? sanitize(data.call_number) : null,
+      title: data.title,
+      type: data.type,
+      author: data.author || null,
+      date: data.date || null,
+      repository: data.repository || null,
+      call_number: data.call_number || null,
       url: data.url ?? null,
       reliability: data.reliability ?? "UNKNOWN",
-      notes: data.notes ? sanitize(data.notes) : null,
+      notes: data.notes || null,
     },
     include: {
       _count: {

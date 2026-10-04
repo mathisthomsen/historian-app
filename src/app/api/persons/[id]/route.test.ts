@@ -11,7 +11,6 @@ const mockUserProjectFindFirst = vi.fn();
 const mockPersonUpdate = vi.fn();
 const mockPersonNameFindMany = vi.fn();
 const mockCacheInvalidate = vi.fn();
-const mockSanitize = vi.fn((s: string) => s);
 const mockLogActivity = vi.fn();
 
 vi.mock("@/lib/auth-guard", () => ({
@@ -38,10 +37,6 @@ vi.mock("@/lib/cache", () => ({
   cache: {
     invalidateByPrefix: mockCacheInvalidate,
   },
-}));
-
-vi.mock("@/lib/sanitize", () => ({
-  sanitize: mockSanitize,
 }));
 
 vi.mock("@/lib/activity", () => ({
