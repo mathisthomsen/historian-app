@@ -10,8 +10,7 @@
  *
  * `VERBATIM_WRITE_COLUMNS` is the plan's write-site table as (table, column)
  * pairs. Route tests iterate it through `columnsOf(table)` rather than listing
- * columns by hand, so the backfill's column list (T4) and these tests can be
- * driven from one list and a column dropped from either is caught.
+ * columns by hand.
  */
 
 /** Text that the old write path mangled: `&` encoded, `<…` truncated, tags stripped. */
