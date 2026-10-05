@@ -144,9 +144,13 @@ einschließlich gelöschter Einträge." It is a plain `<a href="/api/projects/{p
 styled as a button: the browser sends the cookie, the `Content-Disposition` header triggers the
 download, no client JS needed.
 
+When the project ID is absent (a transient database error during project provisioning), the link
+is not shown; instead, one line tells the user "Your project could not be loaded. Reload the page
+to retry." This re-runs the provisioning flow (`src/auth.ts:157` → `attachProjectId`).
+
 The settings area has no index page today, so the dashboard is the only place a researcher already
 lands. Errors (429, 413) arrive as a JSON body in a new tab; acceptable for v1 at these frequencies.
-Strings: `dashboard.export.{action, help}` in both locales.
+Strings: `auth.dashboard.export.{action, help, noProject}` in both locales.
 
 ---
 
