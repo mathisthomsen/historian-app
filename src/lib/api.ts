@@ -127,6 +127,8 @@ export const ERROR_CODES = [
   "INVITE_EMAIL_MISMATCH",
   /** A route that accepts JSON only was sent another media type (spec §4.5 step 2). */
   "UNSUPPORTED_MEDIA_TYPE",
+  /** A project export exceeds the row cap (#139, spec §3 step 4); the message says to contact the operator. */
+  "EXPORT_TOO_LARGE",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
