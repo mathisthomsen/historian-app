@@ -53,6 +53,14 @@ export function AccessRequestForm({ locale }: AccessRequestFormProps) {
   useEffect(() => {
     renderedAt.current = Date.now();
   }, []);
+  // The submit button that had focus is gone once the form is replaced, so
+  // focus moves to the result: keyboard and screen-reader users land on the
+  // message and the Log in / Forgot password controls rather than at the top
+  // of the page (#164).
+  const successRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (success) successRef.current?.focus();
+  }, [success]);
 
   // Built inside the component so the messages are translated (established pattern).
   const schema = z.object({
@@ -136,11 +144,13 @@ export function AccessRequestForm({ locale }: AccessRequestFormProps) {
         </div>
 
         {success ? (
-          <div className="mx-auto mt-8 max-w-xl">
-            <div
-              role="status"
-              className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200"
-            >
+          <div
+            ref={successRef}
+            tabIndex={-1}
+            role="status"
+            className="mx-auto mt-8 max-w-xl outline-none"
+          >
+            <div className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
               {t("success")}
             </div>
             {/*

@@ -12,8 +12,9 @@ vi.mock("@upstash/ratelimit", () => ({
 }));
 
 // Also mock redis so tests don't need real credentials
+const mockSet = vi.fn();
 vi.mock("@/lib/redis", () => ({
-  redis: {},
+  redis: { set: mockSet },
 }));
 
 // rate-limit-key.ts is deliberately not mocked (see its own test file), so
@@ -32,7 +33,7 @@ afterAll(() => {
   else process.env["VERCEL_ENV"] = ORIGINAL_VERCEL_ENV;
 });
 
-const { checkRateLimit, createRedisRateLimiter } = await import("@/lib/rate-limit");
+const { checkRateLimit, claimOnce, createRedisRateLimiter } = await import("@/lib/rate-limit");
 
 describe("createRedisRateLimiter — allowed", () => {
   beforeEach(() => {
@@ -224,5 +225,78 @@ describe("rate-limit key namespace", () => {
       expect.objectContaining({ error: expect.any(Error) }),
     );
     errorSpy.mockRestore();
+  });
+});
+
+describe("createRedisRateLimiter — SDK timeout (#164)", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    (MockRatelimit as unknown as Record<string, unknown>).slidingWindow = vi
+      .fn()
+      .mockReturnValue("sliding:window");
+    MockRatelimit.mockImplementation(() => ({ limit: mockLimit }));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("treats the SDK's timeout fallback as degraded, never as allowed", async () => {
+    // What @upstash/ratelimit resolves after its own timeout on a slow Redis:
+    // success true, nothing counted.
+    mockLimit.mockResolvedValue({
+      success: true,
+      limit: 0,
+      remaining: 0,
+      reset: 0,
+      reason: "timeout",
+    });
+    const result = await createRedisRateLimiter().check("test-key", 5, 60_000);
+    expect(result.allowed).toBe(false);
+    expect(result.degraded).toBe(true);
+  });
+
+  it("so checkRateLimit answers 503, not 200", async () => {
+    mockLimit.mockResolvedValue({
+      success: true,
+      limit: 0,
+      remaining: 0,
+      reset: 0,
+      reason: "timeout",
+    });
+    const response = await checkRateLimit("test-key", 5, 60_000);
+    expect(response?.status).toBe(503);
+  });
+});
+
+describe("claimOnce (#164)", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("takes the claim with SET NX PX in the rate-limit namespace", async () => {
+    mockSet.mockResolvedValue("OK");
+    const result = await claimOnce("notice:abc", 86_400_000);
+    expect(result).toEqual({ claimed: true, degraded: false });
+    expect(mockSet).toHaveBeenCalledWith("@upstash/ratelimit:once:notice:abc", "1", {
+      nx: true,
+      px: 86_400_000,
+    });
+  });
+
+  it("does not take a claim that is already held", async () => {
+    mockSet.mockResolvedValue(null);
+    expect(await claimOnce("notice:abc", 86_400_000)).toEqual({ claimed: false, degraded: false });
+  });
+
+  it("fails closed when Redis throws", async () => {
+    mockSet.mockRejectedValue(new Error("redis exploded"));
+    expect(await claimOnce("notice:abc", 86_400_000)).toEqual({ claimed: false, degraded: true });
+  });
+
+  it("fails closed when Redis does not answer in time", async () => {
+    mockSet.mockReturnValue(new Promise(() => {}));
+    expect(await claimOnce("notice:abc", 86_400_000, 10)).toEqual({
+      claimed: false,
+      degraded: true,
+    });
   });
 });

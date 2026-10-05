@@ -47,7 +47,7 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/rate-limit", () => ({
   checkRateLimit: mocks.checkRateLimit,
-  rateLimiter: { check: mocks.throttleCheck },
+  claimOnce: mocks.throttleCheck,
 }));
 vi.mock("@/lib/email", () => ({
   sendAccessRequestNotification: mocks.notify,
@@ -157,12 +157,7 @@ beforeEach(() => {
   mocks.deleteManyRequests.mockResolvedValue({ count: 1 });
   mocks.notify.mockResolvedValue(undefined);
   mocks.sendNotice.mockResolvedValue(undefined);
-  mocks.throttleCheck.mockResolvedValue({
-    allowed: true,
-    remaining: 0,
-    resetAt: new Date(NOW.getTime() + 24 * HOUR),
-    degraded: false,
-  });
+  mocks.throttleCheck.mockResolvedValue({ claimed: true, degraded: false });
 });
 
 afterEach(() => {
@@ -625,20 +620,10 @@ describe("existing account notice (#163)", () => {
     mocks.findUser.mockResolvedValue({ id: "user_1" });
     const sent = await observable(await post());
 
-    mocks.throttleCheck.mockResolvedValueOnce({
-      allowed: false,
-      remaining: 0,
-      resetAt: new Date(NOW.getTime() + HOUR),
-      degraded: false,
-    });
+    mocks.throttleCheck.mockResolvedValueOnce({ claimed: false, degraded: false });
     const throttled = await observable(await post());
 
-    mocks.throttleCheck.mockResolvedValueOnce({
-      allowed: false,
-      remaining: 0,
-      resetAt: new Date(NOW.getTime() + 60_000),
-      degraded: true,
-    });
+    mocks.throttleCheck.mockResolvedValueOnce({ claimed: false, degraded: true });
     const degraded = await observable(await post());
 
     mocks.sendNotice.mockRejectedValueOnce(new Error("provider down"));
@@ -705,18 +690,13 @@ describe("existing account notice (#163)", () => {
 
   it("throttles per recipient: one notice per 24 h, keyed on the hash of the lowercased address", async () => {
     mocks.findUser.mockResolvedValue({ id: "user_1" });
-    // A stateful stand-in for the limiter: the first call in the window is
-    // allowed, every later one is not.
+    // A stateful stand-in for the claim: the first call takes it, every later
+    // one within its lifetime does not.
     const seen = new Set<string>();
     mocks.throttleCheck.mockImplementation(async (key: string) => {
       const allowed = !seen.has(key);
       seen.add(key);
-      return {
-        allowed,
-        remaining: 0,
-        resetAt: new Date(NOW.getTime() + 24 * HOUR),
-        degraded: false,
-      };
+      return { claimed: allowed, degraded: false };
     });
 
     const first = await observable(await post());
@@ -725,7 +705,7 @@ describe("existing account notice (#163)", () => {
 
     expect(mocks.throttleCheck).toHaveBeenCalledTimes(3);
     for (const call of mocks.throttleCheck.mock.calls) {
-      expect(call).toEqual([`access-request:existing-notice:${EMAIL_HASH}`, 1, 24 * HOUR]);
+      expect(call).toEqual([`access-request:existing-notice:${EMAIL_HASH}`, 24 * HOUR]);
     }
     expect(mocks.sendNotice).toHaveBeenCalledTimes(1);
     expect(second).toEqual(first);
@@ -738,12 +718,7 @@ describe("existing account notice (#163)", () => {
     mocks.throttleCheck.mockImplementation(async (key: string) => {
       const allowed = !seen.has(key);
       seen.add(key);
-      return {
-        allowed,
-        remaining: 0,
-        resetAt: new Date(NOW.getTime() + 24 * HOUR),
-        degraded: false,
-      };
+      return { claimed: allowed, degraded: false };
     });
 
     await post();
@@ -762,12 +737,7 @@ describe("existing account notice (#163)", () => {
 
   it("sends nothing when the limiter is degraded (fails closed for the email)", async () => {
     mocks.findUser.mockResolvedValue({ id: "user_1" });
-    mocks.throttleCheck.mockResolvedValue({
-      allowed: false,
-      remaining: 0,
-      resetAt: new Date(NOW.getTime() + 60_000),
-      degraded: true,
-    });
+    mocks.throttleCheck.mockResolvedValue({ claimed: false, degraded: true });
 
     const res = await post();
 
@@ -799,12 +769,7 @@ describe("existing account notice (#163)", () => {
 
   it("logs nothing that identifies the address when the notice is skipped", async () => {
     mocks.findUser.mockResolvedValue({ id: "user_1" });
-    mocks.throttleCheck.mockResolvedValue({
-      allowed: false,
-      remaining: 0,
-      resetAt: new Date(NOW.getTime() + HOUR),
-      degraded: false,
-    });
+    mocks.throttleCheck.mockResolvedValue({ claimed: false, degraded: false });
 
     await post();
 

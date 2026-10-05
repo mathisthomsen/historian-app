@@ -7,7 +7,7 @@ import { isExpired } from "@/lib/access-retention";
 import { json, jsonError, parseJsonBody } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { sendAccessRequestNotification, sendExistingAccountNotice } from "@/lib/email";
-import { checkRateLimit, rateLimiter } from "@/lib/rate-limit";
+import { checkRateLimit, claimOnce } from "@/lib/rate-limit";
 import { anonymizeIp } from "@/lib/security";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -57,19 +57,19 @@ function accepted(): NextResponse {
  * account (#163). Runs inside `after()`: nothing here may change the response,
  * and the mail call's latency must not be observable (I5).
  *
- * At most one notice per address per 24 h, so the public form cannot be used to
- * flood a registered mailbox. The bucket is keyed on a hash of the normalised
- * address, never the address. It fails CLOSED: a limiter that cannot count
- * (`degraded`) reports `allowed: false`, and then nothing is sent. Nothing
- * logged here identifies the address.
+ * At most one notice per address per 24 h, strictly (`claimOnce`, a `SET NX`
+ * with a 24 h expiry), so the public form cannot be used to flood a registered
+ * mailbox. The key is a hash of the normalised address, never the address. It
+ * fails CLOSED: if Redis cannot be asked, nothing is sent. Nothing logged here
+ * identifies the address.
  */
 async function noticeExistingAccount(email: string, locale: "de" | "en"): Promise<void> {
   try {
     const digest = createHash("sha256").update(email).digest("hex");
-    const verdict = await rateLimiter.check(`access-request:existing-notice:${digest}`, 1, DAY_MS);
-    if (!verdict.allowed) {
+    const claim = await claimOnce(`access-request:existing-notice:${digest}`, DAY_MS);
+    if (!claim.claimed) {
       console.info("[access-request] existing-account notice skipped", {
-        reason: verdict.degraded ? "limiter-degraded" : "throttled",
+        reason: claim.degraded ? "limiter-degraded" : "throttled",
       });
       return;
     }

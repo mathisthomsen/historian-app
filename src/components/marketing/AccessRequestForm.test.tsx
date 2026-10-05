@@ -276,6 +276,19 @@ describe("AccessRequestForm — submission", () => {
     expect(forgot).not.toHaveClass("bg-primary");
   });
 
+  it("moves focus to the result, and the announced region includes the account hint (#164)", async () => {
+    renderWithProviders(<AccessRequestForm locale="de" />);
+    fillValid();
+    submit();
+    const message = await screen.findByText(de.success);
+
+    const region = message.closest('[role="status"]');
+    expect(region).not.toBeNull();
+    expect(region).toHaveFocus();
+    expect(region).toHaveTextContent(de.existingAccount.prompt);
+    expect(region).toContainElement(screen.getByRole("link", { name: de.existingAccount.login }));
+  });
+
   it("en: shows 'Already have an account?' with Log in and Forgot password under /en/", async () => {
     renderEn();
     fireEvent.change(screen.getByLabelText(en.fields.name), { target: { value: "Ada Lovelace" } });
