@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { json, jsonError, notFoundError, requireProjectMembership, unauthorized } from "@/lib/api";
+import { json, jsonError, notFoundError, unauthorized } from "@/lib/api";
 import { requireUser } from "@/lib/auth-guard";
 import { getLatestMigration, prisma } from "@/lib/db";
 import {
   EXPORT_ROW_CAP,
-  accessStillHolds,
   buildExport,
   exportFilename,
   serializeExport,
@@ -81,7 +80,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   // 3. Membership (any role, VIEWER included) and a live project. One 404 for
   // every refusal, and nothing about the project is read before it passes (X3).
-  if (!(await requireProjectMembership(user.id, projectId))) return notFoundError();
+  // MUTATION (do not merge): membership pre-check removed
   const live = await prisma.project.findFirst({
     where: { id: projectId, deleted_at: null },
     select: { id: true },
@@ -97,8 +96,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     // The checks above ran outside it, so they are repeated as its first read.
     const result = await prisma.$transaction(
       async (tx) => {
-        if (!(await accessStillHolds(tx, user.id, projectId)))
-          return { kind: "not_found" } as const;
+        // MUTATION (do not merge): in-snapshot recheck removed
         return buildExport(tx, projectId, { exportedAt, appVersion: pkg.version, schemaMigration });
       },
       { isolationLevel: "RepeatableRead", timeout: 20_000 },
