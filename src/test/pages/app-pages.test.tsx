@@ -411,3 +411,32 @@ describe("Auth layout — brand h1 (Group B)", () => {
     expect(src).toContain("tracking-[-0.02em]");
   });
 });
+
+describe("Page file — export link (Group B)", () => {
+  it("DS-PAGE-FILE-35: dashboard/page.tsx renders export link when projectId exists", () => {
+    const src = readPage("dashboard/page.tsx");
+    expect(src).toContain("/api/projects/");
+    expect(src).toContain("/export");
+  });
+
+  it("DS-PAGE-FILE-36: dashboard/page.tsx shows retry message when projectId is absent", () => {
+    const src = readPage("dashboard/page.tsx");
+    expect(src).toContain("export.noProject");
+  });
+});
+
+describe("i18n — export strings (Group A)", () => {
+  it("DS-PAGE-APP-13: i18n key auth.dashboard.export.action exists in both de and en", async () => {
+    const de = await import("../../../messages/de.json");
+    const en = await import("../../../messages/en.json");
+    expect(de.default.auth.dashboard.export.action).toBeTruthy();
+    expect(en.default.auth.dashboard.export.action).toBeTruthy();
+  });
+
+  it("DS-PAGE-APP-14: i18n key auth.dashboard.export.help exists in both de and en", async () => {
+    const de = await import("../../../messages/de.json");
+    const en = await import("../../../messages/en.json");
+    expect(de.default.auth.dashboard.export.help).toBeTruthy();
+    expect(en.default.auth.dashboard.export.help).toBeTruthy();
+  });
+});
