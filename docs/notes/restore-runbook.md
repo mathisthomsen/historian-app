@@ -44,8 +44,10 @@ backups honour that. Procedure A (PITR) does restore whatever those tables held 
 
    If the answer is 10, delete a stale `ci-run-*` branch first (the CI job reaps them after 3 h).
 
-3. **Pick one known record** from production now, while it is healthy: a person's `id` that was
-   created well before the damage. You will look it up in the restored copy.
+3. **Write down what the incident touched**: the ids of the records that were deleted or wrongly
+   changed, and what their correct values should be, as far as you know them. Counts alone
+   cannot tell a good restore from one taken just after a bad edit. Also pick one record created
+   well before the damage, as a control.
 4. Connection strings carry the role password. Keep them in shell variables, not in files, chat
    or issues, and unset them when done.
 
@@ -65,13 +67,15 @@ row below records it.
    ```
 
 2. **Create a branch from production at that timestamp, with an endpoint.** **Unconfirmed:**
-   `parent_timestamp` (CI creates branches from a parent without it).
+   `parent_timestamp` (CI creates branches from a parent without it). The branch expires after
+   24 hours, the same safety net CI uses, so an interrupted session cannot leave a copy of
+   production behind.
 
    ```bash
    created="$(curl -sS --fail-with-body -X POST \
      -H "Authorization: Bearer $NEON_API_KEY" -H "Content-Type: application/json" \
-     -d "$(jq -nc --arg ts "$RESTORE_TS" \
-          '{branch:{name:("restore-pitr-"+$ts),parent_id:"br-old-grass-a9acitgb",parent_timestamp:$ts},
+     -d "$(jq -nc --arg ts "$RESTORE_TS" --arg exp "$(date -u -d '+24 hours' +%Y-%m-%dT%H:%M:%SZ)" \
+          '{branch:{name:("restore-pitr-"+$ts),parent_id:"br-old-grass-a9acitgb",parent_timestamp:$ts,expires_at:$exp},
             endpoints:[{type:"read_write"}]}')" \
      "$NEON_API/projects/$NEON_PROJECT_ID/branches")"
    BRANCH_ID="$(jq -r '.branch.id' <<<"$created")"
@@ -94,11 +98,23 @@ row below records it.
 4. **Verify** with the SQL in [Verifying a restore](#verifying-a-restore). Counts will differ
    from today's production by exactly the rows written after `RESTORE_TS`; that is the point.
 5. **Decide what to do with it** (owner's call, each **Unconfirmed**):
-   - **Copy rows back.** For a narrow loss (a deleted record, a bad bulk edit): `pg_dump` only the
-     affected tables from the restore branch and load them into production, after re-running
-     the identity query against production. This writes to production; do it in a transaction
-     and check `EntityActivity` and relation endpoints (relations carry no foreign keys) afterwards.
-   - **Point the app at the branch.** For wholesale loss: set `DATABASE_URL`,
+   - **Copy rows back.** For a narrow loss (a deleted record, a bad bulk edit). Never load a table
+     dump into production: it carries the whole table and collides with the rows already there.
+     Instead, stage and merge:
+     1. From the restore branch, export only the affected rows, for example
+        `\copy (select * from persons where id in (...)) to 'persons.csv' csv header`, and the same
+        for their dependants: `person_names`, `property_evidence`, and any `relations` and
+        `relation_evidence` that point at them (relations carry no foreign keys, so nothing
+        enforces that set).
+     2. On production, after the identity query, `begin;`, create `restore_staging` tables
+        `(like persons including all)` etc., and `\copy` the files into them.
+     3. Write the targeted `insert … on conflict (id) do update` (or plain `insert` for deleted rows),
+        compare the affected rows with the staging copy, then `commit;` and drop the staging tables.
+        Re-run the incident-specific checks from [Verifying a restore](#verifying-a-restore) on
+        production.
+   - **Point the app at the branch.** For wholesale loss: first remove the branch's 24-hour
+     expiry (`PATCH $NEON_API/projects/$NEON_PROJECT_ID/branches/$BRANCH_ID` with
+     `{"branch":{"expires_at":null}}`; check in the Neon console that it took), then set `DATABASE_URL`,
      `DATABASE_URL_UNPOOLED` in Vercel and `PRODUCTION_DATABASE_URL` in GitHub secrets to the
      new branch, then redeploy. **`backup-production.yml` will then refuse to run** until its
      `EXPECTED_BRANCH_ID` is changed to the new branch id; that guard is working as intended.
@@ -121,15 +137,18 @@ the age **private key file** held offline by the owner.
    the end.
 
    ```bash
-   age -d -i /path/to/age-private-key.txt -o backup.dump restore/evidoxa-YYYY-MM-DD.dump.age
+   umask 077                                   # every file created from here on is owner-only
+   mkdir -m 700 -p restore-work && cd restore-work
+   age -d -i /path/to/age-private-key.txt -o backup.dump ../restore/evidoxa-YYYY-MM-DD.dump.age
+   stat -c '%a %n' backup.dump                 # must print 600
    pg_restore --list backup.dump > /dev/null && echo readable
    ```
 
 3. **Create an empty branch.** Branching from `ci-base` (`br-morning-band-a9yuaa6k`) gives an
    empty database; `.github/workflows/ci.yml` documents it as an empty root branch with no
    schema, but check it yourself in the next step. Use the create call from Procedure A step 2
-   with `parent_id` set to that id and no `parent_timestamp`, name it `restore-dump-YYYY-MM-DD`,
-   then fetch `RESTORE_URL` as in step 3 there.
+   with `parent_id` set to that id and no `parent_timestamp` (keep the `expires_at`), name it
+   `restore-dump-YYYY-MM-DD`, then fetch `RESTORE_URL` as in step 3 there.
 
    ```bash
    psql "$RESTORE_URL" -tAc "select current_setting('neon.branch_id'), (select count(*) from pg_tables where schemaname = 'public')"
@@ -166,16 +185,25 @@ union all select 'events',    count(*), count(*) filter (where deleted_at is nul
 union all select 'sources',   count(*), count(*) filter (where deleted_at is null) from sources
 union all select 'relations', count(*), count(*) filter (where deleted_at is null) from relations;
 
--- the record you picked before you started
-select id, first_name, last_name, created_at, updated_at, deleted_at from persons where id = '<person id>';
+-- the records the incident touched: each must show its pre-incident state
+select id, first_name, last_name, notes, birth_date_certainty, created_at, updated_at, deleted_at
+from persons where id in ('<affected id>', '<…>');
+-- and their evidence and relations, where the incident could have reached them
+select * from property_evidence where entity_id in ('<affected id>', '<…>');
+select * from relations where from_id in ('<affected id>', '<…>') or to_id in ('<affected id>', '<…>');
+
+-- the control record, created well before the damage
+select id, first_name, last_name, created_at, updated_at, deleted_at from persons where id = '<control id>';
 
 -- Procedure B only: both must be 0
 select (select count(*) from access_requests) as access_requests, (select count(*) from invites) as invites;
 ```
 
-"Total" includes soft-deleted rows. The restore is verified when the counts match (Procedure A:
-production's, less the rows written after the timestamp; Procedure B: the manifest's) and the
-known record is identical, including `updated_at`.
+"Total" includes soft-deleted rows. The restore is verified when **the affected records show
+their pre-incident state** (with an `updated_at` before the incident) and the control record is
+identical. The counts are a sanity check on top (Procedure A: production's, less the rows written
+after the timestamp; Procedure B: the manifest's). Matching counts alone prove nothing about an
+edit, since an edit changes no count.
 
 ## Afterwards
 
