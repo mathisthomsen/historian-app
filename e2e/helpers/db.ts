@@ -430,12 +430,48 @@ export async function createTestUser(email: string, password: string): Promise<v
   }
 }
 
+/**
+ * How many `entity_activity` rows a project holds. Used to prove a read-only
+ * route (the project export, #139) writes none: the count is taken straight
+ * from Postgres, not from the route under test.
+ */
+export async function countTestEntityActivity(projectId: string): Promise<number> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    const res = await client.query<{ n: string }>(
+      "SELECT COUNT(*)::text AS n FROM entity_activity WHERE project_id = $1",
+      [projectId],
+    );
+    return Number(res.rows[0]?.n ?? 0);
+  } finally {
+    await client.end();
+  }
+}
+
 /** Deletes a test user by email (for cleanup after registration tests). */
 export async function deleteTestUser(email: string): Promise<void> {
   const client = getClient();
   await connectGuarded(client);
   try {
     await client.query("DELETE FROM users WHERE email = $1", [email.toLowerCase()]);
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Deletes test projects and, by cascade, every row they own. A user deletion
+ * removes only the membership: `Project` has no owner foreign key, so a
+ * spec that seeds data must delete its projects itself, before its users.
+ */
+export async function deleteTestProjects(ids: readonly string[]): Promise<void> {
+  const present = ids.filter((id) => id !== "");
+  if (present.length === 0) return;
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    await client.query("DELETE FROM projects WHERE id = ANY($1::text[])", [present]);
   } finally {
     await client.end();
   }

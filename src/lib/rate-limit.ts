@@ -34,10 +34,14 @@ function msToDuration(
 /**
  * Redis-backed sliding-window rate limiter via Upstash.
  *
- * Fails CLOSED: if Redis is unavailable the request is denied. Every caller is
- * an auth route, where failing open silently removes brute-force and
- * account-enumeration protection — the exact window an attacker wants (audit
- * S-M2). Redis health is surfaced via /api/health.
+ * `check()` itself always reports an unreachable Redis as `allowed: false,
+ * degraded: true`; what to do about it is the caller's decision. The auth
+ * routes go through `checkRateLimit`, which FAILS CLOSED (503): failing open
+ * there silently removes brute-force and account-enumeration protection — the
+ * exact window an attacker wants (audit S-M2). The project export (#139, D6)
+ * calls `check()` directly and fails OPEN, because its limit only guards cost
+ * and the membership check is its security boundary. Redis health is surfaced
+ * via /api/health.
  */
 export function createRedisRateLimiter(): RateLimiter {
   return {

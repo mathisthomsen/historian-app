@@ -125,7 +125,12 @@
     "dashboard": {
       "welcome": "Welcome, {name}!",
       "loggedIn": "You are signed in.",
-      "logout": "Sign out"
+      "logout": "Sign out",
+      "export": {
+        "action": "Export project",
+        "help": "All data in this project as a JSON file, including deleted entries.",
+        "noProject": "Your project could not be loaded. Reload the page to retry."
+      }
     },
     "strength": {
       "label": "Password strength",

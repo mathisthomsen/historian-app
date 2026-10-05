@@ -38,8 +38,8 @@ at once, so a scoping mistake leaks everything. Method, matching that risk:
 - **Completeness (E2):** a unit test over Prisma's DMMF (§5), not a hand-maintained list.
 - **Size (E5):** a preview deployment, not CI (above).
 - Unit tests mock Prisma; the `pnpm test` job has real Upstash credentials and no namespace
-  (`ci.yml:56–59`), so nothing here may reach `src/lib/redis.ts`. The rate limiter goes through
-  `checkRateLimit`, which refuses to build an un-namespaced key.
+  (`ci.yml:56–59`), so nothing here may reach `src/lib/redis.ts`. Unit tests mock `@/lib/rate-limit`;
+  the real limiter (`rateLimiter.check`) refuses to build an un-namespaced key.
 
 ---
 
@@ -100,23 +100,39 @@ Value rules — the issue's "structured values, not stringified blobs":
 ## 3. API — `GET /api/projects/[id]/export`
 
 1. `requireUser()` → none: 401 (the middleware already answers first; this is the second layer).
-2. `checkRateLimit("export:{userId}", 5, 10 min)` → 429.
+2. `rateLimiter.check("export:{userId}", 5, 10 min)`, called directly — not through `checkRateLimit`,
+   which stays fail-closed for the auth routes. → 429 `RATE_LIMITED` only when `!allowed && !degraded`.
+   **Degraded-open (D6):** when the limiter cannot reach Redis it reports `degraded`; the export then
+   proceeds and emits one `console.warn` carrying `userId` and `projectId`. It never answers 503: the
+   limit guards cost, the membership check below is the security boundary.
 3. `requireProjectMembership(user.id, id)` (any role, including VIEWER) **and** the project's
    `deleted_at` is null → otherwise **404** `NOT_FOUND`. The check precedes any read of project data.
 4. One `prisma.$transaction(async (tx) => …, { isolationLevel: "RepeatableRead", timeout: 20_000 })`:
-   - `count` every table first; total > **100 000 rows** → 413 `EXPORT_TOO_LARGE` (new code in
-     `ERROR_CODES`). ~140× the largest measured project (E4).
+   - `count` every table first, each with the same scope as its `findMany`; total > **100 000 rows**
+     → 413 `EXPORT_TOO_LARGE` (new code in `ERROR_CODES`) before any `findMany`. The message tells
+     the researcher to contact the operator (D5). ~140× the largest measured project (E4).
    - Then one `findMany` per table: direct tables `where: { project_id: id }`; `person_names`
      `where: { person: { project_id: id } }`; `relation_evidence` `where: { relation: { project_id: id } }`.
-5. Respond `200` with a `ReadableStream` that writes the document table by table, and headers:
+5. **Serialise fully, then stream (D7).** The complete document is serialised to UTF-8 bytes _before_
+   the `Response` exists, so a serialisation failure is a 5xx and no failure in our code can follow a
+   `200`. Those finished bytes are then streamed (`ReadableStream`, 64 KiB chunks) with `Content-Length`
+   equal to the byte length. Only a network or platform failure can truncate a `200`, and it shows as
+   a short body against `Content-Length`. A failure anywhere in step 4 or 5 is a bare 500 with no body.
+   Headers, exactly these four:
    - `Content-Type: application/json; charset=utf-8`
    - `Content-Disposition: attachment; filename="evidoxa-export-{slug(project.name)}-{YYYY-MM-DD}.json"`
-     (slug: lowercase ASCII, `[a-z0-9-]`, max 40, fallback `projekt`)
+     (slug: lowercase ASCII, `[a-z0-9-]`, max 40, fallback `projekt`; date in UTC)
    - `Cache-Control: no-store`
+   - `Content-Length: {bytes}`
 6. Log `console.info("[export]", { userId, projectId, rows })` — counts and ids, no content.
 
-`src/lib/export/project-export.ts` holds the table list and the query builder; the route only does
-steps 1–3 and 5.
+`export const maxDuration = 60` — serialising and streaming a large project can outlive the platform
+default.
+
+`src/lib/export/project-export.ts` holds the table list, the query builder, serialisation and the file
+name; the route does steps 1–3 and 5–6 and opens the step-4 transaction. `buildExport(tx, projectId,
+meta)` receives the transaction client and never imports the soft-delete-filtering `db` client (it would
+drop the rows X2 requires).
 
 ---
 
@@ -128,9 +144,13 @@ einschließlich gelöschter Einträge." It is a plain `<a href="/api/projects/{p
 styled as a button: the browser sends the cookie, the `Content-Disposition` header triggers the
 download, no client JS needed.
 
+When the project ID is absent (a transient database error during project provisioning), the link
+is not shown; instead, one line tells the user "Your project could not be loaded. Reload the page
+to retry." This re-runs the provisioning flow (`src/auth.ts:157` → `attachProjectId`).
+
 The settings area has no index page today, so the dashboard is the only place a researcher already
 lands. Errors (429, 413) arrive as a JSON body in a new tab; acceptable for v1 at these frequencies.
-Strings: `dashboard.export.{action, help}` in both locales.
+Strings: `auth.dashboard.export.{action, help, noProject}` in both locales.
 
 ---
 
