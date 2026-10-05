@@ -430,6 +430,25 @@ export async function createTestUser(email: string, password: string): Promise<v
   }
 }
 
+/**
+ * How many `entity_activity` rows a project holds. Used to prove a read-only
+ * route (the project export, #139) writes none: the count is taken straight
+ * from Postgres, not from the route under test.
+ */
+export async function countTestEntityActivity(projectId: string): Promise<number> {
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    const res = await client.query<{ n: string }>(
+      "SELECT COUNT(*)::text AS n FROM entity_activity WHERE project_id = $1",
+      [projectId],
+    );
+    return Number(res.rows[0]?.n ?? 0);
+  } finally {
+    await client.end();
+  }
+}
+
 /** Deletes a test user by email (for cleanup after registration tests). */
 export async function deleteTestUser(email: string): Promise<void> {
   const client = getClient();
