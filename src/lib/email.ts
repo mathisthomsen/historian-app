@@ -279,3 +279,51 @@ export async function sendInviteEmail(params: {
 
   await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html: htmlBody, text });
 }
+
+/**
+ * Sent when someone submits the public access-request form with an address that
+ * already has an account (#163). The submitter and the owner of the mailbox may
+ * be different people, so the mail carries NO text from the form: not the name,
+ * not any other field. It takes only the recipient and the locale on purpose.
+ *
+ * Links come from `AUTH_URL`. The caller throttles per recipient; this function
+ * does not.
+ */
+export async function sendExistingAccountNotice(params: {
+  to: string;
+  locale: string;
+}): Promise<void> {
+  const { to } = params;
+  const isDE = params.locale === "de";
+  // Only the two supported locales ever reach the path.
+  const loc = isDE ? "de" : "en";
+  const loginUrl = `${env.AUTH_URL}/${loc}/auth/login`;
+  const resetUrl = `${env.AUTH_URL}/${loc}/auth/forgot-password`;
+
+  const subject = isDE
+    ? "Ein Konto mit dieser E-Mail-Adresse existiert bereits"
+    : "An account with this email address already exists";
+  const body = isDE
+    ? "Ein Konto mit dieser E-Mail-Adresse existiert bereits bei Evidoxa. Sie können sich direkt anmelden oder Ihr Passwort zurücksetzen, falls Sie es vergessen haben."
+    : "An account with this email address already exists at Evidoxa. You can log in directly, or reset your password if you have forgotten it.";
+  const loginLabel = isDE ? "Anmelden" : "Log in";
+  const resetLabel = isDE ? "Passwort zurücksetzen" : "Reset password";
+  const ignore = isDE
+    ? "Falls Sie dies nicht angefragt haben, können Sie diese E-Mail ignorieren."
+    : "If you did not request this, you can ignore this email.";
+
+  // Every interpolation is escaped by `html`. Prettier would re-indent the markup and
+  // change the mail's whitespace, so it is told to leave the template alone.
+  // prettier-ignore
+  const htmlBody = html`<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+<p>${body}</p>
+<p><a href="${loginUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">${loginLabel}</a></p>
+<p><a href="${resetUrl}">${resetLabel}</a></p>
+<p>${ignore}</p>
+<p style="color:#888;font-size:12px">URL: ${loginUrl}</p>
+</body></html>`.toString();
+
+  const text = `${body}\n\n${loginLabel}: ${loginUrl}\n${resetLabel}: ${resetUrl}\n\n${ignore}`;
+
+  await sendEmail({ from: env.RESEND_FROM_EMAIL, to, subject, html: htmlBody, text });
+}

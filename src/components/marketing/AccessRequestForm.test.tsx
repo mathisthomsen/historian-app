@@ -253,6 +253,87 @@ describe("AccessRequestForm — submission", () => {
     submit();
     expect(await screen.findByText(de.success)).toBeInTheDocument();
   });
+
+  // #163: an existing account holder is told by email; the screen is the same for everyone.
+  it("de: shows 'Haben Sie bereits ein Konto?' with a primary Anmelden and a tertiary Passwort vergessen", async () => {
+    renderWithProviders(<AccessRequestForm locale="de" />);
+    fillValid();
+    submit();
+    await screen.findByText(de.success);
+
+    expect(de.existingAccount.prompt).toBe("Haben Sie bereits ein Konto?");
+    expect(screen.getByText(de.existingAccount.prompt)).toBeInTheDocument();
+
+    const login = screen.getByRole("link", { name: de.existingAccount.login });
+    expect(login).toHaveAttribute("href", "/de/auth/login");
+    // Primary = the default Button variant: filled with the primary colour.
+    expect(login).toHaveClass("bg-primary", "text-primary-foreground");
+
+    const forgot = screen.getByRole("link", { name: de.existingAccount.forgotPassword });
+    expect(forgot).toHaveAttribute("href", "/de/auth/forgot-password");
+    // Tertiary = the `link` variant: text only, no fill.
+    expect(forgot).toHaveClass("text-primary", "underline-offset-4");
+    expect(forgot).not.toHaveClass("bg-primary");
+  });
+
+  it("moves focus to the result, and the announced region includes the account hint (#164)", async () => {
+    renderWithProviders(<AccessRequestForm locale="de" />);
+    fillValid();
+    submit();
+    const message = await screen.findByText(de.success);
+
+    const region = message.closest('[role="status"]');
+    expect(region).not.toBeNull();
+    expect(region).toHaveFocus();
+    expect(region).toHaveTextContent(de.existingAccount.prompt);
+    expect(region).toContainElement(screen.getByRole("link", { name: de.existingAccount.login }));
+  });
+
+  it("en: shows 'Already have an account?' with Log in and Forgot password under /en/", async () => {
+    renderEn();
+    fireEvent.change(screen.getByLabelText(en.fields.name), { target: { value: "Ada Lovelace" } });
+    fireEvent.change(screen.getByLabelText(en.fields.email), {
+      target: { value: "ada@example.com" },
+    });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: enMessages.marketing.cta.action }));
+    await screen.findByText(en.success);
+
+    expect(screen.getByText("Already have an account?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/en/auth/login");
+    expect(screen.getByRole("link", { name: "Forgot password" })).toHaveAttribute(
+      "href",
+      "/en/auth/forgot-password",
+    );
+  });
+
+  it("shows the hint for every accepted submission, whatever the server did (no enumeration)", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("{}", { status: 200 }));
+    renderWithProviders(<AccessRequestForm locale="de" />);
+    fillValid();
+    submit();
+    await screen.findByText(de.success);
+    expect(screen.getByRole("link", { name: de.existingAccount.login })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: de.existingAccount.forgotPassword }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the hint before a submission or after a failed one", async () => {
+    renderWithProviders(<AccessRequestForm locale="de" />);
+    expect(screen.queryByText(de.existingAccount.prompt)).toBeNull();
+
+    vi.mocked(fetch).mockResolvedValue(new Response("{}", { status: 500 }));
+    fillValid();
+    submit();
+    await screen.findByRole("alert");
+    expect(screen.queryByText(de.existingAccount.prompt)).toBeNull();
+  });
+
+  it("the German copy addresses the reader as Sie", () => {
+    expect(de.existingAccount.prompt).toMatch(/\bSie\b/);
+    expect(JSON.stringify(de.existingAccount)).not.toMatch(/\b(du|dein|dir)\b/i);
+  });
 });
 
 describe("AccessRequestForm — failures keep the form and re-enable submit", () => {

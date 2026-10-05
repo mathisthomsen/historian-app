@@ -53,6 +53,14 @@ export function AccessRequestForm({ locale }: AccessRequestFormProps) {
   useEffect(() => {
     renderedAt.current = Date.now();
   }, []);
+  // The submit button that had focus is gone once the form is replaced, so
+  // focus moves to the result: keyboard and screen-reader users land on the
+  // message and the Log in / Forgot password controls rather than at the top
+  // of the page (#164).
+  const successRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (success) successRef.current?.focus();
+  }, [success]);
 
   // Built inside the component so the messages are translated (established pattern).
   const schema = z.object({
@@ -137,10 +145,31 @@ export function AccessRequestForm({ locale }: AccessRequestFormProps) {
 
         {success ? (
           <div
+            ref={successRef}
+            tabIndex={-1}
             role="status"
-            className="mx-auto mt-8 max-w-xl rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200"
+            className="mx-auto mt-8 max-w-xl outline-none"
           >
-            {t("success")}
+            <div className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
+              {t("success")}
+            </div>
+            {/*
+              Shown for EVERY accepted submission, never conditionally: the
+              server answers all cases alike (I5) and an address that already
+              has an account is told by email instead (#163). Showing this only
+              for some submissions would reveal which ones.
+            */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm">
+              <span>{t("existingAccount.prompt")}</span>
+              <Button asChild>
+                <Link href={`/${locale}/auth/login`}>{t("existingAccount.login")}</Link>
+              </Button>
+              <Button asChild variant="link">
+                <Link href={`/${locale}/auth/forgot-password`}>
+                  {t("existingAccount.forgotPassword")}
+                </Link>
+              </Button>
+            </div>
           </div>
         ) : (
           <form

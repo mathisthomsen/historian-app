@@ -665,6 +665,11 @@
     "retention": "Anfragen, über die nicht entschieden wird, werden nach 6 Stunden gelöscht.",
     "submitting": "Wird gesendet …",
     "success": "Danke. Wenn wir Sie einladen können, erhalten Sie in den nächsten Stunden eine E-Mail. Andernfalls wird Ihre Anfrage nach 6 Stunden gelöscht — Sie können sie jederzeit erneut stellen.",
+    "existingAccount": {
+      "prompt": "Haben Sie bereits ein Konto?",
+      "login": "Anmelden",
+      "forgotPassword": "Passwort vergessen"
+    },
     "errors": {
       "nameRequired": "Bitte einen Namen eingeben.",
       "nameTooLong": "Name ist zu lang (höchstens 100 Zeichen).",

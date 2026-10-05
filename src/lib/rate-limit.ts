@@ -48,7 +48,20 @@ export function createRedisRateLimiter(): RateLimiter {
           limiter: Ratelimit.slidingWindow(limit, msToDuration(windowMs)),
           prefix: rateLimitPrefix(),
         });
-        const { success, remaining, reset } = await limiter.limit(key);
+        const { success, remaining, reset, reason } = await limiter.limit(key);
+        // On a slow Redis the SDK does not throw: after its own timeout (5 s by
+        // default) it resolves `success: true` with `reason: "timeout"` and has
+        // counted nothing. Passing that through would fail OPEN for every
+        // caller, so it is a degraded result like any other outage (#164).
+        if (reason === "timeout") {
+          console.error("[rate-limit] limiter timed out, failing closed", { key });
+          return {
+            allowed: false,
+            remaining: 0,
+            resetAt: new Date(Date.now() + 60_000),
+            degraded: true,
+          };
+        }
         return { allowed: success, remaining, resetAt: new Date(reset), degraded: false };
       } catch (error) {
         console.error("[rate-limit] limiter unavailable, failing closed", { key, error });
@@ -64,6 +77,49 @@ export function createRedisRateLimiter(): RateLimiter {
 }
 
 export const rateLimiter: RateLimiter = createRedisRateLimiter();
+
+export interface ClaimResult {
+  /** True when this call took the claim; false when it was already held. */
+  claimed: boolean;
+  /** True when Redis could not be asked. The claim is then not taken. */
+  degraded: boolean;
+}
+
+/**
+ * At most once per `ttlMs` for `key`, strictly: a `SET NX PX` in the rate-limit
+ * namespace. The sliding-window limiter cannot do this for a limit of 1, because
+ * it rounds the previous window's single use down to 0 right after a window
+ * boundary (`math.floor` in `@upstash/ratelimit`'s script, measured on 2.0.8),
+ * which would let a second use through minutes after the first (#164).
+ *
+ * Fails closed: an error or a reply slower than `timeoutMs` claims nothing.
+ */
+export async function claimOnce(
+  key: string,
+  ttlMs: number,
+  timeoutMs = 5_000,
+): Promise<ClaimResult> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timedOut = new Promise<"timeout">((resolve) => {
+      timer = setTimeout(() => resolve("timeout"), timeoutMs);
+    });
+    const reply = await Promise.race([
+      redis.set(`${rateLimitPrefix()}:once:${key}`, "1", { nx: true, px: ttlMs }),
+      timedOut,
+    ]);
+    if (reply === "timeout") {
+      console.error("[rate-limit] claim timed out, failing closed", { key });
+      return { claimed: false, degraded: true };
+    }
+    return { claimed: reply === "OK", degraded: false };
+  } catch (error) {
+    console.error("[rate-limit] claim unavailable, failing closed", { key, error });
+    return { claimed: false, degraded: true };
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
 
 /**
  * Drop-in helper for API routes. Returns a 429 NextResponse if rate limited,

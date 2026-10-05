@@ -194,7 +194,27 @@ Order, each step required:
 4. **Trap:** `company` non-empty, or `Date.now() - rendered_at < 2000` → return the 200 body, write
    nothing, send nothing. (Validated in code, not by Zod, so a bot filling it gets success rather
    than a field error telling it which field to leave blank.)
-5. If a `User` with this email exists → 200, write nothing, send nothing.
+5. If a `User` with this email exists → 200, write nothing, no operator notification.
+
+   _Amended 2026-10-05 (owner, #163):_ the person behind an existing account is helped without
+   revealing, to anyone else, that the account exists. Four parts:
+   - **Screen.** The success state of the form carries one extra line for every accepted
+     submission, never conditionally: "Already have an account?" with a primary "Log in"
+     (`/{locale}/auth/login`) and a tertiary "Forgot password" (`/{locale}/auth/forgot-password`).
+     German: "Haben Sie bereits ein Konto?" / "Anmelden" / "Passwort vergessen".
+   - **Email.** Only for an existing account, scheduled with `after()` like the operator
+     notification (step 8), in the request's locale: `sendExistingAccountNotice` says an account
+     with this address already exists and links to log in and to reset the password (both under
+     `AUTH_URL`), and that the mail can be ignored if the recipient did not request it. It carries
+     **no text from the form**: the typed name is a stranger's input bound for someone else's
+     mailbox.
+   - **Throttle.** At most one such notice per address per 24 h, via `rateLimiter.check` on
+     `access-request:existing-notice:{sha256(lowercased email)}` (limit 1, window 24 h), checked
+     inside `after()`. A degraded or unavailable limiter sends nothing (fails closed for the
+     email). Failures are logged without the address.
+   - **Response unchanged.** Status, headers and body stay byte-identical to a new request, an
+     existing `PENDING` request and the trap (I5). A test asserts this across those cases.
+
 6. `sanitize()` every free-text field.
 7. If this email's row is expired (§4.6), delete it first and treat the request as new. Then upsert
    by email:

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import type * as NextServer from "next/server";
 import { NextResponse } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   updateRequest: vi.fn(),
   deleteManyRequests: vi.fn(),
   notify: vi.fn(),
+  sendNotice: vi.fn(),
+  throttleCheck: vi.fn(),
   isExpired: vi.fn(),
   // Callbacks handed to next/server's `after()`, in scheduling order.
   afterTasks: [] as Array<() => unknown>,
@@ -41,8 +45,14 @@ vi.mock("@/lib/db", () => ({
     },
   },
 }));
-vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: mocks.checkRateLimit }));
-vi.mock("@/lib/email", () => ({ sendAccessRequestNotification: mocks.notify }));
+vi.mock("@/lib/rate-limit", () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  claimOnce: mocks.throttleCheck,
+}));
+vi.mock("@/lib/email", () => ({
+  sendAccessRequestNotification: mocks.notify,
+  sendExistingAccountNotice: mocks.sendNotice,
+}));
 vi.mock("@/lib/access-retention", async (importOriginal) => {
   const actual = await importOriginal<typeof Retention>();
   return { ...actual, isExpired: mocks.isExpired };
@@ -146,6 +156,8 @@ beforeEach(() => {
   mocks.updateRequest.mockResolvedValue({ ...created, id: "req_existing" });
   mocks.deleteManyRequests.mockResolvedValue({ count: 1 });
   mocks.notify.mockResolvedValue(undefined);
+  mocks.sendNotice.mockResolvedValue(undefined);
+  mocks.throttleCheck.mockResolvedValue({ claimed: true, degraded: false });
 });
 
 afterEach(() => {
@@ -572,6 +584,209 @@ describe("§4.1 step 7 — upsert branches", () => {
   });
 });
 
+// #163: an address that already has an account is told by email, never on screen.
+describe("existing account notice (#163)", () => {
+  const EMAIL_HASH = createHash("sha256").update("ada@example.com").digest("hex");
+
+  /** Status, every header and the raw body: all that a caller can observe. */
+  async function observable(res: Response) {
+    return {
+      status: res.status,
+      headers: [...res.headers.entries()].sort(([a], [b]) => a.localeCompare(b)),
+      body: await res.text(),
+    };
+  }
+
+  it("answers byte-identically for a new request, an existing PENDING request, an existing user and a trap", async () => {
+    const fresh = await observable(await post());
+
+    mocks.findRequest.mockResolvedValueOnce(row());
+    const pending = await observable(await post());
+
+    mocks.findUser.mockResolvedValueOnce({ id: "user_1" });
+    const existingUser = await observable(await post());
+
+    const trap = await observable(await post({ company: "Acme" }));
+
+    expect(fresh.status).toBe(200);
+    expect(fresh.body).toBe(JSON.stringify({ ok: true }));
+    expect(fresh.headers.length).toBeGreaterThan(0);
+    expect(pending).toEqual(fresh);
+    expect(existingUser).toEqual(fresh);
+    expect(trap).toEqual(fresh);
+  });
+
+  it("the existing-user response does not depend on whether the notice is sent, throttled or failing", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    const sent = await observable(await post());
+
+    mocks.throttleCheck.mockResolvedValueOnce({ claimed: false, degraded: false });
+    const throttled = await observable(await post());
+
+    mocks.throttleCheck.mockResolvedValueOnce({ claimed: false, degraded: true });
+    const degraded = await observable(await post());
+
+    mocks.sendNotice.mockRejectedValueOnce(new Error("provider down"));
+    const failing = await observable(await post());
+
+    mocks.throttleCheck.mockRejectedValueOnce(new Error("redis exploded"));
+    const throwing = await observable(await post());
+
+    expect(sent.status).toBe(200);
+    for (const other of [throttled, degraded, failing, throwing]) expect(other).toEqual(sent);
+  });
+
+  it("schedules the notice for an existing account, to that address and in the request's locale", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+
+    await post({ locale: "en" });
+
+    expect(mocks.sendNotice).toHaveBeenCalledTimes(1);
+    expect(mocks.sendNotice).toHaveBeenCalledWith({ to: "ada@example.com", locale: "en" });
+  });
+
+  it("creates no access request and sends no operator notification for an existing account", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+
+    await post();
+
+    expect(mocks.findRequest).not.toHaveBeenCalled();
+    expect(mocks.createRequest).not.toHaveBeenCalled();
+    expect(mocks.updateRequest).not.toHaveBeenCalled();
+    expect(mocks.deleteManyRequests).not.toHaveBeenCalled();
+    expect(mocks.notify).not.toHaveBeenCalled();
+  });
+
+  it("does not hand the typed name, or any other form field, to the notice", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+
+    await post({ name: "Mallory <b>Stranger</b>", institution: "Evil Corp", tool_gap: "pwn" });
+
+    const args = JSON.stringify(mocks.sendNotice.mock.calls);
+    expect(args).not.toMatch(/Mallory|Evil Corp|pwn/);
+  });
+
+  it("is sent after the response, not before it", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+
+    const res = await POST(makeRequest(validBody()));
+
+    expect(res.status).toBe(200);
+    expect(mocks.sendNotice).not.toHaveBeenCalled();
+    expect(mocks.throttleCheck).not.toHaveBeenCalled();
+    await runAfterTasks();
+    expect(mocks.sendNotice).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not wait on a notice that never settles", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    mocks.sendNotice.mockReturnValue(new Promise(() => {}));
+
+    const res = await POST(makeRequest(validBody()));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+  });
+
+  it("throttles per recipient: one notice per 24 h, keyed on the hash of the lowercased address", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    // A stateful stand-in for the claim: the first call takes it, every later
+    // one within its lifetime does not.
+    const seen = new Set<string>();
+    mocks.throttleCheck.mockImplementation(async (key: string) => {
+      const allowed = !seen.has(key);
+      seen.add(key);
+      return { claimed: allowed, degraded: false };
+    });
+
+    const first = await observable(await post());
+    const second = await observable(await post());
+    const third = await observable(await post({ email: "  ADA@Example.COM " }));
+
+    expect(mocks.throttleCheck).toHaveBeenCalledTimes(3);
+    for (const call of mocks.throttleCheck.mock.calls) {
+      expect(call).toEqual([`access-request:existing-notice:${EMAIL_HASH}`, 24 * HOUR]);
+    }
+    expect(mocks.sendNotice).toHaveBeenCalledTimes(1);
+    expect(second).toEqual(first);
+    expect(third).toEqual(first);
+  });
+
+  it("a different address has its own bucket", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    const seen = new Set<string>();
+    mocks.throttleCheck.mockImplementation(async (key: string) => {
+      const allowed = !seen.has(key);
+      seen.add(key);
+      return { claimed: allowed, degraded: false };
+    });
+
+    await post();
+    await post({ email: "grace@example.com" });
+
+    expect(mocks.sendNotice).toHaveBeenCalledTimes(2);
+  });
+
+  it("never puts the raw address in the key", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+
+    await post();
+
+    expect(JSON.stringify(mocks.throttleCheck.mock.calls)).not.toContain("ada");
+  });
+
+  it("sends nothing when the limiter is degraded (fails closed for the email)", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    mocks.throttleCheck.mockResolvedValue({ claimed: false, degraded: true });
+
+    const res = await post();
+
+    expect(mocks.throttleCheck).toHaveBeenCalledTimes(1);
+    expect(mocks.sendNotice).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+  });
+
+  it("sends nothing when the limiter throws", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    mocks.throttleCheck.mockRejectedValue(new Error("redis exploded"));
+
+    await post();
+
+    expect(mocks.sendNotice).not.toHaveBeenCalled();
+  });
+
+  it("a failing send is caught and logged without the address", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    mocks.sendNotice.mockRejectedValue(new Error("550 ada@example.com rejected"));
+
+    const res = await post();
+
+    expect(res.status).toBe(200);
+    expect(logged()).toContain("existing-account notice failed");
+    expect(logged()).not.toMatch(/ada|example\.com|Lovelace/);
+  });
+
+  it("logs nothing that identifies the address when the notice is skipped", async () => {
+    mocks.findUser.mockResolvedValue({ id: "user_1" });
+    mocks.throttleCheck.mockResolvedValue({ claimed: false, degraded: false });
+
+    await post();
+
+    expect(logged()).not.toMatch(/ada|example\.com|Lovelace/);
+    expect(logged()).not.toContain(EMAIL_HASH);
+  });
+
+  it("a trap and an existing request send no notice", async () => {
+    await post({ company: "Acme" });
+    mocks.findRequest.mockResolvedValueOnce(row());
+    await post();
+
+    expect(mocks.sendNotice).not.toHaveBeenCalled();
+    expect(mocks.throttleCheck).not.toHaveBeenCalled();
+  });
+});
+
 describe("create race (Q6)", () => {
   it("treats P2002 on create as an existing PENDING row: uniform 200, no notification", async () => {
     mocks.createRequest.mockRejectedValue(
@@ -619,10 +834,14 @@ describe("the notification is off the response path (no timing side channel)", (
     expect(await res.json()).toEqual({ ok: true });
   });
 
-  it("an existing account schedules nothing", async () => {
+  it("an existing account schedules exactly one task: the existing-account notice, not the operator notification", async () => {
     mocks.findUser.mockResolvedValue({ id: "user_1" });
     await POST(makeRequest(validBody()));
-    expect(scheduled()).toBe(0);
+    expect(scheduled()).toBe(1);
+    expect(mocks.sendNotice).not.toHaveBeenCalled();
+    await runAfterTasks();
+    expect(mocks.sendNotice).toHaveBeenCalledTimes(1);
+    expect(mocks.notify).not.toHaveBeenCalled();
   });
 
   it("a trap (honeypot) schedules nothing", async () => {
