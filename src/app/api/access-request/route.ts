@@ -1,14 +1,17 @@
+import { createHash } from "node:crypto";
+
 import { after, type NextResponse } from "next/server";
 import { z } from "zod";
 
 import { isExpired } from "@/lib/access-retention";
 import { json, jsonError, parseJsonBody } from "@/lib/api";
 import { prisma } from "@/lib/db";
-import { sendAccessRequestNotification } from "@/lib/email";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { sendAccessRequestNotification, sendExistingAccountNotice } from "@/lib/email";
+import { checkRateLimit, rateLimiter } from "@/lib/rate-limit";
 import { anonymizeIp } from "@/lib/security";
 
 const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
 /** A form submitted sooner than this after it mounted was not filled in by a person (§4.1 step 4). */
 const MIN_FILL_TIME_MS = 2_000;
 
@@ -47,6 +50,33 @@ const accessRequestSchema = z.object({
  */
 function accepted(): NextResponse {
   return json({ ok: true });
+}
+
+/**
+ * Tells an existing account holder, by email, that the address already has an
+ * account (#163). Runs inside `after()`: nothing here may change the response,
+ * and the mail call's latency must not be observable (I5).
+ *
+ * At most one notice per address per 24 h, so the public form cannot be used to
+ * flood a registered mailbox. The bucket is keyed on a hash of the normalised
+ * address, never the address. It fails CLOSED: a limiter that cannot count
+ * (`degraded`) reports `allowed: false`, and then nothing is sent. Nothing
+ * logged here identifies the address.
+ */
+async function noticeExistingAccount(email: string, locale: "de" | "en"): Promise<void> {
+  try {
+    const digest = createHash("sha256").update(email).digest("hex");
+    const verdict = await rateLimiter.check(`access-request:existing-notice:${digest}`, 1, DAY_MS);
+    if (!verdict.allowed) {
+      console.info("[access-request] existing-account notice skipped", {
+        reason: verdict.degraded ? "limiter-degraded" : "throttled",
+      });
+      return;
+    }
+    await sendExistingAccountNotice({ to: email, locale });
+  } catch {
+    console.error("[access-request] existing-account notice failed");
+  }
 }
 
 /** `P2002` on `access_requests.email` — the unique constraint's only non-id column (Q6). */
@@ -125,12 +155,21 @@ export async function POST(request: Request): Promise<NextResponse> {
   // addresses would reveal which ones have accounts (I5). The text is stored as
   // typed (#150), so markup is not "nothing" and no second check is needed.
 
-  // Step 5 — an address that already has an account: same body, nothing written.
+  // Step 5 — an address that already has an account: same body, nothing written,
+  // no operator notification. The holder is told by email instead (#163), after
+  // the response, so neither the body nor the timing differs from a new request
+  // and the screen can stay the same for everyone (I5). The name typed into the
+  // form is deliberately not passed on: it is a stranger's text bound for
+  // someone else's mailbox.
   const existingUser = await prisma.user.findUnique({
     where: { email: data.email },
     select: { id: true },
   });
-  if (existingUser) return accepted();
+  if (existingUser) {
+    const { email, locale } = data;
+    after(() => noticeExistingAccount(email, locale));
+    return accepted();
+  }
 
   // Step 6 — stranger-supplied text is stored exactly as typed, trimmed by
   // the schema and nothing else (#150, docs/specs/150-plain-text-storage/plan.md).

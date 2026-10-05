@@ -132,6 +132,15 @@ test.describe("Request access through the landing form", () => {
     await expect(page.getByText(ACCESS_SUCCESS)).toBeVisible({ timeout: 10_000 });
     // The form is replaced by the message; nothing in the page says what happened to the address.
     await expect(page.locator("#access-email")).toHaveCount(0);
+    // #163: every accepted submission shows the same "already have an account" line.
+    await expect(page.getByText("Haben Sie bereits ein Konto?")).toBeVisible();
+    await expect(page.locator("#access").getByRole("link", { name: "Anmelden" })).toHaveAttribute(
+      "href",
+      "/de/auth/login",
+    );
+    await expect(
+      page.locator("#access").getByRole("link", { name: "Passwort vergessen" }),
+    ).toHaveAttribute("href", "/de/auth/forgot-password");
 
     const row = await getTestAccessRequest(email);
     expect(row?.status).toBe("PENDING");

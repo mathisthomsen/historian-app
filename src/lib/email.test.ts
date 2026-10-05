@@ -620,6 +620,121 @@ describe("sendInviteEmail", () => {
   });
 });
 
+// #163: told to the holder of an address that already has an account, when a
+// stranger submits the access form with it. The real template runs.
+describe("sendExistingAccountNotice", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.useRealTimers();
+    testEnv.AUTH_URL = "http://localhost:3000";
+    testEnv.EMAIL_TRANSPORT = "resend";
+    mockResend.mockClear();
+    mockSend.mockClear();
+    mockSend.mockResolvedValue({ data: { id: "test-id" }, error: null });
+  });
+
+  it("sends the German notice (Sie) with login and reset links under AUTH_URL", async () => {
+    const email = await loadEmail();
+    await email.sendExistingAccountNotice({ to: "ada@example.org", locale: "de" });
+
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const sent = sentMessages()[0];
+    const login = "http://localhost:3000/de/auth/login";
+    const reset = "http://localhost:3000/de/auth/forgot-password";
+    expect(sent?.to).toBe("ada@example.org");
+    expect(sent?.subject).toBe("Ein Konto mit dieser E-Mail-Adresse existiert bereits");
+    expect(sent?.html).toContain(`href="${login}"`);
+    expect(sent?.html).toContain(`href="${reset}"`);
+    expect(sent?.html).toContain(">Anmelden</a>");
+    expect(sent?.html).toContain(">Passwort zurücksetzen</a>");
+    expect(sent?.text).toContain(`Anmelden: ${login}`);
+    expect(sent?.text).toContain(`Passwort zurücksetzen: ${reset}`);
+    expect(sent?.text).toContain("Ein Konto mit dieser E-Mail-Adresse existiert bereits");
+    expect(sent?.text).toContain("Sie können sich direkt anmelden");
+    expect(sent?.text).toContain(
+      "Falls Sie dies nicht angefragt haben, können Sie diese E-Mail ignorieren.",
+    );
+    expect(sent?.html).toContain("können Sie diese E-Mail ignorieren");
+    expect(sent?.text).not.toMatch(/\b(du|dein|dir)\b/i);
+  });
+
+  it("sends the English notice with /en/ links", async () => {
+    const email = await loadEmail();
+    await email.sendExistingAccountNotice({ to: "ada@example.org", locale: "en" });
+
+    const sent = sentMessages()[0];
+    const login = "http://localhost:3000/en/auth/login";
+    const reset = "http://localhost:3000/en/auth/forgot-password";
+    expect(sent?.subject).toBe("An account with this email address already exists");
+    expect(sent?.html).toContain(`href="${login}"`);
+    expect(sent?.html).toContain(`href="${reset}"`);
+    expect(sent?.html).toContain(">Log in</a>");
+    expect(sent?.html).toContain(">Reset password</a>");
+    expect(sent?.text).toContain(`Log in: ${login}`);
+    expect(sent?.text).toContain(`Reset password: ${reset}`);
+    expect(sent?.text).toContain("If you did not request this, you can ignore this email.");
+  });
+
+  it("builds the links from AUTH_URL, not NEXT_PUBLIC_APP_URL (D5)", async () => {
+    testEnv.AUTH_URL = "http://localhost:4000";
+    const email = await loadEmail();
+    await email.sendExistingAccountNotice({ to: "ada@example.org", locale: "en" });
+
+    const sent = sentMessages()[0];
+    expect(sent?.html).toContain('href="http://localhost:4000/en/auth/login"');
+    expect(sent?.html).not.toContain("app-url.example");
+    expect(sent?.text).not.toContain("app-url.example");
+  });
+
+  it("never puts a locale outside de/en into the link path", async () => {
+    const email = await loadEmail();
+    await email.sendExistingAccountNotice({ to: "a@example.org", locale: "../../evil" });
+
+    const sent = sentMessages()[0];
+    expect(sent?.html).toContain('href="http://localhost:3000/en/auth/login"');
+    expect(sent?.html).not.toContain("evil");
+  });
+
+  it("carries nothing from the form: a stranger's name is not part of the mail", async () => {
+    // The function does not accept a name. Even if a caller smuggled one in, it
+    // must not surface: the output is the same bytes with or without it.
+    const email = await loadEmail();
+    await email.sendExistingAccountNotice({ to: "a@example.org", locale: "de" });
+    const plain = sentMessages()[0];
+    mockSend.mockClear();
+
+    const NAME = "Mallory <script>alert(1)</script> Stranger";
+    await email.sendExistingAccountNotice({
+      to: "a@example.org",
+      locale: "de",
+      name: NAME,
+    } as Parameters<typeof email.sendExistingAccountNotice>[0]);
+
+    const sent = sentMessages()[0];
+    expect(sent?.html).not.toContain("Mallory");
+    expect(sent?.text).not.toContain("Mallory");
+    expect(sent?.subject).not.toContain("Mallory");
+    expect(sent?.html).toBe(plain?.html);
+    expect(sent?.text).toBe(plain?.text);
+    expect(sent?.subject).toBe(plain?.subject);
+  });
+
+  it("does not construct Resend with the local stub transport", async () => {
+    testEnv.EMAIL_TRANSPORT = "stub";
+    const email = await loadEmail();
+    await email.sendExistingAccountNotice({ to: "a@example.org", locale: "de" });
+    expect(mockResend).not.toHaveBeenCalled();
+  });
+
+  it("rejects when delivery fails, so the caller can log it", async () => {
+    mockSend.mockResolvedValue({ data: null, error: { message: "provider down" } });
+    const email = await loadEmail();
+    await expect(
+      email.sendExistingAccountNotice({ to: "a@example.org", locale: "de" }),
+    ).rejects.toThrow("provider down");
+  });
+});
+
 // Escaping contract (docs/specs/150-plain-text-storage/plan.md, T2): the HTML part
 // escapes every interpolation, callers pass RAW text, and the plain-text part and
 // the subject stay verbatim. The real templates run; only Resend, env, Prisma and

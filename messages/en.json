@@ -665,6 +665,11 @@
     "retention": "Requests that are not decided are deleted after 6 hours.",
     "submitting": "Sending …",
     "success": "Thank you. If we can invite you, you will receive an email within the next few hours. Otherwise your request is deleted after 6 hours — you can submit it again at any time.",
+    "existingAccount": {
+      "prompt": "Already have an account?",
+      "login": "Log in",
+      "forgotPassword": "Forgot password"
+    },
     "errors": {
       "nameRequired": "Please enter a name.",
       "nameTooLong": "Name is too long (at most 100 characters).",

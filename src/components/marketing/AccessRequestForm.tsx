@@ -136,11 +136,30 @@ export function AccessRequestForm({ locale }: AccessRequestFormProps) {
         </div>
 
         {success ? (
-          <div
-            role="status"
-            className="mx-auto mt-8 max-w-xl rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200"
-          >
-            {t("success")}
+          <div className="mx-auto mt-8 max-w-xl">
+            <div
+              role="status"
+              className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-200"
+            >
+              {t("success")}
+            </div>
+            {/*
+              Shown for EVERY accepted submission, never conditionally: the
+              server answers all cases alike (I5) and an address that already
+              has an account is told by email instead (#163). Showing this only
+              for some submissions would reveal which ones.
+            */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm">
+              <span>{t("existingAccount.prompt")}</span>
+              <Button asChild>
+                <Link href={`/${locale}/auth/login`}>{t("existingAccount.login")}</Link>
+              </Button>
+              <Button asChild variant="link">
+                <Link href={`/${locale}/auth/forgot-password`}>
+                  {t("existingAccount.forgotPassword")}
+                </Link>
+              </Button>
+            </div>
           </div>
         ) : (
           <form
