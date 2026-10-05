@@ -13,6 +13,7 @@ import {
   resetRateLimits,
   countTestEntityActivity,
   createTestUser,
+  deleteTestProjects,
   deleteTestUser,
 } from "./helpers/db";
 
@@ -254,6 +255,8 @@ test.beforeAll(async ({ browser }) => {
 test.afterAll(async () => {
   await contextA?.close();
   await contextB?.close();
+  // Projects first: deleting a user removes only the membership (#165 review).
+  await deleteTestProjects([projectA, projectB]);
   await deleteTestUser(emailA);
   await deleteTestUser(emailB);
 });

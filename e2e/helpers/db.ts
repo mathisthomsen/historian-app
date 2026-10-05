@@ -460,6 +460,23 @@ export async function deleteTestUser(email: string): Promise<void> {
   }
 }
 
+/**
+ * Deletes test projects and, by cascade, every row they own. A user deletion
+ * removes only the membership: `Project` has no owner foreign key, so a
+ * spec that seeds data must delete its projects itself, before its users.
+ */
+export async function deleteTestProjects(ids: readonly string[]): Promise<void> {
+  const present = ids.filter((id) => id !== "");
+  if (present.length === 0) return;
+  const client = getClient();
+  await connectGuarded(client);
+  try {
+    await client.query("DELETE FROM projects WHERE id = ANY($1::text[])", [present]);
+  } finally {
+    await client.end();
+  }
+}
+
 /** Marks a user's email as verified (for login tests). */
 export async function verifyUserEmail(email: string): Promise<void> {
   const client = getClient();

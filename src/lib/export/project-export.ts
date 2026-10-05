@@ -106,6 +106,31 @@ interface Delegate {
 }
 
 /**
+ * Rechecks, inside the export's snapshot, what the route checked just before
+ * it: the caller is still a member (any role) and the project is not
+ * soft-deleted. The route's own check runs outside the transaction, so a
+ * membership revoked or a project deleted in between would otherwise still be
+ * exported (#165 review). Run it as the first read in the transaction, so it
+ * sees the same snapshot as every row that follows.
+ */
+export async function accessStillHolds(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  projectId: string,
+): Promise<boolean> {
+  const membership = await tx.userProject.findFirst({
+    where: { user_id: userId, project_id: projectId },
+    select: { id: true },
+  });
+  if (!membership) return false;
+  const live = await tx.project.findFirst({
+    where: { id: projectId, deleted_at: null },
+    select: { id: true },
+  });
+  return live !== null;
+}
+
+/**
  * Reads the whole project through `tx`. The caller opens the transaction
  * (`REPEATABLE READ`) and has already checked membership.
  *
@@ -118,11 +143,27 @@ export async function buildExport(
   projectId: string,
   meta: ExportMeta,
 ): Promise<BuildExportResult> {
-  const project = await tx.project.findUnique({
+  const row = await tx.project.findUnique({
     where: { id: projectId },
-    select: { id: true, name: true, description: true, created_at: true, updated_at: true },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
   });
-  if (!project) return { kind: "not_found" };
+  // Soft-deleted inside the snapshot counts as gone (#165 review): the route's
+  // check ran before the snapshot began.
+  if (!row || row.deleted_at) return { kind: "not_found" };
+  const project = {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
 
   const delegates = tx as unknown as Record<string, Delegate>;
 

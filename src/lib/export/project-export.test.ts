@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  accessStillHolds,
   EXPORT_ROW_CAP,
   EXPORT_TABLES,
   buildExport,
@@ -232,6 +233,15 @@ describe("buildExport queries", () => {
     expect(calls.filter((c) => c.op === "findMany")).toHaveLength(0);
   });
 
+  it("reports not_found when the project is soft-deleted in the snapshot, before reading any table", async () => {
+    const { tx, calls } = makeTx();
+    (tx as unknown as { project: { findUnique: ReturnType<typeof vi.fn> } }).project.findUnique =
+      vi.fn(async () => ({ id: PROJECT_ID, name: "P", deleted_at: new Date() }));
+    const result = await buildExport(tx, PROJECT_ID, META);
+    expect(result.kind).toBe("not_found");
+    expect(calls).toHaveLength(0);
+  });
+
   it("reports not_found when the project row is gone, before reading any table", async () => {
     const { tx, calls } = makeTx();
     (tx as unknown as { project: { findUnique: ReturnType<typeof vi.fn> } }).project.findUnique =
@@ -414,5 +424,47 @@ describe("P3: the export module never reads through the soft-delete-filtering cl
   it("does not import the raw redis client or the global prisma", () => {
     expect(source).not.toMatch(/lib\/redis/);
     expect(source).not.toMatch(/new PrismaClient/);
+  });
+});
+
+describe("accessStillHolds (#165 review)", () => {
+  function makeAccessTx(member: boolean, live: boolean) {
+    const calls: { model: string; args: unknown }[] = [];
+    const tx = {
+      userProject: {
+        findFirst: vi.fn(async (args: unknown) => {
+          calls.push({ model: "userProject", args });
+          return member ? { id: "m" } : null;
+        }),
+      },
+      project: {
+        findFirst: vi.fn(async (args: unknown) => {
+          calls.push({ model: "project", args });
+          return live ? { id: PROJECT_ID } : null;
+        }),
+      },
+    } as unknown as Prisma.TransactionClient;
+    return { tx, calls };
+  }
+
+  it("holds for a member of a live project, checked by user and project", async () => {
+    const { tx, calls } = makeAccessTx(true, true);
+    expect(await accessStillHolds(tx, "user_1", PROJECT_ID)).toBe(true);
+    expect(calls[0]).toEqual({
+      model: "userProject",
+      args: { where: { user_id: "user_1", project_id: PROJECT_ID }, select: { id: true } },
+    });
+    expect(calls[1]).toEqual({
+      model: "project",
+      args: { where: { id: PROJECT_ID, deleted_at: null }, select: { id: true } },
+    });
+  });
+
+  it("fails once the membership is gone", async () => {
+    expect(await accessStillHolds(makeAccessTx(false, true).tx, "user_1", PROJECT_ID)).toBe(false);
+  });
+
+  it("fails once the project is soft-deleted", async () => {
+    expect(await accessStillHolds(makeAccessTx(true, false).tx, "user_1", PROJECT_ID)).toBe(false);
   });
 });

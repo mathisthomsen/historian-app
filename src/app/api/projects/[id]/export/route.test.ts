@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   getLatestMigration: vi.fn(),
   rateCheck: vi.fn(),
   buildExport: vi.fn(),
+  accessStillHolds: vi.fn(),
 }));
 
 vi.mock("@/lib/auth-guard", () => ({ requireUser: mocks.requireUser }));
@@ -34,6 +35,7 @@ vi.mock("@/lib/rate-limit", () => ({ rateLimiter: { check: mocks.rateCheck } }))
 vi.mock("@/lib/export/project-export", async (importOriginal) => ({
   ...(await importOriginal<typeof ExportModule>()),
   buildExport: mocks.buildExport,
+  accessStillHolds: mocks.accessStillHolds,
 }));
 
 import { GET, maxDuration } from "./route";
@@ -105,6 +107,7 @@ beforeEach(() => {
   mocks.getLatestMigration.mockResolvedValue("20261001000000_example");
   mocks.transaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => cb(TX));
   mocks.buildExport.mockResolvedValue(ok());
+  mocks.accessStillHolds.mockResolvedValue(true);
   vi.spyOn(console, "info").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
@@ -265,6 +268,43 @@ describe("GET /api/projects/[id]/export", () => {
       const res = await call("proj_victim");
       expect(res.status).toBe(404);
       expect(await res.text()).toBe(first.body);
+    });
+  });
+
+  describe("access rechecked inside the snapshot (#165 review)", () => {
+    it("rechecks with the callback's tx, the caller and the project, before any export read", async () => {
+      const ownTx = { name: "this-callbacks-tx" };
+      mocks.transaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) =>
+        cb(ownTx),
+      );
+      const order: string[] = [];
+      mocks.accessStillHolds.mockImplementation(async () => {
+        order.push("recheck");
+        return true;
+      });
+      mocks.buildExport.mockImplementation(async () => {
+        order.push("build");
+        return ok();
+      });
+
+      await call("proj_X");
+
+      expect(mocks.accessStillHolds).toHaveBeenCalledWith(ownTx, USER.id, "proj_X");
+      expect(order).toEqual(["recheck", "build"]);
+    });
+
+    it("membership revoked or project deleted after the first check: the same 404, nothing read", async () => {
+      mocks.membershipFindFirst.mockResolvedValueOnce(null);
+      const refused = await call();
+      const refusedBody = await refused.text();
+      expect(refused.status).toBe(404);
+
+      mocks.accessStillHolds.mockResolvedValue(false);
+      const late = await call();
+
+      expect(late.status).toBe(404);
+      expect(await late.text()).toBe(refusedBody);
+      expect(mocks.buildExport).not.toHaveBeenCalled();
     });
   });
 

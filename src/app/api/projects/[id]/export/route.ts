@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth-guard";
 import { getLatestMigration, prisma } from "@/lib/db";
 import {
   EXPORT_ROW_CAP,
+  accessStillHolds,
   buildExport,
   exportFilename,
   serializeExport,
@@ -93,8 +94,13 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     // 4. One snapshot: every read sees the same moment (X4). `buildExport` gets
     // the callback's own `tx`; a read through `prisma` would leave the snapshot.
+    // The checks above ran outside it, so they are repeated as its first read.
     const result = await prisma.$transaction(
-      (tx) => buildExport(tx, projectId, { exportedAt, appVersion: pkg.version, schemaMigration }),
+      async (tx) => {
+        if (!(await accessStillHolds(tx, user.id, projectId)))
+          return { kind: "not_found" } as const;
+        return buildExport(tx, projectId, { exportedAt, appVersion: pkg.version, schemaMigration });
+      },
       { isolationLevel: "RepeatableRead", timeout: 20_000 },
     );
 
