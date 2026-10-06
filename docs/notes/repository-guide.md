@@ -18,6 +18,8 @@ on the dated observations below.
   agentic-layer work — merged from the former "AI-aided roadmap" proposal and
   now committed scope, not a separate proposal. Locked decisions (including the
   AX additions) are in `docs/strategy/decisions.md`.
+- `docs/notes/restore-runbook.md`: restoring production data, from Neon point-in-time recovery
+  (6 hours) or from the daily encrypted dump (14 days).
 - `docs/design-system/`, `docs/implementation/`, and
   `skills/platforms/evidoxa.md`: design rationale, implementation specifications,
   and the Evidoxa overlay for UX reviews.

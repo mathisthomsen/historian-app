@@ -1,0 +1,278 @@
+name: Back up production database
+
+# Daily logical backup of the production database (#140), kept alongside Neon's
+# point-in-time recovery. PITR is the fast path but its window is 6 hours
+# (history_retention_seconds = 21600, measured on the production branch); this
+# job is the answer to "something went wrong yesterday". Restore procedures:
+# docs/notes/restore-runbook.md.
+#
+# Shape: pg_dump (custom format) -> readability check -> age encryption with the
+# public key in BACKUP_AGE_RECIPIENT -> upload the .age file as a workflow
+# artifact kept 14 days. The private key is held offline by the owner; nothing in
+# CI can decrypt what it produces.
+#
+# THE REPOSITORY IS PUBLIC. Workflow logs are readable by anyone, and artifacts
+# are downloadable by any signed-in GitHub user. Hence:
+#   - only the encrypted file is ever uploaded; the plaintext dump is removed and
+#     the job fails if one is still on disk;
+#   - the log carries row counts and sizes only, never row contents;
+#   - the connection string is never echoed and there is no `set -x`.
+#
+# Scheduled workflows run from the default branch only, and GitHub may delay a
+# run under load. GitHub also disables scheduled workflows after 60 days without
+# repository activity. A failed run emails the repository owner; nothing else
+# alerts on a missing backup, so the runbook's drill is where that is checked.
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two runs must never overlap (a manual dispatch during the scheduled run).
+# Queue rather than cancel: a cancelled run is a missing backup.
+concurrency:
+  group: backup-production
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Dump, encrypt, upload
+    # workflow_dispatch can be started on any ref, and a branch's copy of this
+    # file could be edited to dump anywhere. Only main's copy may run.
+    if: github.ref == 'refs/heads/main'
+    # Pinned image rather than ubuntu-latest: the `age` package version and the
+    # PGDG repository codename below both depend on the release.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      # Measured by the owner (issue #140): Neon project quiet-fog-92876233,
+      # production branch, Postgres 17. Do not infer branch identity from the
+      # hostname or the secret's name; the guard step asks the server.
+      EXPECTED_BRANCH_ID: "br-old-grass-a9acitgb"
+      # A rotated URL could name another database on the same branch. "neondb"
+      # is Neon's default name and is NOT measured: the first dispatch run
+      # measures it, and the guard fails closed if it differs.
+      EXPECTED_DATABASE: "neondb"
+    steps:
+      # No checkout: the job needs nothing from the repository.
+
+      # The `runner` context is not available in job-level env, so the scratch
+      # directory is exported to the later steps from here.
+      - name: Set the scratch directory
+        run: |
+          set -euo pipefail
+          echo "BACKUP_DIR=$RUNNER_TEMP/backup" >> "$GITHUB_ENV"
+
+      # pg_dump must be at least as new as the server, and the server is
+      # Postgres 17, newer than the client in Ubuntu 24.04 (16). The PGDG
+      # project's own script adds its signed apt repository for this release.
+      # /usr/bin/pg_dump is a wrapper that picks a version itself, so later
+      # steps put the versioned bin directory first on PATH instead.
+      - name: Install PostgreSQL 17 client
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/17/bin/pg_dump --version
+
+      # `age` from Ubuntu's own archive rather than a pinned release download.
+      # We only encrypt to a public key, the apt package is signature-checked by
+      # the archive, and a pinned release would add a hash that lives next to
+      # the thing it protects. The cost is that the version floats with the
+      # image (1.1.x on 24.04), which is acceptable for a stable file format;
+      # the output header is asserted below.
+      - name: Install age
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -qq age
+          age --version
+
+      - name: Check tool versions
+        run: |
+          set -euo pipefail
+          # Resolves through PATH, so this is the binary the dump step will use.
+          version="$(pg_dump --version)"
+          echo "$version"
+          case "$version" in
+            "pg_dump (PostgreSQL) 17."*) ;;
+            *)
+              echo "::error::pg_dump is not version 17; it must be >= the server (17)"
+              exit 1
+              ;;
+          esac
+
+      # Runs before any dump. The measurement is the server's own answer, so a
+      # secret that was swapped, rotated onto another branch or pointed at a
+      # preview branch cannot silently produce a "production" backup.
+      - name: Confirm the target is the production branch
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::PRODUCTION_DATABASE_URL is not set in GitHub Actions secrets"
+            exit 1
+          fi
+          # stderr is discarded on purpose: connection errors can name the host,
+          # and this log is public.
+          if ! identity="$(PGCONNECT_TIMEOUT=30 psql "$DATABASE_URL" -X -tA -F ' ' \
+            -c "select current_setting('neon.branch_id'), current_database()" 2>/dev/null)"; then
+            echo "::error::Could not query the database named by PRODUCTION_DATABASE_URL (connection or neon.branch_id unavailable)"
+            exit 1
+          fi
+          read -r branch_id database <<<"$identity"
+          if [ "$branch_id" != "$EXPECTED_BRANCH_ID" ]; then
+            echo "::error::PRODUCTION_DATABASE_URL points at branch '$branch_id', expected '$EXPECTED_BRANCH_ID'. Refusing to dump."
+            exit 1
+          fi
+          if [ "$database" != "$EXPECTED_DATABASE" ]; then
+            echo "::error::PRODUCTION_DATABASE_URL names database '$database', expected '$EXPECTED_DATABASE'. Refusing to dump."
+            exit 1
+          fi
+          echo "Identity confirmed: branch $branch_id, database $database"
+
+      - name: Dump the database
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$BACKUP_DIR"
+          cd "$BACKUP_DIR"
+
+          # access_requests and invites keep their schema but not their rows.
+          # #29 promises applicants that an unapproved request is erased within
+          # 6 h and an invite within 48 h; a backup kept 14 days would break
+          # that promise for every row it caught. A restore therefore brings
+          # both tables back empty, by design. (Table names are the @@map
+          # values in prisma/schema.prisma.) pg_dump does not fail on an
+          # exclude pattern that matches nothing, so a rename would silently
+          # start keeping these rows; the next step checks the archive itself
+          # and fails closed.
+          #
+          # --no-owner/--no-privileges: the restore target is a different
+          # branch with its own roles.
+          pg_dump \
+            --dbname="$DATABASE_URL" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --exclude-table-data=public.access_requests \
+            --exclude-table-data=public.invites \
+            --file=backup.dump
+          echo "Dump written."
+
+      # Prove the archive can be read before spending the encryption step on it.
+      # --list parses the whole table of contents; it does not prove the data
+      # restores, which only a restore drill can (see the runbook).
+      - name: Check the dump is readable and write the manifest
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          cd "$BACKUP_DIR"
+          toc="$(pg_restore --list backup.dump)"
+          echo "pg_restore --list: ok"
+
+          # The privacy exclusion, checked in the archive rather than trusted:
+          # each table must be present as schema and absent as data.
+          for table in access_requests invites; do
+            if ! grep -Eq "^[0-9]+; [0-9]+ [0-9]+ TABLE public ${table} " <<<"$toc"; then
+              echo "::error::public.${table} is missing from the dump; the exclusion no longer matches a table"
+              exit 1
+            fi
+            if grep -Eq " TABLE DATA public ${table} " <<<"$toc"; then
+              echo "::error::public.${table} rows are in the dump; they must be excluded (#29 retention)"
+              exit 1
+            fi
+          done
+          echo "Exclusions confirmed: access_requests and invites carry no data"
+
+          # Counts and sizes only, never row contents. The counts are read from
+          # the live database seconds after the dump started, so they can differ
+          # slightly from the dump if someone wrote in between; they are
+          # for comparing against a restore, not an exact checksum.
+          # "total" includes soft-deleted rows (deleted_at is not null).
+          echo "dump_bytes: $(stat -c %s backup.dump)"
+          echo "table | total | live"
+          psql "$DATABASE_URL" -X -tA -F ' | ' -v ON_ERROR_STOP=1 -c "
+            select 'persons', count(*), count(*) filter (where deleted_at is null) from persons
+            union all
+            select 'events', count(*), count(*) filter (where deleted_at is null) from events
+            union all
+            select 'sources', count(*), count(*) filter (where deleted_at is null) from sources
+            union all
+            select 'relations', count(*), count(*) filter (where deleted_at is null) from relations
+          "
+
+      - name: Compute artifact name
+        id: meta
+        run: |
+          set -euo pipefail
+          echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Encrypt the dump and remove the plaintext
+        id: encrypt
+        env:
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+          BACKUP_DATE: ${{ steps.meta.outputs.date }}
+        run: |
+          set -euo pipefail
+          cd "$BACKUP_DIR"
+
+          # A public key only. An empty value, a private key pasted by mistake
+          # (AGE-SECRET-KEY-...) or stray whitespace must fail here rather than
+          # produce an unreadable backup or leak a secret into the log.
+          if [ -z "$BACKUP_AGE_RECIPIENT" ]; then
+            echo "::error::BACKUP_AGE_RECIPIENT is not set in GitHub Actions secrets"
+            exit 1
+          fi
+          if ! [[ "$BACKUP_AGE_RECIPIENT" =~ ^age1[a-z0-9]+$ ]]; then
+            echo "::error::BACKUP_AGE_RECIPIENT is not an age public key (expected age1...)"
+            exit 1
+          fi
+
+          out="evidoxa-${BACKUP_DATE}.dump.age"
+          age -r "$BACKUP_AGE_RECIPIENT" -o "$out" backup.dump
+
+          # Format check on what we are about to publish. Decryption cannot be
+          # tested here: the private key is deliberately not in CI.
+          if [ ! -s "$out" ] || [ "$(head -n 1 "$out")" != "age-encryption.org/v1" ]; then
+            echo "::error::$out is empty or lacks the age header"
+            exit 1
+          fi
+
+          shred -u backup.dump
+
+          # Nothing but the .age file may remain; the upload path below is
+          # explicit, but this makes a leftover plaintext a hard failure.
+          if find "$BACKUP_DIR" -mindepth 1 ! -name '*.age' | grep -q .; then
+            echo "::error::Unexpected non-.age file(s) left in the backup directory"
+            exit 1
+          fi
+          echo "encrypted_bytes: $(stat -c %s "$out")"
+          echo "file=$out" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the encrypted backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidoxa-backup-${{ steps.meta.outputs.date }}
+          path: ${{ runner.temp }}/backup/${{ steps.encrypt.outputs.file }}
+          retention-days: 14
+          if-no-files-found: error
+          # Already incompressible ciphertext.
+          compression-level: 0
+
+      # The runner is discarded after the job, so this only matters for a
+      # failure between dump and encrypt. It is cheap, so it is unconditional.
+      - name: Remove any plaintext dump
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d "$BACKUP_DIR" ]; then
+            find "$BACKUP_DIR" -name '*.dump' -exec shred -u {} +
+          fi
