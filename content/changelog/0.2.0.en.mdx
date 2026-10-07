@@ -1,0 +1,32 @@
+---
+version: "0.2.0"
+date: "2026-10-05"
+title: "Access by invitation, project export, text stored as typed"
+---
+
+Access to Evidoxa is now by invitation, and a project can be exported.
+
+**Access by invitation.** Registration needs an invitation link. The landing
+page has a form to request access; if we can invite you, the link arrives by
+email and works once. A request that is not answered is deleted after six hours.
+If the address already belongs to an account, the email says so — the page does
+not, so it cannot be used to check who has an account.
+
+**Export your project.** The dashboard has an "Export project" button. It
+downloads one JSON file with everything in the project: people, events, sources
+and relations, their evidence, certainty and partial dates as stored. Deleted
+records are included, with their `deleted_at` value. You can export five times
+in ten minutes; a project of more than 100,000 rows is refused rather than cut
+off.
+
+**Text is stored as you typed it.** Names, titles and notes containing `&` or
+`<` used to be saved HTML-escaped and shown as `&amp;` or `&lt;`. They are now
+saved and shown exactly as entered. A check of production on 2026-10-04 found
+no existing record that needed correcting.
+
+**Signing out ends the session.** A session token copied before signing out used
+to stay valid for up to 30 days. Signing out and resetting a password now revoke
+it on the server.
+
+**Landing page.** Its claim about certainty is narrowed to the fields that
+actually store a certainty level.

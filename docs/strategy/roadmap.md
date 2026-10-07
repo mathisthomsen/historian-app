@@ -291,10 +291,9 @@ its test. This bullet remains open work, not delivered scope.
 > (issue #82, closed) shipped one landing page, a changelog page and the two legally required
 > pages. Features, About and Pricing are deferred. Part B — the closed-alpha access-request and
 > single-use invite-token flow specified in `docs/specs/2-6-marketing-landing/specification.md`
-> §4.1–4.2 — has **not** shipped: there is no `Invite`/`AccessRequest` model in
-> `prisma/schema.prisma`, no migration creates one, and `src/app/api/auth/register/route.ts`
-> has no invite check (its own `token` code is the email-verification mechanism, not a gate).
-> **Registration is open to the public today.** Tracked as issue #29 (open).
+> §4.1–4.2 — shipped later, as issue #29 (closed): `prisma/schema.prisma` has `AccessRequest` and
+> `Invite` models, and `src/app/api/auth/register/route.ts` refuses a registration that does not
+> carry a valid invite. Registration is by invitation only.
 
 **Verifiable:** Homepage renders with brand styling, hero CTA navigates to `/de/auth/register`, all text available in DE and EN, Lighthouse score >90 on public pages.
 
@@ -663,6 +662,11 @@ it. Sequenced last in Phase 4 for that reason, not by number.
 ### Epic 5.1 — Export System
 
 **Deliverable:** Export research data in formats usable outside the app.
+
+> **Scope note:** a minimal project export exists ahead of this epic (issue #139, closed): one
+> JSON file of every project table, downloaded from the dashboard. It is a data-ownership
+> safeguard for the alpha, not this epic — the formats below, the filtered exports and the export
+> UI on list views are still to be built.
 
 - **Person/Event export:** CSV and JSON; filterable (export only filtered results, or entire project)
 - **Source/Literature export:** RIS format, BibTeX format
@@ -1245,12 +1249,11 @@ Voraussetzung dafür.
 Work that shipped without appearing in either predecessor roadmap. Recorded here so the
 gap between the epic list and the repository is visible; progress against the epics
 themselves lives on GitHub Issues and the Evidoxa Backlog project board
-(`gh project 1 --owner mathisthomsen`), not written down here. (Measured 2026-09-21: the repo
-has 30 GitHub milestones, 10 closed — `gh api repos/mathisthomsen/historian-app/milestones`,
-paginated with `?state=all` — one per epic, kept in sync with `scripts/roadmap-status.ts`,
-which regenerates `content/roadmap-status.json` on manual run (`pnpm roadmap:status:generate`).
-It does not regenerate itself on a schedule or on issue/milestone changes; issue #122 tracks
-automating that.)
+(`gh project 1 --owner mathisthomsen`), not written down here. Epic status is one GitHub
+milestone per epic (`gh api repos/mathisthomsen/historian-app/milestones?state=all`).
+`scripts/roadmap-status.ts` derives `content/roadmap-status.json` from them, and CI regenerates
+that file on every deploy (issue #122, closed); the committed copy is only a fallback for when
+that step cannot reach GitHub.
 
 Phase 6 exists as a phase only from the September 2026 roadmap merge: `ai_aided_roadmap.md`
 carried Epics 6.0–6.3 as a proposal, and the merge presented them as committed
