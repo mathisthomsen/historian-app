@@ -291,9 +291,7 @@ its test. This bullet remains open work, not delivered scope.
 > (issue #82, closed) shipped one landing page, a changelog page and the two legally required
 > pages. Features, About and Pricing are deferred. Part B — the closed-alpha access-request and
 > single-use invite-token flow specified in `docs/specs/2-6-marketing-landing/specification.md`
-> §4.1–4.2 — shipped later, as issue #29 (closed): `prisma/schema.prisma` has `AccessRequest` and
-> `Invite` models, and `src/app/api/auth/register/route.ts` refuses a registration that does not
-> carry a valid invite. Registration is by invitation only.
+> §4.1–4.2 — was split out of this epic and is tracked as issue #29.
 
 **Verifiable:** Homepage renders with brand styling, hero CTA navigates to `/de/auth/register`, all text available in DE and EN, Lighthouse score >90 on public pages.
 
@@ -663,10 +661,9 @@ it. Sequenced last in Phase 4 for that reason, not by number.
 
 **Deliverable:** Export research data in formats usable outside the app.
 
-> **Scope note:** a minimal project export exists ahead of this epic (issue #139, closed): one
-> JSON file of every project table, downloaded from the dashboard. It is a data-ownership
-> safeguard for the alpha, not this epic — the formats below, the filtered exports and the export
-> UI on list views are still to be built.
+> **Scope note:** a minimal one-file export of a whole project (issue #139) is scoped separately
+> from this epic. The formats below, the filtered exports and the export UI on list views belong
+> to this epic.
 
 - **Person/Event export:** CSV and JSON; filterable (export only filtered results, or entire project)
 - **Source/Literature export:** RIS format, BibTeX format
@@ -1252,7 +1249,7 @@ themselves lives on GitHub Issues and the Evidoxa Backlog project board
 (`gh project 1 --owner mathisthomsen`), not written down here. Epic status is one GitHub
 milestone per epic (`gh api repos/mathisthomsen/historian-app/milestones?state=all`).
 `scripts/roadmap-status.ts` derives `content/roadmap-status.json` from them, and CI regenerates
-that file on every deploy (issue #122, closed); the committed copy is only a fallback for when
+that file on every deploy (issue #122); the committed copy is only a fallback for when
 that step cannot reach GitHub.
 
 Phase 6 exists as a phase only from the September 2026 roadmap merge: `ai_aided_roadmap.md`
