@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-01T18:27:16.567Z",
+  "generatedAt": "2026-10-07T13:08:26.307Z",
   "epics": [
     {
       "epic": "1.1",
@@ -68,8 +68,8 @@
       "epic": "2.6",
       "title": "Marketing & Pre-Auth Pages",
       "state": "shipped",
-      "openIssues": 10,
-      "closedIssues": 5
+      "openIssues": 7,
+      "closedIssues": 6
     },
     {
       "epic": "2.7",

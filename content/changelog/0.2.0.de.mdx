@@ -1,0 +1,36 @@
+---
+version: "0.2.0"
+date: "2026-10-05"
+title: "Zugang auf Einladung, Projektexport, Text unverändert gespeichert"
+---
+
+Der Zugang zu Evidoxa erfolgt jetzt auf Einladung, und ein Projekt lässt sich
+exportieren.
+
+**Zugang auf Einladung.** Für die Registrierung brauchen Sie einen
+Einladungslink. Auf der Startseite können Sie den Zugang anfragen; wenn wir Sie
+einladen können, kommt der Link per E-Mail und gilt einmal. Eine unbeantwortete
+Anfrage läuft nach sechs Stunden ab und wird danach von einer stündlichen
+Bereinigung gelöscht. Gehört die Adresse bereits zu einem
+Konto, steht das in der E-Mail — die Seite verrät es nicht, damit sich damit
+nicht prüfen lässt, wer ein Konto hat.
+
+**Projekt exportieren.** Das Dashboard hat eine Schaltfläche „Projekt
+exportieren“. Sie lädt eine JSON-Datei mit allem, was im Projekt liegt: Personen,
+Ereignisse, Quellen und Relationen, dazu Belege, Gewissheit und Teildaten, so wie
+sie gespeichert sind. Gelöschte Datensätze sind enthalten, mit ihrem
+`deleted_at`-Wert. Sie können fünfmal in zehn Minuten exportieren; ein Projekt
+mit mehr als 100.000 Zeilen wird abgelehnt statt abgeschnitten.
+
+**Text wird so gespeichert, wie Sie ihn eingeben.** Namen, Titel und Notizen mit
+`&` oder `<` wurden bisher HTML-maskiert gespeichert und als `&amp;` oder `&lt;`
+angezeigt. Jetzt werden sie genau so gespeichert und angezeigt, wie Sie sie
+eingeben. Eine Prüfung der Produktion am 04.10.2026 fand keinen bestehenden
+Datensatz, der korrigiert werden musste.
+
+**Abmelden beendet die Sitzung.** Ein vor dem Abmelden kopiertes Sitzungstoken
+blieb bisher bis zu 30 Tage gültig. Abmelden und das Zurücksetzen des Passworts
+widerrufen es jetzt auf dem Server.
+
+**Startseite.** Die Aussage zur Gewissheit beschränkt sich jetzt auf die Felder,
+die tatsächlich eine Gewissheitsstufe speichern.
